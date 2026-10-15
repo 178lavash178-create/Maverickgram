@@ -36,3 +36,8 @@ The account avatar fits its toolbar slot with a circular metal rim and an inset 
 Every Aqua section change recomputes shell geometry before presentation, including profile/back and indirect chat navigation. Contacts, Calls, Settings, Profile and Workshop meet the shared 52pt footer without reserving the hidden Classic navigation area. Closed chats and the media center also use that fixed footer regardless of a retained multiline draft. The media panel and section reveal stay above it.
 
 The Aqua chat list uses square edges and meets the footer directly. The File button pairs the approved attachment image with its label; Classic cells keep their original artwork and geometry. Live checks should cover a multiline draft, every top-level section, back navigation, closed-chat suggestions, media-center navigation, and narrow-window resizing.
+
+
+## Narrow media center
+
+Aqua media tabs keep readable labels by wrapping into balanced rows. Status and result areas follow the extra tab height. The existing result views and hit targets reflow to the clip width on resize, preserving scroll position and thumbnail ownership without triggering pagination or rebuilding the results. Delayed history callbacks keep message-only navigation hidden while media or closed-chat content is displayed.

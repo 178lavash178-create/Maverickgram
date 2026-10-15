@@ -1600,14 +1600,14 @@
     }
     if ([notification object] == self.mediaCenterWindow) {
         [self layoutMediaCenterWindowSubviews];
-        [self rebuildMediaCenterRows];
+        if (!TGInterfaceDesignIsAqua()) [self rebuildMediaCenterRows];
         return;
     }
     if ([notification object] != [self window]) {
         return;
     }
     [self layoutContentView];
-    if (self.mediaCenterVisible) {
+    if (self.mediaCenterVisible && !TGInterfaceDesignIsAqua()) {
         [self rebuildMediaCenterRowsPreservingScroll:YES];
     }
     [self.messageTableView reloadData];

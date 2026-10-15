@@ -270,6 +270,7 @@
 - (void)updateMessageJumpToNewestButtonVisibility {
     BOOL ready = ([self.currentAuthState isEqualToString:@"ready"] &&
                   [(self.activeSection ? self.activeSection : TGSectionChats) isEqualToString:TGSectionChats] &&
+                  !self.chatNavigationClosed && !self.mediaCenterVisible &&
                   self.selectedChatID != nil);
     [self.messageJumpToNewestButton setHidden:!ready];
     [self.messageJumpToNewestButton setEnabled:ready];

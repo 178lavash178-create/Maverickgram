@@ -1,3 +1,5 @@
+#import "TGMediaCenterLayout.h"
+
 static const NSUInteger TGMediaCenterPageLimit = 30;
 
 static NSString *TGMediaCenterFilterIdentifierForIndex(NSInteger index) {
@@ -353,6 +355,9 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
                                                 18.0)] autorelease];
     [spinner setStyle:NSProgressIndicatorSpinningStyle];
     [spinner setDisplayedWhenStopped:NO];
+    if (TGInterfaceDesignIsAqua() && NSWidth(frame) > 50.0) {
+        [spinner setAutoresizingMask:NSViewMinXMargin | NSViewMaxXMargin];
+    }
     [spinner startAnimation:nil];
     [view addSubview:spinner];
 }
@@ -483,9 +488,27 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
     }
 }
 
+- (TGAquaMediaCenterTabs)aquaMediaCenterTabGeometryForWidth:(CGFloat)width height:(CGFloat)height {
+    CGFloat minimumWidth = 72.0;
+    for (NSButton *button in self.mediaCenterTabButtons) {
+        NSFont *font = [button font] ?: [NSFont systemFontOfSize:13.0];
+        CGFloat titleWidth = [[button title] sizeWithAttributes:[NSDictionary dictionaryWithObject:font forKey:NSFontAttributeName]].width;
+        minimumWidth = MAX(minimumWidth, ceil(titleWidth) + 24.0);
+    }
+    return TGAquaMediaCenterTabGeometry(width, height, [self.mediaCenterTabButtons count], minimumWidth);
+}
+
 - (void)layoutMediaCenterTabButtonsForWidth:(CGFloat)width height:(CGFloat)height {
     NSUInteger count = [self.mediaCenterTabButtons count];
     if (count == 0) {
+        return;
+    }
+    if (TGInterfaceDesignIsAqua()) {
+        TGAquaMediaCenterTabs layout = [self aquaMediaCenterTabGeometryForWidth:width height:height];
+        NSUInteger index = 0;
+        for (index = 0; index < count; index++) {
+            [[self.mediaCenterTabButtons objectAtIndex:index] setFrame:TGAquaMediaCenterTabFrame(layout, index)];
+        }
         return;
     }
     CGFloat gap = 6.0;
@@ -733,9 +756,27 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
     [self.mediaCenterTitleField setFrame:NSMakeRect(72.0, height - 162.0, width - 144.0, 26.0)];
     [self.mediaCenterSubtitleField setFrame:NSMakeRect(72.0, height - 186.0, width - 144.0, 20.0)];
     [self layoutMediaCenterTabButtonsForWidth:width height:height];
-    [self.mediaCenterStatusField setFrame:NSMakeRect(52.0, height - 274.0, width - 136.0, 18.0)];
-    [self.mediaCenterRefreshButton setFrame:NSMakeRect(width - 72.0, height - 282.0, 34.0, 30.0)];
-    [self.mediaCenterScrollView setFrame:NSMakeRect(36.0, 24.0, width - 72.0, MAX(120.0, height - 316.0))];
+    BOOL aqua = TGInterfaceDesignIsAqua();
+    CGFloat extraTabHeight = aqua ? [self aquaMediaCenterTabGeometryForWidth:width height:height].extraHeight : 0.0;
+    [self.mediaCenterStatusField setFrame:NSMakeRect(52.0, height - 274.0 - extraTabHeight, width - 136.0, 18.0)];
+    [self.mediaCenterRefreshButton setFrame:NSMakeRect(width - 72.0, height - 282.0 - extraTabHeight, 34.0, 30.0)];
+    NSClipView *clipView = [self.mediaCenterScrollView contentView];
+    BOOL postsBoundsChanges = [clipView postsBoundsChangedNotifications];
+    NSPoint previousOrigin = [clipView bounds].origin;
+    /* Geometry changes must not be mistaken for a request to paginate. */
+    if (aqua) [clipView setPostsBoundsChangedNotifications:NO];
+    [self.mediaCenterScrollView setFrame:NSMakeRect(36.0, 24.0, width - 72.0,
+                                                   MAX(aqua ? 0.0 : 120.0, height - 316.0 - extraTabHeight))];
+    if (aqua) {
+        TGAquaMediaCenterReflowResults(self.mediaCenterResultsView, NSWidth([clipView bounds]),
+                                      TGMediaCenterSelectionUsesGrid([self mediaCenterCurrentTabIndex]),
+                                      [self.mediaCenterItems count] == 0);
+        previousOrigin.x = 0.0;
+        previousOrigin.y = MIN(previousOrigin.y, MAX(0.0, NSHeight([self.mediaCenterResultsView frame]) - NSHeight([clipView bounds])));
+        [clipView scrollToPoint:previousOrigin];
+        [self.mediaCenterScrollView reflectScrolledClipView:clipView];
+        [clipView setPostsBoundsChangedNotifications:postsBoundsChanges];
+    }
     [self.mediaCenterLoadingSpinner setFrame:NSMakeRect(floor((width - 24.0) / 2.0),
                                                         floor((height - 24.0) / 2.0) - 64.0,
                                                         24.0,
@@ -791,12 +832,14 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
             [imageView setImage:thumbnail];
             [imageView setImageScaling:NSImageScaleProportionallyUpOrDown];
             [imageView setImageFrameStyle:NSImageFrameNone];
+            if (TGInterfaceDesignIsAqua()) [imageView setAutoresizingMask:NSViewWidthSizable];
             [tile addSubview:imageView];
         } else {
             NSTextField *typeField = [self labelWithFrame:NSMakeRect(10.0, 32.0, tileWidth - 20.0, 24.0)
                                                      text:TGMediaCenterTypeTitleForItem(item)
                                                      font:[NSFont boldSystemFontOfSize:13.0]];
             [typeField setAlignment:NSCenterTextAlignment];
+            if (TGInterfaceDesignIsAqua()) [typeField setAutoresizingMask:NSViewWidthSizable];
             [tile addSubview:typeField];
         }
         [self addMediaCenterThumbnailSpinnerForItem:item toView:tile frame:previewRect];
@@ -806,6 +849,7 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
                                              text:titleText
                                              font:[NSFont boldSystemFontOfSize:11.0]];
         [[title cell] setLineBreakMode:NSLineBreakByTruncatingTail];
+        if (TGInterfaceDesignIsAqua()) [title setAutoresizingMask:NSViewWidthSizable];
         [tile addSubview:title];
 
         NSString *details = [NSString stringWithFormat:@"%@ · %@",
@@ -816,6 +860,7 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
                                                 font:[NSFont systemFontOfSize:10.0]];
         [[subtitle cell] setLineBreakMode:NSLineBreakByTruncatingTail];
         [self applyMutedLabelStyle:subtitle];
+        if (TGInterfaceDesignIsAqua()) [subtitle setAutoresizingMask:NSViewWidthSizable];
         [tile addSubview:subtitle];
 
         NSButton *button = [[[TGPointingHandButton alloc] initWithFrame:[tile bounds]] autorelease];
@@ -826,6 +871,7 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
         [button setAction:@selector(previewMediaCenterItem:)];
         [button setTag:(NSInteger)index];
         [button setMenu:[self mediaCenterContextMenuForIndex:index]];
+        if (TGInterfaceDesignIsAqua()) [button setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
         [tile addSubview:button];
     }
 }
@@ -867,6 +913,7 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
                                              text:TGMediaCenterTitleForItem(item)
                                              font:[NSFont boldSystemFontOfSize:13.0]];
         [[title cell] setLineBreakMode:NSLineBreakByTruncatingTail];
+        if (TGInterfaceDesignIsAqua()) [title setAutoresizingMask:NSViewWidthSizable];
         [row addSubview:title];
 
         NSString *details = [NSString stringWithFormat:@"%@ · %@ · %@",
@@ -878,6 +925,7 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
                                                 font:[NSFont systemFontOfSize:12.0]];
         [[subtitle cell] setLineBreakMode:NSLineBreakByTruncatingTail];
         [self applyMutedLabelStyle:subtitle];
+        if (TGInterfaceDesignIsAqua()) [subtitle setAutoresizingMask:NSViewWidthSizable];
         [row addSubview:subtitle];
 
         NSButton *button = [[[TGPointingHandButton alloc] initWithFrame:[row bounds]] autorelease];
@@ -888,6 +936,7 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
         [button setAction:@selector(previewMediaCenterItem:)];
         [button setTag:(NSInteger)index];
         [button setMenu:[self mediaCenterContextMenuForIndex:index]];
+        if (TGInterfaceDesignIsAqua()) [button setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
         [row addSubview:button];
     }
 }
@@ -918,6 +967,7 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
                                              text:([chatItem.title length] > 0 ? chatItem.title : TGLoc(@"media.center.group.untitled"))
                                              font:[NSFont boldSystemFontOfSize:13.0]];
         [[title cell] setLineBreakMode:NSLineBreakByTruncatingTail];
+        if (TGInterfaceDesignIsAqua()) [title setAutoresizingMask:NSViewWidthSizable];
         [row addSubview:title];
 
         NSString *details = ([chatItem.typeSummary length] > 0 ? chatItem.typeSummary : TGLoc(@"media.center.tab.groups"));
@@ -926,6 +976,7 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
                                                 font:[NSFont systemFontOfSize:12.0]];
         [[subtitle cell] setLineBreakMode:NSLineBreakByTruncatingTail];
         [self applyMutedLabelStyle:subtitle];
+        if (TGInterfaceDesignIsAqua()) [subtitle setAutoresizingMask:NSViewWidthSizable];
         [row addSubview:subtitle];
     }
 }
@@ -960,9 +1011,12 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
         }] retain];
     }
 
-    CGFloat width = MAX(420.0, NSWidth([self.mediaCenterScrollView bounds]) - 18.0);
+    CGFloat width = TGInterfaceDesignIsAqua()
+        ? MAX(1.0, floor(NSWidth([[self.mediaCenterScrollView contentView] bounds])))
+        : MAX(420.0, NSWidth([self.mediaCenterScrollView bounds]) - 18.0);
 
     if ([items count] == 0) {
+        if (TGInterfaceDesignIsAqua()) [self.mediaCenterResultsView setFrame:NSMakeRect(0.0, 0.0, width, 100.0)];
         NSTextField *empty = [self labelWithFrame:NSMakeRect(18.0, 34.0, width - 36.0, 20.0)
                                              text:(self.mediaCenterLoading ? TGLoc(@"media.center.loading") : (TGMediaCenterSelectionUsesGroups(selectedTab) ? TGLoc(@"media.center.groups.empty") : TGLoc(@"media.center.empty")))
                                              font:[NSFont systemFontOfSize:13.0]];
