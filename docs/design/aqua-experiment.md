@@ -21,3 +21,9 @@ A short single reaction can share a compact text row when measured content, reac
 Use the regular `scripts/run_tests.sh` suite, including separate-process Classic/Aqua restart, material, footer and source-list geometry probes. Compile and smoke-test with the unified 10.8 deployment target on the available legacy Mac. Live acceptance covers cancel, restart in both directions, folders with long names/many entries, divider/collapse, narrow windows, forum navigation, composer and lower utility alignment. A static rendering is not proof of final visual equivalence; compare the running legacy app before calling this complete.
 
 Keep this experiment isolated from main/develop until the owner accepts the new interface. Do not publish a release from this work without an explicit release request.
+
+## Material and source-list refinement
+
+The source-list header is an embossed text heading with a separate text action. Its 18pt metal divider caps folder height at the actual row count and preserves usable chat space. Archive remains a folder only; Settings shares the composer's baseline in the continuous metal footer. Panel seams stop at that footer instead of continuing through it.
+
+The original Subtle Patterns Brushed Alum and Black Linen PNGs ship with their attribution and CC BY-SA 3.0 license in `Resources/Textures`. They are decoded once and composited over the Aqua surfaces. Button light is a continuous gradient with an inset bevel, without a rectangular highlight overlay. All icons continue to use existing approved assets.

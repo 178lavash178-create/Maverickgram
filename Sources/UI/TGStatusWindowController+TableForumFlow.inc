@@ -594,6 +594,7 @@
 }
 
 - (void)applyChatItems:(NSArray *)items preserveSelection:(BOOL)preserveSelection preferredChatID:(NSNumber *)preferredChatID {
+    [self rememberAquaClosedChatRecentItemsFromItems:items];
     if ([self.currentAuthState isEqualToString:@"ready"]) {
         TGRecordConfirmedNotificationChatReads(items, self.notificationReadState);
         [self removeConfirmedReadNotifications];
@@ -642,6 +643,10 @@
         }
         [pendingChatID release];
         [pendingThreadID release];
+    }
+
+    if ([self restoreAquaClosedChatPlaceholderAfterChatListUpdate]) {
+        return;
     }
 
     if (selectedIndex != NSNotFound) {

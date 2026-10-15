@@ -1,0 +1,19 @@
+Aqua surface textures — Subtle Patterns
+
+brushed_alu.png: “Brushed Alum”, Tim Ward, 7 June 2011.
+https://www.toptal.com/designers/subtlepatterns/brushed-alum/
+Original file: https://raw.githubusercontent.com/atlemo/SubtlePatterns/gh-pages/brushed_alu.png
+
+black-Linen.png: “Black Linen”, Atle Mo, 6 June 2011.
+https://www.toptal.com/designers/subtlepatterns/black-linen/
+Original file: https://raw.githubusercontent.com/atlemo/SubtlePatterns/gh-pages/black-Linen.png
+
+Subtle Patterns © 2017 Toptal. Licensed under Creative Commons
+Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0):
+https://creativecommons.org/licenses/by-sa/3.0/
+https://creativecommons.org/licenses/by-sa/3.0/legalcode
+Upstream license declaration: https://github.com/atlemo/SubtlePatterns
+
+The two PNG files are redistributed unmodified. Telegraphica composites them
+at reduced opacity over Aqua surfaces. These textures and adaptations remain
+available under CC BY-SA 3.0. Their authors do not endorse Telegraphica.

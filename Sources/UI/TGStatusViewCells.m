@@ -1,3 +1,4 @@
+#import "TGInterfaceDesign.h"
 #import "TGStatusViewCells.h"
 #import "TGChatDisplayPreferences.h"
 #import "TGChatUnreadBadgeAppearance.h"
@@ -288,6 +289,12 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
 - (void)drawRect:(NSRect)dirtyRect {
     (void)dirtyRect;
     NSRect bounds = [self bounds];
+    if (TGInterfaceDesignIsAqua()) {
+        TGThemeDrawPanelBackgroundInPath([NSBezierPath bezierPathWithRect:bounds], bounds, [self isFlipped]);
+        NSRect header = NSMakeRect(0, NSHeight(bounds)-TGPanelHeaderHeight, NSWidth(bounds), TGPanelHeaderHeight);
+        TGThemeDrawHeaderBackgroundInRect(header, [self isFlipped]);
+        return;
+    }
     NSRect panelBounds = NSInsetRect(bounds, 1.0, 1.0);
     NSBezierPath *panelPath = [NSBezierPath bezierPathWithRoundedRect:panelBounds
                                                              xRadius:TGPanelCornerRadius

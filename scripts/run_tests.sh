@@ -499,8 +499,20 @@ HOME="$TEST_HOME" "$BUILD_DIR/interface-design-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/interface-design-probe" aqua
 
 echo "== Aqua surfaces and footer =="
-"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_material_probe.m Sources/UI/TGTheme.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGAquaAppearance.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGLocalization.m -framework Cocoa -o "$BUILD_DIR/aqua-material-probe"
-HOME="$TEST_HOME" "$BUILD_DIR/aqua-material-probe" -TelegraphicaInterfaceDesign aqua -TelegraphicaThemeIdentifier visual-space-terminal
+AQUA_PROBE_BUNDLE="$BUILD_DIR/AquaMaterialProbe.app"
+mkdir -p "$AQUA_PROBE_BUNDLE/Contents/MacOS" "$AQUA_PROBE_BUNDLE/Contents/Resources"
+cp -R Sources/Resources/Textures "$AQUA_PROBE_BUNDLE/Contents/Resources/"
+cat > "$AQUA_PROBE_BUNDLE/Contents/Info.plist" <<'AQUA_PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleExecutable</key><string>aqua-material-probe</string>
+<key>CFBundleIdentifier</key><string>local.telegraphica.aqua-material-probe</string>
+<key>CFBundlePackageType</key><string>APPL</string>
+</dict></plist>
+AQUA_PLIST
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_material_probe.m Sources/UI/TGTheme.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGAquaAppearance.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGLocalization.m -framework Cocoa -o "$AQUA_PROBE_BUNDLE/Contents/MacOS/aqua-material-probe"
+HOME="$TEST_HOME" "$AQUA_PROBE_BUNDLE/Contents/MacOS/aqua-material-probe" -TelegraphicaInterfaceDesign aqua -TelegraphicaThemeIdentifier visual-space-terminal
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_footer_probe.m "${MESSAGE_PROBE_SOURCES[@]}" Sources/UI/TGIconAssets.m -framework Cocoa -o "$BUILD_DIR/aqua-footer-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/aqua-footer-probe" classic
 HOME="$TEST_HOME" "$BUILD_DIR/aqua-footer-probe" aqua
@@ -508,3 +520,7 @@ HOME="$TEST_HOME" "$BUILD_DIR/aqua-footer-probe" aqua
 echo "== Aqua source list geometry =="
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_shell_layout_probe.m Sources/UI/TGAquaShellLayout.m -framework Cocoa -o "$BUILD_DIR/aqua-shell-layout-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/aqua-shell-layout-probe"
+
+echo "== Closed-chat suggestions =="
+"$CLANG" "${COMPILE_FLAGS[@]}" -ISources/Core Tests/closed_chat_suggestions_probe.m Sources/Core/TGChatItem.m -framework Cocoa -o "$BUILD_DIR/closed_chat_suggestions_probe"
+HOME="$TEST_HOME" "$BUILD_DIR/closed_chat_suggestions_probe"

@@ -33,6 +33,27 @@
 }
 @end
 
+// Source-list headings are quiet text controls, not selected navigation tabs.
+@implementation TGAquaSectionButtonCell
+- (void)drawWithFrame:(NSRect)frame inView:(NSView *)view {
+    BOOL heading = [self alignment] == NSLeftTextAlignment;
+    NSMutableParagraphStyle *paragraph = [[[NSMutableParagraphStyle alloc] init] autorelease];
+    [paragraph setAlignment:[self alignment]];
+    [paragraph setLineBreakMode:NSLineBreakByTruncatingTail];
+    NSColor *ink = heading ? TGColorFromHex(0x445568) : TGColorFromHex([self isHighlighted] ? 0x163D66 : 0x295782);
+    NSShadow *emboss = [[[NSShadow alloc] init] autorelease];
+    [emboss setShadowColor:[NSColor colorWithCalibratedWhite:1.0 alpha:0.85]];
+    [emboss setShadowOffset:NSMakeSize(0, [view isFlipped] ? -1 : 1)];
+    NSDictionary *attrs = [NSDictionary dictionaryWithObjectsAndKeys:
+        heading ? [NSFont boldSystemFontOfSize:11] : [NSFont systemFontOfSize:12], NSFontAttributeName,
+        ink, NSForegroundColorAttributeName, paragraph, NSParagraphStyleAttributeName,
+        emboss, NSShadowAttributeName, nil];
+    NSString *title = [self title] ? [self title] : @"";
+    CGFloat height = ceil([title sizeWithAttributes:attrs].height);
+    [title drawInRect:NSMakeRect(NSMinX(frame)+4, floor(NSMidY(frame)-height/2), MAX(0,NSWidth(frame)-8), height) withAttributes:attrs];
+}
+@end
+
 @implementation TGAquaFolderButtonCell
 - (void)drawWithFrame:(NSRect)frame inView:(NSView *)view {
     BOOL selected = [self state] == NSOnState;
@@ -60,11 +81,15 @@
 - (void)resetCursorRects { [self addCursorRect:[self bounds] cursor:[NSCursor resizeUpDownCursor]]; }
 - (void)drawRect:(NSRect)dirtyRect {
     (void)dirtyRect;
-    NSGradient *gradient = [[[NSGradient alloc] initWithStartingColor:TGColorFromHex(0xEEEEEE) endingColor:TGColorFromHex(0xBBBBBB)] autorelease];
-    [gradient drawInRect:[self bounds] angle:-90];
-    [TGColorFromHex(0x888888) set];
-    NSRectFill(NSMakeRect(NSMidX([self bounds])-14, 4, 28, 1));
-    NSRectFill(NSMakeRect(NSMidX([self bounds])-14, 6, 28, 1));
+    NSRect bounds = [self bounds];
+    TGAquaDrawSurfaceInPath([NSBezierPath bezierPathWithRect:bounds], bounds, TGThemeSurfaceHeader, [self isFlipped]);
+    // Recessed horizontal grooves are part of the splitter material.
+    CGFloat x = floor(NSMidX(bounds)-22), y = floor(NSMidY(bounds)-3);
+    NSUInteger row;
+    for (row=0; row<3; row++) {
+        [TGColorFromHex(0x939CA6) set]; NSRectFill(NSMakeRect(x,y+row*3,44,1));
+        [[NSColor colorWithCalibratedWhite:1 alpha:0.8] set]; NSRectFill(NSMakeRect(x,y+row*3+1,44,1));
+    }
 }
 - (void)mouseDown:(NSEvent *)event { _initialY = [event locationInWindow].y; _dragDelta = 0.0; }
 - (void)mouseDragged:(NSEvent *)event {

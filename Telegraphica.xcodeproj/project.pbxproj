@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A68400000000000000000001 /* Textures in Resources */ = {isa = PBXBuildFile; fileRef = A68400000000000000000002 /* Textures */; };
 		A65300000000000000000001 /* TGChatOpenState.m in Sources */ = {isa = PBXBuildFile; fileRef = A65300000000000000000003 /* TGChatOpenState.m */; };
 		A65200000000000000000001 /* TGMessageReactionParser.m in Sources */ = {isa = PBXBuildFile; fileRef = A65200000000000000000003 /* TGMessageReactionParser.m */; };
 		A65100000000000000000001 /* TGReactionChipLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = A65100000000000000000003 /* TGReactionChipLayout.m */; };
@@ -196,6 +197,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A68400000000000000000002 /* Textures */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Textures; sourceTree = "<group>"; };
 		A65300000000000000000002 /* TGChatOpenState.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGChatOpenState.h; sourceTree = "<group>"; };
 		A65300000000000000000003 /* TGChatOpenState.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGChatOpenState.m; sourceTree = "<group>"; };
 		A65200000000000000000002 /* TGMessageReactionParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGMessageReactionParser.h; sourceTree = "<group>"; };
@@ -938,6 +940,7 @@
 				111111111111111111111223 /* TelegraphicaAppIcon.icns */,
 				111111111111111111111224 /* TelegraphicaNotificationIcon.png */,
 				111111111111111111111277 /* Icons */,
+				A68400000000000000000002 /* Textures */,
 				111111111111111111111229 /* ThirdPartyNotices.txt */,
 				221000000000000000000016 /* WorkshopCatalog.json */,
 				221000000000000000000017 /* WorkshopCatalogPublicKey.der */,
@@ -1041,6 +1044,7 @@
 				111111111111111111111110 /* TelegraphicaAppIcon.icns in Resources */,
 				111111111111111111111114 /* TelegraphicaNotificationIcon.png in Resources */,
 				111111111111111111111141 /* Icons in Resources */,
+				A68400000000000000000001 /* Textures in Resources */,
 				111111111111111111111119 /* ThirdPartyNotices.txt in Resources */,
 				220000000000000000000016 /* WorkshopCatalog.json in Resources */,
 				220000000000000000000017 /* WorkshopCatalogPublicKey.der in Resources */,

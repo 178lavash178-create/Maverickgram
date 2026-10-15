@@ -31,28 +31,73 @@ static NSBitmapImageRep *TGMaterialBitmap(TGThemeSurfaceRole role, BOOL flipped)
 static NSUInteger TGCheckAquaButtonMaterials(void) {
     NSUInteger failures=0,checks=0;
     CGFloat minimum=21.0;
-    NSUInteger scale,flip,pressed,heightIndex;
+    NSMutableDictionary *directions=[NSMutableDictionary dictionary];
+    NSUInteger scale,flip,pressed,heightIndex,accented,enabled;
     const CGFloat heights[]={24.0,32.0,40.0,64.0};
-    for(scale=1;scale<=2;scale++) for(flip=0;flip<2;flip++) for(pressed=0;pressed<2;pressed++) for(heightIndex=0;heightIndex<4;heightIndex++) {
+    for(scale=1;scale<=2;scale++) for(flip=0;flip<2;flip++) for(pressed=0;pressed<2;pressed++) for(heightIndex=0;heightIndex<4;heightIndex++) for(accented=0;accented<2;accented++) for(enabled=0;enabled<2;enabled++) {
         CGFloat height=heights[heightIndex];
         NSBitmapImageRep *bitmap=[[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:160*scale pixelsHigh:(NSInteger)(height*scale) bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSCalibratedRGBColorSpace bytesPerRow:0 bitsPerPixel:0] autorelease];
         [NSGraphicsContext saveGraphicsState];
         [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithBitmapImageRep:bitmap]];
         NSAffineTransform *transform=[NSAffineTransform transform];[transform scaleBy:scale];[transform concat];
         NSRect rect=NSMakeRect(0,0,160,height);
-        TGAquaDrawButtonInPath([NSBezierPath bezierPathWithRoundedRect:rect xRadius:6 yRadius:6],rect,pressed!=0,YES,YES,flip!=0);
+        TGAquaDrawButtonInPath([NSBezierPath bezierPathWithRoundedRect:rect xRadius:6 yRadius:6],rect,pressed!=0,accented!=0,enabled!=0,flip!=0);
         [NSGraphicsContext restoreGraphicsState];
+        NSColor *ink=enabled ? (accented ? [NSColor whiteColor] : [NSColor colorWithCalibratedWhite:0.12 alpha:1.0]) : [NSColor colorWithCalibratedWhite:0.40 alpha:1.0];
         CGFloat contrast=21.0; NSInteger x,y;
-        // Sample every interior pixel, including both sides of the gloss seam.
+        // Sample every interior pixel through the continuous curved light profile.
         // Six points also exclude the rounded corner and its antialiasing.
-        for(y=2*scale;y<(NSInteger)((height-2)*scale);y++) for(x=6*scale;x<(NSInteger)(154*scale);x++) {
-            contrast=MIN(contrast,TGThemeContrastRatio([NSColor whiteColor],[bitmap colorAtX:x y:y]));
+        for(y=3*scale;y<(NSInteger)((height-3)*scale);y++) for(x=6*scale;x<(NSInteger)(154*scale);x++) {
+            contrast=MIN(contrast,TGThemeContrastRatio(ink,[bitmap colorAtX:x y:y]));
+        }
+        NSString *directionKey=[NSString stringWithFormat:@"%lu:%lu:%lu:%lu:%lu",(unsigned long)scale,(unsigned long)pressed,(unsigned long)heightIndex,(unsigned long)accented,(unsigned long)enabled];
+        NSData *raster=[NSData dataWithBytes:[bitmap bitmapData] length:[bitmap bytesPerRow]*[bitmap pixelsHigh]];
+        if(!flip) [directions setObject:raster forKey:directionKey];
+        else {
+            const unsigned char *normal=[[directions objectForKey:directionKey] bytes],*reverse=[raster bytes];
+            NSInteger stride=[bitmap bytesPerRow],pixelsHigh=[bitmap pixelsHigh],channel;
+            NSUInteger maximumDifference=0;
+            for(y=3*scale;y<pixelsHigh-(NSInteger)(3*scale);y++) for(x=6*scale;x<(NSInteger)(154*scale);x++) for(channel=0;channel<4;channel++) {
+                NSInteger difference=abs((int)normal[y*stride+x*4+channel]-(int)reverse[(pixelsHigh-1-y)*stride+x*4+channel]);
+                maximumDifference=MAX(maximumDifference,(NSUInteger)difference);
+            }
+            if(maximumDifference>1) { fprintf(stderr,"Aqua flipped light profile mismatch: %lu channel levels\n",(unsigned long)maximumDifference);failures++; }
         }
         minimum=MIN(minimum,contrast);checks++;
-        if(contrast<4.5) { fprintf(stderr,"Aqua button white title contrast scale%lu flip%lu pressed%lu height%.0f %.3f\n",(unsigned long)scale,(unsigned long)flip,(unsigned long)pressed,(double)height,(double)contrast);failures++; }
+        if(contrast<4.5) { fprintf(stderr,"Aqua button title contrast scale%lu flip%lu pressed%lu height%.0f %.3f\n",(unsigned long)scale,(unsigned long)flip,(unsigned long)pressed,(double)height,(double)contrast);failures++; }
     }
-    printf("Aqua cobalt buttons: %lu actual rasters, minimum white title contrast %.2f:1, %lu failures.\n",(unsigned long)checks,(double)minimum,(unsigned long)failures);
+    printf("Aqua buttons: %lu actual rasters, minimum title contrast %.2f:1, %lu failures.\n",(unsigned long)checks,(double)minimum,(unsigned long)failures);
     return failures;
+}
+
+static void TGWriteAquaMaterialPreview(NSString *output) {
+    if(![output length]) return;
+    NSBitmapImageRep *bitmap=[[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:1000 pixelsHigh:660 bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSCalibratedRGBColorSpace bytesPerRow:0 bitsPerPixel:0] autorelease];
+    [NSGraphicsContext saveGraphicsState];[NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithBitmapImageRep:bitmap]];
+    [[NSColor colorWithCalibratedWhite:0.90 alpha:1] set];NSRectFill(NSMakeRect(0,0,1000,660));
+    NSDictionary *label=[NSDictionary dictionaryWithObjectsAndKeys:[NSFont boldSystemFontOfSize:15],NSFontAttributeName,[NSColor blackColor],NSForegroundColorAttributeName,nil];
+    [@"Actual Aqua materials — licensed linen / aluminium" drawAtPoint:NSMakePoint(24,625) withAttributes:label];
+    NSUInteger row,col;
+    for(row=0;row<2;row++) for(col=0;col<3;col++) {
+        NSRect rect=NSMakeRect(24+col*325,425-row*140,300,115);
+        TGThemeSurfaceRole role=row==0 ? (col==0 ? TGThemeSurfaceHeader : col==1 ? TGThemeSurfaceRail : TGThemeSurfaceRecessed) : (col==0 ? TGThemeSurfaceOutgoing : TGThemeSurfaceIncoming);
+        if(row==1 && col==2) TGAquaDrawConversationBackground(rect,NO);
+        else TGAquaDrawSurfaceInPath([NSBezierPath bezierPathWithRoundedRect:rect xRadius:8 yRadius:8],rect,role,NO);
+        NSArray *names=[NSArray arrayWithObjects:@"Brushed aluminium",@"Linen source list",@"Inset field",@"Outgoing pearl blue",@"Incoming pearl",@"Linen conversation",nil];
+        [[names objectAtIndex:row*3+col] drawAtPoint:NSMakePoint(NSMinX(rect),NSMaxY(rect)+8) withAttributes:label];
+    }
+    for(row=0;row<2;row++) for(col=0;col<3;col++) {
+        BOOL accented=row==0,pressed=col==1,enabled=col!=2;
+        NSRect rect=NSMakeRect(50+col*325,155-row*80,230,40);
+        TGAquaDrawButtonInPath([NSBezierPath bezierPathWithRoundedRect:rect xRadius:6 yRadius:6],rect,pressed,accented,enabled,NO);
+        NSColor *ink=enabled ? (accented ? [NSColor whiteColor] : [NSColor colorWithCalibratedWhite:0.12 alpha:1]) : [NSColor colorWithCalibratedWhite:0.40 alpha:1];
+        NSDictionary *attrs=[NSDictionary dictionaryWithObjectsAndKeys:[NSFont systemFontOfSize:13],NSFontAttributeName,ink,NSForegroundColorAttributeName,nil];
+        NSString *title=col==0 ? @"Normal — Настройки" : col==1 ? @"Pressed — Настройки" : @"Disabled — Настройки";
+        NSSize size=[title sizeWithAttributes:attrs];
+        [title drawAtPoint:NSMakePoint(NSMidX(rect)-size.width/2,NSMidY(rect)-size.height/2) withAttributes:attrs];
+    }
+    [NSGraphicsContext restoreGraphicsState];
+    [[bitmap representationUsingType:NSPNGFileType properties:[NSDictionary dictionary]] writeToFile:output atomically:YES];
 }
 
 int main(int argc, const char *argv[]) {
@@ -60,6 +105,11 @@ int main(int argc, const char *argv[]) {
     NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];
     [NSApplication sharedApplication];
     if(!TGInterfaceDesignIsAqua()) { fprintf(stderr,"Run with -TelegraphicaInterfaceDesign aqua\n"); [pool drain]; return 1; }
+    for(NSString *texture in [NSArray arrayWithObjects:@"black-Linen",@"brushed_alu",nil]) {
+        NSString *path=[[NSBundle mainBundle] pathForResource:texture ofType:@"png" inDirectory:@"Textures"];
+        NSImage *image=path ? [[[NSImage alloc] initWithContentsOfFile:path] autorelease] : nil;
+        if(!image || [image size].width<=0 || [image size].height<=0) { fprintf(stderr,"Missing/invalid bundled Aqua texture: %s\n",[texture UTF8String]);[pool drain];return 1; }
+    }
     id savedTheme=[[[NSUserDefaults standardUserDefaults] objectForKey:TGThemeDefaultsKey] retain];
     NSMutableArray *reference=[NSMutableArray array];
     NSUInteger failures=TGCheckAquaButtonMaterials(),checks=0;
@@ -92,5 +142,6 @@ int main(int argc, const char *argv[]) {
     if(savedTheme ? ![savedTheme isEqual:after] : after!=nil) { fprintf(stderr,"Aqua overwrote saved classic preference\n"); failures++; }
     [savedTheme release];
     printf("Aqua materials: %lu actual surfaces, fixed palette across29saved themes, preference preserved, minimum%.2f:1, %lu failures.\n",(unsigned long)checks,(double)minimum,(unsigned long)failures);
+    TGWriteAquaMaterialPreview([[[NSProcessInfo processInfo] environment] objectForKey:@"TG_AQUA_PREVIEW_PATH"]);
     [pool drain];return failures?1:0;
 }

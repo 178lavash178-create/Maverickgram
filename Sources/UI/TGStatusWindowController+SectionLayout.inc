@@ -898,7 +898,7 @@
         }
     }
 
-    CGFloat estimatedSendFieldWidth = conversationWidth - (aqua ? (self.botComposerVisible ? 334.0 : 272.0) : 198.0);
+    CGFloat estimatedSendFieldWidth = conversationWidth - (aqua ? (self.botComposerVisible ? 366.0 : 288.0) : 198.0);
     if (!aqua && estimatedSendFieldWidth < 160.0) {
         estimatedSendFieldWidth = 160.0;
     }
@@ -1031,7 +1031,7 @@
     }
     NSRect messageSurfaceFrame = NSMakeRect(messageScrollX, messageBottom, messageScrollWidth, messageHeight);
     [self.messageScrollSurfaceView setFrame:messageSurfaceFrame];
-    [self.messageScrollView setFrame:NSInsetRect(messageSurfaceFrame, 5.0, 5.0)];
+    [self.messageScrollView setFrame:NSInsetRect(messageSurfaceFrame, aqua ? 1.0 : 5.0, aqua ? 1.0 : 5.0)];
     [self.messageLoadingSpinner setFrame:NSMakeRect(NSMidX(messageSurfaceFrame) - 12.0,
                                                     NSMidY(messageSurfaceFrame) - 12.0,
                                                     24.0,
@@ -1050,7 +1050,7 @@
     }
 
     CGFloat sendButtonWidth = aqua ? 94.0 : 38.0;
-    CGFloat attachButtonWidth = aqua ? 56.0 : 38.0;
+    CGFloat attachButtonWidth = aqua ? 72.0 : 38.0;
     CGFloat smallComposerButtonWidth = 34.0;
     CGFloat composerButtonGap = 6.0;
     CGFloat attachButtonX = conversationX + 12.0;

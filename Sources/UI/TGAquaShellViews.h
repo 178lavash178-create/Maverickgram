@@ -7,7 +7,8 @@ typedef struct {
     NSRect chatHeader;
     NSRect chats;
 } TGAquaSourceListGeometry;
-TGAquaSourceListGeometry TGAquaSourceListFrames(NSRect sidebar, CGFloat footerTop, CGFloat preferredFolderHeight, BOOL collapsed);
+// folderCount is the actual 32pt rows, including the built-in folder entries.
+TGAquaSourceListGeometry TGAquaSourceListFrames(NSRect sidebar, CGFloat footerTop, CGFloat preferredFolderHeight, NSUInteger folderCount, BOOL collapsed);
 
 @interface TGAquaMetalView : NSView
 @end
@@ -15,6 +16,8 @@ TGAquaSourceListGeometry TGAquaSourceListFrames(NSRect sidebar, CGFloat footerTo
     BOOL _accented;
 }
 @property(nonatomic, assign) BOOL accented;
+@end
+@interface TGAquaSectionButtonCell : NSButtonCell
 @end
 @interface TGAquaFolderButtonCell : TGNavigationButtonCell
 @end

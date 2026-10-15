@@ -17,32 +17,28 @@ static NSGradient *TGAquaGradient(NSUInteger top, NSUInteger bottom) {
     return gradient;
 }
 
-// Two tiny reusable material tiles. No per-frame random work, timers or layers.
-// Both are low-amplitude surface grain, never icon artwork.
-static NSColor *TGAquaGrain(BOOL linen) {
+// Original, licensed Subtle Patterns tiles; attribution ships beside the PNGs.
+// Decode each image once. Missing optional artwork falls back to the base finish.
+static NSColor *TGAquaTexture(BOOL linen) {
     static NSColor *metalColor=nil, *linenColor=nil;
-    NSColor *cached=linen ? linenColor : metalColor;
-    if (cached) return cached;
-    NSBitmapImageRep *bitmap=[[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:128 pixelsHigh:128 bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSCalibratedRGBColorSpace bytesPerRow:0 bitsPerPixel:0] autorelease];
-    NSInteger x,y;
-    for(y=0;y<128;y++) for(x=0;x<128;x++) {
-        NSUInteger noise=((NSUInteger)x*37+(NSUInteger)y*131+((NSUInteger)x*(NSUInteger)y)%17)%19;
-        CGFloat white,alpha;
-        if(linen) {
-            white=((x%4)==0 || (y%4)==1) ? 1.0 : 0.0;
-            alpha=((x%4)==0 || (y%4)==1) ? 0.065 : 0.025;
-            alpha+=(noise/18.0)*0.012;
-        } else {
-            white=((y%3)==0) ? 1.0 : 0.0;
-            alpha=((y%3)==0 ? 0.075 : 0.022)+(noise/18.0)*0.012;
-        }
-        [bitmap setColor:[NSColor colorWithCalibratedWhite:white alpha:alpha] atX:x y:y];
-    }
-    NSImage *image=[[[NSImage alloc] initWithSize:NSMakeSize(128,128)] autorelease];
-    [image addRepresentation:bitmap];
-    cached=[[NSColor colorWithPatternImage:image] retain];
-    if(linen) linenColor=cached; else metalColor=cached;
-    return cached;
+    static BOOL metalLoaded=NO, linenLoaded=NO;
+    if(linen ? linenLoaded : metalLoaded) return linen ? linenColor : metalColor;
+    NSString *name=linen ? @"black-Linen" : @"brushed_alu";
+    NSString *path=[[NSBundle mainBundle] pathForResource:name ofType:@"png" inDirectory:@"Textures"];
+    NSImage *image=path ? [[[NSImage alloc] initWithContentsOfFile:path] autorelease] : nil;
+    NSColor *pattern=image ? [[NSColor colorWithPatternImage:image] retain] : nil;
+    if(linen) { linenLoaded=YES;linenColor=pattern; }
+    else { metalLoaded=YES;metalColor=pattern; }
+    return pattern;
+}
+
+static void TGAquaDrawTexture(NSRect rect, BOOL linen, CGFloat opacity) {
+    NSColor *texture=TGAquaTexture(linen);
+    if(!texture) return;
+    [NSGraphicsContext saveGraphicsState];
+    CGContextSetAlpha((CGContextRef)[[NSGraphicsContext currentContext] graphicsPort],opacity);
+    [texture set];NSRectFillUsingOperation(rect,NSCompositeSourceOver);
+    [NSGraphicsContext restoreGraphicsState];
 }
 
 static void TGAquaEdge(NSRect rect, BOOL top, BOOL flipped, NSColor *color) {
@@ -69,7 +65,7 @@ void TGAquaDrawSurfaceInPath(NSBezierPath *path, NSRect rect, TGThemeSurfaceRole
     [path addClip];
     [TGAquaGradient(top,bottom) drawInRect:rect angle:flipped ? 90.0 : -90.0];
     if(metal || linen) {
-        [TGAquaGrain(linen) set]; NSRectFillUsingOperation(rect,NSCompositeSourceOver);
+        TGAquaDrawTexture(rect,linen,linen ? 0.13 : 0.42);
     }
     if(role==TGThemeSurfaceRecessed) {
         TGAquaEdge(rect,YES,flipped,[NSColor colorWithCalibratedWhite:0.0 alpha:0.18]);
@@ -85,26 +81,43 @@ void TGAquaDrawSurfaceInPath(NSBezierPath *path, NSRect rect, TGThemeSurfaceRole
 void TGAquaDrawConversationBackground(NSRect rect, BOOL flipped) {
     (void)flipped;
     [TGAquaColor(0xD8E0E8) set]; NSRectFill(rect);
-    [TGAquaGrain(YES) set]; NSRectFillUsingOperation(rect,NSCompositeSourceOver);
+    TGAquaDrawTexture(rect,YES,0.14);
+}
+
+static NSGradient *TGAquaButtonFinish(BOOL highlighted, BOOL accented, BOOL enabled) {
+    static NSGradient *finishes[8]={nil,nil,nil,nil,nil,nil,nil,nil};
+    NSUInteger slot=(highlighted ? 1 : 0)|(accented ? 2 : 0)|(enabled ? 4 : 0);
+    if(!finishes[slot]) {
+        NSUInteger top,shoulder,lower,bottom;
+        if(!enabled) { top=0xF4F5F6;shoulder=0xEEF0F2;lower=0xE7E9EC;bottom=0xF0F2F4; }
+        else if(accented && highlighted) { top=0x17447B;shoulder=0x205798;lower=0x225C9E;bottom=0x2C66A7; }
+        else if(accented) { top=0x3A70B0;shoulder=0x235DA5;lower=0x174B92;bottom=0x2D6AAC; }
+        else if(highlighted) { top=0xADB6C0;shoulder=0xCCD2D9;lower=0xD7DCE1;bottom=0xDEE3E8; }
+        else { top=0xFFFFFF;shoulder=0xF1F3F5;lower=0xD8DDE3;bottom=0xF0F3F6; }
+        NSArray *colors=[NSArray arrayWithObjects:TGAquaColor(top),TGAquaColor(shoulder),TGAquaColor(lower),TGAquaColor(bottom),nil];
+        CGFloat locations[]={0.0,0.38,0.68,1.0};
+        finishes[slot]=[[NSGradient alloc] initWithColors:colors atLocations:locations colorSpace:[NSColorSpace genericRGBColorSpace]];
+    }
+    return finishes[slot];
 }
 
 void TGAquaDrawButtonInPath(NSBezierPath *path, NSRect rect, BOOL highlighted, BOOL accented, BOOL enabled, BOOL flipped) {
     if(NSIsEmptyRect(rect)) return;
-    NSUInteger top,bottom;
-    // Keep the glossy upper half dark enough for the shell's white title.
-    if(accented) { top=highlighted ? 0x235B9E : 0x2B65AC;bottom=highlighted ? 0x143E7A : 0x174C94; }
-    else { top=highlighted ? 0xC2C7CD : 0xFFFFFF;bottom=highlighted ? 0xE4E7EB : 0xC9CDD2; }
-    if(!enabled) { top=0xE6E8EB;bottom=0xCDD1D6; }
-    [NSGraphicsContext saveGraphicsState]; [path addClip];
-    [TGAquaGradient(top,bottom) drawInRect:rect angle:flipped ? 90.0 : -90.0];
-    if(!highlighted && enabled) {
-        NSRect sheen=rect; sheen.size.height=floor(NSHeight(rect)*0.48);
-        if(!flipped) sheen.origin.y=NSMaxY(rect)-NSHeight(sheen);
-        [[NSColor colorWithCalibratedWhite:1.0 alpha:accented ? 0.08 : 0.22] set];
-        NSRectFillUsingOperation(sheen,NSCompositeSourceOver);
-    }
-    TGAquaEdge(NSInsetRect(rect,1,1),YES,flipped,[NSColor colorWithCalibratedWhite:1.0 alpha:accented ? 0.45 : 0.9]);
-    TGAquaEdge(rect,NO,flipped,[NSColor colorWithCalibratedWhite:0.0 alpha:0.18]);
+    [NSGraphicsContext saveGraphicsState];[path addClip];
+    // A continuous curved light profile, with a lower reflection and an inset
+    // pressed finish. No rectangular white overlay across the label.
+    [TGAquaButtonFinish(highlighted,accented,enabled) drawInRect:rect angle:flipped ? 90.0 : -90.0];
+    NSBezierPath *rim=[[path copy] autorelease];
+    [(enabled && accented ? TGAquaColor(0x123F78) : TGAquaColor(enabled ? 0x8A939E : 0xB5BBC2)) set];
+    [rim setLineWidth:2.0];[rim stroke];
+    NSBezierPath *bevel=[[path copy] autorelease];
+    NSAffineTransform *inset=[NSAffineTransform transform];
+    [inset translateXBy:NSMinX(rect)+1.5 yBy:NSMinY(rect)+1.5];
+    [inset scaleXBy:MAX(0.01,(NSWidth(rect)-3.0)/NSWidth(rect)) yBy:MAX(0.01,(NSHeight(rect)-3.0)/NSHeight(rect))];
+    [inset translateXBy:-NSMinX(rect) yBy:-NSMinY(rect)];
+    [bevel transformUsingAffineTransform:inset];
+    [[NSColor colorWithCalibratedWhite:highlighted ? 0.0 : 1.0 alpha:highlighted ? 0.13 : (accented ? 0.22 : 0.72)] set];
+    [bevel setLineWidth:1.0];[bevel stroke];
     [NSGraphicsContext restoreGraphicsState];
 }
 

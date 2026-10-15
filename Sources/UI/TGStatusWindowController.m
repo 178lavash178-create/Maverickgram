@@ -310,7 +310,6 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 @property (nonatomic, retain) NSButton *aquaFolderEditButton;
 @property (nonatomic, retain) NSButton *aquaSearchButton;
 @property (nonatomic, retain) NSButton *aquaDownloadsButton;
-@property (nonatomic, retain) NSButton *aquaArchiveButton;
 @property (nonatomic, retain) TGAquaFolderDivider *aquaFolderDivider;
 @property (nonatomic, assign) CGFloat aquaFolderPreferredHeight;
 @property (nonatomic, assign) BOOL aquaFoldersCollapsed;
@@ -496,6 +495,8 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 @property (nonatomic, retain) NSTextField *closedChatHintField;
 @property (nonatomic, retain) NSArray *closedChatSuggestionViews;
 @property (nonatomic, retain) NSArray *closedChatSuggestionItems;
+@property (nonatomic, retain) NSArray *closedChatRecentItems;
+@property (nonatomic, retain) NSButton *closedChatEmptyActionButton;
 @property (nonatomic, retain) NSView *chatScrollSurfaceView;
 @property (nonatomic, retain) NSScrollView *chatScrollView;
 @property (nonatomic, retain) NSTableView *chatTableView;
@@ -910,7 +911,6 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 @synthesize aquaFolderEditButton = _aquaFolderEditButton;
 @synthesize aquaSearchButton = _aquaSearchButton;
 @synthesize aquaDownloadsButton = _aquaDownloadsButton;
-@synthesize aquaArchiveButton = _aquaArchiveButton;
 @synthesize aquaFolderDivider = _aquaFolderDivider;
 @synthesize aquaFolderPreferredHeight = _aquaFolderPreferredHeight;
 @synthesize aquaFoldersCollapsed = _aquaFoldersCollapsed;
@@ -1431,6 +1431,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
         [self.sectionTransitionController reset];
     }
     if ([_currentAuthState isEqualToString:@"ready"] && ![state isEqualToString:@"ready"]) {
+        [self clearClosedChatSuggestionsForSessionChange];
         [self.mediaCenterSaveRequests removeAllObjects];
         [self.mediaCenterDownloadingFileIDs removeAllObjects];
         [self.notificationReadState reset];
@@ -1477,6 +1478,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
 - (void)setClient:(TGTDLibClient *)client {
     if (_client != client) {
+        [self clearClosedChatSuggestionsForSessionChange];
         [self invalidateAutomaticReadRequests];
         [self.sectionTransitionController reset];
         [self.mediaCenterSaveRequests removeAllObjects];
@@ -4915,7 +4917,6 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [_aquaFolderEditButton release];
     [_aquaSearchButton release];
     [_aquaDownloadsButton release];
-    [_aquaArchiveButton release];
     [_aquaFolderDivider release];
     [_settingsSessionCardView release];
     [_settingsDrawerCardView release];
@@ -5060,6 +5061,8 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [_closedChatHintField release];
     [_closedChatSuggestionViews release];
     [_closedChatSuggestionItems release];
+    [_closedChatRecentItems release];
+    [_closedChatEmptyActionButton release];
     [_chatScrollSurfaceView release];
     [_chatScrollView release];
     [_chatTableView release];
