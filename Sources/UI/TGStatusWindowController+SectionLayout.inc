@@ -898,7 +898,7 @@
     }
 
     CGFloat estimatedSendFieldWidth = conversationWidth - (aqua ? (self.botComposerVisible ? 334.0 : 272.0) : 198.0);
-    if (estimatedSendFieldWidth < 160.0) {
+    if (!aqua && estimatedSendFieldWidth < 160.0) {
         estimatedSendFieldWidth = 160.0;
     }
     CGFloat composerInputHeight = [self composerInputHeightForWidth:(estimatedSendFieldWidth - 16.0)];

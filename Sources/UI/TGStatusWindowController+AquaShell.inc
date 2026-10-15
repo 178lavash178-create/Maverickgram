@@ -87,8 +87,8 @@
 }
 
 - (void)openAquaArchive:(id)sender {
-    self.activeSection = TGSectionChats;
     [self folderFilterChanged:sender];
+    self.activeSection = TGSectionChats;
     [self layoutContentView]; [self updateVisibleSection];
 }
 
