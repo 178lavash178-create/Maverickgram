@@ -647,6 +647,9 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
         [tabButton setCell:[[[TGStickerPickerTabButtonCell alloc] initTextCell:title] autorelease]];
         [tabButton setTitle:title];
         [tabButton setImage:nil];
+        if (TGInterfaceDesignIsAqua()) {
+            [self installAquaTextCellOnButton:tabButton accented:NO];
+        }
         [tabButton setButtonType:NSToggleButton];
         [tabButton setTag:(NSInteger)tabIndex];
         [tabButton setTarget:self];
