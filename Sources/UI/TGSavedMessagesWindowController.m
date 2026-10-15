@@ -9,6 +9,7 @@
 #import "TGStatusViewComponents.h"
 #import "TGStatusViewCells.h"
 #import "TGTheme.h"
+#import "TGThemeTextField.h"
 
 @interface TGSavedMessagesWindowController () <NSTableViewDataSource, NSTableViewDelegate>
 @property (nonatomic, retain) TGTDLibClient *client;
@@ -81,7 +82,8 @@
 }
 
 - (NSTextField *)labelWithFrame:(NSRect)frame font:(NSFont *)font color:(NSColor *)color {
-    NSTextField *field = [[[NSTextField alloc] initWithFrame:frame] autorelease];
+    TGThemeTextField *field = [[[TGThemeTextField alloc] initWithFrame:frame] autorelease];
+    [field setThemeSurface:TGThemeSurfaceWindow];
     [field setEditable:NO];
     [field setSelectable:NO];
     [field setBezeled:NO];
@@ -170,6 +172,7 @@
                                               color:TGClassicCardInkColor()];
     [topicsTitle setStringValue:TGLoc(@"saved.topics")];
     [topicsTitle setAutoresizingMask:NSViewMinYMargin];
+    [(TGThemeTextField *)topicsTitle setThemeSurface:TGThemeSurfaceCard];
     [root addSubview:topicsTitle];
     self.topicsTableView = [self tableInScrollViewWithFrame:NSMakeRect(32, 118, 232, 334)
                                                 identifier:@"topics"
@@ -190,6 +193,7 @@
                                                 color:TGClassicCardInkColor()];
     [messagesTitle setStringValue:TGLoc(@"saved.messages")];
     [messagesTitle setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
+    [(TGThemeTextField *)messagesTitle setThemeSurface:TGThemeSurfaceCard];
     [root addSubview:messagesTitle];
     self.historyTableView = [self tableInScrollViewWithFrame:NSMakeRect(304, 92, 520, 360)
                                                  identifier:@"history"

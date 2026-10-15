@@ -5,6 +5,7 @@
 #import "TGStatusViewComponents.h"
 #import "TGStatusViewCells.h"
 #import "TGTheme.h"
+#import "TGThemeContrast.h"
 
 @interface TGBotCommandCell : NSTextFieldCell
 @end
@@ -46,6 +47,8 @@
             ? [command objectForKey:@"description"] : @"";
     }
     BOOL highlighted = [self isHighlighted];
+    NSColor *rowSurface = highlighted ? TGClassicSelectedRowColor() : TGClassicTablePaperColor();
+    [rowSurface set]; NSRectFill(cellFrame);
     if (replyButton) {
         NSDictionary *type = [[command objectForKey:@"type"] isKindOfClass:[NSDictionary class]]
             ? [command objectForKey:@"type"] : nil;
@@ -60,16 +63,15 @@
         NSBezierPath *background = [NSBezierPath bezierPathWithRoundedRect:backgroundRect
                                                                    xRadius:8.0
                                                                    yRadius:8.0];
-        [[buttonColor colorWithAlphaComponent:highlighted ? 0.95 : 0.30] set];
+        rowSurface = TGThemeCompositeColor([buttonColor colorWithAlphaComponent:highlighted ? 0.95 : 0.30], rowSurface);
+        [rowSurface set];
         [background fill];
         [TGClassicPanelStrokeColor() set];
         [background setLineWidth:1.0];
         [background stroke];
     }
-    NSColor *nameColor = highlighted ? [NSColor whiteColor] : TGClassicCardInkColor();
-    NSColor *detailColor = highlighted
-        ? [NSColor colorWithCalibratedWhite:1.0 alpha:0.82]
-        : TGClassicCardMutedInkColor();
+    NSColor *nameColor = TGThemeReadableInk(highlighted ? TGClassicSelectedRowTextColor() : TGClassicInkColor(), rowSurface, 4.5);
+    NSColor *detailColor = TGThemeReadableInk(highlighted ? TGClassicSelectedRowTextColor() : TGClassicMutedInkColor(), rowSurface, 4.5);
     NSMutableParagraphStyle *style = [[[NSMutableParagraphStyle alloc] init] autorelease];
     [style setLineBreakMode:NSLineBreakByTruncatingTail];
     NSDictionary *nameAttributes = [NSDictionary dictionaryWithObjectsAndKeys:

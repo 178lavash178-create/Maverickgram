@@ -8,6 +8,7 @@
 #import "TGStatusViewCells.h"
 #import "TGStatusViewComponents.h"
 #import "TGTheme.h"
+#import "TGThemeTextField.h"
 
 static NSString *TGContactSubtitle(NSDictionary *contact) {
     NSString *username = [contact objectForKey:@"username"];
@@ -39,6 +40,10 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
         return;
     }
     BOOL highlighted = [self isHighlighted];
+    NSColor *surface=highlighted ? TGClassicSelectedRowColor() : TGClassicTablePaperColor();
+    [surface setFill]; NSRectFill(cellFrame);
+    NSColor *titleInk=TGThemeReadableInk(highlighted ? TGClassicSelectedRowTextColor() : TGClassicInkColor(),surface,4.5);
+    NSColor *detailInk=TGThemeReadableInk(highlighted ? titleInk : TGClassicMutedInkColor(),surface,4.5);
     NSString *name = [contact objectForKey:@"display_name"];
     NSString *subtitle = TGContactSubtitle(contact);
     NSRect avatarRect = NSMakeRect(NSMinX(cellFrame) + 10.0,
@@ -58,11 +63,11 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
     CGFloat textWidth = MAX(40.0, NSMaxX(cellFrame) - textX - 12.0);
     NSDictionary *nameAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                     [NSFont boldSystemFontOfSize:13.0], NSFontAttributeName,
-                                    highlighted ? [NSColor whiteColor] : TGClassicCardInkColor(), NSForegroundColorAttributeName,
+                                    titleInk, NSForegroundColorAttributeName,
                                     nil];
     NSDictionary *subtitleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                         [NSFont systemFontOfSize:11.0], NSFontAttributeName,
-                                        highlighted ? [NSColor colorWithCalibratedWhite:1.0 alpha:0.80] : TGClassicCardMutedInkColor(), NSForegroundColorAttributeName,
+                                        detailInk, NSForegroundColorAttributeName,
                                         nil];
     [name drawInRect:NSMakeRect(textX, NSMinY(cellFrame) + 7.0, textWidth, 17.0) withAttributes:nameAttributes];
     [subtitle drawInRect:NSMakeRect(textX, NSMinY(cellFrame) + 25.0, textWidth, 15.0) withAttributes:subtitleAttributes];
@@ -145,14 +150,16 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
     [super dealloc];
 }
 
-- (NSTextField *)labelWithFrame:(NSRect)frame font:(NSFont *)font color:(NSColor *)color {
-    NSTextField *label = [[[NSTextField alloc] initWithFrame:frame] autorelease];
+- (NSTextField *)labelWithFrame:(NSRect)frame font:(NSFont *)font surface:(TGThemeSurfaceRole)surface detail:(BOOL)detail {
+    NSTextField *label = [[[TGThemeTextField alloc] initWithFrame:frame] autorelease];
     [label setEditable:NO];
     [label setSelectable:NO];
     [label setBezeled:NO];
     [label setDrawsBackground:NO];
     [label setFont:font];
-    [label setTextColor:color];
+    [(TGThemeTextField *)label setThemeSurface:surface];
+    [(TGThemeTextField *)label setDetailInk:detail];
+    [(TGThemeTextField *)label refreshThemeInk];
     [[label cell] setLineBreakMode:NSLineBreakByTruncatingTail];
     return label;
 }
@@ -164,7 +171,7 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
 
     NSTextField *title = [self labelWithFrame:NSMakeRect(24, 578, 420, 26)
                                          font:[NSFont boldSystemFontOfSize:20.0]
-                                        color:TGClassicHeaderTextColor(1.0)];
+                                        surface:TGThemeSurfaceWindow detail:NO];
     [title setStringValue:TGLoc(@"contacts.title")];
     [title setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
     [root addSubview:title];
@@ -214,7 +221,7 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
 
     self.statusField = [self labelWithFrame:NSMakeRect(24, 164, 210, 18)
                                        font:[NSFont systemFontOfSize:12.0]
-                                      color:TGClassicHeaderDetailTextColor(0.92)];
+                                      surface:TGThemeSurfaceWindow detail:YES];
     [self.statusField setStringValue:TGLoc(@"contacts.loading")];
     [self.statusField setAutoresizingMask:(NSViewWidthSizable | NSViewMaxYMargin)];
     [root addSubview:self.statusField];
@@ -266,7 +273,7 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
     [root addSubview:inviteCard];
     NSTextField *inviteLabel = [self labelWithFrame:NSMakeRect(34, 78, 560, 18)
                                                font:[NSFont boldSystemFontOfSize:13.0]
-                                              color:TGClassicCardInkColor()];
+                                              surface:TGThemeSurfaceCard detail:NO];
     [inviteLabel setStringValue:TGLoc(@"contacts.inviteTitle")];
     [inviteLabel setAutoresizingMask:(NSViewWidthSizable | NSViewMaxYMargin)];
     [root addSubview:inviteLabel];
@@ -315,7 +322,8 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
     self.requestGeneration++;
     NSUInteger generation = self.requestGeneration;
     [self setLoading:YES];
-    [self.statusField setTextColor:TGClassicMutedInkColor()];
+    [(TGThemeTextField *)self.statusField setErrorInk:NO];
+    [(TGThemeTextField *)self.statusField refreshThemeInk];
     [self.statusField setStringValue:TGLoc(@"contacts.loading")];
     TGTDLibClient *client = [self.client retain];
     TGChatLifecycleWindowController *controller = [self retain];
@@ -334,7 +342,8 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
                     controller.contacts = [NSArray array];
                     controller.filteredContacts = [NSArray array];
                     [controller.tableView reloadData];
-                    [controller.statusField setTextColor:[NSColor colorWithCalibratedRed:0.63 green:0.12 blue:0.10 alpha:1.0]];
+                    [(TGThemeTextField *)controller.statusField setErrorInk:YES];
+                    [(TGThemeTextField *)controller.statusField refreshThemeInk];
                     [controller.statusField setStringValue:([errorMessage length] > 0 ? errorMessage : TGLoc(@"contacts.error"))];
                 }
             }
@@ -439,6 +448,8 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
     NSNumber *userID = [[contact objectForKey:@"user_id"] retain];
     NSString *title = [[contact objectForKey:@"display_name"] copy];
     [self setLoading:YES];
+    [(TGThemeTextField *)self.statusField setErrorInk:NO];
+    [(TGThemeTextField *)self.statusField refreshThemeInk];
     [self.statusField setStringValue:TGLoc(@"contacts.opening")];
     TGTDLibClient *client = [self.client retain];
     TGChatLifecycleWindowController *controller = [self retain];
@@ -453,7 +464,8 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
                 [controller.statusField setStringValue:TGLoc(@"contacts.opened")];
                 [controller.delegate chatLifecycleWindowController:controller didOpenChatID:chatID title:title];
             } else {
-                [controller.statusField setTextColor:[NSColor colorWithCalibratedRed:0.63 green:0.12 blue:0.10 alpha:1.0]];
+                [(TGThemeTextField *)controller.statusField setErrorInk:YES];
+                [(TGThemeTextField *)controller.statusField refreshThemeInk];
                 [controller.statusField setStringValue:([errorMessage length] > 0 ? errorMessage : TGLoc(@"contacts.error"))];
             }
             [chatID release];
@@ -471,11 +483,13 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
 - (void)completeCreationWithChatID:(NSNumber *)chatID title:(NSString *)title errorMessage:(NSString *)errorMessage {
     [self setLoading:NO];
     if (chatID) {
-        [self.statusField setTextColor:TGClassicMutedInkColor()];
+        [(TGThemeTextField *)self.statusField setErrorInk:NO];
+        [(TGThemeTextField *)self.statusField refreshThemeInk];
         [self.statusField setStringValue:TGLoc(@"create.created")];
         [self.delegate chatLifecycleWindowController:self didOpenChatID:chatID title:title];
     } else {
-        [self.statusField setTextColor:[NSColor colorWithCalibratedRed:0.63 green:0.12 blue:0.10 alpha:1.0]];
+        [(TGThemeTextField *)self.statusField setErrorInk:YES];
+        [(TGThemeTextField *)self.statusField refreshThemeInk];
         [self.statusField setStringValue:([errorMessage length] > 0 ? errorMessage : TGLoc(@"create.error"))];
     }
 }
@@ -503,7 +517,8 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
     NSArray *safeUserIDs = [userIDs copy];
     NSString *safeTitle = [title copy];
     [self setLoading:YES];
-    [self.statusField setTextColor:TGClassicMutedInkColor()];
+    [(TGThemeTextField *)self.statusField setErrorInk:NO];
+    [(TGThemeTextField *)self.statusField refreshThemeInk];
     [self.statusField setStringValue:TGLoc(@"create.creatingGroup")];
     TGTDLibClient *client = [self.client retain];
     TGChatLifecycleWindowController *controller = [self retain];
@@ -546,7 +561,8 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
         return;
     }
     [self setLoading:YES];
-    [self.statusField setTextColor:TGClassicMutedInkColor()];
+    [(TGThemeTextField *)self.statusField setErrorInk:NO];
+    [(TGThemeTextField *)self.statusField refreshThemeInk];
     [self.statusField setStringValue:TGLoc(@"create.creatingSecret")];
     TGTDLibClient *client = [self.client retain];
     TGChatLifecycleWindowController *controller = [self retain];
@@ -581,7 +597,8 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
     NSString *safeTitle = [title copy];
     NSString *safeDescription = [description copy];
     [self setLoading:YES];
-    [self.statusField setTextColor:TGClassicMutedInkColor()];
+    [(TGThemeTextField *)self.statusField setErrorInk:NO];
+    [(TGThemeTextField *)self.statusField refreshThemeInk];
     [self.statusField setStringValue:TGLoc(@"create.creatingChannel")];
     TGTDLibClient *client = [self.client retain];
     TGChatLifecycleWindowController *controller = [self retain];
@@ -616,7 +633,8 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
         return;
     }
     [self setLoading:YES];
-    [self.statusField setTextColor:TGClassicMutedInkColor()];
+    [(TGThemeTextField *)self.statusField setErrorInk:NO];
+    [(TGThemeTextField *)self.statusField refreshThemeInk];
     [self.statusField setStringValue:TGLoc(@"contacts.checkingInvite")];
     TGTDLibClient *client = [self.client retain];
     TGChatLifecycleWindowController *controller = [self retain];
@@ -628,7 +646,8 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (!summary) {
                 [controller setLoading:NO];
-                [controller.statusField setTextColor:[NSColor colorWithCalibratedRed:0.63 green:0.12 blue:0.10 alpha:1.0]];
+                [(TGThemeTextField *)controller.statusField setErrorInk:YES];
+                [(TGThemeTextField *)controller.statusField refreshThemeInk];
                 [controller.statusField setStringValue:([errorMessage length] > 0 ? errorMessage : TGLoc(@"contacts.invalidInvite"))];
                 [summary release];
                 [errorMessage release];
@@ -681,7 +700,8 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
                         [controller.statusField setStringValue:TGLoc(@"contacts.joined")];
                         [controller.delegate chatLifecycleWindowController:controller didOpenChatID:chatID title:chatTitle];
                     } else {
-                        [controller.statusField setTextColor:[NSColor colorWithCalibratedRed:0.63 green:0.12 blue:0.10 alpha:1.0]];
+                        [(TGThemeTextField *)controller.statusField setErrorInk:YES];
+                        [(TGThemeTextField *)controller.statusField refreshThemeInk];
                         [controller.statusField setStringValue:([joinErrorMessage length] > 0 ? joinErrorMessage : TGLoc(@"contacts.error"))];
                     }
                     [chatID release];

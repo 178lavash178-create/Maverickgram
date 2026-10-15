@@ -9,6 +9,7 @@
 #import "TGStatusButtonCells.h"
 #import "TGAccessibilitySupport.h"
 #import "TGTheme.h"
+#import "TGThemeContrast.h"
 #import "TGLocalization.h"
 #import "../Core/TGChatItem.h"
 #import "../Core/TGMessageItem.h"
@@ -178,7 +179,7 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
     [paragraph setLineBreakMode:NSLineBreakByTruncatingTail];
     NSDictionary *titleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                      [NSFont boldSystemFontOfSize:12.0], NSFontAttributeName,
-                                     selected ? TGClassicSelectedRowTextColor() : TGClassicInkColor(), NSForegroundColorAttributeName,
+                                     selected ? TGClassicSelectedRowTextColor() : TGThemeSurfaceInkColor(TGClassicInkColor(), TGThemeSurfaceRecessed, 4.5), NSForegroundColorAttributeName,
                                      paragraph, NSParagraphStyleAttributeName,
                                      nil];
     CGFloat titleX = NSMaxX(avatarRect) + 9.0;
@@ -189,7 +190,7 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
     NSString *communityBadge = [item isCommunity] ? TGLoc(@"chat.community.badge") : @"";
     NSDictionary *communityAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                          [NSFont boldSystemFontOfSize:8.0], NSFontAttributeName,
-                                         selected ? TGClassicSelectedRowTextColor() : TGClassicLinkColor(), NSForegroundColorAttributeName,
+                                         selected ? TGClassicSelectedRowTextColor() : TGThemeSurfaceInkColor(TGClassicLinkColor(), TGThemeSurfaceRecessed, 4.5), NSForegroundColorAttributeName,
                                          nil];
     CGFloat communityBadgeWidth = [communityBadge length] > 0
         ? MIN(64.0, [communityBadge sizeWithAttributes:communityAttributes].width + 12.0) : 0.0;
@@ -229,7 +230,7 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
                                     NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 15.0) / 2.0),
                                     15.0,
                                     15.0);
-        NSColor *botColor = selected ? TGClassicSelectedRowTextColor() : [TGClassicLinkColor() colorWithAlphaComponent:0.9];
+        NSColor *botColor = selected ? TGClassicSelectedRowTextColor() : [TGThemeSurfaceInkColor(TGClassicLinkColor(), TGThemeSurfaceRecessed, 4.5) colorWithAlphaComponent:0.9];
         TGDrawTemplateIconAsset(@"robot", botRect, botColor, 1.0, [controlView isFlipped]);
         iconX = NSMaxX(botRect) + 4.0;
     }
@@ -238,8 +239,8 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
                                     NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 12.0) / 2.0),
                                     12.0,
                                     12.0);
-        NSColor *pinColor = selected ? TGClassicSelectedRowTextColor() : [TGClassicInkColor() colorWithAlphaComponent:0.72];
-        TGDrawTemplateIconAsset(@"flag-triangle", pinRect, pinColor, 0.9, [controlView isFlipped]);
+        NSColor *pinColor = selected ? TGClassicSelectedRowTextColor() : [TGThemeSurfaceInkColor(TGClassicInkColor(), TGThemeSurfaceRecessed, 4.5) colorWithAlphaComponent:0.72];
+        TGDrawTemplateIconAsset(@"flag-triangle", pinRect, TGThemeReadableInk(pinColor, selected ? TGClassicSelectedRowColor() : TGClassicTablePaperColor(), 4.5), 1.0, [controlView isFlipped]);
         iconX = NSMaxX(pinRect) + 4.0;
     }
     if ([item notificationsMuted]) {
@@ -247,8 +248,8 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
                                      NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 15.0) / 2.0),
                                      15.0,
                                      15.0);
-        NSColor *muteColor = selected ? TGClassicSelectedRowTextColor() : [TGClassicInkColor() colorWithAlphaComponent:0.78];
-        TGDrawTemplateIconAsset(@"sound-off", muteRect, muteColor, 1.0, [controlView isFlipped]);
+        NSColor *muteColor = selected ? TGClassicSelectedRowTextColor() : [TGThemeSurfaceInkColor(TGClassicInkColor(), TGThemeSurfaceRecessed, 4.5) colorWithAlphaComponent:0.78];
+        TGDrawTemplateIconAsset(@"sound-off", muteRect, TGThemeReadableInk(muteColor, selected ? TGClassicSelectedRowColor() : TGClassicTablePaperColor(), 4.5), 1.0, [controlView isFlipped]);
     }
     if ([unreadString length] > 0) {
         NSBezierPath *unreadPath = [NSBezierPath bezierPathWithRoundedRect:unreadRect
@@ -595,7 +596,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
     NSMutableParagraphStyle *paragraph = TGMessageTextParagraphStyle();
     NSDictionary *textAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                     TGChatMessageBodyFont(), NSFontAttributeName,
-                                    TGClassicInkColor(), NSForegroundColorAttributeName,
+                                    TGMessageContentInkColor(item, TGClassicInkColor()), NSForegroundColorAttributeName,
                                     paragraph, NSParagraphStyleAttributeName,
                                     nil];
     NSString *timeString = TGShortTimeStringFromDateValue([item date]);
@@ -662,8 +663,8 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
                                     12.0);
         TGDrawTemplateIconAsset(@"flag-triangle",
                                 pinRect,
-                                TGClassicNavigationSelectedColor(0.82),
-                                0.92,
+                                TGMessageContentInkColor(item, TGClassicNavigationSelectedColor(1.0)),
+                                1.0,
                                 [controlView isFlipped]);
     }
 
@@ -681,7 +682,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
         NSString *senderName = [item senderDisplayName];
         NSDictionary *senderAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                           TGChatMessageBoldSecondaryFont(), NSFontAttributeName,
-                                          TGClassicNavigationSelectedColor(0.90), NSForegroundColorAttributeName,
+                                          TGMessageContentInkColor(item, TGClassicNavigationSelectedColor(0.90)), NSForegroundColorAttributeName,
                                           nil];
         NSRect senderRect = flipped ? NSMakeRect(NSMinX(bubbleRect) + 12.0,
                                                  contentTop,
@@ -727,11 +728,11 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
 
         NSDictionary *titleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                          TGChatMessageBoldSecondaryFont(), NSFontAttributeName,
-                                         TGClassicNavigationSelectedColor(0.95), NSForegroundColorAttributeName,
+                                         TGMessageContentInkColor(item, TGClassicNavigationSelectedColor(0.95)), NSForegroundColorAttributeName,
                                          nil];
         NSDictionary *subtitleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                             TGChatMessageSecondaryFont(), NSFontAttributeName,
-                                            TGClassicMutedInkColor(), NSForegroundColorAttributeName,
+                                            TGMessageContentInkColor(item, TGClassicMutedInkColor()), NSForegroundColorAttributeName,
                                             nil];
         NSRect titleRect = NSMakeRect(NSMinX(contextRect) + 8.0,
                                       NSMinY(contextRect),
@@ -852,7 +853,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
             [imagePath stroke];
             NSDictionary *placeholderAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                                    TGChatMessageBoldBodyFont(), NSFontAttributeName,
-                                                   TGClassicMutedInkColor(), NSForegroundColorAttributeName,
+                                                   TGMessageContentInkColor(item, TGClassicMutedInkColor()), NSForegroundColorAttributeName,
                                                    nil];
             NSString *placeholder = [item visualMediaPlaceholderTitle];
             NSSize placeholderSize = [placeholder sizeWithAttributes:placeholderAttributes];
@@ -1009,7 +1010,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
     if ([senderTitle length] > 0) {
         NSDictionary *senderAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                           TGChatMessageBoldSecondaryFont(), NSFontAttributeName,
-                                          TGClassicNavigationSelectedColor(0.92), NSForegroundColorAttributeName,
+                                          TGMessageContentInkColor(item, TGClassicNavigationSelectedColor(0.92)), NSForegroundColorAttributeName,
                                           nil];
         NSRect senderRect = NSMakeRect(textX,
                                        flipped ? textY : (textY - 14.0),
@@ -1024,7 +1025,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
         NSString *contextTitle = ([[item forwardSourceDisplayName] length] > 0) ? [NSString stringWithFormat:TGLoc(@"forwarded.from"), [item forwardSourceDisplayName]] : (([[item replySenderDisplayName] length] > 0) ? [item replySenderDisplayName] : TGLoc(@"reply"));
         NSDictionary *contextAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                            TGChatMessageSecondaryFont(), NSFontAttributeName,
-                                           TGClassicMutedInkColor(), NSForegroundColorAttributeName,
+                                           TGMessageContentInkColor(item, TGClassicMutedInkColor()), NSForegroundColorAttributeName,
                                            nil];
         NSRect contextRect = NSMakeRect(textX,
                                         flipped ? textY : (textY - 14.0),
@@ -1062,7 +1063,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
     NSMutableParagraphStyle *paragraph = TGMessageTextParagraphStyle();
     NSDictionary *textAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                     TGChatMessageBodyFont(), NSFontAttributeName,
-                                    messageTextIsPlaceholder ? TGClassicMutedInkColor() : TGClassicInkColor(), NSForegroundColorAttributeName,
+                                    TGMessageContentInkColor(item, messageTextIsPlaceholder ? TGClassicMutedInkColor() : TGClassicInkColor()), NSForegroundColorAttributeName,
                                     paragraph, NSParagraphStyleAttributeName,
                                     nil];
     NSAttributedString *attributedText = TGAttributedMessageStringForItem(item, messageText, textAttributes);
@@ -1155,7 +1156,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
         NSString *title = TGMessageCommentTitleForItem(item);
         NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys:
             TGChatMessageSecondaryFont(), NSFontAttributeName,
-            TGClassicNavigationSelectedColor(1.0), NSForegroundColorAttributeName, nil];
+            TGMessageContentInkColor(item, TGClassicNavigationSelectedColor(1.0)), NSForegroundColorAttributeName, nil];
         CGFloat titleHeight = ceil([title sizeWithAttributes:attributes].height) + 2.0;
         NSRect commentRect = TGMessageCommentBarRectForItem(item, rowRect, flipped);
         NSRect titleRect = NSMakeRect(NSMinX(commentRect), NSMidY(commentRect) - floor(titleHeight / 2.0), NSWidth(commentRect), titleHeight);

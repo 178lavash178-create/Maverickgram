@@ -1681,6 +1681,7 @@ def check_chat_folder_management_contract(errors):
     layout_rel = os.path.join("Sources", "UI", "TGStatusWindowController+SectionLayout.inc")
     client_text = read_text(os.path.join(ROOT, client_rel))
     controller_text = read_text(os.path.join(ROOT, controller_rel))
+    controller_text += read_text(os.path.join(ROOT, "Sources", "UI", "TGChatFolderManagementWindowController+Cells.inc"))
     host_text = read_text(os.path.join(ROOT, host_rel))
     status_text = read_text(os.path.join(ROOT, status_rel))
     layout_text = read_text(os.path.join(ROOT, layout_rel))

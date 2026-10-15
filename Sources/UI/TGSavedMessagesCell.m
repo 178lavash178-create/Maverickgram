@@ -1,5 +1,6 @@
 #import "TGSavedMessagesCell.h"
 #import "TGTheme.h"
+#import "TGThemeContrast.h"
 #import "../Media/TGMediaImageLoader.h"
 
 @implementation TGSavedMessagesCell
@@ -31,10 +32,10 @@ static NSMutableSet *TGSavedMessagesPendingImagePaths(void) {
     NSString *imagePath = [[row objectForKey:@"image_path"] isKindOfClass:[NSString class]]
         ? [row objectForKey:@"image_path"] : nil;
     BOOL highlighted = [self isHighlighted];
-    NSColor *titleColor = highlighted ? [NSColor whiteColor] : TGClassicCardInkColor();
-    NSColor *detailColor = highlighted
-        ? [NSColor colorWithCalibratedWhite:1.0 alpha:0.82]
-        : TGClassicCardMutedInkColor();
+    NSColor *surface = highlighted ? TGClassicSelectedRowColor() : TGClassicTablePaperColor();
+    [surface set]; NSRectFill(cellFrame);
+    NSColor *titleColor = TGThemeReadableInk(highlighted ? TGClassicSelectedRowTextColor() : TGClassicInkColor(), surface, 4.5);
+    NSColor *detailColor = TGThemeReadableInk(highlighted ? TGClassicSelectedRowTextColor() : TGClassicMutedInkColor(), surface, 4.5);
 
     NSMutableParagraphStyle *singleLine = [[[NSMutableParagraphStyle alloc] init] autorelease];
     [singleLine setLineBreakMode:NSLineBreakByTruncatingTail];

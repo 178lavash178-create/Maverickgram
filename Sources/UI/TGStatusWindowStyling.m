@@ -3,6 +3,7 @@
 #import "TGLocalization.h"
 #import "TGStatusButtonCells.h"
 #import "TGTheme.h"
+#import "TGThemeContrast.h"
 
 @implementation TGStatusWindowController (TGStatusWindowStyling)
 
@@ -111,7 +112,7 @@
     [button setImagePosition:NSImageLeft];
     [button setImage:TGTemplateIconAssetImage(@"log-out",
                                               NSMakeSize(16.0, 16.0),
-                                              [NSColor colorWithCalibratedRed:0.920 green:0.140 blue:0.140 alpha:1.0],
+                                              TGThemeSurfaceInkColor([NSColor colorWithCalibratedRed:0.920 green:0.140 blue:0.140 alpha:1.0], TGThemeSurfaceCard, 4.5),
                                               1.0)];
     [button setFocusRingType:NSFocusRingTypeExterior];
     [button setFont:[NSFont systemFontOfSize:14.0]];
@@ -119,9 +120,9 @@
 
     NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                 [NSFont systemFontOfSize:14.0], NSFontAttributeName,
-                                [NSColor colorWithCalibratedRed:0.920 green:0.140 blue:0.140 alpha:1.0], NSForegroundColorAttributeName,
+                                TGThemeSurfaceInkColor([NSColor colorWithCalibratedRed:0.920 green:0.140 blue:0.140 alpha:1.0], TGThemeSurfaceCard, 4.5), NSForegroundColorAttributeName,
                                 nil];
-    NSAttributedString *title = [[[NSAttributedString alloc] initWithString:TGLoc(@"profile.logout") attributes:attributes] autorelease];
+    NSAttributedString *title = [[[NSAttributedString alloc] initWithString:([button title] ? [button title] : @"") attributes:attributes] autorelease];
     [button setAttributedTitle:title];
 }
 
@@ -143,7 +144,7 @@
     [textField setBezeled:NO];
     [textField setBordered:NO];
     [textField setBackgroundColor:[NSColor clearColor]];
-    [textField setTextColor:TGClassicInkColor()];
+    [textField setTextColor:TGThemeSurfaceInkColor(TGClassicInkColor(), TGThemeSurfaceRecessed, 4.5)];
     [textField setDrawsBackground:NO];
     [textField setFocusRingType:NSFocusRingTypeNone];
     [textField setFont:[NSFont systemFontOfSize:12.0]];
@@ -167,7 +168,7 @@
         return;
     }
     NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys:
-                                TGClassicCardMutedInkColor(), NSForegroundColorAttributeName,
+                                TGThemeSurfaceInkColor(TGClassicMutedInkColor(), TGThemeSurfaceRecessed, 4.5), NSForegroundColorAttributeName,
                                 [textField font] ? [textField font] : [NSFont systemFontOfSize:12.0], NSFontAttributeName,
                                 nil];
     NSAttributedString *attributedPlaceholder = [[[NSAttributedString alloc] initWithString:placeholder attributes:attributes] autorelease];
@@ -219,7 +220,7 @@
         return;
     }
     [headerCell setFont:[NSFont boldSystemFontOfSize:11.0]];
-    [headerCell setTextColor:TGClassicMutedInkColor()];
+    [headerCell setTextColor:TGThemeReadableInk(TGClassicMutedInkColor(), TGClassicTableHeaderColor(), 4.5)];
     [headerCell setAlignment:NSLeftTextAlignment];
     [headerCell setDrawsBackground:YES];
     [headerCell setBackgroundColor:TGClassicTableHeaderColor()];

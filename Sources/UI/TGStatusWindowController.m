@@ -37,6 +37,9 @@
 #import "TGReactionMenuRowView.h"
 #import "TGSavedMessagesWindowController.h"
 #import "TGStatusButtonCells.h"
+#import "TGButtonAppearance.h"
+#import "TGThemeContrast.h"
+#import "TGThemeTextField.h"
 #import "TGSectionTitleField.h"
 #import "TGScheduledMessagesWindowController.h"
 #import "TGStatusViewComponents.h"
@@ -189,12 +192,12 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
     NSRect buttonRect = NSInsetRect(bounds, 1.0, 1.0);
     NSBezierPath *buttonPath = [NSBezierPath bezierPathWithRoundedRect:buttonRect xRadius:7.0 yRadius:7.0];
-    TGThemeDrawEnamelButtonInPath(buttonPath, buttonRect, highlighted, YES, YES, [self isFlipped]);
+    TGDrawReadableButtonSurface(buttonPath, buttonRect, TGButtonSurfaceEnamel, highlighted, YES, YES, [self isFlipped]);
     [TGClassicPanelStrokeColor() set];
     [buttonPath setLineWidth:1.0];
     [buttonPath stroke];
 
-    NSColor *iconColor = TGClassicHeaderTextColor(1.0);
+    NSColor *iconColor = TGButtonForegroundColor(TGButtonSurfaceEnamel, highlighted, YES, YES);
     NSRect iconRect = NSMakeRect(NSMidX(buttonRect) - 8.5,
                                  NSMidY(buttonRect) - 8.5,
                                  17.0,
@@ -203,15 +206,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
         TGDrawTemplateIconAsset(@"cross", iconRect, iconColor, 1.0, [self isFlipped]);
     }
 
-    [iconColor set];
-    NSBezierPath *crossPath = [NSBezierPath bezierPath];
-    [crossPath setLineWidth:1.8];
-    [crossPath setLineCapStyle:NSRoundLineCapStyle];
-    [crossPath moveToPoint:NSMakePoint(NSMinX(iconRect) + 1.0, NSMinY(iconRect) + 1.0)];
-    [crossPath lineToPoint:NSMakePoint(NSMaxX(iconRect) - 1.0, NSMaxY(iconRect) - 1.0)];
-    [crossPath moveToPoint:NSMakePoint(NSMinX(iconRect) + 1.0, NSMaxY(iconRect) - 1.0)];
-    [crossPath lineToPoint:NSMakePoint(NSMaxX(iconRect) - 1.0, NSMinY(iconRect) + 1.0)];
-    [crossPath stroke];
+
 }
 
 @end
@@ -1939,6 +1934,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.profileUsernameRowTitleField setStringValue:TGLoc(@"profile.username")];
     [self.profilePhoneRowTitleField setStringValue:TGLoc(@"profile.phone")];
     [self.profileIDRowTitleField setStringValue:TGLoc(@"profile.id")];
+    [self.logoutButton setTitle:TGLoc(@"profile.logout")];
     [self applyDestructiveSettingsButtonStyle:self.logoutButton];
     [self.settingsTitleField setStringValue:TGLoc(@"settings")];
     [self.settingsProfileSectionField setStringValue:TGLoc(@"settings.section.account")];
@@ -1983,6 +1979,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.settingsStorageUsageButton setTitle:TGLoc(@"storage.open")];
     [self.settingsDownloadManagerButton setTitle:TGLoc(@"downloads.open")];
     [self.settingsDeleteLocalDataButton setTitle:TGLoc(@"settings.localData.delete")];
+    [self applyDestructiveSettingsButtonStyle:self.settingsDeleteLocalDataButton];
     [self.settingsEconomyModeButton setTitle:TGLoc(@"settings.resources.economy")];
     [self.settingsAutoDownloadPhotosButton setTitle:TGLoc(@"settings.resources.photos")];
     [self.settingsAutoDownloadVideosButton setTitle:TGLoc(@"settings.resources.videos")];
@@ -2089,11 +2086,12 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 - (void)refreshThemeAppearance {
     [self.sectionTransitionController cancelAnimation];
     [self.downloadManagerWindowController refreshPresentation];
+    [self refreshAboutLinkAppearance];
     NSColor *cardInkColor = TGClassicCardInkColor();
     NSColor *cardMutedColor = TGClassicCardMutedInkColor();
 
-    [self.titleField setTextColor:TGClassicNavigationTextColor(1.0)];
-    [self applyPanelHeaderDetailStyle:self.statusField];
+    [self.titleField setTextColor:TGThemeSurfaceInkColor(TGClassicNavigationTextColor(1.0), TGThemeSurfaceRail, 4.5)];
+    [self.statusField setTextColor:TGThemeSurfaceInkColor(TGClassicNavigationMutedTextColor(1.0), TGThemeSurfaceRail, 4.5)];
     [self applyPanelHeaderLabelStyle:self.diagnosticsLabel];
     [self applyPanelHeaderLabelStyle:self.chatsLabel];
     [self applyPanelHeaderLabelStyle:self.messagesLabel];
@@ -2111,7 +2109,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self applyPanelHeaderLabelStyle:self.settingsTitleField];
     [self applyPanelHeaderDetailStyle:self.selectedChatField];
 
-    [self.loginBrandField setTextColor:TGClassicNavigationTextColor(1.0)];
+    [self.loginBrandField setTextColor:TGThemeSurfaceInkColor(TGClassicNavigationTextColor(1.0), TGThemeSurfaceWindow, 4.5)];
     [self.loginTitleField setTextColor:cardInkColor];
     [self.sendLabel setTextColor:TGClassicInkColor()];
     [self.profileNameField setTextColor:cardInkColor];
@@ -2131,7 +2129,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.authLabel setTextColor:cardMutedColor];
     [self.authSecondaryLabel setTextColor:cardMutedColor];
     if (self.loginErrorVisible) {
-        [self.authStateField setTextColor:[NSColor colorWithCalibratedRed:0.760 green:0.160 blue:0.130 alpha:1.0]];
+        [self.authStateField setTextColor:TGThemeSurfaceInkColor([NSColor colorWithCalibratedRed:0.760 green:0.160 blue:0.130 alpha:1.0], TGThemeSurfaceCard, 4.5)];
     } else {
         [self.authStateField setTextColor:cardMutedColor];
     }
@@ -2198,6 +2196,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
         [self applySettingsSwitchTextStyle:[settingsSwitchButtons objectAtIndex:settingsSwitchIndex]];
     }
     [self applyDestructiveSettingsButtonStyle:self.logoutButton];
+    [self applyDestructiveSettingsButtonStyle:self.settingsDeleteLocalDataButton];
 
     [self applyComposerTextFieldStyle:self.authTextField];
     [self applyComposerTextFieldStyle:self.authSecureField];
@@ -2209,7 +2208,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self applyComposerTextFieldStyle:self.photoSendCaptionField];
     [self applyComposerPlaceholderStyle:self.photoSendCaptionField];
     [self.photoSendCaptionBackgroundView setNeedsDisplay:YES];
-    [self.voiceRecordingIndicatorField setTextColor:[NSColor colorWithCalibratedRed:0.760 green:0.160 blue:0.130 alpha:1.0]];
+    [self.voiceRecordingIndicatorField setTextColor:TGThemeSurfaceInkColor([NSColor colorWithCalibratedRed:0.760 green:0.160 blue:0.130 alpha:1.0], TGThemeSurfacePanel, 4.5)];
     [self.settingsAppearanceButton setNeedsDisplay:YES];
     [self.settingsLogsButton setNeedsDisplay:YES];
     [self.settingsAboutButton setNeedsDisplay:YES];
@@ -2672,7 +2671,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     self.statusField = [self labelWithFrame:NSMakeRect(24, 636, 712, 22)
                                      text:@"Connecting..."
                                      font:[NSFont systemFontOfSize:13.0]];
-    [self applyPanelHeaderDetailStyle:self.statusField];
+    [self.statusField setTextColor:TGThemeSurfaceInkColor(TGClassicNavigationMutedTextColor(1.0), TGThemeSurfaceRail, 4.5)];
     [self.statusField setHidden:YES];
     [contentView addSubview:self.statusField];
 
@@ -2771,7 +2770,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
                                            text:@"Telegraphica"
                                            font:[NSFont boldSystemFontOfSize:22.0]];
     [self.loginBrandField setAlignment:NSCenterTextAlignment];
-    [self.loginBrandField setTextColor:TGClassicNavigationTextColor(1.0)];
+    [self.loginBrandField setTextColor:TGThemeSurfaceInkColor(TGClassicNavigationTextColor(1.0), TGThemeSurfaceWindow, 4.5)];
     [self.loginBrandField setAutoresizingMask:(NSViewMinXMargin | NSViewMaxXMargin | NSViewMaxYMargin)];
     [contentView addSubview:self.loginBrandField];
 

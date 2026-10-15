@@ -9,57 +9,10 @@
 #import "TGStatusViewComponents.h"
 #import "TGStatusViewCells.h"
 #import "TGTheme.h"
+#import "TGThemeTextField.h"
+#import "TGThemeContrast.h"
 
-@interface TGBlockedSenderCell : TGRepresentedObjectCell
-@end
-
-@implementation TGBlockedSenderCell
-
-- (void)drawInteriorWithFrame:(NSRect)cellFrame inView:(NSView *)controlView {
-    NSDictionary *summary = [[self representedObject] isKindOfClass:[NSDictionary class]]
-        ? [self representedObject]
-        : nil;
-    if (!summary) {
-        return;
-    }
-
-    BOOL selected = [self isHighlighted];
-    BOOL flipped = [controlView isFlipped];
-    NSString *title = [summary objectForKey:@"title"];
-    if ([title length] == 0) {
-        title = TGLoc(@"chat.untitled");
-    }
-    NSRect avatarRect = NSMakeRect(NSMinX(cellFrame) + 10.0,
-                                   NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 36.0) / 2.0),
-                                   36.0,
-                                   36.0);
-    TGDrawAvatarInRect([summary objectForKey:@"avatar_local_path"], title, avatarRect, selected, flipped);
-
-    CGFloat textX = NSMaxX(avatarRect) + 11.0;
-    CGFloat textWidth = MAX(40.0, NSMaxX(cellFrame) - textX - 12.0);
-    NSColor *ink = selected ? TGClassicHeaderTextColor(1.0) : TGClassicCardInkColor();
-    NSColor *muted = selected ? TGClassicHeaderDetailTextColor(0.94) : TGClassicCardMutedInkColor();
-    NSDictionary *titleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
-                                     [NSFont boldSystemFontOfSize:12.5], NSFontAttributeName,
-                                     ink, NSForegroundColorAttributeName,
-                                     nil];
-    NSDictionary *detailAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
-                                      [NSFont systemFontOfSize:10.5], NSFontAttributeName,
-                                      muted, NSForegroundColorAttributeName,
-                                      nil];
-    [title drawInRect:NSMakeRect(textX, NSMinY(cellFrame) + 7.0, textWidth, 17.0)
-       withAttributes:titleAttributes];
-    NSString *username = [summary objectForKey:@"username"];
-    NSString *detail = [username length] > 0
-        ? [NSString stringWithFormat:@"@%@", username]
-        : @"";
-    if ([detail length] > 0) {
-        [detail drawInRect:NSMakeRect(textX, NSMinY(cellFrame) + 25.0, textWidth, 15.0)
-            withAttributes:detailAttributes];
-    }
-}
-
-@end
+#include "TGPrivacyWindowController+BlockedSenderCell.inc"
 
 @interface TGPrivacyWindowController () <NSTableViewDataSource, NSTableViewDelegate>
 @property (nonatomic, retain) TGTDLibClient *client;
@@ -164,14 +117,16 @@
     [super dealloc];
 }
 
-- (NSTextField *)labelWithFrame:(NSRect)frame font:(NSFont *)font color:(NSColor *)color {
-    NSTextField *field = [[[NSTextField alloc] initWithFrame:frame] autorelease];
+- (NSTextField *)labelWithFrame:(NSRect)frame font:(NSFont *)font surface:(TGThemeSurfaceRole)surface detail:(BOOL)detail {
+    NSTextField *field = [[[TGThemeTextField alloc] initWithFrame:frame] autorelease];
     [field setEditable:NO];
     [field setSelectable:NO];
     [field setBezeled:NO];
     [field setDrawsBackground:NO];
     [field setFont:font];
-    [field setTextColor:color];
+    [(TGThemeTextField *)field setThemeSurface:surface];
+    [(TGThemeTextField *)field setDetailInk:detail];
+    [(TGThemeTextField *)field refreshThemeInk];
     [[field cell] setLineBreakMode:NSLineBreakByTruncatingTail];
     return field;
 }
@@ -192,7 +147,7 @@
 
     NSTextField *title = [self labelWithFrame:NSMakeRect(24, 650, 560, 28)
                                          font:[NSFont boldSystemFontOfSize:20.0]
-                                        color:TGClassicHeaderTextColor(1.0)];
+                                        surface:TGThemeSurfaceWindow detail:YES];
     [title setStringValue:TGLoc(@"privacy.title")];
     [title setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
     [root addSubview:title];
@@ -210,7 +165,7 @@
     [root addSubview:rulesCard];
     NSTextField *rulesTitle = [self labelWithFrame:NSMakeRect(38, 600, 310, 18)
                                               font:[NSFont boldSystemFontOfSize:13.0]
-                                             color:TGClassicCardInkColor()];
+                                             surface:TGThemeSurfaceCard detail:NO];
     [rulesTitle setStringValue:TGLoc(@"privacy.rules")];
     [rulesTitle setAutoresizingMask:NSViewMinYMargin];
     [root addSubview:rulesTitle];
@@ -246,7 +201,7 @@
 
     self.ruleHintField = [self labelWithFrame:NSMakeRect(38, 522, 314, 30)
                                          font:[NSFont systemFontOfSize:10.0]
-                                        color:TGClassicCardMutedInkColor()];
+                                        surface:TGThemeSurfaceCard detail:YES];
     [[self.ruleHintField cell] setWraps:YES];
     [[self.ruleHintField cell] setLineBreakMode:NSLineBreakByWordWrapping];
     [self.ruleHintField setStringValue:TGLoc(@"privacy.rules.help")];
@@ -266,13 +221,13 @@
     [root addSubview:retentionCard];
     NSTextField *retentionTitle = [self labelWithFrame:NSMakeRect(400, 600, 320, 18)
                                                   font:[NSFont boldSystemFontOfSize:13.0]
-                                                 color:TGClassicCardInkColor()];
+                                                 surface:TGThemeSurfaceCard detail:NO];
     [retentionTitle setStringValue:TGLoc(@"privacy.retention")];
     [retentionTitle setAutoresizingMask:(NSViewMinXMargin | NSViewMinYMargin)];
     [root addSubview:retentionTitle];
     NSTextField *ttlLabel = [self labelWithFrame:NSMakeRect(400, 566, 148, 18)
                                             font:[NSFont systemFontOfSize:11.0]
-                                           color:TGClassicCardInkColor()];
+                                           surface:TGThemeSurfaceCard detail:NO];
     [ttlLabel setStringValue:TGLoc(@"privacy.accountTTL")];
     [ttlLabel setAutoresizingMask:(NSViewMinXMargin | NSViewMinYMargin)];
     [root addSubview:ttlLabel];
@@ -288,7 +243,7 @@
     [root addSubview:self.accountTTLPopUpButton];
     NSTextField *autoLabel = [self labelWithFrame:NSMakeRect(400, 534, 148, 18)
                                              font:[NSFont systemFontOfSize:11.0]
-                                            color:TGClassicCardInkColor()];
+                                            surface:TGThemeSurfaceCard detail:NO];
     [autoLabel setStringValue:TGLoc(@"privacy.defaultAutoDelete")];
     [autoLabel setAutoresizingMask:(NSViewMinXMargin | NSViewMinYMargin)];
     [root addSubview:autoLabel];
@@ -315,12 +270,12 @@
     [root addSubview:permissionsCard];
     NSTextField *permissionsTitle = [self labelWithFrame:NSMakeRect(38, 444, 300, 18)
                                                      font:[NSFont boldSystemFontOfSize:13.0]
-                                                    color:TGClassicCardInkColor()];
+                                                    surface:TGThemeSurfaceCard detail:NO];
     [permissionsTitle setStringValue:TGLoc(@"privacy.permissions.title")];
     [permissionsTitle setAutoresizingMask:NSViewMinYMargin];
     [root addSubview:permissionsTitle];
 
-    self.microphonePermissionButton = [[[NSButton alloc] initWithFrame:NSMakeRect(36, 410, 218, 24)] autorelease];
+    self.microphonePermissionButton = [[[TGThemeSwitchButton alloc] initWithFrame:NSMakeRect(36, 410, 218, 24)] autorelease];
     [self.microphonePermissionButton setButtonType:NSSwitchButton];
     [self.microphonePermissionButton setTitle:TGLoc(@"privacy.permissions.microphone")];
     [self.microphonePermissionButton setTarget:self];
@@ -328,7 +283,7 @@
     [self.microphonePermissionButton setAutoresizingMask:NSViewMinYMargin];
     [root addSubview:self.microphonePermissionButton];
 
-    self.cameraPermissionButton = [[[NSButton alloc] initWithFrame:NSMakeRect(260, 410, 218, 24)] autorelease];
+    self.cameraPermissionButton = [[[TGThemeSwitchButton alloc] initWithFrame:NSMakeRect(260, 410, 218, 24)] autorelease];
     [self.cameraPermissionButton setButtonType:NSSwitchButton];
     [self.cameraPermissionButton setTitle:TGLoc(@"privacy.permissions.camera")];
     [self.cameraPermissionButton setTarget:self];
@@ -336,7 +291,7 @@
     [self.cameraPermissionButton setAutoresizingMask:NSViewMinYMargin];
     [root addSubview:self.cameraPermissionButton];
 
-    self.locationPermissionButton = [[[NSButton alloc] initWithFrame:NSMakeRect(484, 410, 234, 24)] autorelease];
+    self.locationPermissionButton = [[[TGThemeSwitchButton alloc] initWithFrame:NSMakeRect(484, 410, 234, 24)] autorelease];
     [self.locationPermissionButton setButtonType:NSSwitchButton];
     [self.locationPermissionButton setTitle:TGLoc(@"privacy.permissions.location")];
     [self.locationPermissionButton setTarget:self];
@@ -349,7 +304,7 @@
     [root addSubview:blockedCard];
     NSTextField *blockedTitle = [self labelWithFrame:NSMakeRect(38, 360, 300, 18)
                                                 font:[NSFont boldSystemFontOfSize:13.0]
-                                               color:TGClassicCardInkColor()];
+                                               surface:TGThemeSurfaceCard detail:NO];
     [blockedTitle setStringValue:TGLoc(@"privacy.blocked")];
     [blockedTitle setAutoresizingMask:NSViewMinYMargin];
     [root addSubview:blockedTitle];
@@ -398,7 +353,7 @@
 
     self.statusField = [self labelWithFrame:NSMakeRect(24, 25, 674, 18)
                                        font:[NSFont systemFontOfSize:10.0]
-                                      color:TGClassicHeaderTextColor(0.86)];
+                                      surface:TGThemeSurfaceWindow detail:YES];
     [self.statusField setAutoresizingMask:(NSViewWidthSizable | NSViewMaxYMargin)];
     [root addSubview:self.statusField];
     self.spinner = [[[NSProgressIndicator alloc] initWithFrame:NSMakeRect(716, 25, 16, 16)] autorelease];

@@ -5,6 +5,7 @@
 #import "TGStatusButtonCells.h"
 #import "TGStatusViewComponents.h"
 #import "TGTheme.h"
+#import "TGThemeTextField.h"
 
 @interface TGChatFolderSharingWindowController ()
 @property (nonatomic, retain) TGTDLibClient *client;
@@ -100,14 +101,16 @@
     [super dealloc];
 }
 
-- (NSTextField *)labelWithFrame:(NSRect)frame font:(NSFont *)font color:(NSColor *)color {
-    NSTextField *label = [[[NSTextField alloc] initWithFrame:frame] autorelease];
+- (NSTextField *)labelWithFrame:(NSRect)frame font:(NSFont *)font surface:(TGThemeSurfaceRole)surface detail:(BOOL)detail {
+    NSTextField *label = [[[TGThemeTextField alloc] initWithFrame:frame] autorelease];
     [label setEditable:NO];
     [label setSelectable:NO];
     [label setBezeled:NO];
     [label setDrawsBackground:NO];
     [label setFont:font];
-    [label setTextColor:color];
+    [(TGThemeTextField *)label setThemeSurface:surface];
+    [(TGThemeTextField *)label setDetailInk:detail];
+    [(TGThemeTextField *)label refreshThemeInk];
     [[label cell] setLineBreakMode:NSLineBreakByTruncatingTail];
     return label;
 }
@@ -137,7 +140,7 @@
     [table setHeaderView:nil];
     [table setRowHeight:42.0];
     [table setIntercellSpacing:NSMakeSize(0.0, 1.0)];
-    [table setBackgroundColor:[NSColor clearColor]];
+    [table setBackgroundColor:[NSColor textBackgroundColor]];
     [table setAllowsMultipleSelection:NO];
     NSTableColumn *column = [[[NSTableColumn alloc] initWithIdentifier:identifier] autorelease];
     [column setWidth:NSWidth(frame) - 8.0];
@@ -154,13 +157,13 @@
 
     NSTextField *title = [self labelWithFrame:NSMakeRect(24.0, 520.0, 460.0, 26.0)
                                          font:[NSFont boldSystemFontOfSize:20.0]
-                                        color:TGClassicHeaderTextColor(1.0)];
+                                        surface:TGThemeSurfaceWindow detail:YES];
     [title setStringValue:TGLoc(@"folders.links.title")];
     [title setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
     [root addSubview:title];
     NSTextField *subtitle = [self labelWithFrame:NSMakeRect(24.0, 500.0, 620.0, 17.0)
                                             font:[NSFont systemFontOfSize:11.0]
-                                           color:TGClassicHeaderDetailTextColor(0.92)];
+                                           surface:TGThemeSurfaceWindow detail:YES];
     [subtitle setStringValue:TGLoc(@"folders.links.subtitle")];
     [subtitle setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
     [root addSubview:subtitle];
@@ -175,7 +178,7 @@
 
     NSTextField *linksLabel = [self labelWithFrame:NSMakeRect(30.0, 454.0, 250.0, 18.0)
                                                font:[NSFont boldSystemFontOfSize:12.0]
-                                              color:TGClassicCardInkColor()];
+                                              surface:TGThemeSurfacePanel detail:NO];
     [linksLabel setStringValue:TGLoc(@"folders.links.list")];
     [linksLabel setAutoresizingMask:NSViewMinYMargin];
     [root addSubview:linksLabel];
@@ -185,7 +188,7 @@
 
     NSTextField *recommendedLabel = [self labelWithFrame:NSMakeRect(390.0, 454.0, 250.0, 18.0)
                                                      font:[NSFont boldSystemFontOfSize:12.0]
-                                                    color:TGClassicCardInkColor()];
+                                                    surface:TGThemeSurfacePanel detail:NO];
     [recommendedLabel setStringValue:TGLoc(@"folders.recommended")];
     [recommendedLabel setAutoresizingMask:(NSViewMinXMargin | NSViewMinYMargin)];
     [root addSubview:recommendedLabel];
@@ -212,7 +215,7 @@
 
     self.pendingChatsField = [self labelWithFrame:NSMakeRect(28.0, 152.0, 450.0, 18.0)
                                           font:[NSFont boldSystemFontOfSize:12.0]
-                                         color:TGClassicCardInkColor()];
+                                         surface:TGThemeSurfacePanel detail:NO];
     [root addSubview:self.pendingChatsField];
     self.addNewChatsButton = [self buttonWithFrame:NSMakeRect(492.0, 146.0, 116.0, 28.0)
                                               title:TGLoc(@"folders.newChats.add") primary:NO action:@selector(addNewChats:)];
@@ -223,13 +226,13 @@
 
     self.limitsField = [self labelWithFrame:NSMakeRect(28.0, 112.0, 704.0, 32.0)
                                         font:[NSFont systemFontOfSize:11.0]
-                                       color:TGClassicCardMutedInkColor()];
+                                       surface:TGThemeSurfacePanel detail:YES];
     [[self.limitsField cell] setWraps:YES];
     [[self.limitsField cell] setLineBreakMode:NSLineBreakByWordWrapping];
     [root addSubview:self.limitsField];
     self.statusField = [self labelWithFrame:NSMakeRect(28.0, 70.0, 650.0, 20.0)
                                         font:[NSFont systemFontOfSize:11.0]
-                                       color:TGClassicHeaderDetailTextColor(0.92)];
+                                       surface:TGThemeSurfacePanel detail:YES];
     [root addSubview:self.statusField];
     self.spinner = [[[NSProgressIndicator alloc] initWithFrame:NSMakeRect(694.0, 72.0, 16.0, 16.0)] autorelease];
     [self.spinner setStyle:NSProgressIndicatorSpinningStyle];

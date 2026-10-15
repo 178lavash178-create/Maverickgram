@@ -187,6 +187,8 @@
 		1E3B31050F232518D90F2B08 /* TGNotificationDeliverySupport.m in Sources */ = {isa = PBXBuildFile; fileRef = 712EC2CDFCD982936C8A8B3E /* TGNotificationDeliverySupport.m */; };
 		D05900000000000000000001 /* TGPersistentFileDownload.m in Sources */ = {isa = PBXBuildFile; fileRef = D05900000000000000000003 /* TGPersistentFileDownload.m */; };
 		D05900000000000000000011 /* TGDownloadProgressWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = D05900000000000000000013 /* TGDownloadProgressWindowController.m */; };
+		D5A1F7EB66B80A6920D83B65 /* TGButtonAppearance.m in Sources */ = {isa = PBXBuildFile; fileRef = 25291A9227E8164A9969858D /* TGButtonAppearance.m */; };
+		A592EDE76D20CA743BE03C60 /* TGThemeTextField.m in Sources */ = {isa = PBXBuildFile; fileRef = 956C0AF75C3C69DD2E59870D /* TGThemeTextField.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -514,6 +516,13 @@
 		D05900000000000000000003 /* TGPersistentFileDownload.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGPersistentFileDownload.m; sourceTree = "<group>"; };
 		D05900000000000000000012 /* TGDownloadProgressWindowController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGDownloadProgressWindowController.h; sourceTree = "<group>"; };
 		D05900000000000000000013 /* TGDownloadProgressWindowController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGDownloadProgressWindowController.m; sourceTree = "<group>"; };
+		CF2C18211C79B1CD3ABE0D12 /* TGButtonAppearance.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGButtonAppearance.h; sourceTree = "<group>"; };
+		25291A9227E8164A9969858D /* TGButtonAppearance.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGButtonAppearance.m; sourceTree = "<group>"; };
+		34FDFB3869B4EA635FCD3D5E /* TGThemeTextField.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGThemeTextField.h; sourceTree = "<group>"; };
+		956C0AF75C3C69DD2E59870D /* TGThemeTextField.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGThemeTextField.m; sourceTree = "<group>"; };
+		8EFFD97EBA2E8E6B163D1AA2 /* TGThemeContrast.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGThemeContrast.h; sourceTree = "<group>"; };
+		B56EC779FD8C4F687A80B57F /* TGThemeContrast.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGThemeContrast.inc; sourceTree = "<group>"; };
+		3DB2198457D4B107E5B820B2 /* TGThemeSurfaceAppearance.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGThemeSurfaceAppearance.inc; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -718,6 +727,13 @@
 				EA13EAA9FADC4249BB7AD4A3 /* TGChatUnreadBadgeAppearance.m */,
 				B64C6530EA18C4456450072F /* TGNotificationDeliverySupport.h */,
 				712EC2CDFCD982936C8A8B3E /* TGNotificationDeliverySupport.m */,
+				CF2C18211C79B1CD3ABE0D12 /* TGButtonAppearance.h */,
+				25291A9227E8164A9969858D /* TGButtonAppearance.m */,
+				34FDFB3869B4EA635FCD3D5E /* TGThemeTextField.h */,
+				956C0AF75C3C69DD2E59870D /* TGThemeTextField.m */,
+				8EFFD97EBA2E8E6B163D1AA2 /* TGThemeContrast.h */,
+				B56EC779FD8C4F687A80B57F /* TGThemeContrast.inc */,
+				3DB2198457D4B107E5B820B2 /* TGThemeSurfaceAppearance.inc */,
 				111111111111111111111235 /* TGTheme.h */,
 				111111111111111111111236 /* TGTheme.m */,
 				111111111111111111111314 /* TGVisualWorldThemeSpec.h */,
@@ -1146,6 +1162,8 @@
 				A65000000000000000000001 /* TGMessageThreadSupport.m in Sources */,
 				A65300000000000000000001 /* TGChatOpenState.m in Sources */,
 				A65200000000000000000001 /* TGMessageReactionParser.m in Sources */,
+				D5A1F7EB66B80A6920D83B65 /* TGButtonAppearance.m in Sources */,
+				A592EDE76D20CA743BE03C60 /* TGThemeTextField.m in Sources */,
 				A65100000000000000000001 /* TGReactionChipLayout.m in Sources */,
 				A60000000000000000000001 /* TGTDLibClient+Storage.m in Sources */,
 				A61000000000000000000001 /* TGTDLibClient+Files.m in Sources */,

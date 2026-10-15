@@ -57,7 +57,7 @@ static NSButton *TGWorkshopViewButton(NSRect frame, NSString *title, NSInteger t
 static NSImage *TGWorkshopBackImage(void) {
     NSImage *source = TGWorkshopUprightTemplateIcon(@"route-arrow",
                                                     NSMakeSize(18.0, 18.0),
-                                                    TGClassicHeaderTextColor(1.0),
+                                                    TGWorkshopCreamColor(),
                                                     1.0);
     if (!source) return nil;
     NSImage *image = [[[NSImage alloc] initWithSize:NSMakeSize(18.0, 18.0)] autorelease];
@@ -141,7 +141,7 @@ static NSImage *TGWorkshopBackImage(void) {
     _refreshButton = [TGWorkshopViewButton(NSMakeRect(490, 56, 38, 38), @"", 0) retain];
     [_refreshButton setImage:TGWorkshopUprightTemplateIcon(@"refresh",
                                                            NSMakeSize(16.0, 16.0),
-                                                           TGClassicHeaderTextColor(1.0),
+                                                           TGWorkshopCreamColor(),
                                                            1.0)];
     [_refreshButton setImagePosition:NSImageOnly];
     [[_refreshButton cell] setButtonType:NSMomentaryPushInButton];
@@ -266,7 +266,7 @@ static NSImage *TGWorkshopBackImage(void) {
                           nil];
         [button setImage:TGWorkshopUprightTemplateIcon([icons objectAtIndex:index],
                                                         NSMakeSize(16.0, 16.0),
-                                                        TGClassicHeaderTextColor(1.0),
+                                                        TGWorkshopCreamColor(),
                                                         1.0)];
         [button setImagePosition:NSImageLeft];
     }

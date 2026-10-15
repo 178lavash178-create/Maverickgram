@@ -4,6 +4,7 @@
 #import "TGIconAssets.h"
 #import "TGLocalization.h"
 #import "TGTheme.h"
+#import "TGThemeContrast.h"
 #import "../Core/TGMessageItem.h"
 #import "../Core/TGMessagePollSupport.h"
 #import "../Core/TGCustomEmojiParser.h"
@@ -15,8 +16,8 @@
 
 static CGFloat const TGMessageBubbleMaximumWidth = 500.0;
 static CGFloat const TGMessagePhotoMaximumSide = 320.0;
-static CGFloat const TGOutgoingStatusCheckSide = 10.0;
-static CGFloat const TGOutgoingStatusCheckOverlap = 4.0;
+static CGFloat const TGOutgoingStatusCheckSide = 14.0;
+static CGFloat const TGOutgoingStatusCheckOverlap = 5.0;
 static CGFloat const TGOutgoingStatusCheckInlineFontSize = 12.0;
 
 NSString *TGInitialsForTitle(NSString *title) {
@@ -508,7 +509,18 @@ static NSAttributedString *TGCustomEmojiReplacementForEntity(NSDictionary *entit
 NSAttributedString *TGAttributedMessageStringForItem(TGMessageItem *item,
                                                      NSString *text,
                                                      NSDictionary *baseAttributes) {
-    NSMutableAttributedString *attributed = [[TGAttributedMessageString(text, baseAttributes) mutableCopy] autorelease];
+    NSMutableDictionary *readableAttributes = [NSMutableDictionary dictionaryWithDictionary:baseAttributes ? baseAttributes : [NSDictionary dictionary]];
+    NSColor *bodyInk = TGMessageContentInkColor(item, [readableAttributes objectForKey:NSForegroundColorAttributeName] ?: TGClassicInkColor());
+    [readableAttributes setObject:bodyInk forKey:NSForegroundColorAttributeName];
+    NSMutableAttributedString *attributed = [[TGAttributedMessageString(text, readableAttributes) mutableCopy] autorelease];
+    NSColor *linkInk = TGMessageContentInkColor(item, TGClassicLinkColor());
+    NSUInteger linkIndex = 0;
+    while (linkIndex < [attributed length]) {
+        NSRange run;
+        id link = [attributed attribute:NSLinkAttributeName atIndex:linkIndex effectiveRange:&run];
+        if (link) { [attributed addAttribute:NSForegroundColorAttributeName value:linkInk range:run]; }
+        linkIndex = NSMaxRange(run);
+    }
     NSArray *entities = [item formattedEntities];
     if (![entities isKindOfClass:[NSArray class]] || [entities count] == 0 || [text length] == 0) {
         TGReplaceUnrenderableEmojiInAttributedString(attributed,
@@ -566,11 +578,11 @@ NSAttributedString *TGAttributedMessageStringForItem(TGMessageItem *item,
                                value:[NSFont userFixedPitchFontOfSize:[baseFont pointSize]]
                                range:range];
             [attributed addAttribute:NSBackgroundColorAttributeName
-                               value:[TGClassicTableGridColor() colorWithAlphaComponent:0.22]
+                               value:TGThemeCompositeColor([TGClassicTableGridColor() colorWithAlphaComponent:0.22], TGMessageContentBaseColor(item))
                                range:range];
         } else if ([typeName isEqualToString:@"textEntityTypeSpoiler"]) {
             [attributed addAttribute:NSBackgroundColorAttributeName
-                               value:[TGClassicMutedInkColor() colorWithAlphaComponent:0.28]
+                               value:TGThemeCompositeColor([TGClassicMutedInkColor() colorWithAlphaComponent:0.28], TGMessageContentBaseColor(item))
                                range:range];
         } else if ([typeName isEqualToString:@"textEntityTypeBlockQuote"] ||
                    [typeName isEqualToString:@"textEntityTypeExpandableBlockQuote"]) {
@@ -578,8 +590,9 @@ NSAttributedString *TGAttributedMessageStringForItem(TGMessageItem *item,
             [quoteParagraph setParagraphSpacingBefore:4.0];
             [quoteParagraph setParagraphSpacing:8.0];
             NSTextBlock *quoteBlock = [[[NSTextBlock alloc] init] autorelease];
-            [quoteBlock setBackgroundColor:[TGClassicSelectedRowColor() colorWithAlphaComponent:0.12]];
-            [quoteBlock setBorderColor:TGClassicLinkColor() forEdge:NSMinXEdge];
+            NSColor *quoteFill = TGThemeCompositeColor([TGClassicSelectedRowColor() colorWithAlphaComponent:0.12], TGMessageContentBaseColor(item));
+            [quoteBlock setBackgroundColor:quoteFill];
+            [quoteBlock setBorderColor:TGThemeReadableInk(TGClassicLinkColor(), quoteFill, 3.0) forEdge:NSMinXEdge];
             [quoteBlock setWidth:3.0
                             type:NSTextBlockAbsoluteValueType
                         forLayer:NSTextBlockBorder
@@ -604,7 +617,7 @@ NSAttributedString *TGAttributedMessageStringForItem(TGMessageItem *item,
             NSURL *url = [urlString length] > 0 ? [NSURL URLWithString:urlString] : nil;
             if (url) {
                 [attributed addAttribute:NSLinkAttributeName value:url range:range];
-                [attributed addAttribute:NSForegroundColorAttributeName value:TGClassicLinkColor() range:range];
+                [attributed addAttribute:NSForegroundColorAttributeName value:linkInk range:range];
                 [attributed addAttribute:NSUnderlineStyleAttributeName
                                    value:[NSNumber numberWithInteger:NSUnderlineStyleSingle]
                                    range:range];
@@ -626,8 +639,25 @@ NSAttributedString *TGAttributedMessageStringForItem(TGMessageItem *item,
                                         [[attributed string] length] - (NSUInteger)offset));
         NSAttributedString *replacement = TGCustomEmojiReplacementForEntity(entity,
                                                                              baseFont,
-                                                                             baseAttributes);
+                                                                             readableAttributes);
         [attributed replaceCharactersInRange:range withAttributedString:replacement];
+    }
+    // Text can overlap a quote/code fill even when its bubble ink is readable.
+    // Adjust after entity processing so overlapping links keep their underline.
+    NSUInteger shadedIndex = 0;
+    while (shadedIndex < [attributed length]) {
+        NSRange run;
+        NSDictionary *attributes = [attributed attributesAtIndex:shadedIndex effectiveRange:&run];
+        NSColor *surface = [attributes objectForKey:NSBackgroundColorAttributeName];
+        NSParagraphStyle *paragraph = [attributes objectForKey:NSParagraphStyleAttributeName];
+        if (!surface && [[paragraph textBlocks] count] > 0) {
+            surface = [[[paragraph textBlocks] objectAtIndex:0] backgroundColor];
+        }
+        if (surface) {
+            NSColor *preferred = [attributes objectForKey:NSForegroundColorAttributeName] ?: bodyInk;
+            [attributed addAttribute:NSForegroundColorAttributeName value:TGThemeReadableInk(preferred, surface, 4.5) range:run];
+        }
+        shadedIndex = NSMaxRange(run);
     }
     TGReplaceUnrenderableEmojiInAttributedString(attributed, baseFont);
     return attributed;
@@ -937,11 +967,11 @@ static NSString *TGStickerFallbackFormatBadgeForMediaItem(NSDictionary *mediaIte
 
 static void TGDrawStickerFallbackInRect(NSDictionary *mediaItem, NSRect rect, BOOL flipped) {
     NSBezierPath *backgroundPath = [NSBezierPath bezierPathWithRoundedRect:rect xRadius:11.0 yRadius:11.0];
-    [[NSColor colorWithCalibratedWhite:0.985 alpha:0.96] set];
+    [[NSColor colorWithCalibratedWhite:0.985 alpha:1.0] set];
     [backgroundPath fill];
 
     NSBezierPath *innerPath = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(rect, 7.0, 7.0) xRadius:9.0 yRadius:9.0];
-    [[NSColor colorWithCalibratedWhite:0.93 alpha:0.72] set];
+    [[NSColor colorWithCalibratedWhite:0.9454 alpha:1.0] set];
     [innerPath fill];
 
     NSString *emoji = TGStickerFallbackEmojiForMediaItem(mediaItem);
@@ -955,7 +985,7 @@ static void TGDrawStickerFallbackInRect(NSDictionary *mediaItem, NSRect rect, BO
     [centeredParagraph setLineBreakMode:NSLineBreakByTruncatingTail];
     NSDictionary *emojiAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                      emojiFont, NSFontAttributeName,
-                                     TGClassicInkColor(), NSForegroundColorAttributeName,
+                                     TGThemeReadableInk(TGClassicInkColor(), [NSColor colorWithCalibratedWhite:0.9454 alpha:1.0], 4.5), NSForegroundColorAttributeName,
                                      centeredParagraph, NSParagraphStyleAttributeName,
                                      nil];
     NSSize emojiSize = [emoji sizeWithAttributes:emojiAttributes];
@@ -969,7 +999,7 @@ static void TGDrawStickerFallbackInRect(NSDictionary *mediaItem, NSRect rect, BO
     if ([caption length] > 0 && ![caption isEqualToString:emoji]) {
         NSDictionary *captionAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                            [NSFont boldSystemFontOfSize:11.0], NSFontAttributeName,
-                                           TGClassicMutedInkColor(), NSForegroundColorAttributeName,
+                                           TGThemeReadableInk(TGClassicMutedInkColor(), [NSColor colorWithCalibratedWhite:0.9454 alpha:1.0], 4.5), NSForegroundColorAttributeName,
                                            centeredParagraph, NSParagraphStyleAttributeName,
                                            nil];
         NSSize captionSize = [caption sizeWithAttributes:captionAttributes];
@@ -1534,7 +1564,7 @@ void TGDrawLinkPreviewCardForItem(TGMessageItem *item,
 
     NSBezierPath *cardPath = [NSBezierPath bezierPathWithRoundedRect:cardRect xRadius:9.0 yRadius:9.0];
     NSColor *cardColor = outgoing ? TGClassicOutgoingBubbleBottomColor() : TGClassicIncomingBubbleBottomColor();
-    [[cardColor colorWithAlphaComponent:0.76] set];
+    [cardColor set];
     [cardPath fill];
     [TGClassicPanelStrokeColor() set];
     [cardPath setLineWidth:0.8];
@@ -1572,16 +1602,16 @@ void TGDrawLinkPreviewCardForItem(TGMessageItem *item,
     [paragraph setLineBreakMode:NSLineBreakByTruncatingTail];
     NSDictionary *siteAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                     TGChatMessageBoldSecondaryFont(), NSFontAttributeName,
-                                    TGClassicNavigationSelectedColor(0.96), NSForegroundColorAttributeName,
+                                    TGThemeReadableInk(TGClassicNavigationSelectedColor(0.96), cardColor, 4.5), NSForegroundColorAttributeName,
                                     paragraph, NSParagraphStyleAttributeName,
                                     nil];
     NSDictionary *titleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                      TGChatMessageBoldBodyFont(), NSFontAttributeName,
-                                     TGClassicInkColor(), NSForegroundColorAttributeName,
+                                     TGThemeReadableInk(TGClassicInkColor(), cardColor, 4.5), NSForegroundColorAttributeName,
                                      nil];
     NSDictionary *descriptionAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                            TGChatMessageSecondaryFont(), NSFontAttributeName,
-                                           TGClassicMutedInkColor(), NSForegroundColorAttributeName,
+                                           TGThemeReadableInk(TGClassicMutedInkColor(), cardColor, 4.5), NSForegroundColorAttributeName,
                                            nil];
     if (siteHeight > 0.0) {
         [site drawInRect:TGLinkPreviewRectFromTop(textArea, textTop, siteHeight, flipped)
@@ -2020,7 +2050,8 @@ void TGDrawMessageCommentBarForItem(TGMessageItem *item, NSRect bubbleRect, BOOL
     }
     NSBezierPath *barPath = [NSBezierPath bezierPathWithRoundedRect:barRect xRadius:11.0 yRadius:11.0];
     NSColor *fillColor = outgoing ? TGClassicIncomingBubbleBottomColor() : TGClassicOutgoingBubbleBottomColor();
-    [[fillColor colorWithAlphaComponent:0.62] set];
+    [fillColor set];
+    NSColor *commentInk = TGThemeReadableInk(TGClassicNavigationSelectedColor(1.0), fillColor, 4.5);
     [barPath fill];
     [TGClassicNavigationSelectedStrokeColor(0.48) set];
     [barPath setLineWidth:0.8];
@@ -2029,14 +2060,14 @@ void TGDrawMessageCommentBarForItem(TGMessageItem *item, NSRect bubbleRect, BOOL
     NSString *title = TGMessageCommentTitleForItem(item);
     NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                 TGChatMessageBoldSecondaryFont(), NSFontAttributeName,
-                                TGClassicNavigationSelectedColor(0.96), NSForegroundColorAttributeName,
+                                commentInk, NSForegroundColorAttributeName,
                                 nil];
     CGFloat iconSide = 15.0;
     NSRect iconRect = NSMakeRect(NSMinX(barRect) + 10.0,
                                  NSMinY(barRect) + floor((NSHeight(barRect) - iconSide) / 2.0),
                                  iconSide,
                                  iconSide);
-    TGDrawTemplateIconAsset(@"route-arrow", iconRect, TGClassicNavigationSelectedColor(0.98), 0.95, flipped);
+    TGDrawTemplateIconAsset(@"route-arrow", iconRect, commentInk, 1.0, flipped);
     CGFloat titleHeight = TGMessageCommentTitleLineHeight();
     NSRect textRect = NSMakeRect(NSMaxX(iconRect) + 7.0,
                                  NSMinY(barRect) + floor((NSHeight(barRect) - titleHeight) / 2.0),
@@ -2451,16 +2482,16 @@ void TGDrawDocumentContentForItem(TGMessageItem *item, NSRect bubbleRect, BOOL o
     NSRect contentRect = NSInsetRect(bubbleRect, 12.0, 9.0);
     NSRect iconRect = TGDocumentIconRectForBubbleRect(bubbleRect);
     NSBezierPath *iconPath = [NSBezierPath bezierPathWithOvalInRect:iconRect];
-    NSColor *accentColor = outgoing ? TGClassicNavigationSelectedColor(0.95) : [NSColor colorWithCalibratedRed:0.05 green:0.67 blue:0.17 alpha:1.0];
+    NSColor *accentColor = outgoing ? TGClassicNavigationSelectedColor(1.0) : [NSColor colorWithCalibratedRed:0.05 green:0.67 blue:0.17 alpha:1.0];
     [accentColor set];
     [iconPath fill];
 
     NSString *downloadState = [item documentDownloadState];
     if ([downloadState isEqualToString:@"completed"]) {
-        TGDrawTemplateIconAsset(@"document", NSInsetRect(iconRect, 9.0, 8.0), [NSColor whiteColor], 1.0, flipped);
+        TGDrawTemplateIconAsset(@"document", NSInsetRect(iconRect, 9.0, 8.0), TGThemeReadableInk([NSColor whiteColor], accentColor, 4.5), 1.0, flipped);
     } else if (![downloadState isEqualToString:@"queued"] &&
                ![downloadState isEqualToString:@"downloading"]) {
-        TGDrawTemplateIconAsset(@"arrow-down", NSInsetRect(iconRect, 9.0, 8.0), [NSColor whiteColor], 1.0, flipped);
+        TGDrawTemplateIconAsset(@"arrow-down", NSInsetRect(iconRect, 9.0, 8.0), TGThemeReadableInk([NSColor whiteColor], accentColor, 4.5), 1.0, flipped);
     }
 
     CGFloat textX = NSMaxX(iconRect) + 10.0;
@@ -2472,12 +2503,12 @@ void TGDrawDocumentContentForItem(TGMessageItem *item, NSRect bubbleRect, BOOL o
     [titleParagraph setLineBreakMode:NSLineBreakByTruncatingTail];
     NSDictionary *titleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                      TGChatMessageBoldBodyFont(), NSFontAttributeName,
-                                     TGClassicInkColor(), NSForegroundColorAttributeName,
+                                     TGMessageContentInkColor(item, TGClassicInkColor()), NSForegroundColorAttributeName,
                                      titleParagraph, NSParagraphStyleAttributeName,
                                      nil];
     NSDictionary *subtitleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                         TGChatMessageBodyFont(), NSFontAttributeName,
-                                        accentColor, NSForegroundColorAttributeName,
+                                        TGMessageContentInkColor(item, accentColor), NSForegroundColorAttributeName,
                                         nil];
     NSString *title = TGDocumentFileTitleForMessageItem(item);
     NSString *subtitle = TGDocumentFileSubtitleForMessageItem(item);
@@ -2553,7 +2584,7 @@ void TGDrawPollContentForItem(TGMessageItem *item, NSRect bubbleRect, BOOL outgo
 
     NSDictionary *questionAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                         TGChatMessageBoldBodyFont(), NSFontAttributeName,
-                                        TGClassicInkColor(), NSForegroundColorAttributeName,
+                                        TGMessageContentInkColor(item, TGClassicInkColor()), NSForegroundColorAttributeName,
                                         TGMessageTextParagraphStyle(), NSParagraphStyleAttributeName,
                                         nil];
     CGFloat questionWidth = NSWidth(contentRect);
@@ -2584,11 +2615,11 @@ void TGDrawPollContentForItem(TGMessageItem *item, NSRect bubbleRect, BOOL outgo
         options = [NSArray arrayWithObject:[NSDictionary dictionaryWithObject:@"Poll option" forKey:TGMessagePollOptionTextKey]];
     }
 
-    NSDictionary *optionAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
+    NSMutableDictionary *optionAttributes = [NSMutableDictionary dictionaryWithObjectsAndKeys:
                                       TGChatMessageBodyFont(), NSFontAttributeName,
-                                      TGClassicInkColor(), NSForegroundColorAttributeName,
+                                      TGMessageContentInkColor(item, TGClassicInkColor()), NSForegroundColorAttributeName,
                                       nil];
-    NSDictionary *percentAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
+    NSMutableDictionary *percentAttributes = [NSMutableDictionary dictionaryWithObjectsAndKeys:
                                        TGChatMessageMetaFont(), NSFontAttributeName,
                                        TGClassicMutedInkColor(), NSForegroundColorAttributeName,
                                        nil];
@@ -2620,7 +2651,12 @@ void TGDrawPollContentForItem(TGMessageItem *item, NSRect bubbleRect, BOOL outgo
             continue;
         }
         NSBezierPath *track = [NSBezierPath bezierPathWithRoundedRect:optionRect xRadius:6.0 yRadius:6.0];
-        [[TGClassicMutedInkColor() colorWithAlphaComponent:(pending ? 0.17 : 0.10)] set];
+        NSColor *trackColor = TGThemeCompositeColor([TGClassicMutedInkColor() colorWithAlphaComponent:(pending ? 0.17 : 0.10)], TGMessageContentBaseColor(item));
+        NSColor *fillColor = TGThemeCompositeColor([TGClassicNavigationSelectedColor(1.0) colorWithAlphaComponent:(active ? 0.32 : 0.18)], trackColor);
+        NSArray *optionSurfaces = [NSArray arrayWithObjects:trackColor, fillColor, nil];
+        [optionAttributes setObject:TGThemeReadableInkOnSurfaces(TGClassicInkColor(), optionSurfaces, 4.5) forKey:NSForegroundColorAttributeName];
+        [percentAttributes setObject:TGThemeReadableInkOnSurfaces(TGClassicMutedInkColor(), optionSurfaces, 4.5) forKey:NSForegroundColorAttributeName];
+        [trackColor set];
         [track fill];
         if (ratio > 0.0) {
             NSRect fillRect = optionRect;
@@ -2629,7 +2665,7 @@ void TGDrawPollContentForItem(TGMessageItem *item, NSRect bubbleRect, BOOL outgo
                 fillRect.size.width = 8.0;
             }
             NSBezierPath *fill = [NSBezierPath bezierPathWithRoundedRect:fillRect xRadius:6.0 yRadius:6.0];
-            [[(active ? TGClassicNavigationSelectedColor(0.90) : TGClassicNavigationSelectedColor(0.50)) colorWithAlphaComponent:(active ? 0.32 : 0.18)] set];
+            [fillColor set];
             [fill fill];
         }
         [(active ? TGClassicNavigationSelectedStrokeColor(0.84) : TGClassicPanelStrokeColor()) set];
@@ -2643,16 +2679,16 @@ void TGDrawPollContentForItem(TGMessageItem *item, NSRect bubbleRect, BOOL outgo
                                           indicatorSide);
         NSBezierPath *indicatorPath = [item isPollMultipleChoice] ? [NSBezierPath bezierPathWithRoundedRect:indicatorRect xRadius:2.0 yRadius:2.0]
                                                                  : [NSBezierPath bezierPathWithOvalInRect:indicatorRect];
-        [[NSColor colorWithCalibratedWhite:1.0 alpha:0.72] set];
+        [[NSColor whiteColor] set];
         [indicatorPath fill];
-        [(active ? TGClassicNavigationSelectedStrokeColor(0.92) : TGClassicPanelStrokeColor()) set];
+        [TGThemeReadableInkOnSurfaces(active ? TGClassicNavigationSelectedStrokeColor(1.0) : TGClassicPanelStrokeColor(), [NSArray arrayWithObjects:[NSColor whiteColor], trackColor, nil], 3.0) set];
         [indicatorPath setLineWidth:1.0];
         [indicatorPath stroke];
         if (active) {
             NSRect markRect = NSInsetRect(indicatorRect, 3.0, 3.0);
             NSBezierPath *markPath = [item isPollMultipleChoice] ? [NSBezierPath bezierPathWithRoundedRect:markRect xRadius:1.0 yRadius:1.0]
                                                                 : [NSBezierPath bezierPathWithOvalInRect:markRect];
-            [TGClassicNavigationSelectedColor(0.94) set];
+            [TGThemeReadableInk(TGClassicNavigationSelectedColor(1.0), [NSColor whiteColor], 4.5) set];
             [markPath fill];
         }
 
@@ -2689,14 +2725,15 @@ void TGDrawPollContentForItem(TGMessageItem *item, NSRect bubbleRect, BOOL outgo
     NSRect confirmRect = TGPollConfirmRectForItem(item, bubbleRect, flipped);
     if (!NSIsEmptyRect(confirmRect)) {
         NSBezierPath *confirmPath = [NSBezierPath bezierPathWithRoundedRect:confirmRect xRadius:7.0 yRadius:7.0];
-        [TGClassicNavigationSelectedColor(0.92) set];
+        NSColor *confirmFill = TGClassicNavigationSelectedColor(1.0);
+        [confirmFill set];
         [confirmPath fill];
         [TGClassicNavigationSelectedStrokeColor(0.88) set];
         [confirmPath setLineWidth:0.9];
         [confirmPath stroke];
         NSDictionary *confirmAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                            TGChatMessageBoldSecondaryFont(), NSFontAttributeName,
-                                           [NSColor whiteColor], NSForegroundColorAttributeName,
+                                           TGThemeReadableInk([NSColor whiteColor], confirmFill, 4.5), NSForegroundColorAttributeName,
                                            nil];
         NSString *confirmTitle = TGLoc(@"message.poll.submit");
         NSSize confirmSize = [confirmTitle sizeWithAttributes:confirmAttributes];
@@ -2709,7 +2746,7 @@ void TGDrawPollContentForItem(TGMessageItem *item, NSRect bubbleRect, BOOL outgo
     }
     NSDictionary *footerAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                       TGChatMessageMetaFont(), NSFontAttributeName,
-                                      ([[item pollVoteState] isEqualToString:@"failed"] ? [NSColor colorWithCalibratedRed:0.72 green:0.14 blue:0.12 alpha:0.95] : TGClassicMutedInkColor()), NSForegroundColorAttributeName,
+                                      TGMessageContentInkColor(item, ([[item pollVoteState] isEqualToString:@"failed"] ? [NSColor colorWithCalibratedRed:0.72 green:0.14 blue:0.12 alpha:1.0] : TGClassicMutedInkColor())), NSForegroundColorAttributeName,
                                       nil];
     NSRect footerRect = flipped ? NSMakeRect(NSMinX(contentRect), cursorY + 1.0, NSWidth(contentRect), 14.0)
                                 : NSMakeRect(NSMinX(contentRect), cursorY - 15.0, NSWidth(contentRect), 14.0);
@@ -2730,19 +2767,20 @@ void TGDrawPlayableMediaContentForItem(TGMessageItem *item, NSRect bubbleRect, B
                                        circleSide,
                                        circleSide);
     NSBezierPath *circle = [NSBezierPath bezierPathWithOvalInRect:playCircleRect];
-    [TGClassicNavigationSelectedColor(0.90) set];
+    NSColor *playFill = TGClassicNavigationSelectedColor(1.0);
+    [playFill set];
     [circle fill];
     [TGClassicNavigationSelectedStrokeColor(0.78) set];
     [circle setLineWidth:1.0];
     [circle stroke];
 
     NSRect playIconRect = NSInsetRect(playCircleRect, 10.0, 10.0);
-    TGDrawTemplateIconAsset(@"play", playIconRect, TGClassicHeaderTextColor(0.96), 1.0, flipped);
+    TGDrawTemplateIconAsset(@"play", playIconRect, TGThemeReadableInk(TGClassicHeaderTextColor(1.0), playFill, 4.5), 1.0, flipped);
 
     NSString *title = TGPlayableMediaTitleForMessageItem(item);
     NSDictionary *titleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                      TGChatMessageBoldBodyFont(), NSFontAttributeName,
-                                     TGClassicInkColor(), NSForegroundColorAttributeName,
+                                     TGMessageContentInkColor(item, TGClassicInkColor()), NSForegroundColorAttributeName,
                                      nil];
     NSString *duration = TGDurationStringFromSecondsValue([item mediaDuration]);
     if ([duration length] == 0) {
@@ -2750,7 +2788,7 @@ void TGDrawPlayableMediaContentForItem(TGMessageItem *item, NSRect bubbleRect, B
     }
     NSDictionary *durationAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                         TGChatMessageSecondaryFont(), NSFontAttributeName,
-                                        TGClassicMutedInkColor(), NSForegroundColorAttributeName,
+                                        TGMessageContentInkColor(item, TGClassicMutedInkColor()), NSForegroundColorAttributeName,
                                         nil];
     CGFloat textX = NSMaxX(playCircleRect) + 10.0;
     CGFloat textWidth = NSWidth(playableRect) - (textX - NSMinX(playableRect)) - 68.0;

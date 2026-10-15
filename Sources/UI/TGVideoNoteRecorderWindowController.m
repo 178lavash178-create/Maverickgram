@@ -9,6 +9,7 @@
 #import "TGStatusViewComponents.h"
 #import "TGStatusViewCells.h"
 #import "TGTheme.h"
+#import "TGThemeTextField.h"
 #include <math.h>
 
 static NSTimeInterval const TGVideoNoteMaximumDuration = 60.0;
@@ -43,6 +44,7 @@ static NSTimeInterval const TGVideoNoteMaximumDuration = 60.0;
 @property (nonatomic, retain) NSTextField *statusField;
 @property (nonatomic, retain) NSTextField *timerField;
 @property (nonatomic, retain) NSImageView *cameraStateImageView;
+@property (nonatomic, copy) NSString *cameraStateAssetName;
 @property (nonatomic, retain) NSButton *recordButton;
 @property (nonatomic, retain) NSButton *stopButton;
 @property (nonatomic, retain) NSButton *playButton;
@@ -74,6 +76,7 @@ static NSTimeInterval const TGVideoNoteMaximumDuration = 60.0;
 @synthesize statusField = _statusField;
 @synthesize timerField = _timerField;
 @synthesize cameraStateImageView = _cameraStateImageView;
+@synthesize cameraStateAssetName = _cameraStateAssetName;
 @synthesize recordButton = _recordButton;
 @synthesize stopButton = _stopButton;
 @synthesize playButton = _playButton;
@@ -101,21 +104,35 @@ static NSTimeInterval const TGVideoNoteMaximumDuration = 60.0;
         [window setReleasedWhenClosed:NO];
         [window setDelegate:self];
         [self buildViews];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(refreshCameraTheme:)
+            name:NSUserDefaultsDidChangeNotification object:nil];
     }
     return self;
 }
 
+- (void)refreshCameraTheme:(NSNotification *)notification {
+    (void)notification;
+    if (![NSThread isMainThread]) {
+        [self performSelectorOnMainThread:@selector(refreshCameraTheme:) withObject:nil waitUntilDone:NO]; return;
+    }
+    [self.cameraStateImageView setImage:TGTemplateIconAssetImage(self.cameraStateAssetName,
+        NSMakeSize(24.0,24.0),TGThemeSurfaceInkColor(TGClassicHeaderTextColor(1.0),TGThemeSurfaceWindow,4.5),1.0)];
+    [[[self window] contentView] setNeedsDisplay:YES];
+}
+
 - (NSTextField *)labelWithFrame:(NSRect)frame
                             font:(NSFont *)font
-                           color:(NSColor *)color
+                           surface:(TGThemeSurfaceRole)surface detail:(BOOL)detail
                        alignment:(NSTextAlignment)alignment {
-    NSTextField *field = [[[NSTextField alloc] initWithFrame:frame] autorelease];
+    NSTextField *field = [[[TGThemeTextField alloc] initWithFrame:frame] autorelease];
     [field setEditable:NO];
     [field setSelectable:NO];
     [field setBezeled:NO];
     [field setDrawsBackground:NO];
     [field setFont:font];
-    [field setTextColor:color];
+    [(TGThemeTextField *)field setThemeSurface:surface];
+    [(TGThemeTextField *)field setDetailInk:detail];
+    [(TGThemeTextField *)field refreshThemeInk];
     [field setAlignment:alignment];
     return field;
 }
@@ -141,21 +158,19 @@ static NSTimeInterval const TGVideoNoteMaximumDuration = 60.0;
 
     NSTextField *title = [self labelWithFrame:NSMakeRect(28.0, 606.0, 484.0, 28.0)
                                          font:[NSFont boldSystemFontOfSize:21.0]
-                                        color:TGClassicHeaderTextColor(1.0)
+                                        surface:TGThemeSurfaceWindow detail:NO
                                     alignment:NSCenterTextAlignment];
     [title setStringValue:TGLoc(@"videoNote.title")];
     [root addSubview:title];
     self.cameraStateImageView = [[[NSImageView alloc] initWithFrame:NSMakeRect(490.0, 608.0, 24.0, 24.0)] autorelease];
     [self.cameraStateImageView setImageScaling:NSImageScaleProportionallyUpOrDown];
-    [self.cameraStateImageView setImage:TGTemplateIconAssetImage(@"video",
-                                                                 NSMakeSize(24.0, 24.0),
-                                                                 TGClassicHeaderTextColor(1.0),
-                                                                 1.0)];
+    self.cameraStateAssetName = @"video";
+    [self refreshCameraTheme:nil];
     [root addSubview:self.cameraStateImageView];
 
     NSTextField *hint = [self labelWithFrame:NSMakeRect(28.0, 580.0, 484.0, 22.0)
                                         font:[NSFont systemFontOfSize:11.0]
-                                       color:TGClassicHeaderDetailTextColor(0.9)
+                                       surface:TGThemeSurfaceWindow detail:YES
                                    alignment:NSCenterTextAlignment];
     [hint setStringValue:TGLoc(@"videoNote.hint")];
     [root addSubview:hint];
@@ -186,14 +201,16 @@ static NSTimeInterval const TGVideoNoteMaximumDuration = 60.0;
 
     self.statusField = [self labelWithFrame:NSMakeRect(72.0, 150.0, 396.0, 22.0)
                                        font:[NSFont systemFontOfSize:12.0]
-                                      color:TGClassicCardMutedInkColor()
+                                      surface:TGThemeSurfaceCard detail:YES
                                   alignment:NSCenterTextAlignment];
     [root addSubview:self.statusField];
 
-    self.timerField = [self labelWithFrame:NSMakeRect(208.0, 510.0, 124.0, 24.0)
-                                      font:[NSFont boldSystemFontOfSize:16.0]
-                                     color:[NSColor whiteColor]
-                                 alignment:NSCenterTextAlignment];
+    // Recording overlay has a fixed translucent black backing, independent of the theme.
+    self.timerField = [[[NSTextField alloc] initWithFrame:NSMakeRect(208.0, 510.0, 124.0, 24.0)] autorelease];
+    [self.timerField setEditable:NO]; [self.timerField setSelectable:NO]; [self.timerField setBezeled:NO];
+    [self.timerField setFont:[NSFont boldSystemFontOfSize:16.0]];
+    [self.timerField setTextColor:[NSColor whiteColor]];
+    [self.timerField setAlignment:NSCenterTextAlignment];
     [self.timerField setStringValue:@"0:00 / 1:00"];
     [self.timerField setHidden:YES];
     [self.timerField setDrawsBackground:YES];
@@ -321,10 +338,8 @@ static NSTimeInterval const TGVideoNoteMaximumDuration = 60.0;
     [self.spinner stopAnimation:nil];
     [self showReadyToRecordControls];
     [self.statusField setStringValue:([message length] > 0 ? message : TGLoc(@"videoNote.failed"))];
-    [self.cameraStateImageView setImage:TGTemplateIconAssetImage(@"video-off",
-                                                                 NSMakeSize(24.0, 24.0),
-                                                                 TGClassicHeaderTextColor(1.0),
-                                                                 1.0)];
+    self.cameraStateAssetName = @"video-off";
+    [self refreshCameraTheme:nil];
 }
 
 - (void)attachCameraPreviewLayer {
@@ -407,10 +422,8 @@ static NSTimeInterval const TGVideoNoteMaximumDuration = 60.0;
     self.microphoneEnabled = microphoneEnabled;
     [self.previewView setNeedsDisplay:YES];
     [self.previewClipLayer setBorderColor:[TGClassicTableGridColor() CGColor]];
-    [self.cameraStateImageView setImage:TGTemplateIconAssetImage(@"video",
-                                                                 NSMakeSize(24.0, 24.0),
-                                                                 TGClassicHeaderTextColor(1.0),
-                                                                 1.0)];
+    self.cameraStateAssetName = @"video";
+    [self refreshCameraTheme:nil];
     [self.recordButton setEnabled:YES];
     [self removeFileAtPath:self.recordingPath];
     [self removeFileAtPath:self.preparedPath];
@@ -692,6 +705,8 @@ didFinishRecordingToOutputFileAtURL:(NSURL *)outputFileURL
 }
 
 - (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [_cameraStateAssetName release];
     [[self window] setDelegate:nil];
     [_recordingTimer invalidate];
     [_movieOutput stopRecording];

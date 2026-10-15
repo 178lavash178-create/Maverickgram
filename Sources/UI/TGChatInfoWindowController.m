@@ -13,6 +13,7 @@
 #import "TGStatusViewComponents.h"
 #import "TGStatusViewCells.h"
 #import "TGTheme.h"
+#import "TGThemeTextField.h"
 
 @interface TGChatInfoWindowController () <NSTableViewDataSource, NSTableViewDelegate>
 @property (nonatomic, retain) TGTDLibClient *client;
@@ -173,7 +174,7 @@ static NSImage *TGSecretChatKeyImage(NSData *keyHashData) {
 }
 
 - (NSTextField *)labelWithFrame:(NSRect)frame font:(NSFont *)font color:(NSColor *)color {
-    NSTextField *field = [[[NSTextField alloc] initWithFrame:frame] autorelease];
+    TGThemeTextField *field = [[[TGThemeTextField alloc] initWithFrame:frame] autorelease];
     [field setEditable:NO];
     [field setSelectable:NO];
     [field setBezeled:NO];
@@ -194,6 +195,7 @@ static NSImage *TGSecretChatKeyImage(NSData *keyHashData) {
                                      color:TGClassicHeaderTextColor(1.0)];
     [self.titleField setStringValue:[self.chatTitle length] > 0 ? self.chatTitle : TGLoc(@"chat.info.title")];
     [self.titleField setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
+    [(TGThemeTextField *)self.titleField setThemeSurface:TGThemeSurfaceWindow];
     [root addSubview:self.titleField];
 
     self.administrationButton = [[[NSButton alloc] initWithFrame:NSMakeRect(486, 530, 114, 30)] autorelease];

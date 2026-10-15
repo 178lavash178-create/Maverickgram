@@ -594,7 +594,7 @@
     self.loginErrorVisible = hasMessage;
     [self.authStateField setStringValue:(hasMessage ? message : @"")];
     if (hasMessage) {
-        [self.authStateField setTextColor:[NSColor colorWithCalibratedRed:0.760 green:0.160 blue:0.130 alpha:1.0]];
+        [self.authStateField setTextColor:TGThemeSurfaceInkColor([NSColor colorWithCalibratedRed:0.760 green:0.160 blue:0.130 alpha:1.0], TGThemeSurfaceCard, 4.5)];
     } else {
         [self applyMutedLabelStyle:self.authStateField];
     }

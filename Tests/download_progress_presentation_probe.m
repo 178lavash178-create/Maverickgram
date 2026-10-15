@@ -8,6 +8,7 @@ NSString *TGLoc(NSString *key) { return key; }
 NSColor *TGClassicPanelBottomColor(void) { return [NSColor whiteColor]; }
 NSColor *TGClassicInkColor(void) { return [NSColor blackColor]; }
 NSColor *TGClassicMutedInkColor(void) { return [NSColor grayColor]; }
+NSColor *TGThemeReadableInk(NSColor *preferred, NSColor *surface, CGFloat minimum) { (void)surface; (void)minimum; return preferred; }
 static void TGAssert(BOOL condition, const char *message) {
     if (!condition) { fprintf(stderr, "Download progress probe failed: %s\n", message); exit(1); }
 }

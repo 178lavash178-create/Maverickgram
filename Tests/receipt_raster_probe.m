@@ -1,0 +1,150 @@
+#import <Cocoa/Cocoa.h>
+#import "TGMessageItem.h"
+#import "TGMessageLayoutSupport.h"
+#import "TGChatDisplayPreferences.h"
+#import "TGTheme.h"
+#include <math.h>
+
+// Unrelated media dependencies; the receipt renderer, theme gradients and
+// approved icon asset loader are all production implementations.
+NSString * const TGInlineMediaKindGIF = @"gif";
+NSString * const TGInlineMediaKindVideo = @"video";
+NSString * const TGInlineMediaKindWebM = @"webm";
+NSString * const TGInlineMediaKindTGS = @"tgs";
+NSString * const TGInlineMediaIdentifierKey = @"identifier";
+NSString * const TGInlineMediaPathKey = @"path";
+NSString * const TGInlineMediaFrameKey = @"frame";
+NSString * const TGInlineMediaKindKey = @"kind";
+NSString * const TGInlineMediaPlaybackDiagnosticNotification = @"TGInlineMediaPlaybackDiagnosticNotification";
+NSString * const TGInlineMediaPlaybackDiagnosticMessageKey = @"message";
+NSImage *TGImageWithCorrectOrientationFromFile(NSString *path) { (void)path; return nil; }
+NSImage *TGImageThumbnailFromFile(NSString *path, NSUInteger size) { (void)path; (void)size; return nil; }
+NSImage *TGMediaCachedThumbnailFromFile(NSString *path, NSUInteger size) { (void)path; (void)size; return nil; }
+NSImage *TGImageThumbnailFromData(NSData *data, NSUInteger size) { (void)data; (void)size; return nil; }
+NSImage *TGCustomEmojiCachedImageForEntity(NSDictionary *entity, NSUInteger size) { (void)entity; (void)size; return nil; }
+void TGCustomEmojiRequestImageForEntity(NSDictionary *entity, NSUInteger size) { (void)entity; (void)size; }
+
+static NSBitmapImageRep *TGRenderReceipt(TGMessageItem *item, BOOL flipped, NSInteger scale, BOOL includeReceipt) {
+    NSBitmapImageRep *bitmap = [[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL
+        pixelsWide:176 * scale pixelsHigh:52 * scale bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO
+        colorSpaceName:NSCalibratedRGBColorSpace bytesPerRow:0 bitsPerPixel:0] autorelease];
+    memset([bitmap bitmapData], 0, [bitmap bytesPerRow] * [bitmap pixelsHigh]);
+    [NSGraphicsContext saveGraphicsState];
+    NSGraphicsContext *context = [NSGraphicsContext graphicsContextWithBitmapImageRep:bitmap];
+    [NSGraphicsContext setCurrentContext:context];
+    NSAffineTransform *transform = [NSAffineTransform transform];
+    if (flipped) { [transform translateXBy:0.0 yBy:52.0 * scale]; }
+    [transform scaleXBy:scale yBy:flipped ? -scale : scale];
+    [transform concat];
+    [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithGraphicsPort:[context graphicsPort] flipped:flipped]];
+    [TGClassicTablePaperColor() set]; NSRectFill(NSMakeRect(0, 0, 176, 52));
+    NSRect bubble = NSMakeRect(8, 8, 154, 36);
+    if (TGChatMessagesAsBlocksEnabled()) {
+        [TGMessageMetadataSurfaceColor(item, flipped) set]; NSRectFill(bubble);
+    } else {
+        TGThemeDrawMessageBubbleInPath([NSBezierPath bezierPathWithRoundedRect:bubble xRadius:12 yRadius:12], bubble, YES, flipped);
+    }
+    [@"Текст" drawInRect:NSMakeRect(20, 17, 65, 18) withAttributes:[NSDictionary dictionaryWithObjectsAndKeys:
+        [NSFont systemFontOfSize:12], NSFontAttributeName, TGClassicInkColor(), NSForegroundColorAttributeName, nil]];
+    NSRect time = NSMakeRect(102, 20, 26, 12);
+    [@"12:30" drawInRect:time withAttributes:[NSDictionary dictionaryWithObjectsAndKeys:
+        [NSFont systemFontOfSize:9], NSFontAttributeName, TGMessageMetadataInkColor(item, flipped), NSForegroundColorAttributeName, nil]];
+    if (includeReceipt) { TGDrawOutgoingStatusDotsForItem(item, time, flipped); }
+    [NSGraphicsContext restoreGraphicsState];
+    return bitmap;
+}
+
+static CGFloat TGPixelDifference(NSBitmapImageRep *a, NSBitmapImageRep *b, NSInteger x, NSInteger y) {
+    NSUInteger p[4], q[4]; [a getPixel:p atX:x y:y]; [b getPixel:q atX:x y:y];
+    return MAX(MAX(fabs((CGFloat)p[0] - q[0]), fabs((CGFloat)p[1] - q[1])), fabs((CGFloat)p[2] - q[2])) / 255.0;
+}
+
+static BOOL TGInlineReceiptHasFullRaster(TGMessageItem *item) {
+    NSAttributedString *suffix = TGOutgoingStatusInlineAttributedStringForItem(item);
+    if ([suffix length] < 2) { return NO; }
+    NSTextAttachment *attachment = [suffix attribute:NSAttachmentAttributeName atIndex:1 effectiveRange:NULL];
+    NSImage *image = [(NSTextAttachmentCell *)[attachment attachmentCell] image];
+    NSSize size = [image size];
+    if (!image || size.width != TGOutgoingStatusDotsWidthForItem(item) || size.height < 14.0) { return NO; }
+    NSBitmapImageRep *bitmap = [[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:(NSInteger)size.width
+        pixelsHigh:(NSInteger)size.height bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO
+        colorSpaceName:NSCalibratedRGBColorSpace bytesPerRow:0 bitsPerPixel:0] autorelease];
+    memset([bitmap bitmapData], 0, [bitmap bytesPerRow] * [bitmap pixelsHigh]);
+    [NSGraphicsContext saveGraphicsState];
+    [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithBitmapImageRep:bitmap]];
+    [image drawInRect:NSMakeRect(0, 0, size.width, size.height) fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0];
+    [NSGraphicsContext restoreGraphicsState];
+    NSUInteger area = 0; NSInteger x, y;
+    for (y = 0; y < [bitmap pixelsHigh]; y++) {
+        for (x = 0; x < [bitmap pixelsWide]; x++) {
+            NSUInteger pixel[4]; [bitmap getPixel:pixel atX:x y:y]; if (pixel[3] > 127) { area++; }
+        }
+    }
+    return area >= 65;
+}
+
+int main(int argc, const char **argv) {
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    TGMessageItem *item = [[[TGMessageItem alloc] initWithChatID:@1 messageID:@2 date:@1 outgoing:YES preview:@"Text"] autorelease];
+    NSUInteger samples = 0; CGFloat minimumInk = 10000, minimumChanged = 10000;
+    BOOL passed = YES;
+    NSMutableArray *comparison = [NSMutableArray array];
+    for (NSString *theme in TGThemeIdentifiers()) {
+        TGSetActiveThemeIdentifier(theme);
+        NSInteger blocks, flip, scale;
+        for (blocks = 0; blocks < 2; blocks++) {
+            TGSetChatMessagesAsBlocksEnabled(blocks != 0);
+            NSInteger state;
+            for (state = 0; state < 2; state++) {
+                [item setOutgoingRead:state != 0];
+                if (!TGInlineReceiptHasFullRaster(item)) {
+                    fprintf(stderr, "Inline receipt asset clipped or missing in %s blocks%ld state%ld\n", [theme UTF8String], (long)blocks, (long)state);
+                    passed = NO;
+                }
+            }
+            for (flip = 0; flip < 2; flip++) {
+                for (scale = 1; scale <= 2; scale++) {
+                    [item setOutgoingRead:NO];
+                    NSBitmapImageRep *background = TGRenderReceipt(item, flip != 0, scale, NO);
+                    NSBitmapImageRep *sent = TGRenderReceipt(item, flip != 0, scale, YES);
+                    [item setOutgoingRead:YES];
+                    NSBitmapImageRep *read = TGRenderReceipt(item, flip != 0, scale, YES);
+                    CGFloat ink = 0, changed = 0, firstCheck = 0, secondCheck = 0; NSInteger x, y;
+                    for (y = 12 * scale; y < 40 * scale; y++) {
+                        for (x = 132 * scale; x < 162 * scale; x++) {
+                            if (TGPixelDifference(sent, background, x, y) > 0.15 && TGPixelDifference(read, background, x, y) > 0.15) {
+                                CGFloat area = 1.0 / (scale * scale);
+                                ink += area;
+                                if (x < 141 * scale) { firstCheck += area; }
+                                if (x >= 147 * scale) { secondCheck += area; }
+                            }
+                            if (TGPixelDifference(sent, read, x, y) > 0.15) { changed += 1.0 / (scale * scale); }
+                        }
+                    }
+                    minimumInk = MIN(minimumInk, ink); minimumChanged = MIN(minimumChanged, changed); samples++;
+                    if (ink < 65.0 || changed < 55.0 || firstCheck < 10.0 || secondCheck < 10.0) {
+                        fprintf(stderr, "Receipt raster visibility %s blocks%ld flip%ld scale%ld: ink%.2f changed%.2f first%.2f second%.2f\n", [theme UTF8String], (long)blocks, (long)flip, (long)scale, (double)ink, (double)changed, (double)firstCheck, (double)secondCheck);
+                        passed = NO;
+                    }
+                    if (!blocks && flip && scale == 1 && ([theme isEqualToString:TGThemeIdentifierVKBlue] || [theme isEqualToString:TGThemeIdentifierVisualNotebook])) {
+                        [comparison addObject:sent]; [comparison addObject:read];
+                    }
+                }
+            }
+        }
+    }
+    if (argc > 1 && [comparison count] == 4) {
+        NSImage *sheet = [[[NSImage alloc] initWithSize:NSMakeSize(352, 104)] autorelease];
+        [sheet lockFocus]; NSUInteger i;
+        for (i = 0; i < 4; i++) {
+            NSImage *image = [[[NSImage alloc] initWithSize:NSMakeSize(176, 52)] autorelease];
+            [image addRepresentation:[comparison objectAtIndex:i]];
+            [image drawInRect:NSMakeRect((i % 2) * 176, (1 - i / 2) * 52, 176, 52) fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0];
+        }
+        [sheet unlockFocus];
+        NSBitmapImageRep *render = [NSBitmapImageRep imageRepWithData:[sheet TIFFRepresentation]];
+        [[render representationUsingType:NSPNGFileType properties:[NSDictionary dictionary]] writeToFile:[NSString stringWithUTF8String:argv[1]] atomically:YES];
+    }
+    printf("Receipt raster probe: %lu actual asset/theme renders, minimum shared visible ink %.2fpx², minimum state change %.2fpx², %s.\n", (unsigned long)samples, (double)minimumInk, (double)minimumChanged, passed ? "PASS" : "FAIL");
+    [pool drain]; return passed ? 0 : 1;
+}

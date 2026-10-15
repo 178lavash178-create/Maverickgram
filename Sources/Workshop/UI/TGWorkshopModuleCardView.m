@@ -236,7 +236,7 @@ static NSString *TGWorkshopIconNameForModuleIdentifier(NSString *identifier) {
     [_descriptionField setTextColor:TGWorkshopMutedCreamColor()];
     [_detailsField setTextColor:TGWorkshopMutedCreamColor()];
     [_statusField setTextColor:([_errorMessage length] > 0
-                                ? [NSColor colorWithCalibratedRed:0.78 green:0.16 blue:0.13 alpha:1.0]
+                                ? [NSColor colorWithCalibratedRed:1.0 green:0.71 blue:0.65 alpha:1.0]
                                 : TGWorkshopMutedCreamColor())];
     [_successImageView setImage:TGTemplateIconAssetImage(@"done-mini",
                                                          NSMakeSize(18.0, 18.0),

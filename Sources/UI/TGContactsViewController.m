@@ -10,6 +10,7 @@
 #import "TGStatusViewCells.h"
 #import "TGStatusViewComponents.h"
 #import "TGTheme.h"
+#import "TGThemeContrast.h"
 
 static NSString *TGContactsSubtitle(NSDictionary *contact) {
     NSString *username = [contact objectForKey:@"username"];
@@ -43,8 +44,9 @@ static NSString *TGContactsSubtitle(NSDictionary *contact) {
 
     BOOL highlighted = [self isHighlighted];
     BOOL flipped = [controlView isFlipped];
-    NSColor *ink = highlighted ? [NSColor whiteColor] : TGClassicCardInkColor();
-    NSColor *muted = highlighted ? [NSColor colorWithCalibratedWhite:1.0 alpha:0.80] : TGClassicCardMutedInkColor();
+    if (highlighted) { [TGClassicSelectedRowColor() set]; NSRectFill(cellFrame); }
+    NSColor *ink = highlighted ? TGClassicSelectedRowTextColor() : TGClassicCardInkColor();
+    NSColor *muted = highlighted ? TGClassicSelectedRowTextColor() : TGClassicCardMutedInkColor();
     NSRect avatarRect = NSMakeRect(NSMinX(cellFrame) + 10.0,
                                    NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 34.0) / 2.0),
                                    34.0,
@@ -163,7 +165,7 @@ static NSString *TGContactsSubtitle(NSDictionary *contact) {
 
     self.titleField = [self labelWithFrame:NSMakeRect(72, 520, 576, 24)
                                       font:[NSFont boldSystemFontOfSize:15.0]
-                                     color:TGClassicNavigationTextColor(1.0)];
+                                     color:TGClassicHeaderTextColor(1.0)];
     [self.titleField setAlignment:NSCenterTextAlignment];
     [self.titleField setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
     [root addSubview:self.titleField];
@@ -220,7 +222,7 @@ static NSString *TGContactsSubtitle(NSDictionary *contact) {
 
     self.statusField = [self labelWithFrame:NSMakeRect(18, 18, 450, 22)
                                       font:[NSFont systemFontOfSize:12.0]
-                                     color:TGClassicMutedInkColor()];
+                                     color:TGThemeSurfaceInkColor(TGClassicMutedInkColor(), TGThemeSurfacePanel, 4.5)];
     [self.statusField setAutoresizingMask:(NSViewWidthSizable | NSViewMaxYMargin)];
     [root addSubview:self.statusField];
 
@@ -384,8 +386,8 @@ static NSString *TGContactsSubtitle(NSDictionary *contact) {
 }
 
 - (void)refreshThemeAppearance {
-    [self.titleField setTextColor:TGClassicNavigationTextColor(1.0)];
-    [self.statusField setTextColor:TGClassicMutedInkColor()];
+    [self.titleField setTextColor:TGClassicHeaderTextColor(1.0)];
+    [self.statusField setTextColor:TGThemeSurfaceInkColor(TGClassicMutedInkColor(), TGThemeSurfacePanel, 4.5)];
     [self.profileView refreshThemeAppearance];
     [self.listCardView setNeedsDisplay:YES];
     [self.openButton setNeedsDisplay:YES];
@@ -428,7 +430,7 @@ static NSString *TGContactsSubtitle(NSDictionary *contact) {
     [self.profilesByUserID removeAllObjects];
     NSUInteger generation = self.requestGeneration;
     [self setLoading:YES];
-    [self.statusField setTextColor:TGClassicMutedInkColor()];
+    [self.statusField setTextColor:TGThemeSurfaceInkColor(TGClassicMutedInkColor(), TGThemeSurfacePanel, 4.5)];
     [self.statusField setStringValue:TGLoc(@"contacts.loading")];
     TGTDLibClient *client = [self.client retain];
     TGContactsViewController *controller = [self retain];
@@ -452,13 +454,13 @@ static NSString *TGContactsSubtitle(NSDictionary *contact) {
                     [controller.tableView reloadData];
                     if (contactsErrorCode == 201 && controller.authorizationRetryCount < 3) {
                         controller.authorizationRetryCount++;
-                        [controller.statusField setTextColor:TGClassicMutedInkColor()];
+                        [controller.statusField setTextColor:TGThemeSurfaceInkColor(TGClassicMutedInkColor(), TGThemeSurfacePanel, 4.5)];
                         [controller.statusField setStringValue:TGLoc(@"contacts.authWaiting")];
                         [controller performSelector:@selector(retryContactsAfterAuthorizationDelay)
                                          withObject:nil
                                          afterDelay:0.8];
                     } else {
-                        [controller.statusField setTextColor:[NSColor colorWithCalibratedRed:0.63 green:0.12 blue:0.10 alpha:1.0]];
+                        [controller.statusField setTextColor:TGThemeSurfaceInkColor([NSColor colorWithCalibratedRed:0.63 green:0.12 blue:0.10 alpha:1.0], TGThemeSurfacePanel, 4.5)];
                         [controller.statusField setStringValue:([errorMessage length] > 0 &&
                                                                 contactsErrorCode != 201
                                                                     ? errorMessage
@@ -701,12 +703,12 @@ static NSString *TGContactsSubtitle(NSDictionary *contact) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [controller setLoading:NO];
             if (added) {
-                [controller.statusField setTextColor:TGClassicMutedInkColor()];
+                [controller.statusField setTextColor:TGThemeSurfaceInkColor(TGClassicMutedInkColor(), TGThemeSurfacePanel, 4.5)];
                 [controller.statusField setStringValue:TGLoc(@"contacts.add.saved")];
                 controller.loaded = NO;
                 [controller refreshContacts:nil];
             } else {
-                [controller.statusField setTextColor:[NSColor colorWithCalibratedRed:0.63 green:0.12 blue:0.10 alpha:1.0]];
+                [controller.statusField setTextColor:TGThemeSurfaceInkColor([NSColor colorWithCalibratedRed:0.63 green:0.12 blue:0.10 alpha:1.0], TGThemeSurfacePanel, 4.5)];
                 [controller.statusField setStringValue:([errorMessage length] > 0 ? errorMessage : TGLoc(@"contacts.add.failed"))];
             }
             [errorMessage release];
@@ -804,12 +806,12 @@ static NSString *TGContactsSubtitle(NSDictionary *contact) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [controller setLoading:NO];
             if (removed) {
-                [controller.statusField setTextColor:TGClassicMutedInkColor()];
+                [controller.statusField setTextColor:TGThemeSurfaceInkColor(TGClassicMutedInkColor(), TGThemeSurfacePanel, 4.5)];
                 [controller.statusField setStringValue:TGLoc(@"contacts.remove.removed")];
                 controller.loaded = NO;
                 [controller refreshContacts:nil];
             } else {
-                [controller.statusField setTextColor:[NSColor colorWithCalibratedRed:0.63 green:0.12 blue:0.10 alpha:1.0]];
+                [controller.statusField setTextColor:TGThemeSurfaceInkColor([NSColor colorWithCalibratedRed:0.63 green:0.12 blue:0.10 alpha:1.0], TGThemeSurfacePanel, 4.5)];
                 [controller.statusField setStringValue:([errorMessage length] > 0 ? errorMessage : TGLoc(@"contacts.remove.failed"))];
             }
             [errorMessage release];
@@ -845,7 +847,7 @@ static NSString *TGContactsSubtitle(NSDictionary *contact) {
                 [controller.statusField setStringValue:TGLoc(@"contacts.opened")];
                 [controller.delegate contactsViewController:controller didOpenChatID:chatID title:title];
             } else {
-                [controller.statusField setTextColor:[NSColor colorWithCalibratedRed:0.63 green:0.12 blue:0.10 alpha:1.0]];
+                [controller.statusField setTextColor:TGThemeSurfaceInkColor([NSColor colorWithCalibratedRed:0.63 green:0.12 blue:0.10 alpha:1.0], TGThemeSurfacePanel, 4.5)];
                 [controller.statusField setStringValue:([errorMessage length] > 0 ? errorMessage : TGLoc(@"contacts.error"))];
             }
             [chatID release];

@@ -6,6 +6,7 @@
 #import "TGStatusViewComponents.h"
 #import "TGStatusViewCells.h"
 #import "TGTheme.h"
+#import "TGThemeTextField.h"
 
 @interface TGNotificationSettingsWindowController () <NSTableViewDataSource, NSTableViewDelegate>
 @property (nonatomic, retain) TGTDLibClient *client;
@@ -53,11 +54,14 @@
         [[self window] setMaxSize:NSMakeSize(860.0, 680.0)];
         [[self window] setReleasedWhenClosed:NO];
         [self buildViews];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(refreshPreviewTheme:)
+            name:NSUserDefaultsDidChangeNotification object:nil];
     }
     return self;
 }
 
 - (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
     [_client release];
     [_tableView release];
     [_statusField release];
@@ -74,14 +78,16 @@
 
 - (NSTextField *)labelWithFrame:(NSRect)frame
                            font:(NSFont *)font
-                          color:(NSColor *)color {
-    NSTextField *field = [[[NSTextField alloc] initWithFrame:frame] autorelease];
+                          surface:(TGThemeSurfaceRole)surface detail:(BOOL)detail {
+    NSTextField *field = [[[TGThemeTextField alloc] initWithFrame:frame] autorelease];
     [field setEditable:NO];
     [field setSelectable:NO];
     [field setBezeled:NO];
     [field setDrawsBackground:NO];
     [field setFont:font];
-    [field setTextColor:color];
+    [(TGThemeTextField *)field setThemeSurface:surface];
+    [(TGThemeTextField *)field setDetailInk:detail];
+    [(TGThemeTextField *)field refreshThemeInk];
     [[field cell] setLineBreakMode:NSLineBreakByTruncatingTail];
     return field;
 }
@@ -93,14 +99,14 @@
 
     NSTextField *title = [self labelWithFrame:NSMakeRect(24, 452, 470, 26)
                                          font:[NSFont boldSystemFontOfSize:20.0]
-                                        color:TGClassicHeaderTextColor(1.0)];
+                                        surface:TGThemeSurfaceWindow detail:YES];
     [title setStringValue:TGLoc(@"notifications.exceptions.title")];
     [title setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
     [root addSubview:title];
 
     NSTextField *subtitle = [self labelWithFrame:NSMakeRect(24, 432, 560, 18)
                                             font:[NSFont systemFontOfSize:11.0]
-                                           color:TGClassicHeaderTextColor(0.82)];
+                                           surface:TGThemeSurfaceWindow detail:YES];
     [subtitle setStringValue:TGLoc(@"notifications.exceptions.help")];
     [subtitle setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
     [root addSubview:subtitle];
@@ -137,7 +143,7 @@
 
     self.statusField = [self labelWithFrame:NSMakeRect(32, 68, 246, 16)
                                        font:[NSFont systemFontOfSize:10.0]
-                                      color:TGClassicCardMutedInkColor()];
+                                      surface:TGThemeSurfaceCard detail:YES];
     [self.statusField setStringValue:TGLoc(@"notifications.exceptions.loading")];
     [self.statusField setAutoresizingMask:NSViewMaxYMargin];
     [root addSubview:self.statusField];
@@ -154,14 +160,14 @@
 
     self.selectionField = [self labelWithFrame:NSMakeRect(324, 362, 294, 30)
                                           font:[NSFont boldSystemFontOfSize:14.0]
-                                         color:TGClassicCardInkColor()];
+                                         surface:TGThemeSurfaceCard detail:NO];
     [self.selectionField setStringValue:TGLoc(@"notifications.exceptions.select")];
     [self.selectionField setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
     [root addSubview:self.selectionField];
 
     NSTextField *muteLabel = [self labelWithFrame:NSMakeRect(324, 314, 130, 20)
                                              font:[NSFont systemFontOfSize:12.0]
-                                            color:TGClassicCardInkColor()];
+                                            surface:TGThemeSurfaceCard detail:NO];
     [muteLabel setStringValue:TGLoc(@"notifications.exceptions.mute")];
     [muteLabel setAutoresizingMask:NSViewMinYMargin];
     [root addSubview:muteLabel];
@@ -184,7 +190,7 @@
 
     NSTextField *hint = [self labelWithFrame:NSMakeRect(324, 172, 292, 78)
                                         font:[NSFont systemFontOfSize:11.0]
-                                       color:TGClassicCardMutedInkColor()];
+                                       surface:TGThemeSurfaceCard detail:YES];
     [hint setStringValue:TGLoc(@"notifications.exceptions.editorHelp")];
     [[hint cell] setWraps:YES];
     [[hint cell] setLineBreakMode:NSLineBreakByWordWrapping];
@@ -252,7 +258,10 @@
     [self updateEditorAvailability];
 }
 
+#include "TGNotificationSettingsWindowController+Theme.inc"
+
 - (void)updateEditorAvailability {
+    [self refreshPreviewTheme:nil];
     BOOL enabled = (!self.loading && [self selectedSummary] != nil);
     [self.mutePopUpButton setEnabled:enabled];
     [self.previewButton setEnabled:enabled];

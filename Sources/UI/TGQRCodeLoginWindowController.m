@@ -5,6 +5,7 @@
 #import "TGStatusViewCells.h"
 #import "TGStatusViewComponents.h"
 #import "TGTheme.h"
+#import "TGThemeTextField.h"
 #import "../Core/TGTDLibClient.h"
 
 @interface TGQRCodeLoginBackgroundView : NSView
@@ -36,7 +37,7 @@
 @synthesize delegate = _delegate;
 
 static NSTextField *TGQRCodeLoginLabel(NSString *text, NSRect frame, NSFont *font) {
-    NSTextField *label = [[[NSTextField alloc] initWithFrame:frame] autorelease];
+    TGThemeTextField *label = [[[TGThemeTextField alloc] initWithFrame:frame] autorelease];
     [label setEditable:NO];
     [label setSelectable:NO];
     [label setBordered:NO];
@@ -65,13 +66,13 @@ static NSTextField *TGQRCodeLoginLabel(NSString *text, NSRect frame, NSFont *fon
         NSTextField *title = TGQRCodeLoginLabel(TGLoc(@"login.qr.title"),
                                                NSMakeRect(28.0, 474.0, 424.0, 28.0),
                                                [NSFont boldSystemFontOfSize:20.0]);
-        [title setTextColor:TGClassicHeaderTextColor(1.0)];
+        [(TGThemeTextField *)title setThemeSurface:TGThemeSurfaceWindow];
         [contentView addSubview:title];
 
         NSTextField *hint = TGQRCodeLoginLabel(TGLoc(@"login.qr.hint"),
                                               NSMakeRect(42.0, 416.0, 396.0, 48.0),
                                               [NSFont systemFontOfSize:12.0]);
-        [hint setTextColor:TGClassicHeaderDetailTextColor(1.0)];
+        [(TGThemeTextField *)hint setThemeSurface:TGThemeSurfaceWindow];
         [[hint cell] setLineBreakMode:NSLineBreakByWordWrapping];
         [contentView addSubview:hint];
 
@@ -90,7 +91,9 @@ static NSTextField *TGQRCodeLoginLabel(NSString *text, NSRect frame, NSFont *fon
         _statusField = [TGQRCodeLoginLabel(TGLoc(@"login.qr.loading"),
                                           NSMakeRect(70.0, 58.0, 340.0, 26.0),
                                           [NSFont systemFontOfSize:12.0]) retain];
-        [_statusField setTextColor:TGClassicCardMutedInkColor()];
+        [(TGThemeTextField *)_statusField setErrorInk:NO];
+        [(TGThemeTextField *)_statusField setDetailInk:YES];
+        [(TGThemeTextField *)_statusField refreshThemeInk];
         [[_statusField cell] setLineBreakMode:NSLineBreakByTruncatingTail];
         [contentView addSubview:_statusField];
 
@@ -151,14 +154,17 @@ static NSTextField *TGQRCodeLoginLabel(NSString *text, NSRect frame, NSFont *fon
 
 - (void)showError:(NSString *)message {
     [_qrImageView setImage:nil];
-    [_statusField setTextColor:[NSColor colorWithCalibratedRed:0.72 green:0.12 blue:0.10 alpha:1.0]];
+    [(TGThemeTextField *)_statusField setErrorInk:YES];
+    [(TGThemeTextField *)_statusField refreshThemeInk];
     [_statusField setStringValue:message ? message : TGLoc(@"login.qr.failed")];
 }
 
 - (void)refreshQRCodeFromClient {
     NSString *link = [_client currentAuthenticationQRCodeLink];
     if ([link length] > 0) {
-        [_statusField setTextColor:TGClassicCardMutedInkColor()];
+        [(TGThemeTextField *)_statusField setErrorInk:NO];
+        [(TGThemeTextField *)_statusField setDetailInk:YES];
+        [(TGThemeTextField *)_statusField refreshThemeInk];
         [self showQRCodeLink:link];
     }
 }

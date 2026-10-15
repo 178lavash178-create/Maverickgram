@@ -1,5 +1,6 @@
 #import "TGMessageFooterAppearance.h"
 #import "TGTheme.h"
+#import "TGThemeContrast.h"
 #import "TGChatDisplayPreferences.h"
 #import "../Core/TGMessageItem.h"
 #include <math.h>
@@ -62,14 +63,26 @@ NSColor *TGMessageMetadataInkColor(TGMessageItem *item, BOOL flipped) {
 
 NSColor *TGMessageDeliveryStatusInkColor(TGMessageItem *item, BOOL active, BOOL flipped) {
     if (active && ![item sending] && [item outgoingRead]) {
-        // Preserve the familiar pair. Read receipts use a restrained blue;
+        // Preserve the familiar pair. Read receipts use saturated blue;
         // both unread checks stay visibly neutral instead of fading into the bubble.
         CGFloat surface = TGMessageColorLuminance(TGMessageMetadataSurfaceColor(item, flipped));
-        NSColor *preferred = surface > 0.179 ? TGColorFromHex(0x164FB0) : TGColorFromHex(0x6DD2FF);
+        NSColor *preferred = surface > 0.179 ? TGColorFromHex(0x0033FF) : TGColorFromHex(0x00DFFF);
         return TGMessageCachedFooterInk(@"status-read", item, flipped, preferred, 4.5);
     }
     BOOL sent = ![item sending];
     NSColor *preferred = [NSColor colorWithCalibratedWhite:(sent ? (active ? 0.23 : 0.38) : 0.72) alpha:1.0];
     NSString *role = sent ? (active ? @"status-sent-primary" : @"status-sent-secondary") : @"status-pending";
     return TGMessageCachedFooterInk(role, item, flipped, preferred, sent ? 4.5 : 3.0);
+}
+
+NSColor *TGMessageContentBaseColor(TGMessageItem *item) {
+    if (TGChatMessagesAsBlocksEnabled()) { return TGMessageMetadataSurfaceColor(item, NO); }
+    return [item outgoing] ? TGClassicOutgoingBubbleBottomColor() : TGClassicIncomingBubbleBottomColor();
+}
+
+NSColor *TGMessageContentInkColor(TGMessageItem *item, NSColor *preferred) {
+    if (TGChatMessagesAsBlocksEnabled()) {
+        return TGThemeReadableInk(preferred, TGMessageContentBaseColor(item), 4.5);
+    }
+    return TGThemeSurfaceInkColor(preferred, [item outgoing] ? TGThemeSurfaceOutgoing : TGThemeSurfaceIncoming, 4.5);
 }

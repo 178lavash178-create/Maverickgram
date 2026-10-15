@@ -403,6 +403,31 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
     });
 }
 
+- (void)refreshAboutLinkAppearance {
+    NSArray *assets = [NSArray arrayWithObjects:@"instagram", @"github", @"telegram", nil];
+    NSUInteger index;
+    for (index=0; index<[assets count]; index++) {
+        NSButton *button = (NSButton *)[[self.aboutWindow contentView] viewWithTag:(5801+(NSInteger)index)];
+        if (![button isKindOfClass:[NSButton class]]) { continue; }
+        NSColor *ink = TGClassicCardLinkColor();
+        NSMutableAttributedString *title = [[[button attributedTitle] mutableCopy] autorelease];
+        [title addAttribute:NSForegroundColorAttributeName value:ink range:NSMakeRange(0,[title length])];
+        [button setAttributedTitle:title];
+        [button setImage:TGTemplateIconAssetImage([assets objectAtIndex:index], NSMakeSize(16,16), ink, 1.0)];
+        [button setNeedsDisplay:YES];
+    }
+}
+
+- (NSTextField *)utilityLabelWithFrame:(NSRect)frame text:(NSString *)text font:(NSFont *)font {
+    TGThemeTextField *field = [[[TGThemeTextField alloc] initWithFrame:frame] autorelease];
+    [field setStringValue:text ? text : @""];
+    [field setFont:font];
+    [field setDetailInk:([font pointSize] < 13.0)];
+    [field setEditable:NO]; [field setSelectable:NO];
+    [field setBordered:NO]; [field setDrawsBackground:NO];
+    return field;
+}
+
 - (void)showActiveSessionsWindow:(id)sender {
     (void)sender;
     if (!self.activeSessionsWindow) {
@@ -422,10 +447,10 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
         [panelView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
         [contentView addSubview:panelView];
 
-        NSTextField *statusField = [self labelWithFrame:NSMakeRect(24, 438, 440, 20)
+        NSTextField *statusField = [self utilityLabelWithFrame:NSMakeRect(24, 438, 440, 20)
                                                     text:TGLoc(@"settings.sessions.loading")
                                                     font:[NSFont systemFontOfSize:12.0]];
-        [self applyMutedLabelStyle:statusField];
+        [(TGThemeTextField *)statusField setThemeSurface:TGThemeSurfaceWindow];
         [statusField setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
         [contentView addSubview:statusField];
         self.activeSessionsStatusField = statusField;
@@ -664,13 +689,14 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
         [cardView setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
         [contentView addSubview:cardView];
 
-        NSTextField *titleField = [self labelWithFrame:NSMakeRect(34, 214, 220, 22)
+        NSTextField *titleField = [self utilityLabelWithFrame:NSMakeRect(34, 214, 220, 22)
                                                   text:@"Appearance"
                                                   font:[NSFont boldSystemFontOfSize:14.0]];
+        [(TGThemeTextField *)titleField setThemeSurface:TGThemeSurfaceWindow];
         [titleField setAutoresizingMask:NSViewMinYMargin];
         [contentView addSubview:titleField];
 
-        NSTextField *themeLabel = [self labelWithFrame:NSMakeRect(54, 142, 86, 22)
+        NSTextField *themeLabel = [self utilityLabelWithFrame:NSMakeRect(54, 142, 86, 22)
                                                   text:@"Theme"
                                                   font:[NSFont systemFontOfSize:13.0]];
         [contentView addSubview:themeLabel];
@@ -689,7 +715,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
         [contentView addSubview:themePopUpButton];
         self.appearanceThemePopUpButton = themePopUpButton;
 
-        NSTextField *hintField = [self labelWithFrame:NSMakeRect(54, 98, 370, 22)
+        NSTextField *hintField = [self utilityLabelWithFrame:NSMakeRect(54, 98, 370, 22)
                                                  text:@"Theme changes apply immediately."
                                                  font:[NSFont systemFontOfSize:12.0]];
         [self applyMutedLabelStyle:hintField];
@@ -765,9 +791,10 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
         [contentView addSubview:scrollView];
         self.logsWindowDetailsView = textView;
 
-        NSTextField *titleField = [self labelWithFrame:NSMakeRect(22, 414, 300, 20)
+        NSTextField *titleField = [self utilityLabelWithFrame:NSMakeRect(22, 414, 300, 20)
                                                   text:@"Diagnostic Logs"
                                                   font:[NSFont boldSystemFontOfSize:13.0]];
+        [(TGThemeTextField *)titleField setThemeSurface:TGThemeSurfaceWindow];
         [titleField setAutoresizingMask:NSViewMinYMargin];
         [contentView addSubview:titleField];
 
@@ -846,7 +873,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
         [iconView setAutoresizingMask:(NSViewMinXMargin | NSViewMaxXMargin | NSViewMinYMargin)];
         [contentView addSubview:iconView];
 
-        NSTextField *titleField = [self labelWithFrame:NSMakeRect(70, 302, 340, 30)
+        NSTextField *titleField = [self utilityLabelWithFrame:NSMakeRect(70, 302, 340, 30)
                                                   text:@"Telegraphica"
                                                   font:[NSFont boldSystemFontOfSize:22.0]];
         [titleField setAlignment:NSCenterTextAlignment];
@@ -856,7 +883,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
         NSString *version = [info objectForKey:@"CFBundleShortVersionString"];
         NSString *build = [info objectForKey:@"CFBundleVersion"];
         NSString *versionText = [NSString stringWithFormat:TGLoc(@"about.version"), version ? version : @"0.1.0", build ? build : @"0.1.0"];
-        NSTextField *versionField = [self labelWithFrame:NSMakeRect(70, 274, 340, 22)
+        NSTextField *versionField = [self utilityLabelWithFrame:NSMakeRect(70, 274, 340, 22)
                                                     text:versionText
                                                     font:[NSFont systemFontOfSize:12.0]];
         [versionField setAlignment:NSCenterTextAlignment];
@@ -864,7 +891,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
         [contentView addSubview:versionField];
 
         NSString *copyrightText = [NSString stringWithFormat:@"Copyright %@. %@", TGCurrentYearString(), TGLoc(@"about.rights")];
-        NSTextField *copyrightField = [self labelWithFrame:NSMakeRect(60, 246, 360, 22)
+        NSTextField *copyrightField = [self utilityLabelWithFrame:NSMakeRect(60, 246, 360, 22)
                                                       text:copyrightText
                                                       font:[NSFont systemFontOfSize:12.0]];
         [copyrightField setAlignment:NSCenterTextAlignment];
@@ -872,7 +899,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
         [self applyMutedLabelStyle:copyrightField];
         [contentView addSubview:copyrightField];
 
-        NSTextField *compatibilityField = [self labelWithFrame:NSMakeRect(55, 162, 370, 78)
+        NSTextField *compatibilityField = [self utilityLabelWithFrame:NSMakeRect(55, 162, 370, 78)
                                                           text:TGLoc(@"about.compatibility")
                                                           font:[NSFont systemFontOfSize:10.5]];
         [compatibilityField setAlignment:NSCenterTextAlignment];
@@ -883,12 +910,13 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
 
         NSDictionary *linkAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                         [NSFont systemFontOfSize:12.0], NSFontAttributeName,
-                                        TGClassicLinkColor(), NSForegroundColorAttributeName,
+                                        TGClassicCardLinkColor(), NSForegroundColorAttributeName,
                                         [NSNumber numberWithInteger:NSUnderlineStyleSingle], NSUnderlineStyleAttributeName,
                                         nil];
         NSButton *authorButton = [[[NSButton alloc] initWithFrame:NSMakeRect(70, 126, 340, 24)] autorelease];
         [authorButton setAttributedTitle:[[[NSAttributedString alloc] initWithString:TGLoc(@"about.author") attributes:linkAttributes] autorelease]];
-        [authorButton setImage:TGTemplateIconAssetImage(@"instagram", NSMakeSize(16.0, 16.0), TGClassicLinkColor(), 1.0)];
+        [authorButton setTag:5801];
+        [authorButton setImage:TGTemplateIconAssetImage(@"instagram", NSMakeSize(16.0, 16.0), TGClassicCardLinkColor(), 1.0)];
         [authorButton setImagePosition:NSImageLeft];
         [authorButton setBordered:NO];
         [authorButton setButtonType:NSMomentaryPushInButton];
@@ -900,7 +928,8 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
 
         NSButton *projectButton = [[[NSButton alloc] initWithFrame:NSMakeRect(70, 98, 340, 24)] autorelease];
         [projectButton setAttributedTitle:[[[NSAttributedString alloc] initWithString:TGLoc(@"about.project") attributes:linkAttributes] autorelease]];
-        [projectButton setImage:TGTemplateIconAssetImage(@"github", NSMakeSize(16.0, 16.0), TGClassicLinkColor(), 1.0)];
+        [projectButton setTag:5802];
+        [projectButton setImage:TGTemplateIconAssetImage(@"github", NSMakeSize(16.0, 16.0), TGClassicCardLinkColor(), 1.0)];
         [projectButton setImagePosition:NSImageLeft];
         [projectButton setBordered:NO];
         [projectButton setButtonType:NSMomentaryPushInButton];
@@ -912,7 +941,8 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
 
         NSButton *channelButton = [[[NSButton alloc] initWithFrame:NSMakeRect(70, 70, 340, 24)] autorelease];
         [channelButton setAttributedTitle:[[[NSAttributedString alloc] initWithString:TGLoc(@"about.channel") attributes:linkAttributes] autorelease]];
-        [channelButton setImage:TGTemplateIconAssetImage(@"telegram", NSMakeSize(16.0, 16.0), TGClassicLinkColor(), 1.0)];
+        [channelButton setTag:5803];
+        [channelButton setImage:TGTemplateIconAssetImage(@"telegram", NSMakeSize(16.0, 16.0), TGClassicCardLinkColor(), 1.0)];
         [channelButton setImagePosition:NSImageLeft];
         [channelButton setBordered:NO];
         [channelButton setButtonType:NSMomentaryPushInButton];

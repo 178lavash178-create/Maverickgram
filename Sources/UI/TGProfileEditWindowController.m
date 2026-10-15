@@ -2,6 +2,7 @@
 #import "TGStatusButtonCells.h"
 #import "TGStatusViewCells.h"
 #import "TGTheme.h"
+#import "TGThemeTextField.h"
 #import "TGLocalization.h"
 
 @interface TGProfileEditBackgroundView : NSView
@@ -34,28 +35,7 @@
 
 @synthesize delegate = _delegate;
 
-static NSTextField *TGProfileEditLabel(NSString *title, NSRect frame) {
-    NSTextField *label = [[[NSTextField alloc] initWithFrame:frame] autorelease];
-    [label setEditable:NO];
-    [label setSelectable:NO];
-    [label setBordered:NO];
-    [label setDrawsBackground:NO];
-    [label setFont:[NSFont systemFontOfSize:12.0]];
-    [label setTextColor:TGClassicMutedInkColor()];
-    [label setStringValue:title ? title : @""];
-    return label;
-}
-
-static NSTextField *TGProfileEditInput(NSRect frame) {
-    NSTextField *field = [[[NSTextField alloc] initWithFrame:frame] autorelease];
-    [field setFont:[NSFont systemFontOfSize:13.0]];
-    [field setTextColor:TGClassicInkColor()];
-    [field setBackgroundColor:[NSColor colorWithCalibratedWhite:1.0 alpha:0.94]];
-    [field setBezeled:YES];
-    [field setBezelStyle:NSTextFieldRoundedBezel];
-    [field setFocusRingType:NSFocusRingTypeNone];
-    return field;
-}
+#include "TGProfileEditWindowController+Fields.inc"
 
 static NSString *TGPreparedProfilePhotoPath(NSString *sourcePath, NSError **error) {
     NSImage *sourceImage = [[[NSImage alloc] initWithContentsOfFile:sourcePath] autorelease];
@@ -116,7 +96,9 @@ static NSString *TGPreparedProfilePhotoPath(NSString *sourcePath, NSError **erro
 
         NSTextField *titleField = TGProfileEditLabel(TGLoc(@"profile.edit.title"), NSMakeRect(28.0, 404.0, 414.0, 24.0));
         [titleField setFont:[NSFont boldSystemFontOfSize:18.0]];
-        [titleField setTextColor:TGClassicHeaderTextColor(1.0)];
+        [(TGThemeTextField *)titleField setThemeSurface:TGThemeSurfaceWindow];
+        [(TGThemeTextField *)titleField setDetailInk:NO];
+        [(TGThemeTextField *)titleField refreshThemeInk];
         [contentView addSubview:titleField];
 
         [contentView addSubview:TGProfileEditLabel(TGLoc(@"profile.edit.photo"), NSMakeRect(30.0, 363.0, 188.0, 18.0))];
@@ -147,7 +129,8 @@ static NSString *TGPreparedProfilePhotoPath(NSString *sourcePath, NSError **erro
         [contentView addSubview:_bioField];
 
         _errorField = [TGProfileEditLabel(@"", NSMakeRect(30.0, 65.0, 412.0, 20.0)) retain];
-        [_errorField setTextColor:[NSColor colorWithCalibratedRed:0.76 green:0.12 blue:0.10 alpha:1.0]];
+        [(TGThemeTextField *)_errorField setErrorInk:YES];
+        [(TGThemeTextField *)_errorField refreshThemeInk];
         [[_errorField cell] setLineBreakMode:NSLineBreakByTruncatingTail];
         [contentView addSubview:_errorField];
 

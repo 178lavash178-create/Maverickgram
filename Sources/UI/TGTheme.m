@@ -1,5 +1,6 @@
 #import "TGTheme.h"
 #import "TGVisualWorldThemeSpec.h"
+#import "TGThemeContrast.inc"
 
 NSString * const TGThemeDefaultsKey = @"TelegraphicaThemeIdentifier";
 NSString * const TGThemeIdentifierVKBlue = @"vk-blue";
@@ -499,42 +500,28 @@ TG_THEME_COLOR_FUNCTION(TGClassicWindowBottomColor, window)
 TG_THEME_COLOR_FUNCTION(TGClassicPanelBottomColor, panel)
 TG_THEME_COLOR_FUNCTION(TGClassicHeaderBottomColor, header)
 TG_THEME_COLOR_FUNCTION(TGClassicTablePaperColor, tablePaper)
-TG_THEME_COLOR_FUNCTION(TGClassicInkColor, ink)
-TG_THEME_COLOR_FUNCTION(TGClassicMutedInkColor, mutedInk)
+NSColor *TGClassicInkColor(void) { return TGThemeSurfaceInkColor(TGColorFromRGB(TGCurrentThemePalette().ink), TGThemeSurfaceTable, 4.5); }
+NSColor *TGClassicMutedInkColor(void) { return TGThemeSurfaceInkColor(TGColorFromRGB(TGCurrentThemePalette().mutedInk), TGThemeSurfaceTable, 4.5); }
 TG_THEME_COLOR_FUNCTION(TGClassicOutgoingBubbleBottomColor, outgoingBubble)
 TG_THEME_COLOR_FUNCTION(TGClassicIncomingBubbleBottomColor, incomingBubble)
 TG_THEME_COLOR_FUNCTION(TGClassicRailStrokeColor, railStroke)
 TG_THEME_COLOR_FUNCTION(TGClassicHeaderSeparatorColor, headerSeparator)
 TG_THEME_COLOR_FUNCTION(TGClassicPanelStrokeColor, panelStroke)
 TG_THEME_COLOR_FUNCTION(TGClassicSelectedRowColor, selectedRow)
-TG_THEME_COLOR_FUNCTION(TGClassicSelectedRowTextColor, selectedRowText)
+NSColor *TGClassicSelectedRowTextColor(void) { return TGThemeReadableInk(TGColorFromRGB(TGCurrentThemePalette().selectedRowText), TGClassicSelectedRowColor(), 4.7); }
 TG_THEME_COLOR_FUNCTION(TGClassicUnreadTextColor, unreadText)
 TG_THEME_COLOR_FUNCTION(TGClassicTableGridColor, tableGrid)
 TG_THEME_COLOR_FUNCTION(TGClassicTableHeaderColor, tableHeader)
-TG_THEME_COLOR_FUNCTION(TGClassicLinkColor, link)
+NSColor *TGClassicLinkColor(void) { return TGThemeSurfaceInkColor(TGColorFromRGB(TGCurrentThemePalette().link), TGThemeSurfaceTable, 4.5); }
 
 NSColor *TGClassicCardInkColor(void) {
-    if (TGThemeUsesDarkLayeredCards()) {
-        return TGClassicInkColor();
-    }
-    return [NSColor colorWithCalibratedWhite:0.08 alpha:1.0];
+    return TGThemeSurfaceInkColor(TGColorFromRGB(TGCurrentThemePalette().ink), TGThemeSurfaceCard, 4.5);
 }
-
 NSColor *TGClassicCardMutedInkColor(void) {
-    if (TGThemeIsFrutigerMetroDark()) {
-        return TGColorFromHex(0xffe5c7);
-    }
-    if (TGThemeUsesDarkLayeredCards()) {
-        return TGClassicMutedInkColor();
-    }
-    return [NSColor colorWithCalibratedWhite:0.36 alpha:1.0];
+    return TGThemeSurfaceInkColor(TGColorFromRGB(TGCurrentThemePalette().mutedInk), TGThemeSurfaceCard, 4.5);
 }
-
 NSColor *TGClassicCardLinkColor(void) {
-    if (TGThemeUsesDarkLayeredCards()) {
-        return TGClassicLinkColor();
-    }
-    return TGColorFromHex(0x2d5d96);
+    return TGThemeSurfaceInkColor(TGColorFromRGB(TGCurrentThemePalette().link), TGThemeSurfaceCard, 4.5);
 }
 
 #define TG_THEME_ALPHA_COLOR_FUNCTION(name, field) \
@@ -564,21 +551,12 @@ NSColor *TGClassicTimeTextColor(void) {
 }
 
 NSColor *TGClassicHeaderTextColor(CGFloat alpha) {
-    NSString *identifier = TGCurrentThemeIdentifier();
-    if ([identifier isEqualToString:TGThemeIdentifierCoralPlum]) {
-        TGThemePalette palette = TGCurrentThemePalette();
-        return TGColorFromRGBWithAlpha(palette.ink, alpha);
-    }
-    return [NSColor colorWithCalibratedWhite:0.99 alpha:alpha];
+    (void)alpha; // Important labels must not disappear through an opacity multiplier.
+    return TGThemeSurfaceInkColor(TGColorFromRGB(TGCurrentThemePalette().navigationText), TGThemeSurfaceHeader, 4.5);
 }
-
 NSColor *TGClassicHeaderDetailTextColor(CGFloat alpha) {
-    NSString *identifier = TGCurrentThemeIdentifier();
-    if ([identifier isEqualToString:TGThemeIdentifierCoralPlum]) {
-        TGThemePalette palette = TGCurrentThemePalette();
-        return TGColorFromRGBWithAlpha(palette.ink, alpha);
-    }
-    return [NSColor colorWithCalibratedWhite:0.94 alpha:alpha];
+    (void)alpha;
+    return TGThemeSurfaceInkColor(TGColorFromRGB(TGCurrentThemePalette().navigationMutedText), TGThemeSurfaceHeader, 4.5);
 }
 
 typedef enum {
@@ -971,7 +949,7 @@ static void TGThemeDrawInnerShadow(NSBezierPath *path, NSRect rect, CGFloat alph
     [NSGraphicsContext restoreGraphicsState];
 }
 
-void TGThemeDrawWindowBackgroundInRect(NSRect rect, BOOL flipped) {
+static void TGThemeDrawOriginalWindowBackground(NSRect rect, BOOL flipped) {
     (void)flipped;
     if (!TGThemeUsesLayeredMaterials()) {
         [TGClassicWindowBottomColor() set];
@@ -1037,7 +1015,7 @@ void TGThemeDrawWindowBackgroundInRect(NSRect rect, BOOL flipped) {
     TGThemeDrawPatternInClippedRect(rect, TGThemeIsFrutigerAero() ? TGThemeCurrentAeroPattern() : TGSkeuomorphicPatternCanvas, 0.35);
 }
 
-void TGThemeDrawPanelBackgroundInPath(NSBezierPath *path, NSRect rect, BOOL flipped) {
+static void TGThemeDrawOriginalPanel(NSBezierPath *path, NSRect rect, BOOL flipped) {
     (void)flipped;
     if (!TGThemeUsesLayeredMaterials()) {
         [TGClassicPanelBottomColor() set];
@@ -1093,7 +1071,7 @@ void TGThemeDrawPanelBackgroundInPath(NSBezierPath *path, NSRect rect, BOOL flip
     [NSGraphicsContext restoreGraphicsState];
 }
 
-void TGThemeDrawRailBackgroundInPath(NSBezierPath *path, NSRect rect, BOOL flipped) {
+static void TGThemeDrawOriginalRail(NSBezierPath *path, NSRect rect, BOOL flipped) {
     (void)flipped;
     if (!TGThemeUsesLayeredMaterials()) {
         [TGClassicWindowBottomColor() set];
@@ -1152,7 +1130,7 @@ void TGThemeDrawRailBackgroundInPath(NSBezierPath *path, NSRect rect, BOOL flipp
     [NSGraphicsContext restoreGraphicsState];
 }
 
-void TGThemeDrawHeaderBackgroundInRect(NSRect rect, BOOL flipped) {
+static void TGThemeDrawOriginalHeaderBackground(NSRect rect, BOOL flipped) {
     (void)flipped;
     if (!TGThemeUsesLayeredMaterials()) {
         [TGClassicHeaderBottomColor() set];
@@ -1206,7 +1184,7 @@ void TGThemeDrawHeaderBackgroundInRect(NSRect rect, BOOL flipped) {
     NSRectFillUsingOperation(NSMakeRect(NSMinX(rect), NSMinY(rect), NSWidth(rect), 1.0), NSCompositeSourceOver);
 }
 
-void TGThemeDrawRecessedBackgroundInPath(NSBezierPath *path, NSRect rect, BOOL flipped) {
+static void TGThemeDrawOriginalRecessed(NSBezierPath *path, NSRect rect, BOOL flipped) {
     (void)flipped;
     if (!TGThemeUsesLayeredMaterials()) {
         [TGClassicTablePaperColor() set];
@@ -1264,7 +1242,7 @@ void TGThemeDrawRecessedBackgroundInPath(NSBezierPath *path, NSRect rect, BOOL f
     [path stroke];
 }
 
-void TGThemeDrawGroupedCardInPath(NSBezierPath *path, NSRect rect, BOOL flipped) {
+static void TGThemeDrawOriginalCard(NSBezierPath *path, NSRect rect, BOOL flipped) {
     (void)flipped;
     if (!TGThemeUsesLayeredMaterials()) {
         [[NSColor colorWithCalibratedWhite:0.985 alpha:1.0] set];
@@ -1476,20 +1454,24 @@ static NSGradient *TGThemeMessageBubbleGradient(BOOL outgoing) {
     return gradient;
 }
 
+static NSColor *TGThemeSurfaceVeil(TGThemeSurfaceRole role);
+
 NSColor *TGThemeMessageBubbleFooterColor(BOOL outgoing, BOOL flipped) {
     if (!TGThemeUsesLayeredMaterials()) {
-        return outgoing ? TGClassicOutgoingBubbleBottomColor() : TGClassicIncomingBubbleBottomColor();
+        return TGThemeCompositeColor(TGThemeSurfaceVeil(outgoing ? TGThemeSurfaceOutgoing : TGThemeSurfaceIncoming),
+            outgoing ? TGClassicOutgoingBubbleBottomColor() : TGClassicIncomingBubbleBottomColor());
     }
     NSColor *color = [[TGThemeMessageBubbleGradient(outgoing) interpolatedColorAtLocation:(flipped ? 0.92 : 0.08)]
                       colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
     NSColor *paper = [TGClassicTablePaperColor() colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
     CGFloat alpha = [color alphaComponent];
-    return [NSColor colorWithCalibratedRed:[color redComponent] * alpha + [paper redComponent] * (1.0 - alpha)
+    NSColor *surface = [NSColor colorWithCalibratedRed:[color redComponent] * alpha + [paper redComponent] * (1.0 - alpha)
                                    green:[color greenComponent] * alpha + [paper greenComponent] * (1.0 - alpha)
                                     blue:[color blueComponent] * alpha + [paper blueComponent] * (1.0 - alpha) alpha:1.0];
+    return TGThemeCompositeColor(TGThemeSurfaceVeil(outgoing ? TGThemeSurfaceOutgoing : TGThemeSurfaceIncoming), surface);
 }
 
-void TGThemeDrawMessageBubbleInPath(NSBezierPath *path, NSRect rect, BOOL outgoing, BOOL flipped) {
+static void TGThemeDrawOriginalBubble(NSBezierPath *path, NSRect rect, BOOL outgoing, BOOL flipped) {
     (void)flipped;
     if (!TGThemeUsesLayeredMaterials()) {
         [(outgoing ? TGClassicOutgoingBubbleBottomColor() : TGClassicIncomingBubbleBottomColor()) set];
@@ -1510,3 +1492,5 @@ void TGThemeDrawMessageBubbleInPath(NSBezierPath *path, NSRect rect, BOOL outgoi
     [NSGraphicsContext restoreGraphicsState];
     TGThemeDrawInnerShadow(path, rect, 0.06);
 }
+
+#import "TGThemeSurfaceAppearance.inc"

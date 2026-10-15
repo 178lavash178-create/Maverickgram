@@ -10,6 +10,7 @@
 #import "TGStatusViewComponents.h"
 #import "TGStatusViewCells.h"
 #import "TGTheme.h"
+#import "TGThemeContrast.h"
 
 @interface TGLocationPickerWindowController ()
 @property (nonatomic, retain) TGTDLibClient *client;
@@ -147,11 +148,11 @@
     [root addSubview:[self labelWithFrame:NSMakeRect(24.0, height - 47.0, 592.0, 24.0)
                                      text:TGLoc(@"share.location.title")
                                      font:[NSFont boldSystemFontOfSize:20.0]
-                                    color:TGClassicHeaderTextColor(1.0)]];
+                                    color:TGThemeSurfaceInkColor(TGClassicHeaderTextColor(1.0), TGThemeSurfaceWindow, 4.5)]];
     [root addSubview:[self labelWithFrame:NSMakeRect(24.0, height - 68.0, 592.0, 18.0)
                                      text:TGLoc(@"share.location.pickerHint")
                                      font:[NSFont systemFontOfSize:11.0]
-                                    color:TGClassicHeaderDetailTextColor(0.9)]];
+                                    color:TGThemeSurfaceInkColor(TGClassicHeaderDetailTextColor(0.9), TGThemeSurfaceWindow, 4.5)]];
 
     TGUtilityPanelView *pickerCard = [[[TGUtilityPanelView alloc] initWithFrame:NSMakeRect(16.0, 24.0, 608.0, 442.0)] autorelease];
     [root addSubview:pickerCard];
@@ -165,7 +166,7 @@
     [root addSubview:[self labelWithFrame:NSMakeRect(194.0, height - 117.0, 410.0, 18.0)
                                      text:TGLoc(@"share.location.manualHint")
                                      font:[NSFont systemFontOfSize:11.0]
-                                    color:TGClassicCardMutedInkColor()]];
+                                    color:TGThemeSurfaceInkColor(TGClassicCardMutedInkColor(), TGThemeSurfacePanel, 4.5)]];
 
     TGGroupedCardView *mapCard = [[[TGGroupedCardView alloc] initWithFrame:NSMakeRect(24.0, 102.0, 592.0, 310.0)] autorelease];
     [root addSubview:mapCard];
@@ -198,7 +199,7 @@
     self.statusField = [self labelWithFrame:NSMakeRect(24.0, 78.0, 390.0, 18.0)
                                        text:TGLoc(@"share.location.ready")
                                        font:[NSFont systemFontOfSize:10.0]
-                                      color:TGClassicCardMutedInkColor()];
+                                      color:TGThemeSurfaceInkColor(TGClassicCardMutedInkColor(), TGThemeSurfacePanel, 4.5)];
     [root addSubview:self.statusField];
     self.spinner = [[[NSProgressIndicator alloc] initWithFrame:NSMakeRect(420.0, 78.0, 16.0, 16.0)] autorelease];
     [self.spinner setStyle:NSProgressIndicatorSpinningStyle];

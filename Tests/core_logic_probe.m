@@ -12,8 +12,10 @@
 #import "TGOutgoingMessageTextChunker.h"
 #import "TGResourcePolicy.h"
 #import "TGTheme.h"
+#import "TGThemeContrast.h"
 #import "TGVisualWorldThemeSpec.h"
 #include <math.h>
+#import <objc/runtime.h>
 
 NSString * const TGInlineMediaKindGIF = @"gif";
 NSString * const TGInlineMediaKindVideo = @"video";
@@ -94,6 +96,23 @@ NSImage *TGTemplateIconAssetImage(NSString *name, NSSize size, NSColor *color, C
     (void)alpha;
     return nil;
 }
+
+// Capture real renderer text attributes while leaving its painted backgrounds
+// unobscured for contrast sampling. Only enabled during the control audit.
+static NSMutableArray *TGControlTextTrace = nil;
+@interface NSString (TGContrastProbe)
+- (void)tgProbeDrawInRect:(NSRect)rect withAttributes:(NSDictionary *)attributes;
+@end
+@implementation NSString (TGContrastProbe)
+- (void)tgProbeDrawInRect:(NSRect)rect withAttributes:(NSDictionary *)attributes {
+    if (TGControlTextTrace) {
+        NSColor *ink = [attributes objectForKey:NSForegroundColorAttributeName];
+        if (ink) [TGControlTextTrace addObject:[NSDictionary dictionaryWithObjectsAndKeys:ink, @"ink", [NSValue valueWithRect:rect], @"rect", self, @"text", nil]];
+        return;
+    }
+    [self tgProbeDrawInRect:rect withAttributes:attributes];
+}
+@end
 
 static int TGProbeFailures = 0;
 
@@ -697,7 +716,7 @@ static void TGTestDeliveryStatusPresentation(void) {
                 CGFloat distance = MAX(MAX(fabs([read redComponent] - [sent redComponent]), fabs([read greenComponent] - [sent greenComponent])), fabs([read blueComponent] - [sent blueComponent]));
                 minimumChroma = MIN(minimumChroma, chroma);
                 minimumDistance = MIN(minimumDistance, distance);
-                TGAssertTrue(chroma >= 0.14 && distance >= 0.07, [NSString stringWithFormat:@"read and sent need distinct blue/neutral ink in %@", theme]);
+                TGAssertTrue(chroma >= 0.29 && distance >= 0.16, [NSString stringWithFormat:@"read and sent need distinct blue/neutral ink in %@", theme]);
                 TGAssertTrue(fabs([sent redComponent] - [sent blueComponent]) < 0.001, @"sent state remains neutral");
                 NSColor *surface = TGMessageMetadataSurfaceColor(item, flip);
                 CGFloat contrast = MIN(TGStatusProbeContrast(sent, surface), TGStatusProbeContrast(read, surface));
@@ -720,10 +739,11 @@ static void TGTestDeliveryStatusPresentation(void) {
                             TGAssertEqualObjects([asset objectForKey:@"name"], @"done-mini", @"status uses the existing approved asset");
                             NSRect rect = [[asset objectForKey:@"rect"] rectValue];
                             TGAssertTrue(NSMinX(rect) > NSMaxX(time) && NSMaxX(rect) <= NSMaxX(time) + 4.0 + width, @"checks remain inside reserved width at every font size");
+                            TGAssertTrue(NSWidth(rect) >= 14.0 && NSHeight(rect) >= 14.0, @"approved receipt asset needs enough raster area for visible hue");
                             if (state > 0) {
                                 NSColor *actual = [asset objectForKey:@"color"];
                                 TGAssertTrue(TGStatusProbeContrast(actual, surface) >= 4.5, @"both unread checks must remain visible against the bubble");
-                                if (state == 2) { TGAssertEqualObjects(actual, read, @"read checks use the same restrained blue"); }
+                                if (state == 2) { TGAssertEqualObjects(actual, read, @"read checks use the same saturated blue"); }
                             }
                         }
                     }
@@ -741,7 +761,7 @@ static void TGTestDeliveryStatusPresentation(void) {
                 NSColor *expected = TGMessageDeliveryStatusInkColor(item, YES, NO);
                 for (NSDictionary *asset in TGStatusAssetTrace) {
                     TGAssertTrue(TGStatusProbeContrast([asset objectForKey:@"color"], TGMessageMetadataSurfaceColor(item, NO)) >= 4.5, @"both inline checks remain readable in this mode");
-                    if (state != 0) { TGAssertEqualObjects([asset objectForKey:@"color"], expected, @"read inline receipt uses restrained blue"); }
+                    if (state != 0) { TGAssertEqualObjects([asset objectForKey:@"color"], expected, @"read inline receipt uses saturated blue"); }
                 }
                 [TGStatusAssetTrace removeAllObjects];
                 TGOutgoingStatusInlineAttributedStringForItem(item);
@@ -793,6 +813,12 @@ static void TGTestCompactMessageGeometry(void) {
                 NSRect body = TGMessageInlineTextRectForItem(item, bubble, [flip boolValue]);
                 NSRect time = TGMessageInlineTimeRectForItem(item, bubble, [flip boolValue]);
                 TGAssertTrue(NSContainsRect(bubble, body) && NSContainsRect(bubble, time), @"body and complete 12/24-hour time fit both coordinate orientations");
+                TGStatusAssetTrace = [[NSMutableArray alloc] init];
+                TGDrawOutgoingStatusDotsForItem(item, time, [flip boolValue]);
+                for (NSDictionary *asset in TGStatusAssetTrace) {
+                    TGAssertTrue(NSContainsRect(bubble, [[asset objectForKey:@"rect"] rectValue]), @"enlarged receipt checks fit the compact bubble in either orientation");
+                }
+                [TGStatusAssetTrace release]; TGStatusAssetTrace = nil;
                 TGAssertTrue(NSMaxX(body) + 7.9 <= NSMinX(time), @"text selection must exclude timestamp with a real gap");
                 TGAssertTrue(NSIntersectsRect(NSMakeRect(NSMinX(body), NSMinY(body), NSMaxX(time) - NSMinX(body), NSHeight(body)), time), @"time must share the body line");
                 CGFloat statusRight = NSMaxX(time) + (TGOutgoingStatusDotsWidthForItem(item) > 0.0 ? 5.0 + TGOutgoingStatusDotsWidthForItem(item) : 0.0);
@@ -1103,6 +1129,138 @@ static void TGTestReactionGeometry(void) {
     TGClearProbeDefaults();
 }
 
+static void TGTestMessageContentReadability(void) {
+    NSUInteger surfaces = 0;
+    CGFloat worst = 21.0;
+    for (NSString *theme in TGThemeIdentifiers()) {
+        TGSetActiveThemeIdentifier(theme);
+        for (NSNumber *outgoing in [NSArray arrayWithObjects:@NO, @YES, nil]) {
+            TGMessageItem *item = [[[TGMessageItem alloc] initWithChatID:@1 messageID:@2 date:@0 outgoing:[outgoing boolValue] preview:@"Body https://example.org explicit"] autorelease];
+            NSDictionary *entity = [NSDictionary dictionaryWithObjectsAndKeys:@25, @"offset", @8, @"length",
+                [NSDictionary dictionaryWithObjectsAndKeys:@"textEntityTypeTextUrl", @"@type", @"https://example.com", @"url", nil], @"type", nil];
+            [item setFormattedEntities:[NSArray arrayWithObject:entity]];
+            for (NSNumber *blocks in [NSArray arrayWithObjects:@NO, @YES, nil]) {
+                TGSetChatMessagesAsBlocksEnabled([blocks boolValue]);
+                NSAttributedString *body = TGAttributedMessageStringForItem(item, [item preview], nil);
+                TGAssertTrue([body attribute:NSLinkAttributeName atIndex:7 effectiveRange:NULL] != nil, @"autodetected link preserved after contrast adaptation");
+                TGAssertTrue([body attribute:NSLinkAttributeName atIndex:26 effectiveRange:NULL] != nil, @"explicit link preserved after contrast adaptation");
+                for (NSString *type in [NSArray arrayWithObjects:@"textEntityTypeCode", @"textEntityTypeSpoiler", @"textEntityTypeBlockQuote", nil]) {
+                    [item setFormattedEntities:[NSArray arrayWithObject:[NSDictionary dictionaryWithObjectsAndKeys:@0, @"offset", @4, @"length", [NSDictionary dictionaryWithObject:type forKey:@"@type"], @"type", nil]]];
+                    NSAttributedString *shaded = TGAttributedMessageStringForItem(item, [item preview], nil);
+                    NSColor *fill = [shaded attribute:NSBackgroundColorAttributeName atIndex:0 effectiveRange:NULL];
+                    if (!fill) {
+                        NSParagraphStyle *paragraph = [shaded attribute:NSParagraphStyleAttributeName atIndex:0 effectiveRange:NULL];
+                        fill = [[[paragraph textBlocks] objectAtIndex:0] backgroundColor];
+                    }
+                    NSColor *ink = [shaded attribute:NSForegroundColorAttributeName atIndex:0 effectiveRange:NULL];
+                    TGAssertTrue([fill alphaComponent] == 1.0 && TGThemeContrastRatio(ink, fill) >= 4.5, [NSString stringWithFormat:@"%@ %@ text readable against its own entity fill", theme, type]);
+                }
+                [item setFormattedEntities:[NSArray arrayWithObject:entity]];
+                for (NSNumber *flip in [NSArray arrayWithObjects:@NO, @YES, nil]) {
+                    NSBitmapImageRep *bitmap = [[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:96 pixelsHigh:48 bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSCalibratedRGBColorSpace bytesPerRow:0 bitsPerPixel:0] autorelease];
+                    [NSGraphicsContext saveGraphicsState];
+                    [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithBitmapImageRep:bitmap]];
+                    NSRect rect = NSMakeRect(0, 0, 96, 48);
+                    [TGClassicTablePaperColor() set]; NSRectFill(rect);
+                    if ([blocks boolValue]) {
+                        [[([outgoing boolValue] ? TGClassicOutgoingBubbleBottomColor() : TGClassicIncomingBubbleBottomColor()) colorWithAlphaComponent:([outgoing boolValue] ? 0.50 : 0.62)] set];
+                        NSRectFillUsingOperation(rect, NSCompositeSourceOver);
+                    } else {
+                        TGThemeDrawMessageBubbleInPath([NSBezierPath bezierPathWithRect:rect], rect, [outgoing boolValue], [flip boolValue]);
+                    }
+                    [NSGraphicsContext restoreGraphicsState];
+                    CGFloat minimum = 21.0;
+                    for (NSNumber *index in [NSArray arrayWithObjects:@0, @7, @26, nil]) {
+                        NSColor *ink = [body attribute:NSForegroundColorAttributeName atIndex:[index unsignedIntegerValue] effectiveRange:NULL];
+                        NSInteger x,y;
+                        for(y=5;y<43;y+=3) for(x=5;x<91;x+=3) {
+                            minimum = MIN(minimum, TGThemeContrastRatio(ink, [bitmap colorAtX:x y:y]));
+                        }
+                    }
+                    surfaces++; worst=MIN(worst, minimum);
+                    TGAssertTrue(minimum >= 4.45, [NSString stringWithFormat:@"body and both link types readable on actual %@ %@ %@ gradient (%.2f)", theme, outgoing, blocks, (double)minimum]);
+                }
+            }
+        }
+    }
+    TGClearProbeDefaults();
+    printf("Message body/link readability: %lu actual rendered surfaces, minimum %.2f:1.\n", (unsigned long)surfaces, (double)worst);
+}
+
+static void TGTestMessageControlReadability(void) {
+    Method draw = class_getInstanceMethod([NSString class], @selector(drawInRect:withAttributes:));
+    Method capture = class_getInstanceMethod([NSString class], @selector(tgProbeDrawInRect:withAttributes:));
+    method_exchangeImplementations(draw, capture);
+    TGControlTextTrace = [[NSMutableArray alloc] init];
+    TGStatusAssetTrace = [[NSMutableArray alloc] init];
+    NSUInteger checks = 0, icons = 0;
+    CGFloat worst = 21.0;
+    for (NSString *theme in TGThemeIdentifiers()) {
+        TGSetActiveThemeIdentifier(theme);
+        for (NSNumber *outgoing in [NSArray arrayWithObjects:@NO, @YES, nil]) {
+            TGMessageItem *item = [[[TGMessageItem alloc] initWithChatID:@1 messageID:@2 date:@0 outgoing:[outgoing boolValue] preview:@"Poll"] autorelease];
+            [item setContentType:@"messagePoll"]; [item setPollQuestion:@"Question"];
+            [item setPollMultipleChoice:YES]; [item setPollTotalVoterCount:@10];
+            [item setPendingPollOptionIndexes:[NSArray arrayWithObject:@0]];
+            [item setPollOptions:[NSArray arrayWithObjects:
+                [NSDictionary dictionaryWithObjectsAndKeys:@"First option", TGMessagePollOptionTextKey, @4, TGMessagePollOptionVoteCountKey, nil],
+                [NSDictionary dictionaryWithObjectsAndKeys:@"Second option", TGMessagePollOptionTextKey, @6, TGMessagePollOptionVoteCountKey, nil], nil]];
+            for (NSNumber *blocks in [NSArray arrayWithObjects:@NO, @YES, nil]) {
+                TGSetChatMessagesAsBlocksEnabled([blocks boolValue]);
+                for (NSString *kind in [NSArray arrayWithObjects:@"poll", @"document", @"playable", @"comments", @"preview", nil]) {
+                NSBitmapImageRep *bitmap = [[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:360 pixelsHigh:400 bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSCalibratedRGBColorSpace bytesPerRow:0 bitsPerPixel:0] autorelease];
+                [NSGraphicsContext saveGraphicsState];
+                [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithBitmapImageRep:bitmap]];
+                NSRect rect = NSMakeRect(12,12,330,370);
+                [TGMessageContentBaseColor(item) set]; NSRectFill(NSMakeRect(0,0,360,400));
+                if (![blocks boolValue]) TGThemeDrawMessageBubbleInPath([NSBezierPath bezierPathWithRect:rect],rect,[outgoing boolValue],NO);
+                [TGControlTextTrace removeAllObjects];
+                [TGStatusAssetTrace removeAllObjects];
+                if ([kind isEqualToString:@"poll"]) {
+                    TGDrawPollContentForItem(item, rect, [outgoing boolValue], NO);
+                } else if ([kind isEqualToString:@"document"]) {
+                    TGDrawDocumentContentForItem(item, rect, [outgoing boolValue], NO);
+                } else if ([kind isEqualToString:@"playable"]) {
+                    TGDrawPlayableMediaContentForItem(item, rect, NO);
+                } else if ([kind isEqualToString:@"comments"]) {
+                    [item setCanGetMessageThread:YES]; [item setMessageThreadReplyCount:@4];
+                    TGDrawMessageCommentBarForItem(item, rect, [outgoing boolValue], NO);
+                } else {
+                    [item setLinkPreviewInfo:[NSDictionary dictionaryWithObjectsAndKeys:@"https://example.org", @"url", @"Site", @"site_name", @"Title", @"title", @"Description", @"description", nil]];
+                    TGDrawLinkPreviewCardForItem(item, rect, [outgoing boolValue], NO);
+                }
+                [NSGraphicsContext restoreGraphicsState];
+                TGAssertTrue([TGControlTextTrace count] >= ([kind isEqualToString:@"poll"] ? 6 : 1), [NSString stringWithFormat:@"%@ renderer audit must capture its text", kind]);
+                for (NSDictionary *asset in TGStatusAssetTrace) {
+                    NSRect iconRect = [[asset objectForKey:@"rect"] rectValue];
+                    NSInteger x=(NSInteger)floor(NSMidX(iconRect)), y=399-(NSInteger)floor(NSMidY(iconRect));
+                    CGFloat ratio=TGThemeContrastRatio([asset objectForKey:@"color"], [bitmap colorAtX:x y:y]);
+                    TGAssertTrue(ratio >= 4.45, [NSString stringWithFormat:@"%@ %@ approved icon must contrast with its painted fill (%.2f)", theme, [asset objectForKey:@"name"], (double)ratio]);
+                    icons++;
+                }
+                for (NSDictionary *entry in TGControlTextTrace) {
+                    NSRect textRect = [[entry objectForKey:@"rect"] rectValue];
+                    NSColor *ink = [entry objectForKey:@"ink"];
+                    CGFloat minimum = 21.0;
+                    NSInteger x;
+                    for (x = ceil(NSMinX(textRect)+2); x < floor(NSMaxX(textRect)-2); x+=3) {
+                        NSInteger y = 399-(NSInteger)floor(NSMidY(textRect));
+                        if(x>=0 && x<360 && y>=0 && y<400) minimum=MIN(minimum,TGThemeContrastRatio(ink,[bitmap colorAtX:x y:y]));
+                    }
+                    checks++; worst=MIN(worst,minimum);
+                    TGAssertTrue(minimum >= 4.45, [NSString stringWithFormat:@"%@ %@ %@ must contrast with painted fill (%.2f)", theme, kind, [entry objectForKey:@"text"], (double)minimum]);
+                }
+                }
+            }
+        }
+    }
+    [TGControlTextTrace release]; TGControlTextTrace=nil;
+    [TGStatusAssetTrace release]; TGStatusAssetTrace=nil;
+    method_exchangeImplementations(draw, capture);
+    TGClearProbeDefaults();
+    printf("Message control renderer text contrast: %lu actual control samples and %lu approved icon colors, minimum %.2f:1.\n", (unsigned long)checks, (unsigned long)icons, (double)worst);
+}
+
 static void TGTestLocalization(void) {
     TGSetLanguageCode(@"ru");
     TGAssertEqualObjects(TGLanguageCode(), @"ru", @"Russian language should be saved");
@@ -1122,6 +1280,8 @@ int main(int argc, const char **argv) {
     TGClearProbeDefaults();
     TGTestThemes();
     TGTestDeliveryStatusPresentation();
+    TGTestMessageContentReadability();
+    TGTestMessageControlReadability();
     TGTestChatDisplayPreferences();
     TGTestResourcePolicy();
     TGTestMediaSupport();

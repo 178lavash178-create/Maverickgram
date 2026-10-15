@@ -6,6 +6,7 @@
 #import "TGStatusViewComponents.h"
 #import "TGStatusViewCells.h"
 #import "TGTheme.h"
+#import "TGThemeTextField.h"
 
 @interface TGChatAdministrationWindowController () <NSTableViewDataSource, NSTableViewDelegate>
 @property (nonatomic, retain) TGTDLibClient *client;
@@ -112,14 +113,16 @@
     [super dealloc];
 }
 
-- (NSTextField *)labelWithFrame:(NSRect)frame font:(NSFont *)font color:(NSColor *)color {
-    NSTextField *field = [[[NSTextField alloc] initWithFrame:frame] autorelease];
+- (NSTextField *)labelWithFrame:(NSRect)frame font:(NSFont *)font surface:(TGThemeSurfaceRole)surface detail:(BOOL)detail {
+    NSTextField *field = [[[TGThemeTextField alloc] initWithFrame:frame] autorelease];
     [field setEditable:NO];
     [field setSelectable:NO];
     [field setBezeled:NO];
     [field setDrawsBackground:NO];
     [field setFont:font];
-    [field setTextColor:color];
+    [(TGThemeTextField *)field setThemeSurface:surface];
+    [(TGThemeTextField *)field setDetailInk:detail];
+    [(TGThemeTextField *)field refreshThemeInk];
     [[field cell] setLineBreakMode:NSLineBreakByTruncatingTail];
     return field;
 }
@@ -158,7 +161,7 @@
     [[self window] setContentView:root];
     NSTextField *title = [self labelWithFrame:NSMakeRect(24, 602, 720, 28)
                                          font:[NSFont boldSystemFontOfSize:20.0]
-                                        color:TGClassicHeaderTextColor(1.0)];
+                                        surface:TGThemeSurfaceWindow detail:NO];
     [title setStringValue:[self.chatTitle length] > 0
         ? [NSString stringWithFormat:@"%@ — %@", TGLoc(@"admin.title"), self.chatTitle]
         : TGLoc(@"admin.title")];
@@ -177,7 +180,7 @@
     [root addSubview:linksCard];
     NSTextField *linksTitle = [self labelWithFrame:NSMakeRect(38, 554, 380, 18)
                                               font:[NSFont boldSystemFontOfSize:13.0]
-                                             color:TGClassicCardInkColor()];
+                                             surface:TGThemeSurfaceCard detail:NO];
     [linksTitle setStringValue:TGLoc(@"admin.inviteLinks")];
     [linksTitle setAutoresizingMask:NSViewMinYMargin];
     [root addSubview:linksTitle];
@@ -199,7 +202,7 @@
     [[self.memberLimitField cell] setPlaceholderString:TGLoc(@"admin.memberLimit")];
     [self.memberLimitField setAutoresizingMask:NSViewMinYMargin];
     [root addSubview:self.memberLimitField];
-    self.joinRequestButton = [[[NSButton alloc] initWithFrame:NSMakeRect(34, 362, 180, 22)] autorelease];
+    self.joinRequestButton = [[[TGThemeSwitchButton alloc] initWithFrame:NSMakeRect(34, 362, 180, 22)] autorelease];
     [self.joinRequestButton setButtonType:NSSwitchButton];
     [self.joinRequestButton setTitle:TGLoc(@"admin.requiresApproval")];
     [self.joinRequestButton setFont:[NSFont systemFontOfSize:11.0]];
@@ -230,7 +233,7 @@
     [root addSubview:requestsCard];
     NSTextField *requestsTitle = [self labelWithFrame:NSMakeRect(470, 554, 390, 18)
                                                  font:[NSFont boldSystemFontOfSize:13.0]
-                                                color:TGClassicCardInkColor()];
+                                                surface:TGThemeSurfaceCard detail:NO];
     [requestsTitle setStringValue:TGLoc(@"admin.joinRequests")];
     [requestsTitle setAutoresizingMask:(NSViewMinXMargin | NSViewMinYMargin)];
     [root addSubview:requestsTitle];
@@ -257,7 +260,7 @@
     [root addSubview:eventsCard];
     NSTextField *eventsTitle = [self labelWithFrame:NSMakeRect(38, 288, 300, 18)
                                                font:[NSFont boldSystemFontOfSize:13.0]
-                                              color:TGClassicCardInkColor()];
+                                              surface:TGThemeSurfaceCard detail:NO];
     [eventsTitle setStringValue:TGLoc(@"admin.eventLog")];
     [eventsTitle setAutoresizingMask:NSViewMinYMargin];
     [root addSubview:eventsTitle];
@@ -266,7 +269,7 @@
                                                        root:root];
     NSTextField *slowLabel = [self labelWithFrame:NSMakeRect(38, 70, 110, 18)
                                              font:[NSFont systemFontOfSize:11.0]
-                                            color:TGClassicCardInkColor()];
+                                            surface:TGThemeSurfaceCard detail:NO];
     [slowLabel setStringValue:TGLoc(@"admin.slowMode")];
     [slowLabel setAutoresizingMask:NSViewMaxYMargin];
     [root addSubview:slowLabel];
@@ -291,7 +294,7 @@
     [root addSubview:self.applySlowModeButton];
     self.statusField = [self labelWithFrame:NSMakeRect(474, 70, 360, 18)
                                        font:[NSFont systemFontOfSize:10.0]
-                                      color:TGClassicCardMutedInkColor()];
+                                      surface:TGThemeSurfaceCard detail:YES];
     [self.statusField setAlignment:NSRightTextAlignment];
     [self.statusField setAutoresizingMask:(NSViewWidthSizable | NSViewMaxYMargin)];
     [root addSubview:self.statusField];

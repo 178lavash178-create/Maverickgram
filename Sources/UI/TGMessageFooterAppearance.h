@@ -5,3 +5,6 @@
 NSColor *TGMessageMetadataSurfaceColor(TGMessageItem *item, BOOL flipped);
 NSColor *TGMessageMetadataInkColor(TGMessageItem *item, BOOL flipped);
 NSColor *TGMessageDeliveryStatusInkColor(TGMessageItem *item, BOOL active, BOOL flipped);
+
+NSColor *TGMessageContentBaseColor(TGMessageItem *item);
+NSColor *TGMessageContentInkColor(TGMessageItem *item, NSColor *preferred);

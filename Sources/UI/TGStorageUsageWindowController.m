@@ -13,6 +13,8 @@
 #import "TGLocalization.h"
 #import "TGStatusViewComponents.h"
 #import "TGTheme.h"
+#import "TGThemeTextField.h"
+#import "TGButtonAppearance.h"
 #import "TGTransparentSpinnerView.h"
 #include <math.h>
 
@@ -55,59 +57,7 @@ static NSColor *TGStorageRowSeparatorColor(void) {
 
 @end
 
-@interface TGStoragePrimaryButtonCell : NSButtonCell
-@end
-
-@implementation TGStoragePrimaryButtonCell
-
-- (void)drawWithFrame:(NSRect)cellFrame inView:(NSView *)controlView {
-    BOOL highlighted = [self isHighlighted];
-    BOOL enabled = [self isEnabled];
-    CGFloat alpha = enabled ? 1.0 : 0.48;
-    NSRect buttonRect = NSInsetRect(cellFrame, 0.5, 0.5);
-    NSBezierPath *path = [NSBezierPath bezierPathWithRoundedRect:buttonRect xRadius:10.0 yRadius:10.0];
-    TGThemeDrawEnamelButtonInPath(path, buttonRect, highlighted, NO, enabled, [controlView isFlipped]);
-
-    NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys:
-                                [NSFont boldSystemFontOfSize:14.0], NSFontAttributeName,
-                                TGClassicNavigationTextColor(alpha), NSForegroundColorAttributeName,
-                                nil];
-    NSString *title = [self title] ? [self title] : @"";
-    NSSize size = [title sizeWithAttributes:attributes];
-    NSRect titleRect = NSMakeRect(NSMidX(cellFrame) - (size.width / 2.0),
-                                  NSMidY(cellFrame) - (size.height / 2.0) - 1.0,
-                                  size.width,
-                                  size.height);
-    [title drawInRect:titleRect withAttributes:attributes];
-}
-
-@end
-
-@interface TGStorageRefreshButtonCell : NSButtonCell
-@end
-
-@implementation TGStorageRefreshButtonCell
-
-- (void)drawWithFrame:(NSRect)cellFrame inView:(NSView *)controlView {
-    BOOL highlighted = [self isHighlighted];
-    BOOL enabled = [self isEnabled];
-    CGFloat alpha = enabled ? 1.0 : 0.48;
-    NSRect buttonRect = NSInsetRect(cellFrame, 0.5, 0.5);
-    NSBezierPath *buttonPath = [NSBezierPath bezierPathWithRoundedRect:buttonRect xRadius:8.0 yRadius:8.0];
-    TGThemeDrawEnamelButtonInPath(buttonPath, buttonRect, highlighted, NO, enabled, [controlView isFlipped]);
-
-    NSRect iconRect = NSMakeRect(NSMidX(buttonRect) - 9.0,
-                                 NSMidY(buttonRect) - 9.0,
-                                 18.0,
-                                 18.0);
-    TGDrawTemplateIconAsset(@"refresh",
-                            iconRect,
-                            TGClassicNavigationTextColor(0.92 * alpha),
-                            1.0,
-                            [controlView isFlipped]);
-}
-
-@end
+#import "TGStorageButtonCells.inc"
 
 @interface TGStoragePieChartView : NSView
 
@@ -204,7 +154,7 @@ static NSColor *TGStorageRowSeparatorColor(void) {
     NSString *text = self.centerText ? self.centerText : @"";
     NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                 [NSFont boldSystemFontOfSize:22.0], NSFontAttributeName,
-                                TGClassicInkColor(), NSForegroundColorAttributeName,
+                                TGThemeReadableInk(TGClassicInkColor(),TGStorageSoftBackgroundColor(),4.5), NSForegroundColorAttributeName,
                                 nil];
     NSSize size = [text sizeWithAttributes:attributes];
     [text drawAtPoint:NSMakePoint(center.x - (size.width / 2.0),
@@ -355,14 +305,16 @@ static NSColor *TGStorageRowSeparatorColor(void) {
             nil];
 }
 
-- (NSTextField *)labelWithFrame:(NSRect)frame font:(NSFont *)font {
-    NSTextField *label = [[[NSTextField alloc] initWithFrame:frame] autorelease];
+- (NSTextField *)labelWithFrame:(NSRect)frame font:(NSFont *)font surface:(TGThemeSurfaceRole)surface detail:(BOOL)detail {
+    NSTextField *label = [[[TGThemeTextField alloc] initWithFrame:frame] autorelease];
     [label setBordered:NO];
     [label setEditable:NO];
     [label setSelectable:NO];
     [label setDrawsBackground:NO];
     [label setFont:font];
-    [label setTextColor:TGClassicInkColor()];
+    [(TGThemeTextField *)label setThemeSurface:surface];
+    [(TGThemeTextField *)label setDetailInk:detail];
+    [(TGThemeTextField *)label refreshThemeInk];
     return label;
 }
 
@@ -400,10 +352,9 @@ static NSColor *TGStorageRowSeparatorColor(void) {
     [contentView addSubview:panelView];
 
     self.titleField = [self labelWithFrame:NSMakeRect(34, 596, 572, 30)
-                                      font:[NSFont boldSystemFontOfSize:20.0]];
+                                      font:[NSFont boldSystemFontOfSize:20.0] surface:TGThemeSurfaceWindow detail:NO];
     [self.titleField setStringValue:TGLoc(@"storage.title")];
     [self.titleField setAlignment:NSCenterTextAlignment];
-    [self.titleField setTextColor:TGClassicHeaderTextColor(1.0)];
     [contentView addSubview:self.titleField];
 
     self.refreshButton = [[[NSButton alloc] initWithFrame:NSMakeRect(28, 590, 34, 32)] autorelease];
@@ -419,7 +370,7 @@ static NSColor *TGStorageRowSeparatorColor(void) {
     [contentView addSubview:self.chartView];
 
     self.subtitleField = [self labelWithFrame:NSMakeRect(54, 350, 532, 26)
-                                         font:[NSFont boldSystemFontOfSize:18.0]];
+                                         font:[NSFont boldSystemFontOfSize:18.0] surface:TGThemeSurfacePanel detail:NO];
     [self.subtitleField setStringValue:TGLoc(@"storage.loading")];
     [self.subtitleField setAlignment:NSCenterTextAlignment];
     [contentView addSubview:self.subtitleField];
@@ -449,9 +400,8 @@ static NSColor *TGStorageRowSeparatorColor(void) {
     [contentView addSubview:filterCard];
 
     NSTextField *typeLabel = [self labelWithFrame:NSMakeRect(18, 10, 102, 22)
-                                             font:[NSFont systemFontOfSize:12.0]];
+                                             font:[NSFont systemFontOfSize:12.0] surface:TGThemeSurfaceTable detail:YES];
     [typeLabel setStringValue:TGLoc(@"storage.type")];
-    [typeLabel setTextColor:TGClassicMutedInkColor()];
     [filterCard addSubview:typeLabel];
     self.typePopUpButton = [[[NSPopUpButton alloc] initWithFrame:NSMakeRect(118, 7, 396, 28) pullsDown:NO] autorelease];
     NSArray *typeRows = [NSArray arrayWithObjects:
@@ -469,9 +419,8 @@ static NSColor *TGStorageRowSeparatorColor(void) {
     [filterCard addSubview:self.typePopUpButton];
 
     NSTextField *scopeLabel = [self labelWithFrame:NSMakeRect(18, 42, 102, 22)
-                                              font:[NSFont systemFontOfSize:12.0]];
+                                              font:[NSFont systemFontOfSize:12.0] surface:TGThemeSurfaceTable detail:YES];
     [scopeLabel setStringValue:TGLoc(@"storage.scope")];
-    [scopeLabel setTextColor:TGClassicMutedInkColor()];
     [filterCard addSubview:scopeLabel];
     self.scopePopUpButton = [[[NSPopUpButton alloc] initWithFrame:NSMakeRect(118, 39, 396, 28) pullsDown:NO] autorelease];
     [filterCard addSubview:self.scopePopUpButton];
@@ -485,9 +434,8 @@ static NSColor *TGStorageRowSeparatorColor(void) {
     [contentView addSubview:self.clearButton];
 
     self.hintField = [self labelWithFrame:NSMakeRect(72, 22, 496, 34)
-                                     font:[NSFont systemFontOfSize:12.0]];
+                                     font:[NSFont systemFontOfSize:12.0] surface:TGThemeSurfaceWindow detail:YES];
     [[self.hintField cell] setLineBreakMode:NSLineBreakByWordWrapping];
-    [self.hintField setTextColor:TGClassicMutedInkColor()];
     [self.hintField setAlignment:NSCenterTextAlignment];
     [self.hintField setStringValue:TGLoc(@"storage.safeHint")];
     [contentView addSubview:self.hintField];

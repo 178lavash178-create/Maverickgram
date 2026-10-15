@@ -10,6 +10,7 @@
 #import "TGStatusViewCells.h"
 #import "TGStatusViewComponents.h"
 #import "TGTheme.h"
+#import "TGThemeContrast.h"
 
 @interface TGCallHistoryCell : NSTextFieldCell
 @property (nonatomic, retain) NSDictionary *callSummary;
@@ -119,7 +120,7 @@
                    [discardReason isEqualToString:@"callDiscardReasonDeclined"]);
     NSString *directionIcon = missed ? @"call-miss" : (outgoing ? @"call-out" : @"call-in");
     NSColor *directionColor = missed
-        ? [NSColor colorWithCalibratedRed:0.84 green:0.18 blue:0.18 alpha:1.0]
+        ? TGThemeSurfaceInkColor([NSColor colorWithCalibratedRed:0.84 green:0.18 blue:0.18 alpha:1.0], TGThemeSurfaceCard, 4.5)
         : TGClassicCardMutedInkColor();
     TGDrawTemplateIconAsset(directionIcon,
                             NSMakeRect(textX, NSMinY(cardRect) + 11.0, 13.0, 13.0),
@@ -626,7 +627,7 @@ objectValueForTableColumn:(NSTableColumn *)tableColumn
 }
 
 - (void)refreshThemeAppearance {
-    [self.titleField setTextColor:TGClassicNavigationTextColor(1.0)];
+    [self.titleField setTextColor:TGClassicHeaderTextColor(1.0)];
     [(NSTextField *)[self viewWithTag:601] setTextColor:TGClassicCardInkColor()];
     [(NSTextField *)[self viewWithTag:602] setTextColor:TGClassicCardInkColor()];
     [self.statusField setTextColor:TGClassicCardMutedInkColor()];

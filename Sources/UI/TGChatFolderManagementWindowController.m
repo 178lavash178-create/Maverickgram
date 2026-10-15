@@ -10,101 +10,12 @@
 #import "TGStatusViewComponents.h"
 #import "TGStatusViewCells.h"
 #import "TGTheme.h"
+#import "TGThemeContrast.h"
+#import "TGThemeTextField.h"
 
 static NSString * const TGChatFolderDragPasteboardType = @"com.telegraphica.chat-folder-row";
 
-@interface TGChatFolderListCell : TGRepresentedObjectCell
-@end
-
-@implementation TGChatFolderListCell
-
-- (void)drawInteriorWithFrame:(NSRect)cellFrame inView:(NSView *)controlView {
-    NSDictionary *folder = [[self representedObject] isKindOfClass:[NSDictionary class]]
-        ? [self representedObject]
-        : nil;
-    if (!folder) {
-        return;
-    }
-
-    BOOL highlighted = [self isHighlighted];
-    NSColor *titleColor = highlighted ? [NSColor whiteColor] : TGClassicCardInkColor();
-    NSColor *detailColor = highlighted
-        ? [NSColor colorWithCalibratedWhite:1.0 alpha:0.78]
-        : TGClassicCardMutedInkColor();
-    NSRect iconRect = NSMakeRect(NSMinX(cellFrame) + 8.0,
-                                 NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 18.0) / 2.0),
-                                 18.0,
-                                 18.0);
-    TGDrawTemplateIconAsset(@"folder", iconRect, titleColor, 0.92, [controlView isFlipped]);
-
-    CGFloat textX = NSMaxX(iconRect) + 8.0;
-    CGFloat textWidth = MAX(36.0, NSMaxX(cellFrame) - textX - 8.0);
-    BOOL shared = [[folder objectForKey:@"is_shareable"] boolValue];
-    NSDictionary *titleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
-                                     [NSFont boldSystemFontOfSize:12.0], NSFontAttributeName,
-                                     titleColor, NSForegroundColorAttributeName,
-                                     nil];
-    NSDictionary *detailAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
-                                      [NSFont systemFontOfSize:10.0], NSFontAttributeName,
-                                      detailColor, NSForegroundColorAttributeName,
-                                      nil];
-    NSString *title = [[folder objectForKey:@"title"] isKindOfClass:[NSString class]]
-        ? [folder objectForKey:@"title"]
-        : @"";
-    CGFloat titleY = shared ? NSMinY(cellFrame) + 5.0 : NSMinY(cellFrame) + 12.0;
-    [title drawInRect:NSMakeRect(textX, titleY, textWidth, 16.0)
-       withAttributes:titleAttributes];
-    if (shared) {
-        [TGLoc(@"folders.shared") drawInRect:NSMakeRect(textX,
-                                                        NSMinY(cellFrame) + 21.0,
-                                                        textWidth,
-                                                        13.0)
-                              withAttributes:detailAttributes];
-    }
-}
-
-@end
-
-@interface TGChatFolderChatCell : TGRepresentedObjectCell
-@end
-
-@implementation TGChatFolderChatCell
-
-- (void)drawInteriorWithFrame:(NSRect)cellFrame inView:(NSView *)controlView {
-    TGChatItem *item = [[self representedObject] isKindOfClass:[TGChatItem class]]
-        ? [self representedObject]
-        : nil;
-    if (!item) {
-        return;
-    }
-    BOOL highlighted = [self isHighlighted];
-    NSRect avatarRect = NSMakeRect(NSMinX(cellFrame) + 5.0,
-                                   NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 28.0) / 2.0),
-                                   28.0,
-                                   28.0);
-    TGDrawAvatarInRect([item avatarLocalPath],
-                       [item title],
-                       avatarRect,
-                       highlighted,
-                       [controlView isFlipped]);
-
-    CGFloat textX = NSMaxX(avatarRect) + 9.0;
-    CGFloat width = MAX(40.0, NSMaxX(cellFrame) - textX - 8.0);
-    NSDictionary *titleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
-                                     [NSFont boldSystemFontOfSize:12.0], NSFontAttributeName,
-                                     highlighted ? [NSColor whiteColor] : TGClassicCardInkColor(), NSForegroundColorAttributeName,
-                                     nil];
-    NSDictionary *detailAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
-                                      [NSFont systemFontOfSize:10.0], NSFontAttributeName,
-                                      highlighted ? [NSColor colorWithCalibratedWhite:1.0 alpha:0.78] : TGClassicCardMutedInkColor(), NSForegroundColorAttributeName,
-                                      nil];
-    [[item title] drawInRect:NSMakeRect(textX, NSMinY(cellFrame) + 4.0, width, 16.0)
-              withAttributes:titleAttributes];
-    [[item typeSummary] drawInRect:NSMakeRect(textX, NSMinY(cellFrame) + 20.0, width, 14.0)
-                    withAttributes:detailAttributes];
-}
-
-@end
+#include "TGChatFolderManagementWindowController+Cells.inc"
 
 @interface TGChatFolderManagementWindowController ()
 @property (nonatomic, retain) TGTDLibClient *client;
@@ -224,14 +135,16 @@ static NSString * const TGChatFolderDragPasteboardType = @"com.telegraphica.chat
     [super dealloc];
 }
 
-- (NSTextField *)labelWithFrame:(NSRect)frame font:(NSFont *)font color:(NSColor *)color {
-    NSTextField *label = [[[NSTextField alloc] initWithFrame:frame] autorelease];
+- (NSTextField *)labelWithFrame:(NSRect)frame font:(NSFont *)font surface:(TGThemeSurfaceRole)surface detail:(BOOL)detail {
+    NSTextField *label = [[[TGThemeTextField alloc] initWithFrame:frame] autorelease];
     [label setEditable:NO];
     [label setSelectable:NO];
     [label setBezeled:NO];
     [label setDrawsBackground:NO];
     [label setFont:font];
-    [label setTextColor:color];
+    [(TGThemeTextField *)label setThemeSurface:surface];
+    [(TGThemeTextField *)label setDetailInk:detail];
+    [(TGThemeTextField *)label refreshThemeInk];
     [[label cell] setLineBreakMode:NSLineBreakByTruncatingTail];
     return label;
 }
@@ -248,7 +161,7 @@ static NSString * const TGChatFolderDragPasteboardType = @"com.telegraphica.chat
 }
 
 - (NSButton *)checkButtonWithFrame:(NSRect)frame title:(NSString *)title {
-    NSButton *button = [[[NSButton alloc] initWithFrame:frame] autorelease];
+    NSButton *button = [[[TGThemeSwitchButton alloc] initWithFrame:frame] autorelease];
     [button setButtonType:NSSwitchButton];
     [button setTitle:title];
     [button setFont:[NSFont systemFontOfSize:11.0]];
@@ -266,14 +179,14 @@ static NSString * const TGChatFolderDragPasteboardType = @"com.telegraphica.chat
 
     NSTextField *title = [self labelWithFrame:NSMakeRect(24, 594, 430, 26)
                                          font:[NSFont boldSystemFontOfSize:20.0]
-                                        color:TGClassicHeaderTextColor(1.0)];
+                                        surface:TGThemeSurfaceWindow detail:YES];
     [title setStringValue:TGLoc(@"folders.manage.title")];
     [title setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
     [root addSubview:title];
 
     NSTextField *subtitle = [self labelWithFrame:NSMakeRect(24, 574, 500, 17)
                                             font:[NSFont systemFontOfSize:11.0]
-                                           color:TGClassicHeaderDetailTextColor(0.92)];
+                                           surface:TGThemeSurfaceWindow detail:YES];
     [subtitle setStringValue:TGLoc(@"folders.manage.subtitle")];
     [subtitle setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
     [root addSubview:subtitle];
@@ -319,7 +232,7 @@ static NSString * const TGChatFolderDragPasteboardType = @"com.telegraphica.chat
 
     NSTextField *folderLabel = [self labelWithFrame:NSMakeRect(32, 536, 180, 18)
                                                font:[NSFont boldSystemFontOfSize:12.0]
-                                              color:TGClassicCardInkColor()];
+                                              surface:TGThemeSurfaceCard detail:NO];
     [folderLabel setStringValue:TGLoc(@"folders.list")];
     [folderLabel setAutoresizingMask:NSViewMinYMargin];
     [root addSubview:folderLabel];
@@ -360,7 +273,7 @@ static NSString * const TGChatFolderDragPasteboardType = @"com.telegraphica.chat
 
     NSTextField *nameLabel = [self labelWithFrame:NSMakeRect(256, 526, 130, 18)
                                              font:[NSFont boldSystemFontOfSize:12.0]
-                                            color:TGClassicCardInkColor()];
+                                            surface:TGThemeSurfaceCard detail:NO];
     [nameLabel setStringValue:TGLoc(@"folders.name")];
     [nameLabel setAutoresizingMask:NSViewMinYMargin];
     [root addSubview:nameLabel];
@@ -373,7 +286,7 @@ static NSString * const TGChatFolderDragPasteboardType = @"com.telegraphica.chat
 
     NSTextField *includeLabel = [self labelWithFrame:NSMakeRect(256, 468, 220, 18)
                                                 font:[NSFont boldSystemFontOfSize:11.0]
-                                               color:TGClassicCardInkColor()];
+                                               surface:TGThemeSurfaceCard detail:NO];
     [includeLabel setStringValue:TGLoc(@"folders.include")];
     [includeLabel setAutoresizingMask:NSViewMinYMargin];
     [root addSubview:includeLabel];
@@ -399,7 +312,7 @@ static NSString * const TGChatFolderDragPasteboardType = @"com.telegraphica.chat
 
     NSTextField *excludeLabel = [self labelWithFrame:NSMakeRect(256, 396, 220, 18)
                                                 font:[NSFont boldSystemFontOfSize:11.0]
-                                               color:TGClassicCardInkColor()];
+                                               surface:TGThemeSurfaceCard detail:NO];
     [excludeLabel setStringValue:TGLoc(@"folders.exclude")];
     [excludeLabel setAutoresizingMask:NSViewMinYMargin];
     [root addSubview:excludeLabel];
@@ -417,7 +330,7 @@ static NSString * const TGChatFolderDragPasteboardType = @"com.telegraphica.chat
 
     NSTextField *chatLabel = [self labelWithFrame:NSMakeRect(256, 342, 230, 18)
                                              font:[NSFont boldSystemFontOfSize:11.0]
-                                            color:TGClassicCardInkColor()];
+                                            surface:TGThemeSurfaceCard detail:NO];
     [chatLabel setStringValue:TGLoc(@"folders.alwaysInclude")];
     [chatLabel setAutoresizingMask:NSViewMinYMargin];
     [root addSubview:chatLabel];
@@ -462,7 +375,7 @@ static NSString * const TGChatFolderDragPasteboardType = @"com.telegraphica.chat
 
     self.statusField = [self labelWithFrame:NSMakeRect(256, 76, 330, 18)
                                        font:[NSFont systemFontOfSize:11.0]
-                                      color:TGClassicHeaderDetailTextColor(0.92)];
+                                      surface:TGThemeSurfaceCard detail:YES];
     [self.statusField setStringValue:@""];
     [self.statusField setAutoresizingMask:(NSViewWidthSizable | NSViewMaxYMargin)];
     [root addSubview:self.statusField];

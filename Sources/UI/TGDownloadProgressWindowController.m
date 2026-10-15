@@ -2,6 +2,7 @@
 #import "../Services/TGDownloadManager.h"
 #import "TGLocalization.h"
 #import "TGTheme.h"
+#import "TGThemeContrast.h"
 
 NSRect TGDownloadProgressPanelFrame(NSRect mainFrame, NSRect visibleFrame, CGFloat panelHeight) {
     const CGFloat margin = 8.0;
@@ -251,10 +252,12 @@ BOOL TGDownloadProgressCanPerformAction(NSDictionary *record, NSString *action) 
     if (_invalidated) { return; }
     if ([_presentation updateWithRecords:[_manager itemsSnapshot]]) { _mayReserveSpace = YES; }
     [[self window] setTitle:TGLoc(@"downloads.title")];
-    [[self window] setBackgroundColor:TGClassicPanelBottomColor()];
-    [_nameField setTextColor:TGClassicInkColor()];
-    [_statusField setTextColor:TGClassicMutedInkColor()];
-    [_bytesField setTextColor:TGClassicMutedInkColor()];
+    NSColor *surface = TGClassicPanelBottomColor();
+    [[self window] setBackgroundColor:surface];
+    [_nameField setTextColor:TGThemeReadableInk(TGClassicInkColor(), surface, 4.5)];
+    NSColor *detailInk = TGThemeReadableInk(TGClassicMutedInkColor(), surface, 4.5);
+    [_statusField setTextColor:detailInk];
+    [_bytesField setTextColor:detailInk];
     [_downloadsButton setTitle:TGLoc(@"downloads.title")];
     NSDictionary *record = [_presentation displayedRecord];
     NSString *name = [record objectForKey:@"file_name"];

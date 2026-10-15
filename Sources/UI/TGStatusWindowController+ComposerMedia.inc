@@ -179,7 +179,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
                                               text:@"1 media"
                                               font:[NSFont boldSystemFontOfSize:16.0]];
     [titleField setAlignment:NSCenterTextAlignment];
-    [titleField setTextColor:TGClassicHeaderTextColor(1.0)];
+    [titleField setTextColor:TGThemeSurfaceInkColor(TGClassicHeaderTextColor(1.0), TGThemeSurfaceWindow, 4.5)];
     [contentView addSubview:titleField];
     self.photoSendTitleField = titleField;
 
@@ -2708,6 +2708,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     NSTextField *questionLabel = [self labelWithFrame:NSMakeRect(0, 262, 390, 18)
                                                  text:TGLoc(@"poll.create.question")
                                                  font:[NSFont systemFontOfSize:12.0]];
+    [questionLabel setTextColor:[NSColor controlTextColor]];
     [accessory addSubview:questionLabel];
     NSTextField *questionField = [[[NSTextField alloc] initWithFrame:NSMakeRect(0, 237, 390, 22)] autorelease];
     [questionField setStringValue:@""];
@@ -2716,6 +2717,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     NSTextField *optionsLabel = [self labelWithFrame:NSMakeRect(0, 212, 390, 18)
                                                 text:TGLoc(@"poll.create.options")
                                                 font:[NSFont systemFontOfSize:12.0]];
+    [optionsLabel setTextColor:[NSColor controlTextColor]];
     [accessory addSubview:optionsLabel];
     NSScrollView *optionsScroll = [[[NSScrollView alloc] initWithFrame:NSMakeRect(0, 132, 390, 78)] autorelease];
     [optionsScroll setHasVerticalScroller:YES];
@@ -2742,6 +2744,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     NSTextField *correctLabel = [self labelWithFrame:NSMakeRect(198, 82, 132, 18)
                                                 text:TGLoc(@"poll.create.correct")
                                                 font:[NSFont systemFontOfSize:11.0]];
+    [correctLabel setTextColor:[NSColor controlTextColor]];
     [accessory addSubview:correctLabel];
     NSTextField *correctField = [[[NSTextField alloc] initWithFrame:NSMakeRect(334, 79, 56, 22)] autorelease];
     [[correctField cell] setPlaceholderString:@"1"];
@@ -2749,6 +2752,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     NSTextField *explanationLabel = [self labelWithFrame:NSMakeRect(0, 56, 390, 18)
                                                     text:TGLoc(@"poll.create.explanation")
                                                     font:[NSFont systemFontOfSize:11.0]];
+    [explanationLabel setTextColor:[NSColor controlTextColor]];
     [accessory addSubview:explanationLabel];
     NSTextField *explanationField = [[[NSTextField alloc] initWithFrame:NSMakeRect(0, 30, 390, 22)] autorelease];
     [accessory addSubview:explanationField];

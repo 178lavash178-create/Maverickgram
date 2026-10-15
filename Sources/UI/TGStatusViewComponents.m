@@ -3,6 +3,7 @@
 #import "TGIconAssets.h"
 #import "TGMessageLayoutSupport.h"
 #import "TGTheme.h"
+#import "TGThemeContrast.h"
 #include <math.h>
 
 static CGFloat const TGPanelCornerRadius = 8.0;
@@ -65,7 +66,7 @@ static CGFloat const TGPanelCornerRadius = 8.0;
     NSRect bounds = NSInsetRect([self bounds], 2.0, 2.0);
     NSBezierPath *path = [NSBezierPath bezierPathWithRoundedRect:bounds xRadius:14.0 yRadius:14.0];
 
-    [[NSColor colorWithCalibratedWhite:1.0 alpha:0.94] set];
+    [[NSColor colorWithCalibratedWhite:1.0 alpha:1.0] set];
     [path fill];
 
     CGFloat dashPattern[2] = { 10.0, 7.0 };
@@ -78,12 +79,12 @@ static CGFloat const TGPanelCornerRadius = 8.0;
     [paragraph setAlignment:NSCenterTextAlignment];
     NSDictionary *titleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                      [NSFont boldSystemFontOfSize:17.0], NSFontAttributeName,
-                                     TGClassicNavigationSelectedStrokeColor(0.88), NSForegroundColorAttributeName,
+                                     TGThemeReadableInk(TGClassicNavigationSelectedStrokeColor(1.0), [NSColor whiteColor], 4.5), NSForegroundColorAttributeName,
                                      paragraph, NSParagraphStyleAttributeName,
                                      nil];
     NSDictionary *subtitleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                         [NSFont systemFontOfSize:12.0], NSFontAttributeName,
-                                        TGClassicMutedInkColor(), NSForegroundColorAttributeName,
+                                        TGThemeReadableInk(TGClassicMutedInkColor(), [NSColor whiteColor], 4.5), NSForegroundColorAttributeName,
                                         paragraph, NSParagraphStyleAttributeName,
                                         nil];
     NSString *title = @"Drop files here to send them";

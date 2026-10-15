@@ -7,6 +7,7 @@
 #import "TGStatusViewComponents.h"
 #import "TGStatusViewCells.h"
 #import "TGTheme.h"
+#import "TGThemeTextField.h"
 
 @interface TGBotInteractionWindowController () <NSTableViewDataSource, NSTableViewDelegate>
 @property (nonatomic, retain) TGTDLibClient *client;
@@ -97,14 +98,16 @@
     [super dealloc];
 }
 
-- (NSTextField *)labelWithFrame:(NSRect)frame font:(NSFont *)font color:(NSColor *)color {
-    NSTextField *field = [[[NSTextField alloc] initWithFrame:frame] autorelease];
+- (NSTextField *)labelWithFrame:(NSRect)frame font:(NSFont *)font surface:(TGThemeSurfaceRole)surface detail:(BOOL)detail {
+    NSTextField *field = [[[TGThemeTextField alloc] initWithFrame:frame] autorelease];
     [field setEditable:NO];
     [field setSelectable:NO];
     [field setBezeled:NO];
     [field setDrawsBackground:NO];
     [field setFont:font];
-    [field setTextColor:color];
+    [(TGThemeTextField *)field setThemeSurface:surface];
+    [(TGThemeTextField *)field setDetailInk:detail];
+    [(TGThemeTextField *)field refreshThemeInk];
     [[field cell] setLineBreakMode:NSLineBreakByTruncatingTail];
     return field;
 }
@@ -151,14 +154,14 @@
 
     self.titleField = [self labelWithFrame:NSMakeRect(24, 552, 672, 26)
                                       font:[NSFont boldSystemFontOfSize:20.0]
-                                     color:TGClassicHeaderTextColor(1.0)];
+                                     surface:TGThemeSurfaceWindow detail:NO];
     [self.titleField setStringValue:TGLoc(@"bot.window.title")];
     [self.titleField setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
     [root addSubview:self.titleField];
 
     self.descriptionField = [self labelWithFrame:NSMakeRect(26, 510, 666, 38)
                                             font:[NSFont systemFontOfSize:11.0]
-                                           color:TGClassicHeaderTextColor(0.82)];
+                                           surface:TGThemeSurfaceWindow detail:YES];
     [[self.descriptionField cell] setWraps:YES];
     [[self.descriptionField cell] setLineBreakMode:NSLineBreakByWordWrapping];
     [self.descriptionField setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
@@ -169,7 +172,7 @@
     [root addSubview:commandCard];
     NSTextField *commandLabel = [self labelWithFrame:NSMakeRect(34, 462, 350, 18)
                                                 font:[NSFont boldSystemFontOfSize:12.0]
-                                               color:TGClassicCardInkColor()];
+                                               surface:TGThemeSurfaceCard detail:NO];
     [commandLabel setStringValue:TGLoc(@"bot.commands.title")];
     [commandLabel setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
     [root addSubview:commandLabel];
@@ -186,7 +189,7 @@
     [root addSubview:inlineCard];
     NSTextField *inlineLabel = [self labelWithFrame:NSMakeRect(34, 252, 280, 18)
                                                font:[NSFont boldSystemFontOfSize:12.0]
-                                              color:TGClassicCardInkColor()];
+                                              surface:TGThemeSurfaceCard detail:NO];
     [inlineLabel setStringValue:TGLoc(@"bot.inline.title")];
     [inlineLabel setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
     [root addSubview:inlineLabel];
@@ -210,7 +213,7 @@
 
     self.statusField = [self labelWithFrame:NSMakeRect(26, 24, 610, 18)
                                        font:[NSFont systemFontOfSize:10.0]
-                                      color:TGClassicHeaderTextColor(0.82)];
+                                      surface:TGThemeSurfaceWindow detail:YES];
     [self.statusField setAutoresizingMask:(NSViewWidthSizable | NSViewMaxYMargin)];
     [root addSubview:self.statusField];
     self.spinner = [[[NSProgressIndicator alloc] initWithFrame:NSMakeRect(666, 24, 16, 16)] autorelease];

@@ -87,6 +87,22 @@ if [ -n "$SDK_PATH" ]; then
     COMPILE_FLAGS+=("-isysroot" "$SDK_PATH")
 fi
 
+echo "== Actual theme surface readability =="
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/theme_readability_probe.m Sources/UI/TGTheme.m Sources/UI/TGVisualWorldThemeSpec.m -framework Cocoa -o "$BUILD_DIR/theme-readability-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/theme-readability-probe"
+
+echo "== Themed controls and utility surfaces =="
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/utility_surface_contrast_probe.m Sources/UI/TGDownloadProgressWindowController.m Sources/UI/TGThemeTextField.m Sources/Core/TGChatItem.m Sources/Workshop/UI/TGWorkshopModuleCardView.m Sources/Workshop/UI/TGWorkshopButtonCell.m Sources/Workshop/UI/TGWorkshopSurfaceView.m Sources/UI/TGIconAssets.m Sources/UI/TGTheme.m Sources/UI/TGVisualWorldThemeSpec.m -framework Cocoa -o "$BUILD_DIR/utility-surface-contrast-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/utility-surface-contrast-probe"
+BUTTON_APP="$BUILD_DIR/ButtonProbe.app"
+mkdir -p "$BUTTON_APP/Contents/MacOS" "$BUTTON_APP/Contents/Resources"
+cp -R Sources/Resources/Icons "$BUTTON_APP/Contents/Resources/Icons"
+cat > "$BUTTON_APP/Contents/Info.plist" <<'BUTTON_PLIST'
+<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict><key>CFBundleExecutable</key><string>button-probe</string><key>CFBundleIdentifier</key><string>local.telegraphica.button-probe</string><key>CFBundlePackageType</key><string>APPL</string></dict></plist>
+BUTTON_PLIST
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/button_appearance_probe.m Sources/UI/TGStatusButtonCells.m Sources/UI/TGTheme.m Sources/UI/TGVisualWorldThemeSpec.m -framework Cocoa -o "$BUTTON_APP/Contents/MacOS/button-probe"
+HOME="$TEST_HOME" "$BUTTON_APP/Contents/MacOS/button-probe"
+
 echo "== Asynchronous animated image loader =="
 "$CLANG" "${COMPILE_FLAGS[@]}" \
     Tests/animated_image_loader_probe.m \
@@ -138,7 +154,7 @@ echo "== Download identity after restart =="
 HOME="$TEST_HOME" "$BUILD_DIR/download-restart-identity-probe"
 
 echo "== Download manager layout and themes =="
-"$CLANG" "${COMPILE_FLAGS[@]}" -I"$ROOT_DIR/Sources/UI" -I"$ROOT_DIR/Sources/Services" -I"$ROOT_DIR/Sources/Media" Tests/download_manager_presentation_probe.m Sources/UI/TGDownloadManagerPresentation.m Sources/UI/TGDownloadManagerWindowController.m Sources/UI/TGLocalization.m Sources/UI/TGTheme.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGStatusButtonCells.m Sources/UI/TGIconAssets.m Sources/UI/TGIconDrawing.m -framework Cocoa -framework CoreGraphics -o "$BUILD_DIR/download-manager-presentation-probe"
+"$CLANG" "${COMPILE_FLAGS[@]}" -I"$ROOT_DIR/Sources/UI" -I"$ROOT_DIR/Sources/Services" -I"$ROOT_DIR/Sources/Media" Tests/download_manager_presentation_probe.m Sources/UI/TGDownloadManagerPresentation.m Sources/UI/TGDownloadManagerWindowController.m Sources/UI/TGLocalization.m Sources/UI/TGTheme.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGStatusButtonCells.m Sources/UI/TGButtonAppearance.m Sources/UI/TGIconAssets.m Sources/UI/TGIconDrawing.m -framework Cocoa -framework CoreGraphics -o "$BUILD_DIR/download-manager-presentation-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/download-manager-presentation-probe"
 
 echo "== Nonblocking download progress presentation =="
@@ -431,29 +447,46 @@ echo "== Reaction glyph pixel alignment =="
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/reaction_glyph_alignment_probe.m Sources/UI/TGReactionChipLayout.m -framework Cocoa -o "$BUILD_DIR/reaction-glyph-alignment-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/reaction-glyph-alignment-probe"
 
+# Shared production sources for layout/receipt probes.
+MESSAGE_PROBE_SOURCES=(
+    Sources/Core/TGMessageItem.m
+    Sources/Core/TGMessagePollSupport.m
+    Sources/Core/TGOutgoingMessageTextChunker.m
+    Sources/Core/TGCustomEmojiParser.m
+    Sources/Media/TGMediaItemSupport.m
+    Sources/Media/TGOpusVoiceTranscoder.m
+    Sources/Services/TGLogger.m
+    Sources/Services/TGResourcePolicy.m
+    Sources/UI/TGChatDisplayPreferences.m
+    Sources/UI/TGLocalization.m
+    Sources/UI/TGMessageLayoutSupport.m
+    Sources/UI/TGMessageFooterAppearance.m
+    Sources/UI/TGReactionChipLayout.m
+    Sources/UI/TGTheme.m
+    Sources/UI/TGVisualWorldThemeSpec.m
+)
+
 echo "== Core logic probe =="
-
-"$CLANG" \
-    "${COMPILE_FLAGS[@]}" \
-    Tests/core_logic_probe.m \
-    Sources/Core/TGMessageItem.m \
-    Sources/Core/TGMessagePollSupport.m \
-    Sources/Core/TGOutgoingMessageTextChunker.m \
-    Sources/Core/TGCustomEmojiParser.m \
-    Sources/Media/TGMediaItemSupport.m \
-    Sources/Media/TGOpusVoiceTranscoder.m \
-    Sources/Services/TGLogger.m \
-    Sources/Services/TGResourcePolicy.m \
-    Sources/UI/TGChatDisplayPreferences.m \
-    Sources/UI/TGLocalization.m \
-    Sources/UI/TGMessageLayoutSupport.m \
-    Sources/UI/TGMessageFooterAppearance.m \
-    Sources/UI/TGReactionChipLayout.m \
-    Sources/UI/TGTheme.m \
-    Sources/UI/TGVisualWorldThemeSpec.m \
-    -framework Cocoa \
-    -o "$BUILD_DIR/core_logic_probe"
-
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/core_logic_probe.m "${MESSAGE_PROBE_SOURCES[@]}" \
+    -framework Cocoa -o "$BUILD_DIR/core_logic_probe"
 HOME="$TEST_HOME" "$BUILD_DIR/core_logic_probe"
+
+echo "== Receipt asset raster visibility =="
+RECEIPT_PROBE_BUNDLE="$BUILD_DIR/ReceiptRasterProbe.app"
+mkdir -p "$RECEIPT_PROBE_BUNDLE/Contents/MacOS" "$RECEIPT_PROBE_BUNDLE/Contents/Resources/Icons"
+cp Sources/Resources/Icons/done-mini.png "$RECEIPT_PROBE_BUNDLE/Contents/Resources/Icons/done-mini.png"
+cat > "$RECEIPT_PROBE_BUNDLE/Contents/Info.plist" <<'RECEIPT_PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleExecutable</key><string>receipt-raster-probe</string>
+<key>CFBundleIdentifier</key><string>local.telegraphica.receipt-raster-probe</string>
+<key>CFBundlePackageType</key><string>APPL</string>
+</dict></plist>
+RECEIPT_PLIST
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/receipt_raster_probe.m "${MESSAGE_PROBE_SOURCES[@]}" \
+    Sources/UI/TGIconAssets.m -framework Cocoa -o "$RECEIPT_PROBE_BUNDLE/Contents/MacOS/receipt-raster-probe"
+HOME="$TEST_HOME" "$RECEIPT_PROBE_BUNDLE/Contents/MacOS/receipt-raster-probe"
+
 
 echo "Telegraphica tests passed."
