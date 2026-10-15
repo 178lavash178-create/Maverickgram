@@ -71,12 +71,16 @@ int main(int argc, const char *argv[]) {
         for(role=0;role<9;role++) {
             NSUInteger flip;
             for(flip=0;flip<2;flip++) {
+                // Sampling paints at 256x128. Mavericks' NSGradient raises its
+                // internal raster precision after that larger draw, shifting a
+                // subsequent 128x64 draw by one channel level. Prepare the
+                // production samples before capturing the strict pixel baseline.
+                NSColor *ink=TGThemeSurfaceInkColor(TGClassicMutedInkColor(),(TGThemeSurfaceRole)role,4.5);
                 NSBitmapImageRep *bitmap=TGMaterialBitmap((TGThemeSurfaceRole)role,flip!=0);
                 NSData *pixels=[NSData dataWithBytes:[bitmap bitmapData] length:[bitmap bytesPerRow]*[bitmap pixelsHigh]];
                 NSUInteger slot=role*2+flip;
                 if([reference count]<=slot) [reference addObject:pixels];
                 else if(![pixels isEqual:[reference objectAtIndex:slot]]) { fprintf(stderr,"Aqua changed with saved classic theme %s role%lu\n",[theme UTF8String],(unsigned long)role); failures++; }
-                NSColor *ink=TGThemeSurfaceInkColor(TGClassicMutedInkColor(),(TGThemeSurfaceRole)role,4.5);
                 CGFloat contrast=21.0; NSInteger x,y;
                 for(y=5;y<59;y+=3) for(x=5;x<123;x+=3) contrast=MIN(contrast,TGThemeContrastRatio(ink,[bitmap colorAtX:x y:y]));
                 minimum=MIN(minimum,contrast);checks++;

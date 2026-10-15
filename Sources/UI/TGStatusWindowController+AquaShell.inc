@@ -128,13 +128,16 @@
     CGFloat width = NSWidth([content bounds]), height = NSHeight([content bounds]);
     NSRect sidebar = [self.sidebarPanelView frame];
     CGFloat sidebarWidth = NSWidth(sidebar);
-    BOOL showingChats = (self.activeSection == TGSectionChats);
+    BOOL showingChats = [self.activeSection isEqualToString:TGSectionChats];
     CGFloat controlY = showingChats ? NSMinY([self.attachPhotoButton frame]) : 13.0;
     CGFloat footerHeight = showingChats ? MAX(52.0, NSMaxY([self.sendTextFieldBackgroundView frame]) + 6.0) : 52.0;
     [self.aquaToolbarView setFrame:NSMakeRect(0, height-54, width, 54)];
     [self.aquaFooterView setFrame:NSMakeRect(0, 0, width, footerHeight)];
     // Chrome is behind the live controls, not an overlay over the composer.
     [content addSubview:self.aquaFooterView positioned:NSWindowBelow relativeTo:self.attachPhotoButton];
+    for (NSView *control in [NSArray arrayWithObjects:self.attachPhotoButton, self.botActionButton, self.sendTextFieldBackgroundView, self.sendTextField, self.stickerButton, self.voiceRecordButton, self.sendMessageButton, nil]) {
+        [content addSubview:control positioned:NSWindowAbove relativeTo:nil];
+    }
     [self.accountBadgeView setFrame:NSMakeRect(12, height-44, 32, 34)];
     [content addSubview:self.accountBadgeView positioned:NSWindowAbove relativeTo:nil];
     CGFloat searchWidth = MIN(200.0, floor(width*0.18));
@@ -143,7 +146,7 @@
     NSArray *order = [NSArray arrayWithObjects:[self.navigationButtons objectAtIndex:2], [self.navigationButtons objectAtIndex:0], [self.navigationButtons objectAtIndex:1], self.workshopDrawerButton, nil];
     NSUInteger index = 0;
     for (NSButton *button in order) {
-        [button setFrame:NSMakeRect(navigationX + index*78, height-42, 77, 30)];
+        [button setFrame:NSMakeRect(navigationX + index*78, height-42, button == self.workshopDrawerButton ? 104 : 77, 30)];
         [content addSubview:button positioned:NSWindowAbove relativeTo:nil]; index++;
     }
     if (self.markAllChatsReadSpinner) {
