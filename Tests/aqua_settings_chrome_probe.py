@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """Exercise production Settings cell, panel paint and settings viewport geometry."""
 from __future__ import print_function
 import os
@@ -138,7 +139,10 @@ int main(void) {
     printf("Aqua Settings chrome: %lu idle/selected/pressed/disabled real-button rasters; identical bezels; approved icon ink; headerless Aqua/Classic preservation; actual settings viewport PASS.\n",(unsigned long)cases);
     [pool drain]; return 0;
 }
-'''.replace('__CELL__',cell).replace('__PANEL__',panel).replace('__GEOMETRY__',geometry)
+'''
+if not isinstance(harness, type(u'')):
+    harness = harness.decode('utf-8')
+harness = harness.replace('__CELL__',cell).replace('__PANEL__',panel).replace('__GEOMETRY__',geometry)
 folder=tempfile.mkdtemp(prefix='telegraphica-aqua-settings-')
 try:
     source=os.path.join(folder,'probe.m')
