@@ -64,6 +64,7 @@
     [self installAquaTextCellOnButton:self.attachPhotoButton accented:NO];
     [self.attachPhotoButton setImage:TGIconAssetImageNamed(@"attach")];
     [self installAquaTextCellOnButton:self.sendMessageButton accented:YES];
+    [(TGPanelView *)self.settingsPanelView setHeaderHidden:YES];
     [self.chatScrollSurfaceView setSquareEdges:YES];
     [self.drawerFolderScrollView setAutohidesScrollers:NO];
 }
@@ -171,7 +172,7 @@
     }
     [self.aquaDownloadsButton setFrame:NSMakeRect(width-124, height-42, 112, 30)];
     NSButton *settings = [self.navigationButtons objectAtIndex:3];
-    [settings setFrame:NSMakeRect(0, controlY, sidebarWidth, 32)];
+    [settings setFrame:NSMakeRect(12, controlY, MIN(196.0, MAX(0.0, sidebarWidth-24.0)), 32)];
     [content addSubview:settings positioned:NSWindowAbove relativeTo:nil];
     [self.aquaFolderHeaderButton setFrame:NSMakeRect(8, NSMaxY(sidebar)-30, MAX(86, sidebarWidth-104), 26)];
     [self.aquaFolderEditButton setFrame:NSMakeRect(sidebarWidth-88, NSMaxY(sidebar)-30, 80, 26)];

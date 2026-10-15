@@ -277,7 +277,7 @@
     [self showView:self.settingsFilesCardView visible:showSettings];
     [self showView:self.settingsHelpCardView visible:showSettings];
     [self showView:self.settingsSessionCardView visible:showSettings];
-    [self showView:self.settingsTitleField visible:showSettings];
+    [self showView:self.settingsTitleField visible:(showSettings && !TGInterfaceDesignIsAqua())];
     [self showView:self.settingsStateField visible:showSettings];
     [self showView:self.settingsFoldersSectionField visible:showSettings];
     [self showView:self.settingsSavedSectionField visible:showSettings];
@@ -387,7 +387,7 @@
     }
     if (panel) body = [panel frame];
     // Keep navigation/header chrome fully visible and usable during the reveal.
-    body.size.height = MAX(0.0, body.size.height - TGPanelHeaderHeight);
+    body.size.height = MAX(0.0, body.size.height - ((TGInterfaceDesignIsAqua() && [section isEqualToString:TGSectionSettings]) ? 0.0 : TGPanelHeaderHeight));
     if (![self.bottomNavigationView isHidden] && !NSIsEmptyRect(body)) {
         CGFloat bottom = MAX(NSMinY(body), NSMaxY([self.bottomNavigationView frame]));
         body.size.height = MAX(0.0, NSMaxY(body) - bottom);
@@ -569,7 +569,7 @@
     [self.profilePanelView setFrame:NSMakeRect(mainX, mainY, mainWidth, mainHeight)];
     [self.settingsPanelView setFrame:NSMakeRect(mainX, mainY, mainWidth, mainHeight)];
     [self.aboutPanelView setFrame:NSMakeRect(mainX, mainY, mainWidth, mainHeight)];
-    CGFloat auxiliaryBottom = aqua ? 52.0 : 80.0;
+    CGFloat auxiliaryBottom = aqua ? TGAquaFooterBaseHeight() : 80.0;
     [[self.contactsViewController view] setFrame:NSMakeRect(mainX,
                                                             mainY + auxiliaryBottom,
                                                             mainWidth,
@@ -578,7 +578,7 @@
                                                    mainY + auxiliaryBottom,
                                                    mainWidth,
                                                    MAX(220.0, mainHeight - auxiliaryBottom))];
-    CGFloat workshopBottom = aqua ? 52.0 : 72.0;
+    CGFloat workshopBottom = aqua ? TGAquaFooterBaseHeight() : 72.0;
     [[self.workshopViewController view] setFrame:NSMakeRect(mainX,
                                                             mainY + workshopBottom,
                                                             mainWidth,
@@ -925,8 +925,9 @@
     CGFloat botCommandPanelGap = self.botCommandPanelVisible ? 6.0 : 0.0;
     messageBottom += botCommandPanelHeight + botCommandPanelGap;
     if (self.chatNavigationClosed) {
-        messageBottom = mainY + (aqua ? 52.0 : 18.0);
+        messageBottom = mainY + (aqua ? TGAquaFooterBaseHeight() : 18.0);
     }
+    if (aqua) messageBottom = MAX(messageBottom, TGAquaFooterBaseHeight());
     CGFloat messageTop = mainTop - TGPanelHeaderHeight - 7.0;
     CGFloat panelInsetX = conversationX + 8.0;
     CGFloat panelWidth = conversationWidth - 16.0;
@@ -1077,6 +1078,10 @@
     CGFloat composerInnerHeight = composerInputHeight + 10.0;
     CGFloat composerControlY = composerY + floor((composerHeight - 32.0) / 2.0);
     CGFloat composerInputBackgroundY = composerY + floor((composerHeight - composerInnerHeight) / 2.0);
+    if (aqua) {
+        NSRect inputBounds = NSMakeRect(0, composerInputBackgroundY, 1, composerInnerHeight);
+        composerControlY = floor((TGAquaFooterHeight(YES, inputBounds) - 32.0) / 2.0);
+    }
     [self.sendLabel setFrame:NSMakeRect(conversationX + 14.0, composerY + 8.0, 0.0, 22.0)];
     [self.attachPhotoButton setFrame:NSMakeRect(attachButtonX, composerControlY, attachButtonWidth, 32.0)];
     [self.botActionButton setFrame:NSMakeRect(botButtonX, composerControlY, attachButtonWidth, 32.0)];
@@ -1122,7 +1127,7 @@
                                                 panelTitleY,
                                                 MAX(120.0, mainWidth - 176.0),
                                                 20.0)];
-    CGFloat profileScrollBottom = aqua ? 52.0 : bottomNavigationY + bottomNavigationHeight + 10.0;
+    CGFloat profileScrollBottom = aqua ? TGAquaFooterBaseHeight() : bottomNavigationY + bottomNavigationHeight + 10.0;
     CGFloat profileScrollTop = mainTop - TGPanelHeaderHeight - 8.0;
     CGFloat profileScrollHeight = profileScrollTop - profileScrollBottom;
     if (profileScrollHeight < 180.0) {
@@ -1316,8 +1321,8 @@
                                                  MAX(120.0, mainWidth - 116.0),
                                                  20.0)];
 
-    CGFloat settingsScrollBottom = aqua ? 52.0 : bottomNavigationY + bottomNavigationHeight + 10.0;
-    CGFloat settingsScrollTop = mainTop - TGPanelHeaderHeight - 8.0;
+    CGFloat settingsScrollBottom = aqua ? TGAquaFooterBaseHeight() : bottomNavigationY + bottomNavigationHeight + 10.0;
+    CGFloat settingsScrollTop = mainTop - (aqua ? 0.0 : TGPanelHeaderHeight) - 8.0;
     CGFloat settingsScrollHeight = settingsScrollTop - settingsScrollBottom;
     if (settingsScrollHeight < 180.0) {
         settingsScrollHeight = 180.0;

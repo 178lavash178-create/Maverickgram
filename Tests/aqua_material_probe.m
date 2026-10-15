@@ -65,7 +65,8 @@ static NSUInteger TGCheckAquaButtonMaterials(void) {
             }
             // Mavericks dithers NSGradient at 8-bit output: standalone AppKit
             // +/-90-degree draws show channel rounding differences after reflection.
-            // Three channel levels cover legacy dithering; constrain each whole
+            // The additional translucent bitmap finish introduces one more
+            // 8-bit rounding step: allow four levels, while constraining each
             // row's mean separately so a systematic lighting shift cannot hide
             // inside that pixel tolerance. The unreflected image is a negative
             // control for a genuinely reversed light source.
@@ -78,8 +79,8 @@ static NSUInteger TGCheckAquaButtonMaterials(void) {
                 maximumRowMeanDifference=MAX(maximumRowMeanDifference,fabs((double)signedSum)/(148.0*scale));
             }
             if(maximumRowMeanDifference>1.5) { fprintf(stderr,"Aqua flipped mean light profile mismatch: %.3f channel levels\n",(double)maximumRowMeanDifference);failures++; }
-            if(maximumDifference>3) { fprintf(stderr,"Aqua flipped light profile mismatch: %lu channel levels\n",(unsigned long)maximumDifference);failures++; }
-            if(unmirroredDifference<=3) { fprintf(stderr,"Aqua orientation negative control is indistinguishable\n");failures++; }
+            if(maximumDifference>4) { fprintf(stderr,"Aqua flipped light profile mismatch: %lu channel levels\n",(unsigned long)maximumDifference);failures++; }
+            if(unmirroredDifference<=4) { fprintf(stderr,"Aqua orientation negative control is indistinguishable\n");failures++; }
         }
         minimum=MIN(minimum,contrast);checks++;
         if(contrast<4.5) { fprintf(stderr,"Aqua button title contrast scale%lu flip%lu pressed%lu height%.0f %.3f\n",(unsigned long)scale,(unsigned long)flip,(unsigned long)pressed,(double)height,(double)contrast);failures++; }
@@ -123,7 +124,7 @@ int main(int argc, const char *argv[]) {
     NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];
     [NSApplication sharedApplication];
     if(!TGInterfaceDesignIsAqua()) { fprintf(stderr,"Run with -TelegraphicaInterfaceDesign aqua\n"); [pool drain]; return 1; }
-    for(NSString *texture in [NSArray arrayWithObjects:@"black-Linen",@"brushed_alu",nil]) {
+    for(NSString *texture in [NSArray arrayWithObjects:@"black-Linen",@"brushed_alu",@"brushed",nil]) {
         NSString *path=[[NSBundle mainBundle] pathForResource:texture ofType:@"png" inDirectory:@"Textures"];
         NSImage *image=path ? [[[NSImage alloc] initWithContentsOfFile:path] autorelease] : nil;
         if(!image || [image size].width<=0 || [image size].height<=0) { fprintf(stderr,"Missing/invalid bundled Aqua texture: %s\n",[texture UTF8String]);[pool drain];return 1; }

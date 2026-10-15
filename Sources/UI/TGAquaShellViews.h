@@ -8,7 +8,9 @@ typedef struct {
     NSRect chats;
 } TGAquaSourceListGeometry;
 // folderCount is the actual 32pt rows, including the built-in folder entries.
-// The footer follows the live composer only when that composer is visible.
+// Keep one-line composer and utility pages on the same chrome baseline.
+// Only a visible multiline composer may enlarge the footer.
+CGFloat TGAquaFooterBaseHeight(void);
 CGFloat TGAquaFooterHeight(BOOL composerVisible, NSRect composerInputFrame);
 CGFloat TGAquaFooterControlY(BOOL composerVisible, NSRect attachFrame);
 

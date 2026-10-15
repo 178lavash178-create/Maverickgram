@@ -19,21 +19,21 @@ static NSGradient *TGAquaGradient(NSUInteger top, NSUInteger bottom) {
 
 // Original, licensed Subtle Patterns tiles; attribution ships beside the PNGs.
 // Decode each image once. Missing optional artwork falls back to the base finish.
-static NSColor *TGAquaTexture(BOOL linen) {
-    static NSColor *metalColor=nil, *linenColor=nil;
-    static BOOL metalLoaded=NO, linenLoaded=NO;
-    if(linen ? linenLoaded : metalLoaded) return linen ? linenColor : metalColor;
-    NSString *name=linen ? @"black-Linen" : @"brushed_alu";
+typedef enum { TGAquaTextureMetal, TGAquaTextureLinen, TGAquaTextureWhiteBrushed } TGAquaTextureKind;
+static NSColor *TGAquaTexture(TGAquaTextureKind kind) {
+    static NSColor *patterns[3]={nil,nil,nil};
+    static BOOL loaded[3]={NO,NO,NO};
+    if(loaded[kind]) return patterns[kind];
+    NSString *name=kind==TGAquaTextureLinen ? @"black-Linen" : (kind==TGAquaTextureWhiteBrushed ? @"brushed" : @"brushed_alu");
     NSString *path=[[NSBundle mainBundle] pathForResource:name ofType:@"png" inDirectory:@"Textures"];
     NSImage *image=path ? [[[NSImage alloc] initWithContentsOfFile:path] autorelease] : nil;
-    NSColor *pattern=image ? [[NSColor colorWithPatternImage:image] retain] : nil;
-    if(linen) { linenLoaded=YES;linenColor=pattern; }
-    else { metalLoaded=YES;metalColor=pattern; }
-    return pattern;
+    patterns[kind]=image ? [[NSColor colorWithPatternImage:image] retain] : nil;
+    loaded[kind]=YES;
+    return patterns[kind];
 }
 
-static void TGAquaDrawTexture(NSRect rect, BOOL linen, CGFloat opacity) {
-    NSColor *texture=TGAquaTexture(linen);
+static void TGAquaDrawTexture(NSRect rect, TGAquaTextureKind kind, CGFloat opacity) {
+    NSColor *texture=TGAquaTexture(kind);
     if(!texture) return;
     [NSGraphicsContext saveGraphicsState];
     CGContextSetAlpha((CGContextRef)[[NSGraphicsContext currentContext] graphicsPort],opacity);
@@ -65,8 +65,9 @@ void TGAquaDrawSurfaceInPath(NSBezierPath *path, NSRect rect, TGThemeSurfaceRole
     [path addClip];
     [TGAquaGradient(top,bottom) drawInRect:rect angle:flipped ? 90.0 : -90.0];
     if(metal || linen) {
-        TGAquaDrawTexture(rect,linen,linen ? 0.13 : 0.42);
+        TGAquaDrawTexture(rect,linen ? TGAquaTextureLinen : TGAquaTextureMetal,linen ? 0.18 : 0.52);
     }
+    if(role==TGThemeSurfacePanel) TGAquaDrawTexture(rect,TGAquaTextureWhiteBrushed,0.24);
     if(role==TGThemeSurfaceRecessed) {
         TGAquaEdge(rect,YES,flipped,[NSColor colorWithCalibratedWhite:0.0 alpha:0.18]);
         TGAquaEdge(NSInsetRect(rect,0,1),YES,flipped,[NSColor colorWithCalibratedWhite:0.0 alpha:0.05]);
@@ -94,7 +95,7 @@ void TGAquaDrawVerticalSeam(NSRect rect) {
 void TGAquaDrawConversationBackground(NSRect rect, BOOL flipped) {
     (void)flipped;
     [TGAquaColor(0xD8E0E8) set]; NSRectFill(rect);
-    TGAquaDrawTexture(rect,YES,0.14);
+    TGAquaDrawTexture(rect,TGAquaTextureLinen,0.22);
 }
 
 static NSGradient *TGAquaButtonFinish(BOOL highlighted, BOOL accented, BOOL enabled) {
@@ -120,6 +121,18 @@ void TGAquaDrawButtonInPath(NSBezierPath *path, NSRect rect, BOOL highlighted, B
     // A continuous curved light profile, with a lower reflection and an inset
     // pressed finish. No rectangular white overlay across the label.
     [TGAquaButtonFinish(highlighted,accented,enabled) drawInRect:rect angle:flipped ? 90.0 : -90.0];
+    // The silver controls share a real brushed tile with the casework. Keep
+    // cobalt controls clear so their white labels retain the same contrast.
+    if(!accented || !enabled) {
+        [NSGraphicsContext saveGraphicsState];
+        if(flipped) {
+            NSAffineTransform *reflection=[NSAffineTransform transform];
+            [reflection translateXBy:0 yBy:2.0*NSMidY(rect)];
+            [reflection scaleXBy:1 yBy:-1];[reflection concat];
+        }
+        TGAquaDrawTexture(rect,TGAquaTextureWhiteBrushed,enabled ? 0.32 : 0.20);
+        [NSGraphicsContext restoreGraphicsState];
+    }
     NSBezierPath *rim=[[path copy] autorelease];
     [(enabled && accented ? TGAquaColor(0x123F78) : TGAquaColor(enabled ? 0x8A939E : 0xB5BBC2)) set];
     [rim setLineWidth:2.0];[rim stroke];

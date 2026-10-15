@@ -22,16 +22,14 @@
 }
 @end
 
-// The sidebar utility is a toolbar segment, with the existing settings asset.
+// The sidebar utility keeps its bezel in every state, with the approved settings asset.
 @implementation TGAquaUtilityButtonCell
 - (void)drawWithFrame:(NSRect)frame inView:(NSView *)view {
     BOOL selected = [self state] == NSOnState;
-    if ([self isHighlighted] || selected) {
-        NSRect inset = NSInsetRect(frame,6,1);
-        NSBezierPath *path = [NSBezierPath bezierPathWithRoundedRect:inset xRadius:5 yRadius:5];
-        TGAquaDrawButtonInPath(path,inset,[self isHighlighted],selected,[self isEnabled],[view isFlipped]);
-    }
-    NSColor *ink = selected ? [NSColor whiteColor] : TGColorFromHex(0x273847);
+    NSRect inset = NSInsetRect(frame,1,1);
+    NSBezierPath *path = [NSBezierPath bezierPathWithRoundedRect:inset xRadius:5 yRadius:5];
+    TGAquaDrawButtonInPath(path,inset,[self isHighlighted],selected,[self isEnabled],[view isFlipped]);
+    NSColor *ink = ![self isEnabled] ? TGColorFromHex(0x666666) : (selected ? [NSColor whiteColor] : TGColorFromHex(0x273847));
     NSDictionary *attrs = [NSDictionary dictionaryWithObjectsAndKeys:[NSFont systemFontOfSize:13],NSFontAttributeName,ink,NSForegroundColorAttributeName,nil];
     NSString *title = [self title] ? [self title] : @"";
     NSSize size = [title sizeWithAttributes:attrs];

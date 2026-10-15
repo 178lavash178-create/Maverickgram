@@ -50,17 +50,24 @@ int main(void) {
     // section may enlarge the navigation footer or move its controls.
     NSRect inputs[] = {NSZeroRect,NSMakeRect(300,14,400,30),NSMakeRect(300,14,400,94),NSMakeRect(300,1000,400,94)};
     for (NSUInteger i=0;i<sizeof(inputs)/sizeof(inputs[0]);i++) {
-        assert(TGAquaFooterHeight(NO,inputs[i])==52);
-        assert(TGAquaFooterControlY(NO,inputs[i])==10);
+        assert(TGAquaFooterHeight(NO,inputs[i])==58);
+        assert(TGAquaFooterControlY(NO,inputs[i])==13);
         CGFloat expanded=TGAquaFooterHeight(YES,inputs[i]);
-        assert(expanded>=52 && expanded>=NSMaxY(inputs[i])+6);
+        assert(expanded>=58 && expanded>=NSMaxY(inputs[i])+6);
         assert(TGAquaFooterControlY(YES,inputs[i])==NSMinY(inputs[i]));
         TGAquaSourceListGeometry footerList=TGAquaSourceListFrames(sidebar,expanded,210,20,NO);
         assert(NSMinY(footerList.chats)==MIN(NSMaxY(sidebar)-32,expanded));
         assert(NSMinX(footerList.chats)==NSMinX(sidebar));
         assert(NSWidth(footerList.chats)==NSWidth(sidebar));
     }
-    printf("Aqua footer hidden/visible composer and flush list geometry PASS\n");
+    // One-line empty and typed drafts have the same footer as Settings/other pages.
+    for (CGFloat input=20; input<=30; input++) {
+        CGFloat composerHeight=MAX(42.0,input+16.0);
+        CGFloat backgroundY=8.0+floor((composerHeight-input-10.0)/2.0);
+        NSRect background=NSMakeRect(300,backgroundY,400,input+10);
+        assert(TGAquaFooterHeight(YES,background)==TGAquaFooterHeight(NO,background));
+    }
+    printf("Aqua footer stable one-line/utility baseline, multiline and flush list geometry PASS\n");
     printf("Aqua source list geometry: %lu cases plus count-change/collapse PASS\n",(unsigned long)count);
     [pool drain]; return 0;
 }

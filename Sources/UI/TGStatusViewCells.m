@@ -285,6 +285,12 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
 @end
 
 @implementation TGPanelView
+@synthesize headerHidden = _headerHidden;
+- (void)setHeaderHidden:(BOOL)hidden {
+    if (_headerHidden == hidden) return;
+    _headerHidden = hidden;
+    [self setNeedsDisplay:YES];
+}
 
 - (void)drawRect:(NSRect)dirtyRect {
     (void)dirtyRect;
@@ -292,7 +298,7 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
     if (TGInterfaceDesignIsAqua()) {
         TGThemeDrawPanelBackgroundInPath([NSBezierPath bezierPathWithRect:bounds], bounds, [self isFlipped]);
         NSRect header = NSMakeRect(0, NSHeight(bounds)-TGPanelHeaderHeight, NSWidth(bounds), TGPanelHeaderHeight);
-        TGThemeDrawHeaderBackgroundInRect(header, [self isFlipped]);
+        if (!self.headerHidden) TGThemeDrawHeaderBackgroundInRect(header, [self isFlipped]);
         return;
     }
     NSRect panelBounds = NSInsetRect(bounds, 1.0, 1.0);

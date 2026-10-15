@@ -738,8 +738,8 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
     }
     NSRect panelFrame = [self.conversationPanelView frame];
     if (TGInterfaceDesignIsAqua()) {
-        panelFrame.origin.y += 52.0;
-        panelFrame.size.height = MAX(0.0, panelFrame.size.height - 52.0);
+        panelFrame.origin.y += TGAquaFooterBaseHeight();
+        panelFrame.size.height = MAX(0.0, panelFrame.size.height - TGAquaFooterBaseHeight());
     }
     [self.mediaCenterPanelView setFrame:panelFrame];
     NSView *contentView = self.mediaCenterPanelView;

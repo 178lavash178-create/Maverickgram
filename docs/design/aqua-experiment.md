@@ -26,7 +26,7 @@ Keep this experiment isolated from main/develop until the owner accepts the new 
 
 The source-list header is an embossed text heading with a separate text action. Its 18pt metal divider caps folder height at the actual row count and preserves usable chat space. Archive remains a folder only; Settings shares the composer's baseline in the continuous metal footer. The body and footer use one continuous divider with matching coordinates and material.
 
-The original Subtle Patterns Brushed Alum and Black Linen PNGs ship with their attribution and CC BY-SA 3.0 license in `Resources/Textures`. They are decoded once and composited over the Aqua surfaces. Button light is a continuous gradient with an inset bevel, without a rectangular highlight overlay. All icons continue to use existing approved assets.
+The original Subtle Patterns Brushed Alum, Black Linen and White Brushed PNGs ship with their attribution and CC BY-SA 3.0 license in `Resources/Textures`. They are decoded once and composited over the Aqua surfaces. White Brushed adds real grain to silver controls and utility panels; linen backs the conversation. Button light is a continuous gradient with an inset bevel, without a rectangular highlight overlay. All icons continue to use existing approved assets.
 
 The account avatar fits its toolbar slot with a circular metal rim and an inset status dot. The movable chat-list header owns its metal backing, so its controls remain attached to a visible bar when folders resize or collapse. Settings is an integrated footer utility with the existing settings asset and update badge; its baseline follows the composer.
 

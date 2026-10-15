@@ -187,7 +187,8 @@ SOFTWARE.
 
 Aqua textures
 -------------
-Brushed Alum by Tim Ward and Black Linen by Atle Mo, Subtle Patterns.
+Brushed Alum by Tim Ward, Black Linen by Atle Mo, and White Brushed by
+Andre Schouten, Subtle Patterns.
 Licensed under Creative Commons Attribution-ShareAlike 3.0 Unported.
 Full attribution, source links, and license: Resources/Textures/ATTRIBUTION.txt
 and Resources/Textures/CC-BY-SA-3.0.txt. Original texture files are unmodified.

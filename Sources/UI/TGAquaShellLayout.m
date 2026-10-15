@@ -1,12 +1,14 @@
 #import "TGAquaShellViews.h"
 #include <math.h>
 
+CGFloat TGAquaFooterBaseHeight(void) { return 58.0; }
+
 CGFloat TGAquaFooterHeight(BOOL composerVisible, NSRect composerInputFrame) {
-    return composerVisible ? MAX(52.0, NSMaxY(composerInputFrame) + 6.0) : 52.0;
+    return composerVisible ? MAX(TGAquaFooterBaseHeight(), NSMaxY(composerInputFrame) + 6.0) : TGAquaFooterBaseHeight();
 }
 
 CGFloat TGAquaFooterControlY(BOOL composerVisible, NSRect attachFrame) {
-    return composerVisible ? NSMinY(attachFrame) : 10.0;
+    return composerVisible ? NSMinY(attachFrame) : 13.0;
 }
 
 TGAquaSourceListGeometry TGAquaSourceListFrames(NSRect sidebar, CGFloat footerTop, CGFloat preferredFolderHeight, NSUInteger folderCount, BOOL collapsed) {
