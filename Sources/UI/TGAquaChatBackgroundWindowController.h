@@ -13,7 +13,7 @@
     NSArray *_textureButtons;
     NSArray *_wallpaperButtons;
     NSMutableDictionary *_modeChoices;
-    NSSegmentedControl *_modeControl;
+    NSPopUpButton *_modeControl;
     NSView *_colorPane;
     NSView *_texturePane;
     NSView *_imagePane;

@@ -188,12 +188,11 @@ static NSString *TGAquaBackgroundPresetTitle(NSDictionary *preset) {
     _scopeHint = [self label:@"" frame:NSMakeRect(24,506,712,36) font:[NSFont systemFontOfSize:12]];
     [[_scopeHint cell] setWraps:YES];
     [self label:TGLoc(@"aqua.background.type") frame:NSMakeRect(24,476,244,22) font:[NSFont boldSystemFontOfSize:12]];
-    _modeControl = [[[NSSegmentedControl alloc] initWithFrame:NSMakeRect(24,444,244,28)] autorelease];
-    [_modeControl setSegmentCount:3]; [_modeControl setSegmentStyle:NSSegmentStyleTexturedRounded];
+    _modeControl = [[[NSPopUpButton alloc] initWithFrame:NSMakeRect(24,444,244,28) pullsDown:NO] autorelease];
     NSArray *modeKeys = [NSArray arrayWithObjects:@"aqua.background.colors",@"aqua.background.textures",@"aqua.background.images",nil];
-    CGFloat modeWidths[] = {57,82,105};
-    for (NSUInteger i=0;i<3;i++) { [_modeControl setLabel:TGLoc([modeKeys objectAtIndex:i]) forSegment:i]; [_modeControl setWidth:modeWidths[i] forSegment:i]; }
-    [_modeControl setFont:[NSFont systemFontOfSize:11]];
+    for (NSString *key in modeKeys) [_modeControl addItemWithTitle:TGLoc(key)];
+    [_modeControl setFont:[NSFont systemFontOfSize:12]];
+    [[_modeControl cell] setLineBreakMode:NSLineBreakByClipping];
     [_modeControl setTarget:self]; [_modeControl setAction:@selector(modeChanged:)]; [content addSubview:_modeControl];
     _colorPane = [[[NSView alloc] initWithFrame:NSMakeRect(24,150,244,286)] autorelease];
     _texturePane = [[[NSView alloc] initWithFrame:NSMakeRect(24,150,244,286)] autorelease];
@@ -265,7 +264,7 @@ static NSString *TGAquaBackgroundPresetTitle(NSDictionary *preset) {
     [_scopeHint setStringValue:TGLoc(chat ? @"aqua.background.chatHint" : @"aqua.background.commonHint")];
     [_inheritButton setHidden:!chat];
     NSInteger mode = [self modeForConfiguration:configuration];
-    [_modeControl setSelectedSegment:mode];
+    [_modeControl selectItemAtIndex:mode];
     [_colorPane setHidden:mode!=0]; [_texturePane setHidden:mode!=1]; [_imagePane setHidden:mode!=2];
     if (configuration) [_modeChoices setObject:configuration forKey:[self modeKey:mode]];
     NSString *description = nil;
@@ -291,7 +290,7 @@ static NSString *TGAquaBackgroundPresetTitle(NSDictionary *preset) {
 - (void)textureSelected:(id)sender { [self stageConfiguration:[(TGAquaBackgroundSwatchCell *)[sender cell] configuration]]; }
 - (void)wallpaperSelected:(id)sender { [self stageConfiguration:[(TGAquaBackgroundSwatchCell *)[sender cell] configuration]]; }
 - (void)modeChanged:(id)sender {
-    (void)sender; NSInteger mode = [_modeControl selectedSegment];
+    (void)sender; NSInteger mode = [_modeControl indexOfSelectedItem];
     NSDictionary *configuration = [_modeChoices objectForKey:[self modeKey:mode]];
     if (!configuration) {
         NSArray *buttons = mode==1 ? _textureButtons : _wallpaperButtons;

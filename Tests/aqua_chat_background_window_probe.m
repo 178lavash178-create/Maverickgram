@@ -115,9 +115,20 @@ int main(void) {
             NSArray *colors=[controller valueForKey:@"colorButtons"];
             NSArray *textures=[controller valueForKey:@"textureButtons"], *wallpapers=[controller valueForKey:@"wallpaperButtons"];
             NSPopUpButton *scope=[controller valueForKey:@"scopePopUp"];
-            NSSegmentedControl *mode=[controller valueForKey:@"modeControl"];
+            NSPopUpButton *mode=[controller valueForKey:@"modeControl"];
             assert([colors count]==9 && [textures count]==5 && [wallpapers count]==5 && [scope numberOfItems]==(hasChat ? 2 : 1));
-            assert([mode segmentCount]==3 && [mode selectedSegment]==0);
+            assert([mode numberOfItems]==3 && [mode indexOfSelectedItem]==0);
+            assert([mode isKindOfClass:[NSPopUpButton class]] && ![mode pullsDown]);
+            for(NSInteger option=0;option<3;option++) {
+                [mode selectItemAtIndex:option];
+                NSRect titleRect=[[mode cell] titleRectForBounds:[mode bounds]];
+                NSDictionary *titleAttributes=[NSDictionary dictionaryWithObject:[mode font] forKey:NSFontAttributeName];
+                NSSize titleSize=[[mode titleOfSelectedItem] sizeWithAttributes:titleAttributes];
+                assert([[mode titleOfSelectedItem] length]>0 && ![[mode titleOfSelectedItem] hasPrefix:@"aqua."]);
+                assert(titleSize.width<=NSWidth(titleRect) && titleSize.height<=NSHeight(titleRect));
+                AssertContained(titleRect,[mode bounds]);
+            }
+            [mode selectItemAtIndex:0];
             assert([[colors objectAtIndex:8] state]==NSOnState);
             NSUInteger colorIndex=0;
             for(NSButton *button in colors) {
@@ -172,22 +183,22 @@ int main(void) {
                 assert(![Saved objectForKey:@"10:-500"] && [Saved objectForKey:@"common"]);
             }
             [controller showWindow:nil];
-            [mode setSelectedSegment:1]; [controller modeChanged:mode];
+            [mode selectItemAtIndex:1]; [controller modeChanged:mode];
             assert([[[controller previewConfiguration] objectForKey:@"kind"] isEqualToString:@"texture"]);
             [controller textureSelected:[textures objectAtIndex:4]];
             assert([[[controller previewConfiguration] objectForKey:@"id"] isEqualToString:@"texture-4"]);
             assert(![[controller valueForKey:@"texturePane"] isHidden] && [[controller valueForKey:@"colorPane"] isHidden]);
-            [mode setSelectedSegment:2]; [controller modeChanged:mode];
+            [mode selectItemAtIndex:2]; [controller modeChanged:mode];
             assert([[[controller previewConfiguration] objectForKey:@"kind"] isEqualToString:@"wallpaper"]);
             [controller wallpaperSelected:[wallpapers objectAtIndex:4]];
             assert([[[controller previewConfiguration] objectForKey:@"id"] isEqualToString:@"wallpaper-clouds"]);
             assert([[wallpapers objectAtIndex:4] state]==NSOnState && [[wallpapers objectAtIndex:0] state]==NSOffState);
             assert(![[controller valueForKey:@"imagePane"] isHidden] && [[controller valueForKey:@"texturePane"] isHidden]);
-            [mode setSelectedSegment:1]; [controller modeChanged:mode];
+            [mode selectItemAtIndex:1]; [controller modeChanged:mode];
             assert([[[controller previewConfiguration] objectForKey:@"id"] isEqualToString:@"texture-4"]);
-            [mode setSelectedSegment:2]; [controller modeChanged:mode];
+            [mode selectItemAtIndex:2]; [controller modeChanged:mode];
             assert([[[controller previewConfiguration] objectForKey:@"id"] isEqualToString:@"wallpaper-clouds"]);
-            [mode setSelectedSegment:0]; [controller modeChanged:mode];
+            [mode selectItemAtIndex:0]; [controller modeChanged:mode];
             assert([[[controller previewConfiguration] objectForKey:@"kind"] isEqualToString:@"color"]);
             [controller cancelChanges:nil];
             // Imported images are previews until Apply and are discarded on Cancel.
@@ -228,6 +239,6 @@ int main(void) {
     ClosingController=nil; [ClosingPanel release]; ClosingPanel=nil;
     TGSetLanguageCode(originalLanguage); [originalLanguage release];
     [Saved release]; [Writes release]; [Discards release];
-    printf("Aqua wallpaper window: %lu localized common/chat flows, 9 full-name color rows, 5 textures, 5 wallpapers, explicit modes, staged preview/Apply/Cancel, inheritance, import cleanup, modal owner-close lifetime and contained layout PASS.\n",(unsigned long)cases);
+    printf("Aqua wallpaper window: %lu localized common/chat flows, 9 full-name color rows, 5 textures, 5 wallpapers, full-title dropdown modes, staged preview/Apply/Cancel, inheritance, import cleanup, modal owner-close lifetime and contained layout PASS.\n",(unsigned long)cases);
     [pool drain]; return 0;
 }
