@@ -739,7 +739,7 @@ static void TGTestDeliveryStatusPresentation(void) {
                             TGAssertEqualObjects([asset objectForKey:@"name"], @"done-mini", @"status uses the existing approved asset");
                             NSRect rect = [[asset objectForKey:@"rect"] rectValue];
                             TGAssertTrue(NSMinX(rect) > NSMaxX(time) && NSMaxX(rect) <= NSMaxX(time) + 4.0 + width, @"checks remain inside reserved width at every font size");
-                            TGAssertTrue(NSWidth(rect) >= 14.0 && NSHeight(rect) >= 14.0, @"approved receipt asset needs enough raster area for visible hue");
+                            TGAssertTrue(NSWidth(rect) == 10.0 && NSHeight(rect) == 10.0 && width == 16.0, @"receipt color changes must preserve original 10pt glyphs and 16pt pair slot");
                             if (state > 0) {
                                 NSColor *actual = [asset objectForKey:@"color"];
                                 TGAssertTrue(TGStatusProbeContrast(actual, surface) >= 4.5, @"both unread checks must remain visible against the bubble");
@@ -816,7 +816,7 @@ static void TGTestCompactMessageGeometry(void) {
                 TGStatusAssetTrace = [[NSMutableArray alloc] init];
                 TGDrawOutgoingStatusDotsForItem(item, time, [flip boolValue]);
                 for (NSDictionary *asset in TGStatusAssetTrace) {
-                    TGAssertTrue(NSContainsRect(bubble, [[asset objectForKey:@"rect"] rectValue]), @"enlarged receipt checks fit the compact bubble in either orientation");
+                    TGAssertTrue(NSContainsRect(bubble, [[asset objectForKey:@"rect"] rectValue]), @"original receipt checks fit the compact bubble in either orientation");
                 }
                 [TGStatusAssetTrace release]; TGStatusAssetTrace = nil;
                 TGAssertTrue(NSMaxX(body) + 7.9 <= NSMinX(time), @"text selection must exclude timestamp with a real gap");

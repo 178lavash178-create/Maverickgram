@@ -65,7 +65,7 @@ static BOOL TGInlineReceiptHasFullRaster(TGMessageItem *item) {
     NSTextAttachment *attachment = [suffix attribute:NSAttachmentAttributeName atIndex:1 effectiveRange:NULL];
     NSImage *image = [(NSTextAttachmentCell *)[attachment attachmentCell] image];
     NSSize size = [image size];
-    if (!image || size.width != TGOutgoingStatusDotsWidthForItem(item) || size.height < 14.0) { return NO; }
+    if (!image || size.width != 16.0 || size.width != TGOutgoingStatusDotsWidthForItem(item) || size.height != 10.0) { return NO; }
     NSBitmapImageRep *bitmap = [[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:(NSInteger)size.width
         pixelsHigh:(NSInteger)size.height bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO
         colorSpaceName:NSCalibratedRGBColorSpace bytesPerRow:0 bitsPerPixel:0] autorelease];
@@ -80,7 +80,8 @@ static BOOL TGInlineReceiptHasFullRaster(TGMessageItem *item) {
             NSUInteger pixel[4]; [bitmap getPixel:pixel atX:x y:y]; if (pixel[3] > 127) { area++; }
         }
     }
-    return area >= 65;
+    // The original 10pt approved glyph has roughly half the 14pt raster area.
+    return area >= 33;
 }
 
 int main(int argc, const char **argv) {
@@ -115,14 +116,14 @@ int main(int argc, const char **argv) {
                             if (TGPixelDifference(sent, background, x, y) > 0.15 && TGPixelDifference(read, background, x, y) > 0.15) {
                                 CGFloat area = 1.0 / (scale * scale);
                                 ink += area;
-                                if (x < 141 * scale) { firstCheck += area; }
-                                if (x >= 147 * scale) { secondCheck += area; }
+                                if (x < 138 * scale) { firstCheck += area; }
+                                if (x >= 142 * scale) { secondCheck += area; }
                             }
                             if (TGPixelDifference(sent, read, x, y) > 0.15) { changed += 1.0 / (scale * scale); }
                         }
                     }
                     minimumInk = MIN(minimumInk, ink); minimumChanged = MIN(minimumChanged, changed); samples++;
-                    if (ink < 65.0 || changed < 55.0 || firstCheck < 10.0 || secondCheck < 10.0) {
+                    if (ink < 33.0 || changed < 28.0 || firstCheck < 5.0 || secondCheck < 5.0) {
                         fprintf(stderr, "Receipt raster visibility %s blocks%ld flip%ld scale%ld: ink%.2f changed%.2f first%.2f second%.2f\n", [theme UTF8String], (long)blocks, (long)flip, (long)scale, (double)ink, (double)changed, (double)firstCheck, (double)secondCheck);
                         passed = NO;
                     }
