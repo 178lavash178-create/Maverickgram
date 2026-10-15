@@ -129,13 +129,28 @@ int main(void) {
         [NSGraphicsContext saveGraphicsState]; [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithBitmapImageRep:bitmap]];
         IconCalls=0; [cell drawWithFrame:NSMakeRect(8,8,48,32) inView:view];
         assert(IconCalls==1 && NSWidth(IconFrame)==20 && NSHeight(IconFrame)==20);
-        assert(NSMinX(IconFrame)>=9 && NSMaxX(IconFrame)<=55 && NSMinY(IconFrame)==14);
+        assert(NSMinX(IconFrame)==22 && NSMaxX(IconFrame)==42 && NSMinY(IconFrame)==14);
         [NSGraphicsContext restoreGraphicsState];
         for(NSUInteger y=0;y<48;y++) for(NSUInteger x=0;x<64;x++) {
             if([[bitmap colorAtX:x y:y] alphaComponent]>0.01)
                 assert(x>=8 && x<56 && y>=8 && y<40);
         }
         cases++;
+    }
+    for(NSUInteger scale=1;scale<=2;scale++) {
+        NSBitmapImageRep *bitmap=Bitmap(12*scale,24*scale);
+        [NSGraphicsContext saveGraphicsState]; [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithBitmapImageRep:bitmap]];
+        NSAffineTransform *transform=[NSAffineTransform transform]; [transform scaleBy:scale]; [transform concat];
+        TGAquaDrawVerticalSeam(NSMakeRect(3,2,6,20));
+        [NSGraphicsContext restoreGraphicsState];
+        NSUInteger paintedColumns=0;
+        for(NSUInteger x=0;x<12*scale;x++) {
+            if([[bitmap colorAtX:x y:12*scale] alphaComponent]>0.01) {
+                paintedColumns++;
+                assert(x>=5*scale && x<7*scale);
+            }
+        }
+        assert(paintedColumns==2*scale);
     }
     for(NSUInteger aqua=0;aqua<2;aqua++) for(NSUInteger hidden=0;hidden<2;hidden++) {
         Aqua=aqua; TGPanelView *view=[[[TGPanelView alloc] initWithFrame:NSMakeRect(0,0,400,200)] autorelease];

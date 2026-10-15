@@ -672,6 +672,14 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
 
 - (void)showAppearanceWindow:(id)sender {
     (void)sender;
+    if (TGInterfaceDesignIsAqua()) {
+        [[self.aquaChatBackgroundWindowController window] close];
+        self.aquaChatBackgroundWindowController = [[[TGAquaChatBackgroundWindowController alloc]
+            initWithAccountID:self.profileUserID chatID:self.selectedChatID chatTitle:self.selectedChatTitle] autorelease];
+        [self.aquaChatBackgroundWindowController showWindow:self];
+        [[self.aquaChatBackgroundWindowController window] makeKeyAndOrderFront:self];
+        return;
+    }
     if (!self.appearanceWindow) {
         NSRect frame = NSMakeRect(0, 0, 480, 260);
         NSWindow *window = [[[NSWindow alloc] initWithContentRect:frame

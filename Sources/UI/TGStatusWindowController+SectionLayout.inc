@@ -338,7 +338,7 @@
     [self showView:self.settingsDeleteLocalDataButton visible:showSettings];
     [self showView:self.settingsCheckUpdatesButton visible:showSettings];
     [self showView:self.settingsUpdateDotView visible:(showSettings && self.updateAvailable)];
-    [self showView:self.settingsAppearanceButton visible:NO];
+    [self showView:self.settingsAppearanceButton visible:(showSettings && TGInterfaceDesignIsAqua())];
     [self showView:self.settingsLogsButton visible:showSettings];
     [self showView:self.settingsAboutButton visible:showSettings];
 
@@ -833,6 +833,9 @@
         [chatColumn setWidth:chatWidth];
     }
 
+    BOOL hasTypingText = ([[self.typingIndicatorField stringValue] length] > 0);
+    TGAquaConversationHeaderVerticalGeometry aquaHeader = TGAquaConversationHeaderVerticalFrames(NSMakeRect(conversationX, mainTop-TGPanelHeaderHeight, conversationWidth, TGPanelHeaderHeight), hasTypingText);
+    CGFloat conversationButtonY = aqua ? aquaHeader.buttonY : headerButtonY;
     CGFloat conversationRefreshX = conversationX + conversationWidth - 12.0 - headerButtonSize;
     CGFloat conversationJumpX = conversationRefreshX - 6.0 - headerButtonSize;
     CGFloat conversationSearchX = conversationJumpX - 6.0 - headerButtonSize;
@@ -841,26 +844,26 @@
     BOOL layoutSelectedChatCall = ([self.selectedChatTypeSummary isEqualToString:@"Private"] &&
                                    [self.activeSection isEqualToString:TGSectionChats] &&
                                    !self.mediaCenterVisible);
-    [self.loadOlderMessagesButton setFrame:NSMakeRect(conversationRefreshX, headerButtonY, headerButtonSize, headerButtonSize)];
-    [self.loadMessagesButton setFrame:NSMakeRect(conversationRefreshX, headerButtonY, headerButtonSize, headerButtonSize)];
-    [self.messageJumpToNewestButton setFrame:NSMakeRect(conversationJumpX, headerButtonY, headerButtonSize, headerButtonSize)];
-    [self.mediaCenterButton setFrame:NSMakeRect(conversationRefreshX, headerButtonY, 0.0, 0.0)];
-    [self.conversationSearchButton setFrame:NSMakeRect(conversationSearchX, headerButtonY, headerButtonSize, headerButtonSize)];
-    [self.selectedChatCallButton setFrame:NSMakeRect(conversationCallX, headerButtonY, headerButtonSize, headerButtonSize)];
-    [self.selectedChatVideoCallButton setFrame:NSMakeRect(conversationVideoCallX, headerButtonY, headerButtonSize, headerButtonSize)];
+    [self.loadOlderMessagesButton setFrame:NSMakeRect(conversationRefreshX, conversationButtonY, headerButtonSize, headerButtonSize)];
+    [self.loadMessagesButton setFrame:NSMakeRect(conversationRefreshX, conversationButtonY, headerButtonSize, headerButtonSize)];
+    [self.messageJumpToNewestButton setFrame:NSMakeRect(conversationJumpX, conversationButtonY, headerButtonSize, headerButtonSize)];
+    [self.mediaCenterButton setFrame:NSMakeRect(conversationRefreshX, conversationButtonY, 0.0, 0.0)];
+    [self.conversationSearchButton setFrame:NSMakeRect(conversationSearchX, conversationButtonY, headerButtonSize, headerButtonSize)];
+    [self.selectedChatCallButton setFrame:NSMakeRect(conversationCallX, conversationButtonY, headerButtonSize, headerButtonSize)];
+    [self.selectedChatVideoCallButton setFrame:NSMakeRect(conversationVideoCallX, conversationButtonY, headerButtonSize, headerButtonSize)];
     BOOL layoutCommentThreadBack = ([self.selectedMessageTopicKind isEqualToString:@"thread"] &&
                                     [self.selectedMessageThreadID respondsToSelector:@selector(longLongValue)]);
     CGFloat conversationHeaderLeftX = conversationX + 16.0;
     if (layoutCommentThreadBack) {
-        [self.commentThreadBackButton setFrame:NSMakeRect(conversationX + 12.0, headerButtonY, headerButtonSize, headerButtonSize)];
+        [self.commentThreadBackButton setFrame:NSMakeRect(conversationX + 12.0, conversationButtonY, headerButtonSize, headerButtonSize)];
         conversationHeaderLeftX = NSMaxX([self.commentThreadBackButton frame]) + 8.0;
     } else {
-        [self.commentThreadBackButton setFrame:NSMakeRect(conversationX + 12.0, headerButtonY, headerButtonSize, headerButtonSize)];
+        [self.commentThreadBackButton setFrame:NSMakeRect(conversationX + 12.0, conversationButtonY, headerButtonSize, headerButtonSize)];
     }
     [self.messagesLabel setFrame:NSMakeRect(conversationX + 16.0, headerLabelY, 0.0, 20.0)];
     CGFloat selectedAvatarSize = 24.0;
     CGFloat selectedAvatarX = conversationHeaderLeftX;
-    CGFloat selectedAvatarY = mainTop - TGPanelHeaderHeight + floor((TGPanelHeaderHeight - selectedAvatarSize) / 2.0) + sectionHeaderVisualOffset;
+    CGFloat selectedAvatarY = aqua ? aquaHeader.avatarY : mainTop - TGPanelHeaderHeight + floor((TGPanelHeaderHeight - selectedAvatarSize) / 2.0) + sectionHeaderVisualOffset;
     [self.selectedChatAvatarView setFrame:NSMakeRect(selectedAvatarX, selectedAvatarY, selectedAvatarSize, selectedAvatarSize)];
     CGFloat selectedTitleX = NSMaxX([self.selectedChatAvatarView frame]) + 8.0;
     CGFloat selectedTitleRightX = layoutSelectedChatCall
@@ -870,14 +873,13 @@
     if (selectedTitleWidth < 40.0) {
         selectedTitleWidth = 40.0;
     }
-    BOOL hasTypingText = ([[self.typingIndicatorField stringValue] length] > 0);
-    CGFloat selectedTitleY = hasTypingText ? (headerLabelY + 4.0) : headerLabelY;
+    CGFloat selectedTitleY = aqua ? aquaHeader.titleY : (hasTypingText ? (headerLabelY + 4.0) : headerLabelY);
     [self.selectedChatField setFrame:NSMakeRect(selectedTitleX,
                                                 selectedTitleY,
                                                 selectedTitleWidth,
                                                 17.0)];
     [self.typingIndicatorField setFrame:NSMakeRect(selectedTitleX,
-                                                   headerLabelY - 8.0,
+                                                   aqua ? aquaHeader.subtitleY : headerLabelY - 8.0,
                                                    selectedTitleWidth,
                                                    14.0)];
     CGFloat profileHitMaxX = selectedTitleRightX - 10.0;
@@ -1348,7 +1350,7 @@
     CGFloat privacyCardHeight = 54.0;
     CGFloat drawerCardHeight = 104.0;
     CGFloat resourceCardHeight = 366.0;
-    CGFloat interfaceCardHeight = 258.0;
+    CGFloat interfaceCardHeight = TGInterfaceDesignIsAqua() ? 304.0 : 258.0;
     CGFloat sessionsCardHeight = 72.0;
     CGFloat filesCardHeight = 172.0;
     CGFloat helpCardHeight = 112.0;
@@ -1504,7 +1506,9 @@
     [self.settingsLibraryField setFrame:NSMakeRect(settingsGroupedX + 20.0, settingsNextY, settingsGroupedWidth - 40.0, settingsLabelHeight)];
     CGFloat interfaceCardY = settingsNextY + settingsLabelHeight + settingsLabelGap;
     [self.settingsThemeCardView setFrame:NSMakeRect(settingsGroupedX, interfaceCardY, settingsGroupedWidth, interfaceCardHeight)];
-    [self.settingsAppearanceButton setFrame:NSMakeRect(rowLeft, interfaceCardY, 0.0, 0.0)];
+    [self.settingsAppearanceButton setFrame:(TGInterfaceDesignIsAqua()
+        ? NSMakeRect(rowLeft, interfaceCardY + 258.0, rowWidth, 30.0)
+        : NSMakeRect(rowLeft, interfaceCardY, 0.0, 0.0))];
 
     CGFloat popupWidth = 210.0;
     if (popupWidth > settingsGroupedWidth - 150.0) {

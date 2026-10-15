@@ -95,6 +95,19 @@ int main(void) {
             assert(NSMinX(header.back)==8 && NSMaxX(header.back)+8==NSMinX(header.title));
         } else assert(NSEqualRects(header.back,NSZeroRect));
     }
+    for (CGFloat origin=0;origin<=900;origin+=10) for (NSUInteger subtitle=0;subtitle<2;subtitle++) {
+        NSRect band=NSMakeRect(300,origin,500,40);
+        TGAquaConversationHeaderVerticalGeometry g=TGAquaConversationHeaderVerticalFrames(band,subtitle);
+        CGFloat center=NSMidY(band);
+        assert(fabs(g.buttonY+15-center)<=0.5);
+        assert(fabs(g.avatarY+12-center)<=0.5);
+        if(subtitle) {
+            assert(fabs((g.subtitleY+g.titleY+17)/2-center)<=0.5);
+            assert(g.subtitleY+14+2==g.titleY);
+        } else assert(fabs(g.titleY+8.5-center)<=0.5);
+        assert(g.titleY+17<=NSMaxY(band) && g.titleY>=NSMinY(band));
+    }
+    printf("Aqua conversation header: avatar, actions, single/title+typing groups centered PASS\n");
     printf("Aqua icon toolbar, forum header, reclaimed sidebar and composer-only footer PASS\n");
     printf("Aqua source list geometry: %lu cases plus count-change/collapse PASS\n",(unsigned long)count);
     [pool drain]; return 0;

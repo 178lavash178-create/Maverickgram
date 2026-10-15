@@ -34,7 +34,7 @@
     NSColor *ink = ![self isEnabled] ? TGColorFromHex(0x666666) : (selected ? [NSColor whiteColor] : TGColorFromHex(0x273847));
     if (self.iconOnly) {
         BOOL hasBadge = [self.badgeText length] > 0;
-        CGFloat iconX = floor(NSMidX(frame) - 10.0 - (hasBadge ? 5.0 : 0.0));
+        CGFloat iconX = floor(NSMidX(frame) - 10.0);
         TGDrawTemplateIconAsset(self.iconAssetName ? self.iconAssetName : @"settings", NSMakeRect(iconX, floor(NSMidY(frame)-10),20,20), ink, [self isEnabled] ? 1 : 0.55, [view isFlipped]);
         if (hasBadge) {
             NSDictionary *badgeAttrs = [NSDictionary dictionaryWithObjectsAndKeys:[NSFont boldSystemFontOfSize:10], NSFontAttributeName, [NSColor whiteColor], NSForegroundColorAttributeName, nil];

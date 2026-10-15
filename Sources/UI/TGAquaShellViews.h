@@ -22,6 +22,13 @@ typedef struct {
     NSRect refresh;
 } TGAquaChatHeaderGeometry;
 TGAquaChatHeaderGeometry TGAquaChatHeaderFrames(NSRect header, BOOL forum);
+typedef struct {
+    CGFloat buttonY;
+    CGFloat avatarY;
+    CGFloat titleY;
+    CGFloat subtitleY;
+} TGAquaConversationHeaderVerticalGeometry;
+TGAquaConversationHeaderVerticalGeometry TGAquaConversationHeaderVerticalFrames(NSRect header, BOOL subtitle);
 NSRect TGAquaToolbarSectionFrame(CGFloat windowWidth, CGFloat windowHeight, NSUInteger index);
 
 TGAquaSourceListGeometry TGAquaSourceListFrames(NSRect sidebar, CGFloat footerTop, CGFloat preferredFolderHeight, NSUInteger folderCount, BOOL collapsed);

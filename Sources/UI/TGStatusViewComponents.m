@@ -238,9 +238,12 @@ static CGFloat const TGPanelCornerRadius = 8.0;
 @end
 
 @implementation TGMessageTableView
+- (BOOL)isOpaque {
+    return TGInterfaceDesignIsAqua() ? NO : [super isOpaque];
+}
 - (void)drawBackgroundInClipRect:(NSRect)clipRect {
-    if (TGInterfaceDesignIsAqua()) TGAquaDrawConversationBackground(clipRect, [self isFlipped]);
-    else [super drawBackgroundInClipRect:clipRect];
+    // Aqua wallpaper belongs to the stationary clip view behind this table.
+    if (!TGInterfaceDesignIsAqua()) [super drawBackgroundInClipRect:clipRect];
 }
 
 

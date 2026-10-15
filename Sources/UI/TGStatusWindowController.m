@@ -51,6 +51,8 @@
 #import "TGTheme.h"
 #import "TGInterfaceDesign.h"
 #import "TGAquaShellViews.h"
+#import "TGAquaChatBackgroundClipView.h"
+#import "TGAquaChatBackgroundWindowController.h"
 #import "TGTypingIndicatorPresentation.h"
 #import "TGUpdateSupport.h"
 #import "TGTransparentSpinnerView.h"
@@ -320,6 +322,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 @property (nonatomic, retain) TGGroupedCardView *settingsFilesCardView;
 @property (nonatomic, retain) TGGroupedCardView *settingsHelpCardView;
 @property (nonatomic, retain) TGStorageUsageWindowController *storageUsageWindowController;
+@property (nonatomic, retain) TGAquaChatBackgroundWindowController *aquaChatBackgroundWindowController;
 @property (nonatomic, retain) TGChatLifecycleWindowController *chatLifecycleWindowController;
 @property (nonatomic, retain) TGChatFolderManagementWindowController *chatFolderManagementWindowController;
 @property (nonatomic, retain) TGChatInfoWindowController *chatInfoWindowController;
@@ -922,6 +925,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 @synthesize settingsFilesCardView = _settingsFilesCardView;
 @synthesize settingsHelpCardView = _settingsHelpCardView;
 @synthesize storageUsageWindowController = _storageUsageWindowController;
+@synthesize aquaChatBackgroundWindowController = _aquaChatBackgroundWindowController;
 @synthesize aboutCardView = _aboutCardView;
 @synthesize logsCardView = _logsCardView;
 @synthesize settingsProfileSectionField = _settingsProfileSectionField;
@@ -1425,6 +1429,22 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
         _selectedChatID = [chatID retain];
     }
     [self synchronizeUserOpenedChat];
+    [self updateAquaChatBackgroundScope];
+}
+
+- (void)setProfileUserID:(NSNumber *)userID {
+    if (_profileUserID != userID) {
+        [_profileUserID release];
+        _profileUserID = [userID retain];
+    }
+    [self updateAquaChatBackgroundScope];
+}
+
+- (void)updateAquaChatBackgroundScope {
+    NSClipView *clip = [self.messageScrollView contentView];
+    if ([clip isKindOfClass:[TGAquaChatBackgroundClipView class]]) {
+        [(TGAquaChatBackgroundClipView *)clip setBackgroundAccountID:self.profileUserID chatID:self.selectedChatID];
+    }
 }
 
 - (void)setCurrentAuthState:(NSString *)state {
@@ -1701,10 +1721,10 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 }
 
 - (void)applyMessageTranscriptBackgroundStyle {
-    if (TGThemeIsSkeuomorphicBlue()) {
+    if (TGInterfaceDesignIsAqua() || TGThemeIsSkeuomorphicBlue()) {
         [self.messageTableView setBackgroundColor:[NSColor clearColor]];
         [self.messageScrollView setDrawsBackground:NO];
-        [[self.messageScrollView contentView] setDrawsBackground:NO];
+        [[self.messageScrollView contentView] setDrawsBackground:TGInterfaceDesignIsAqua()];
         [[self.messageScrollView contentView] setBackgroundColor:[NSColor clearColor]];
         [[self.messageScrollView contentView] setCopiesOnScroll:NO];
     } else {
@@ -2041,7 +2061,8 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.profileEditButton setTitle:TGLoc(@"profile.edit.short")];
     [self.profileEditButton setToolTip:TGLoc(@"profile.edit.title")];
     [self.settingsCheckUpdatesButton setTitle:TGLoc(@"settings.update")];
-    [self.settingsAppearanceButton setTitle:@""];
+    [self.settingsAppearanceButton setTitle:(TGInterfaceDesignIsAqua() ? TGLoc(@"aqua.background.settings") : @"")];
+    [self.settingsAppearanceButton setToolTip:TGLoc(@"aqua.background.localHint")];
     [self.settingsLogsButton setTitle:TGLoc(@"settings.logs")];
     [self.settingsAboutButton setTitle:TGLoc(@"settings.about")];
     [self.loginLogsButton setTitle:TGLoc(@"login.logs")];
@@ -2554,6 +2575,8 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     self.profileLastName = nil;
     self.profileUsername = nil;
     self.profilePhoneNumber = nil;
+    [[self.aquaChatBackgroundWindowController window] close];
+    self.aquaChatBackgroundWindowController = nil;
     self.profileUserID = nil;
     self.profileAvatarFileID = nil;
     self.profileAvatarLocalPath = nil;
@@ -3185,6 +3208,11 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     self.messageScrollView = [[[NSScrollView alloc] initWithFrame:NSMakeRect(24, 72, 712, 112)] autorelease];
     [self.messageScrollView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [self applySkeuomorphicScrollStyle:self.messageScrollView];
+    if (TGInterfaceDesignIsAqua()) {
+        TGAquaChatBackgroundClipView *clip = [[[TGAquaChatBackgroundClipView alloc] initWithFrame:[[self.messageScrollView contentView] frame]] autorelease];
+        [self.messageScrollView setContentView:clip];
+        [self updateAquaChatBackgroundScope];
+    }
 
     TGMessageTableView *messageTableView = [[[TGMessageTableView alloc] initWithFrame:[[self.messageScrollView contentView] bounds]] autorelease];
     [messageTableView setDropOverlayTarget:self];
@@ -5195,6 +5223,8 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [_settingsDeleteLocalDataButton release];
     [_settingsCheckUpdatesButton release];
     [_settingsUpdateDotView release];
+    [[_aquaChatBackgroundWindowController window] close];
+    [_aquaChatBackgroundWindowController release];
     [_storageUsageWindowController release];
     [[_chatLifecycleWindowController window] close];
     [_chatLifecycleWindowController release];

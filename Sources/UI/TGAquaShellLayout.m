@@ -50,3 +50,15 @@ TGAquaChatHeaderGeometry TGAquaChatHeaderFrames(NSRect header, BOOL forum) {
     g.title = NSMakeRect(titleX, y + 5.0, MAX(0.0, NSMinX(g.compose) - 8.0 - titleX), 20.0);
     return g;
 }
+
+// Center each visual group in the same header band, independently of its height.
+TGAquaConversationHeaderVerticalGeometry TGAquaConversationHeaderVerticalFrames(NSRect header, BOOL subtitle) {
+    TGAquaConversationHeaderVerticalGeometry g;
+    CGFloat center = NSMidY(header);
+    g.buttonY = floor(center - 15.0);
+    g.avatarY = floor(center - 12.0);
+    CGFloat textBottom = floor(center - (subtitle ? 33.0 : 17.0) / 2.0);
+    g.titleY = textBottom + (subtitle ? 16.0 : 0.0);
+    g.subtitleY = subtitle ? textBottom : floor(center - 7.0);
+    return g;
+}

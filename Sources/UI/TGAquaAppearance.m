@@ -83,7 +83,7 @@ void TGAquaDrawVerticalSeam(NSRect rect) {
     if (NSIsEmptyRect(rect)) return;
     [NSGraphicsContext saveGraphicsState];
     NSRectClip(rect);
-    [TGAquaGradient(0xBDC3CA, 0xF0F2F4) drawInRect:rect angle:0];
+    // Keep the six-point resize target, but paint only a fine recessed edge.
     CGFloat x = floor(NSMidX(rect)) - 1.0;
     [TGAquaColor(0x9FA8B2) set];
     NSRectFill(NSMakeRect(x, NSMinY(rect), 1.0, NSHeight(rect)));
@@ -94,8 +94,8 @@ void TGAquaDrawVerticalSeam(NSRect rect) {
 
 void TGAquaDrawConversationBackground(NSRect rect, BOOL flipped) {
     (void)flipped;
-    [TGAquaColor(0xD8E0E8) set]; NSRectFill(rect);
-    TGAquaDrawTexture(rect,TGAquaTextureLinen,0.22);
+    [TGAquaColor(0xE7EEF4) set]; NSRectFill(rect);
+    TGAquaDrawTexture(rect,TGAquaTextureLinen,0.08);
 }
 
 static NSGradient *TGAquaButtonFinish(BOOL highlighted, BOOL accented, BOOL enabled) {
