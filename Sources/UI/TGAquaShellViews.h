@@ -8,6 +8,10 @@ typedef struct {
     NSRect chats;
 } TGAquaSourceListGeometry;
 // folderCount is the actual 32pt rows, including the built-in folder entries.
+// The footer follows the live composer only when that composer is visible.
+CGFloat TGAquaFooterHeight(BOOL composerVisible, NSRect composerInputFrame);
+CGFloat TGAquaFooterControlY(BOOL composerVisible, NSRect attachFrame);
+
 TGAquaSourceListGeometry TGAquaSourceListFrames(NSRect sidebar, CGFloat footerTop, CGFloat preferredFolderHeight, NSUInteger folderCount, BOOL collapsed);
 
 @interface TGAquaMetalView : NSView {

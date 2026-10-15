@@ -78,6 +78,19 @@ void TGAquaDrawSurfaceInPath(NSBezierPath *path, NSRect rect, TGThemeSurfaceRole
     [NSGraphicsContext restoreGraphicsState];
 }
 
+void TGAquaDrawVerticalSeam(NSRect rect) {
+    if (NSIsEmptyRect(rect)) return;
+    [NSGraphicsContext saveGraphicsState];
+    NSRectClip(rect);
+    [TGAquaGradient(0xBDC3CA, 0xF0F2F4) drawInRect:rect angle:0];
+    CGFloat x = floor(NSMidX(rect)) - 1.0;
+    [TGAquaColor(0x9FA8B2) set];
+    NSRectFill(NSMakeRect(x, NSMinY(rect), 1.0, NSHeight(rect)));
+    [[NSColor colorWithCalibratedWhite:1.0 alpha:0.75] set];
+    NSRectFill(NSMakeRect(x + 1.0, NSMinY(rect), 1.0, NSHeight(rect)));
+    [NSGraphicsContext restoreGraphicsState];
+}
+
 void TGAquaDrawConversationBackground(NSRect rect, BOOL flipped) {
     (void)flipped;
     [TGAquaColor(0xD8E0E8) set]; NSRectFill(rect);

@@ -518,6 +518,7 @@ HOME="$TEST_HOME" "$BUILD_DIR/aqua-footer-probe" classic
 HOME="$TEST_HOME" "$BUILD_DIR/aqua-footer-probe" aqua
 
 echo "== Aqua source list geometry =="
+"$PYTHON_BIN" Tests/aqua_section_routing_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_shell_layout_probe.m Sources/UI/TGAquaShellLayout.m -framework Cocoa -o "$BUILD_DIR/aqua-shell-layout-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/aqua-shell-layout-probe"
 

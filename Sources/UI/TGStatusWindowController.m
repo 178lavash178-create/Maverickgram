@@ -1467,7 +1467,8 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 }
 
 - (void)setActiveSection:(NSString *)section {
-    if (![_activeSection isEqualToString:section]) {
+    BOOL sectionChanged = ![_activeSection isEqualToString:section];
+    if (sectionChanged) {
         [self invalidateAutomaticReadRequests];
         [self.sectionTransitionController cancelAnimation];
     }
@@ -1476,6 +1477,13 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
         _activeSection = [section copy];
     }
     [self synchronizeUserOpenedChat];
+    // Aqua shares one footer between chats and utility sections. Every route
+    // must recompute its geometry, including profile/back and notification
+    // navigation, before the incoming section is presented. The shell guard
+    // keeps initialization safe; Classic retains its existing layout path.
+    if (sectionChanged && TGInterfaceDesignIsAqua() && self.aquaToolbarView) {
+        [self layoutContentView];
+    }
 }
 
 - (void)setClient:(TGTDLibClient *)client {

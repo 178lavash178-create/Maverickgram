@@ -710,7 +710,12 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
     if (!self.mediaCenterPanelView) {
         return;
     }
-    [self.mediaCenterPanelView setFrame:[self.conversationPanelView frame]];
+    NSRect panelFrame = [self.conversationPanelView frame];
+    if (TGInterfaceDesignIsAqua()) {
+        panelFrame.origin.y += 52.0;
+        panelFrame.size.height = MAX(0.0, panelFrame.size.height - 52.0);
+    }
+    [self.mediaCenterPanelView setFrame:panelFrame];
     NSView *contentView = self.mediaCenterPanelView;
     NSRect bounds = [contentView bounds];
     CGFloat width = NSWidth(bounds);

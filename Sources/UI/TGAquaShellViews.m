@@ -17,9 +17,7 @@
     NSRect rect = [self bounds];
     TGAquaDrawSurfaceInPath([NSBezierPath bezierPathWithRect:rect], rect, TGThemeSurfaceHeader, [self isFlipped]);
     if (self.dividerX > 0 && self.dividerX < NSWidth(rect)) {
-        CGFloat x = floor(self.dividerX);
-        [TGColorFromHex(0x9FA8B2) set]; NSRectFill(NSMakeRect(x,0,1,NSHeight(rect)));
-        [[NSColor colorWithCalibratedWhite:1 alpha:0.75] set]; NSRectFill(NSMakeRect(x+1,0,1,NSHeight(rect)));
+        TGAquaDrawVerticalSeam(NSMakeRect(self.dividerX - 3.0, NSMinY(rect), 6.0, NSHeight(rect)));
     }
 }
 @end
@@ -68,7 +66,20 @@
     NSString *title = [self title] ? [self title] : @"";
     CGFloat height = ceil([title sizeWithAttributes:attrs].height);
     CGFloat badgeWidth = [self.badgeText length] ? MIN(30.0, ceil([self.badgeText sizeWithAttributes:attrs].width)+6) : 0;
-    [title drawInRect:NSMakeRect(NSMinX(rect)+6, floor(NSMidY(rect)-height/2), MAX(0.0, NSWidth(rect)-12-badgeWidth), height) withAttributes:attrs];
+    NSRect titleRect = NSMakeRect(NSMinX(rect)+6, floor(NSMidY(rect)-height/2), MAX(0.0, NSWidth(rect)-12-badgeWidth), height);
+    NSImage *image = [self image];
+    if (image) {
+        CGFloat imageSide = MIN(16.0, MAX(0.0, NSWidth(titleRect)));
+        CGFloat titleWidth = MIN([title sizeWithAttributes:attrs].width, MAX(0.0, NSWidth(titleRect)-imageSide-6.0));
+        CGFloat groupWidth = imageSide+6.0+titleWidth;
+        CGFloat groupX = floor(NSMidX(titleRect)-groupWidth/2.0);
+        NSRect imageRect = NSMakeRect(groupX, floor(NSMidY(rect)-imageSide/2.0), imageSide, imageSide);
+        [image drawInRect:imageRect fromRect:NSZeroRect operation:NSCompositeSourceOver
+                 fraction:[self isEnabled] ? 1.0 : 0.55 respectFlipped:[view isFlipped] hints:nil];
+        titleRect.origin.x = groupX+imageSide+6.0;
+        titleRect.size.width = titleWidth;
+    }
+    [title drawInRect:titleRect withAttributes:attrs];
     if (badgeWidth) [self.badgeText drawInRect:NSMakeRect(NSMaxX(rect)-badgeWidth-3, floor(NSMidY(rect)-height/2), badgeWidth, height) withAttributes:attrs];
 }
 @end

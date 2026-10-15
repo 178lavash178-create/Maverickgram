@@ -326,6 +326,7 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
 @implementation TGScrollSurfaceView
 
 @synthesize drawsInterior = _drawsInterior;
+@synthesize squareEdges = _squareEdges;
 
 - (id)initWithFrame:(NSRect)frameRect {
     self = [super initWithFrame:frameRect];
@@ -340,8 +341,8 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
     NSRect bounds = [self bounds];
     NSRect surfaceRect = NSInsetRect(bounds, 0.5, 0.5);
     NSBezierPath *surfacePath = [NSBezierPath bezierPathWithRoundedRect:surfaceRect
-                                                                xRadius:8.0
-                                                                yRadius:8.0];
+                                                                xRadius:self.squareEdges ? 0.0 : 8.0
+                                                                yRadius:self.squareEdges ? 0.0 : 8.0];
     if (self.drawsInterior) {
         TGThemeDrawRecessedBackgroundInPath(surfacePath, surfaceRect, [self isFlipped]);
     }

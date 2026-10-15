@@ -194,10 +194,7 @@ static CGFloat const TGPanelCornerRadius = 8.0;
 - (void)drawRect:(NSRect)dirtyRect {
     (void)dirtyRect;
     if (TGInterfaceDesignIsAqua()) {
-        NSRect rect = [self bounds];
-        NSGradient *seam = [[[NSGradient alloc] initWithStartingColor:TGColorFromHex(0xBDC3CA) endingColor:TGColorFromHex(0xF0F2F4)] autorelease];
-        [seam drawInRect:rect angle:0];
-        [TGColorFromHex(0xA2AAB3) set]; NSRectFill(NSMakeRect(0,0,1,NSHeight(rect)));
+        TGAquaDrawVerticalSeam([self bounds]);
         return;
     }
     NSRect lineRect = NSMakeRect(floor(NSMidX([self bounds])), 7.0, 1.0, MAX(0.0, NSHeight([self bounds]) - 14.0));

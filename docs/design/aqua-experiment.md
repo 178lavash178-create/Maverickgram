@@ -24,8 +24,15 @@ Keep this experiment isolated from main/develop until the owner accepts the new 
 
 ## Material and source-list refinement
 
-The source-list header is an embossed text heading with a separate text action. Its 18pt metal divider caps folder height at the actual row count and preserves usable chat space. Archive remains a folder only; Settings shares the composer's baseline in the continuous metal footer. Panel seams stop at that footer instead of continuing through it.
+The source-list header is an embossed text heading with a separate text action. Its 18pt metal divider caps folder height at the actual row count and preserves usable chat space. Archive remains a folder only; Settings shares the composer's baseline in the continuous metal footer. The body and footer use one continuous divider with matching coordinates and material.
 
 The original Subtle Patterns Brushed Alum and Black Linen PNGs ship with their attribution and CC BY-SA 3.0 license in `Resources/Textures`. They are decoded once and composited over the Aqua surfaces. Button light is a continuous gradient with an inset bevel, without a rectangular highlight overlay. All icons continue to use existing approved assets.
 
-The account avatar fits its toolbar slot with a circular metal rim and an inset status dot. The movable chat-list header owns its metal backing, so its controls remain attached to a visible bar when folders resize or collapse. Settings is an integrated footer utility with the existing gear asset and update badge; its baseline follows the composer.
+The account avatar fits its toolbar slot with a circular metal rim and an inset status dot. The movable chat-list header owns its metal backing, so its controls remain attached to a visible bar when folders resize or collapse. Settings is an integrated footer utility with the existing settings asset and update badge; its baseline follows the composer.
+
+
+## Section navigation and chrome
+
+Every Aqua section change recomputes shell geometry before presentation, including profile/back and indirect chat navigation. Contacts, Calls, Settings, Profile and Workshop meet the shared 52pt footer without reserving the hidden Classic navigation area. Closed chats and the media center also use that fixed footer regardless of a retained multiline draft. The media panel and section reveal stay above it.
+
+The Aqua chat list uses square edges and meets the footer directly. The File button pairs the approved attachment image with its label; Classic cells keep their original artwork and geometry. Live checks should cover a multiline draft, every top-level section, back navigation, closed-chat suggestions, media-center navigation, and narrow-window resizing.

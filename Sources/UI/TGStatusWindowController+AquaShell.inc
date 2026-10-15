@@ -62,7 +62,9 @@
     [settings setBordered:NO]; [settingsTitle release];
     [self installAquaTextCellOnButton:self.workshopDrawerButton accented:NO];
     [self installAquaTextCellOnButton:self.attachPhotoButton accented:NO];
+    [self.attachPhotoButton setImage:TGIconAssetImageNamed(@"attach")];
     [self installAquaTextCellOnButton:self.sendMessageButton accented:YES];
+    [self.chatScrollSurfaceView setSquareEdges:YES];
     [self.drawerFolderScrollView setAutohidesScrollers:NO];
 }
 
@@ -136,8 +138,9 @@
     NSRect sidebar = [self.sidebarPanelView frame];
     CGFloat sidebarWidth = NSWidth(sidebar);
     BOOL showingChats = [self.activeSection isEqualToString:TGSectionChats];
-    CGFloat controlY = showingChats ? NSMinY([self.attachPhotoButton frame]) : 13.0;
-    CGFloat footerHeight = showingChats ? MAX(52.0, NSMaxY([self.sendTextFieldBackgroundView frame]) + 6.0) : 52.0;
+    BOOL composerVisible = showingChats && !self.chatNavigationClosed && !self.mediaCenterVisible;
+    CGFloat controlY = TGAquaFooterControlY(composerVisible, [self.attachPhotoButton frame]);
+    CGFloat footerHeight = TGAquaFooterHeight(composerVisible, [self.sendTextFieldBackgroundView frame]);
     [self.aquaToolbarView setFrame:NSMakeRect(0, height-54, width, 54)];
     [self.aquaFooterView setFrame:NSMakeRect(0, 0, width, footerHeight)];
     [self.aquaFooterView setDividerX:showingChats ? NSMaxX(sidebar)+3 : 0];

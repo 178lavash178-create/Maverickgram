@@ -18,6 +18,7 @@ NSColor *TGClassicNavigationSelectedColor(CGFloat alpha) { return [[NSColor gray
 NSColor *TGClassicNavigationSelectedStrokeColor(CGFloat alpha) { return [[NSColor grayColor] colorWithAlphaComponent:alpha]; }
 NSColor *TGThemeReadableInk(NSColor *ink,NSColor *surface,CGFloat minimum) { (void)surface;(void)minimum;return ink; }
 void TGAquaDrawConversationBackground(NSRect rect,BOOL flipped) { (void)rect;(void)flipped; }
+void TGAquaDrawVerticalSeam(NSRect rect) { (void)rect; }
 void TGThemeDrawWindowBackgroundInRect(NSRect rect,BOOL flipped) { (void)rect;(void)flipped; }
 #define SURFACE(name) void name(NSBezierPath *path,NSRect rect,BOOL flipped) { (void)path;(void)rect;(void)flipped; }
 SURFACE(TGThemeDrawGroupedCardInPath) SURFACE(TGThemeDrawPanelBackgroundInPath) SURFACE(TGThemeDrawRailBackgroundInPath)

@@ -20,8 +20,10 @@
 
 @interface TGScrollSurfaceView : NSView {
     BOOL _drawsInterior;
+    BOOL _squareEdges;
 }
 @property (nonatomic, assign) BOOL drawsInterior;
+@property (nonatomic, assign) BOOL squareEdges;
 @end
 
 @interface TGComposerInputBackgroundView : NSView
