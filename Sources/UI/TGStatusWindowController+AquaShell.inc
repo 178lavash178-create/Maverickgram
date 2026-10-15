@@ -128,8 +128,9 @@
     CGFloat width = NSWidth([content bounds]), height = NSHeight([content bounds]);
     NSRect sidebar = [self.sidebarPanelView frame];
     CGFloat sidebarWidth = NSWidth(sidebar);
-    CGFloat controlY = NSMinY([self.attachPhotoButton frame]);
-    CGFloat footerHeight = MAX(52.0, NSMaxY([self.sendTextFieldBackgroundView frame]) + 6.0);
+    BOOL showingChats = (self.activeSection == TGSectionChats);
+    CGFloat controlY = showingChats ? NSMinY([self.attachPhotoButton frame]) : 13.0;
+    CGFloat footerHeight = showingChats ? MAX(52.0, NSMaxY([self.sendTextFieldBackgroundView frame]) + 6.0) : 52.0;
     [self.aquaToolbarView setFrame:NSMakeRect(0, height-54, width, 54)];
     [self.aquaFooterView setFrame:NSMakeRect(0, 0, width, footerHeight)];
     // Chrome is behind the live controls, not an overlay over the composer.

@@ -399,8 +399,9 @@
 }
 
 - (CGFloat)composerInputHeightForWidth:(CGFloat)width {
-    if (width < 80.0) {
-        width = 80.0;
+    CGFloat minimumMeasureWidth = TGInterfaceDesignIsAqua() ? 1.0 : 80.0;
+    if (width < minimumMeasureWidth) {
+        width = minimumMeasureWidth;
     }
 
     NSString *text = [self.sendTextField stringValue];

@@ -1163,7 +1163,7 @@
         [self saveCurrentComposerDraft];
         [self updateSendControls];
         CGFloat currentHeight = NSHeight([self.sendTextField frame]);
-        CGFloat desiredHeight = [self composerInputHeightForWidth:MAX(80.0, NSWidth([self.sendTextField frame]))];
+        CGFloat desiredHeight = [self composerInputHeightForWidth:NSWidth([self.sendTextField frame])];
         CGFloat heightDelta = currentHeight - desiredHeight;
         if (heightDelta < 0.0) {
             heightDelta = -heightDelta;
