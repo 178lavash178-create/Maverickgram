@@ -69,10 +69,17 @@ NSColor *TGMessageDeliveryStatusInkColor(TGMessageItem *item, BOOL active, BOOL 
         NSColor *preferred = surface > 0.179 ? TGColorFromHex(0x0033FF) : TGColorFromHex(0x00DFFF);
         return TGMessageCachedFooterInk(@"status-read", item, flipped, preferred, 4.5);
     }
+    if (![item sending] && ![item outgoingRead] && ![item failedToSend]) {
+        return TGColorFromHex(0xE5E7EA);
+    }
     BOOL sent = ![item sending];
     NSColor *preferred = [NSColor colorWithCalibratedWhite:(sent ? (active ? 0.23 : 0.38) : 0.72) alpha:1.0];
     NSString *role = sent ? (active ? @"status-sent-primary" : @"status-sent-secondary") : @"status-pending";
     return TGMessageCachedFooterInk(role, item, flipped, preferred, sent ? 4.5 : 3.0);
+}
+
+NSColor *TGMessageUnreadStatusOutlineColor(TGMessageItem *item, BOOL flipped) {
+    return TGMessageCachedFooterInk(@"status-unread-outline", item, flipped, TGColorFromHex(0x747A83), 4.5);
 }
 
 NSColor *TGMessageContentBaseColor(TGMessageItem *item) {

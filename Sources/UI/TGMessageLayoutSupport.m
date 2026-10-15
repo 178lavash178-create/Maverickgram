@@ -2121,10 +2121,12 @@ static NSImage *TGOutgoingStatusPairImageForItem(TGMessageItem *item) {
     [pair lockFocus];
     NSUInteger index = 0;
     for (index = 0; index < 2; index++) {
-        NSImage *check = TGTemplateIconAssetImage(@"done-mini",
-                                                  NSMakeSize(TGOutgoingStatusCheckSide, TGOutgoingStatusCheckSide),
-                                                  TGOutgoingStatusCheckColorForIndex(item, index, NO),
-                                                  1.0);
+        BOOL unread = ![item sending] && ![item outgoingRead] && ![item failedToSend];
+        NSImage *check = unread
+            ? TGOutlinedTemplateIconAssetImage(@"done-mini", NSMakeSize(TGOutgoingStatusCheckSide,TGOutgoingStatusCheckSide),
+                TGOutgoingStatusCheckColorForIndex(item,index,NO), TGMessageUnreadStatusOutlineColor(item,NO), 0.5)
+            : TGTemplateIconAssetImage(@"done-mini", NSMakeSize(TGOutgoingStatusCheckSide,TGOutgoingStatusCheckSide),
+                TGOutgoingStatusCheckColorForIndex(item,index,NO), 1.0);
         if (!check) {
             continue;
         }
@@ -2190,11 +2192,12 @@ void TGDrawOutgoingStatusDotsForItem(TGMessageItem *item, NSRect timeRect, BOOL 
     NSUInteger index = 0;
     for (index = 0; index < 2; index++) {
         NSRect checkRect = NSMakeRect(checkX + (checkStep * (CGFloat)index), checkY, checkSide, checkSide);
-        TGDrawTemplateIconAsset(@"done-mini",
-                                checkRect,
-                                TGOutgoingStatusCheckColorForIndex(item, index, flipped),
-                                1.0,
-                                flipped);
+        if (![item sending] && ![item outgoingRead]) {
+            TGDrawOutlinedTemplateIconAsset(@"done-mini",checkRect,TGOutgoingStatusCheckColorForIndex(item,index,flipped),
+                TGMessageUnreadStatusOutlineColor(item,flipped),0.5,flipped);
+        } else {
+            TGDrawTemplateIconAsset(@"done-mini",checkRect,TGOutgoingStatusCheckColorForIndex(item,index,flipped),1.0,flipped);
+        }
     }
 }
 

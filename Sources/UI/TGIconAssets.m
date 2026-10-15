@@ -1,4 +1,6 @@
 #import "TGIconAssets.h"
+#include <math.h>
+#include <string.h>
 
 static NSMutableDictionary *TGIconAssetSourceCache(void) {
     static NSMutableDictionary *cache = nil;
@@ -113,4 +115,64 @@ void TGDrawTemplateIconAsset(NSString *name, NSRect rect, NSColor *color, CGFloa
               fraction:(color ? 1.0 : alpha)
         respectFlipped:flipped
                  hints:nil];
+}
+
+// Preserve the approved image's alpha silhouette. An inward edge is derived
+// from that mask; neither the asset bounds nor the glyph shape is expanded.
+static CGFloat TGIconMaskAlpha(NSBitmapImageRep *mask, NSInteger x, NSInteger y) {
+    if (x < 0 || y < 0 || x >= [mask pixelsWide] || y >= [mask pixelsHigh]) { return 0.0; }
+    NSUInteger pixel[4]; [mask getPixel:pixel atX:x y:y];
+    return pixel[3] / 255.0;
+}
+
+NSImage *TGOutlinedTemplateIconAssetImage(NSString *name, NSSize size, NSColor *fill, NSColor *outline, CGFloat width) {
+    if (!outline || width <= 0.0) { return TGTemplateIconAssetImage(name, size, fill, 1.0); }
+    NSImage *source = TGIconAssetImageNamed(name);
+    if (!source || size.width <= 0.0 || size.height <= 0.0) { return nil; }
+    static NSCache *cache = nil;
+    if (!cache) { cache = [[NSCache alloc] init]; [cache setCountLimit:128]; }
+    NSString *key = [NSString stringWithFormat:@"%@|%@|%.2f", TGIconAssetCacheKey(name,size,fill,1.0), TGIconAssetCacheKey(name,size,outline,1.0), width];
+    NSImage *cached = [cache objectForKey:key];
+    if (cached) { return cached; }
+    const CGFloat scale = 4.0;
+    NSInteger pixelsWide = (NSInteger)ceil(size.width * scale), pixelsHigh = (NSInteger)ceil(size.height * scale);
+    NSBitmapImageRep *mask = [[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:pixelsWide pixelsHigh:pixelsHigh bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSCalibratedRGBColorSpace bytesPerRow:0 bitsPerPixel:0] autorelease];
+    NSBitmapImageRep *result = [[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:pixelsWide pixelsHigh:pixelsHigh bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSCalibratedRGBColorSpace bytesPerRow:0 bitsPerPixel:0] autorelease];
+    if (!mask || !result) { return TGTemplateIconAssetImage(name,size,fill,1.0); }
+    memset([mask bitmapData],0,[mask bytesPerRow]*pixelsHigh);
+    [NSGraphicsContext saveGraphicsState];
+    [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithBitmapImageRep:mask]];
+    [source drawInRect:NSMakeRect(0,0,pixelsWide,pixelsHigh) fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0 respectFlipped:NO hints:nil];
+    [NSGraphicsContext restoreGraphicsState];
+    NSColor *fillRGB = [fill colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
+    NSColor *edgeRGB = [outline colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
+    CGFloat radius = MIN(width * scale, MIN(pixelsWide,pixelsHigh));
+    NSInteger nearOffset = (NSInteger)floor(radius), farOffset = (NSInteger)ceil(radius);
+    CGFloat fraction = radius - nearOffset;
+    NSInteger x,y,dx,dy;
+    for (y=0;y<pixelsHigh;y++) for (x=0;x<pixelsWide;x++) {
+        CGFloat alpha = TGIconMaskAlpha(mask,x,y), inner = alpha;
+        for (dy=-1;dy<=1;dy++) for (dx=-1;dx<=1;dx++) {
+            if (dx==0 && dy==0) { continue; }
+            CGFloat nearAlpha = TGIconMaskAlpha(mask,x+dx*nearOffset,y+dy*nearOffset);
+            CGFloat farAlpha = TGIconMaskAlpha(mask,x+dx*farOffset,y+dy*farOffset);
+            inner = MIN(inner,nearAlpha*(1.0-fraction)+farAlpha*fraction);
+        }
+        CGFloat amount = alpha > 0.0 ? inner/alpha : 0.0;
+        NSColor *pixel = [NSColor colorWithCalibratedRed:[fillRGB redComponent]*amount+[edgeRGB redComponent]*(1.0-amount)
+            green:[fillRGB greenComponent]*amount+[edgeRGB greenComponent]*(1.0-amount)
+            blue:[fillRGB blueComponent]*amount+[edgeRGB blueComponent]*(1.0-amount) alpha:alpha];
+        [result setColor:pixel atX:x y:y];
+    }
+    [result setSize:size];
+    NSImage *image = [[[NSImage alloc] initWithSize:size] autorelease];
+    [image addRepresentation:result];
+    [cache setObject:image forKey:key];
+    return image;
+}
+
+void TGDrawOutlinedTemplateIconAsset(NSString *name, NSRect rect, NSColor *fill, NSColor *outline, CGFloat width, BOOL flipped) {
+    if (NSIsEmptyRect(rect)) { return; }
+    NSImage *image = TGOutlinedTemplateIconAssetImage(name,rect.size,fill,outline,width);
+    [image drawInRect:rect fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0 respectFlipped:flipped hints:nil];
 }

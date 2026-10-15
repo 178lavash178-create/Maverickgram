@@ -97,6 +97,26 @@ NSImage *TGTemplateIconAssetImage(NSString *name, NSSize size, NSColor *color, C
     return nil;
 }
 
+NSImage *TGOutlinedTemplateIconAssetImage(NSString *name, NSSize size, NSColor *fill, NSColor *outline, CGFloat width) {
+    NSImage *image = TGTemplateIconAssetImage(name,size,fill,1.0);
+    if ([TGStatusAssetTrace count]) {
+        NSMutableDictionary *entry = [[[TGStatusAssetTrace lastObject] mutableCopy] autorelease];
+        [entry setObject:outline forKey:@"outline"];
+        [entry setObject:[NSNumber numberWithDouble:width] forKey:@"outlineWidth"];
+        [TGStatusAssetTrace replaceObjectAtIndex:[TGStatusAssetTrace count]-1 withObject:entry];
+    }
+    return image;
+}
+void TGDrawOutlinedTemplateIconAsset(NSString *name, NSRect rect, NSColor *fill, NSColor *outline, CGFloat width, BOOL flipped) {
+    TGDrawTemplateIconAsset(name,rect,fill,1.0,flipped);
+    if ([TGStatusAssetTrace count]) {
+        NSMutableDictionary *entry = [[[TGStatusAssetTrace lastObject] mutableCopy] autorelease];
+        [entry setObject:outline forKey:@"outline"];
+        [entry setObject:[NSNumber numberWithDouble:width] forKey:@"outlineWidth"];
+        [TGStatusAssetTrace replaceObjectAtIndex:[TGStatusAssetTrace count]-1 withObject:entry];
+    }
+}
+
 // Capture real renderer text attributes while leaving its painted backgrounds
 // unobscured for contrast sampling. Only enabled during the control audit.
 static NSMutableArray *TGControlTextTrace = nil;
@@ -717,11 +737,11 @@ static void TGTestDeliveryStatusPresentation(void) {
                 minimumChroma = MIN(minimumChroma, chroma);
                 minimumDistance = MIN(minimumDistance, distance);
                 TGAssertTrue(chroma >= 0.29 && distance >= 0.16, [NSString stringWithFormat:@"read and sent need distinct blue/neutral ink in %@", theme]);
-                TGAssertTrue(fabs([sent redComponent] - [sent blueComponent]) < 0.001, @"sent state remains neutral");
+                TGAssertEqualObjects(sent, [TGColorFromHex(0xE5E7EA) colorUsingColorSpaceName:NSCalibratedRGBColorSpace], @"unread fill remains the requested very light gray on every theme");
                 NSColor *surface = TGMessageMetadataSurfaceColor(item, flip);
-                CGFloat contrast = MIN(TGStatusProbeContrast(sent, surface), TGStatusProbeContrast(read, surface));
+                CGFloat contrast = MIN(MAX(TGStatusProbeContrast(sent,surface),TGStatusProbeContrast(TGMessageUnreadStatusOutlineColor(item,flip),surface)), TGStatusProbeContrast(read, surface));
                 minimumContrast = MIN(minimumContrast, contrast);
-                TGAssertTrue(contrast >= 4.5, [NSString stringWithFormat:@"sent and read require 4.5:1 on %@ bubble/list footer", theme]);
+                TGAssertTrue(contrast >= 4.5, [NSString stringWithFormat:@"unread fill/outline and read require 4.5:1 on %@ bubble/list footer", theme]);
                 surfaces++;
                 for (NSNumber *fontLevel in [NSArray arrayWithObjects:@0, @1, @2, @3, nil]) {
                     TGSetChatMessageTextSizeLevel([fontLevel integerValue]);
@@ -742,7 +762,11 @@ static void TGTestDeliveryStatusPresentation(void) {
                             TGAssertTrue(NSWidth(rect) == 10.0 && NSHeight(rect) == 10.0 && width == 16.0, @"receipt color changes must preserve original 10pt glyphs and 16pt pair slot");
                             if (state > 0) {
                                 NSColor *actual = [asset objectForKey:@"color"];
-                                TGAssertTrue(TGStatusProbeContrast(actual, surface) >= 4.5, @"both unread checks must remain visible against the bubble");
+                                NSColor *outline = [asset objectForKey:@"outline"];
+                                CGFloat edgeContrast = outline ? TGStatusProbeContrast(outline,surface) : 0.0;
+                                TGAssertTrue(MAX(TGStatusProbeContrast(actual,surface),edgeContrast) >= 4.5, @"unread outline or fill must remain visible against the bubble");
+                                TGAssertTrue((state == 1) == (outline != nil), @"only unread state gets an outline");
+                                if (outline) TGAssertTrue([[asset objectForKey:@"outlineWidth"] doubleValue] == 0.5, @"unread edge remains thin");
                                 if (state == 2) { TGAssertEqualObjects(actual, read, @"read checks use the same saturated blue"); }
                             }
                         }
@@ -760,7 +784,10 @@ static void TGTestDeliveryStatusPresentation(void) {
                 TGAssertTrue([TGStatusAssetTrace count] == 2, @"inline receipt needs fresh correct-count asset calls for each theme and mode");
                 NSColor *expected = TGMessageDeliveryStatusInkColor(item, YES, NO);
                 for (NSDictionary *asset in TGStatusAssetTrace) {
-                    TGAssertTrue(TGStatusProbeContrast([asset objectForKey:@"color"], TGMessageMetadataSurfaceColor(item, NO)) >= 4.5, @"both inline checks remain readable in this mode");
+                    NSColor *outline = [asset objectForKey:@"outline"];
+                    NSColor *surface = TGMessageMetadataSurfaceColor(item,NO);
+                    TGAssertTrue(MAX(TGStatusProbeContrast([asset objectForKey:@"color"],surface),outline ? TGStatusProbeContrast(outline,surface) : 0.0) >= 4.5, @"inline unread edge or fill remains readable");
+                    TGAssertTrue((state == 0) == (outline != nil), @"only unread inline pair gets an outline");
                     if (state != 0) { TGAssertEqualObjects([asset objectForKey:@"color"], expected, @"read inline receipt uses saturated blue"); }
                 }
                 [TGStatusAssetTrace removeAllObjects];
@@ -914,7 +941,8 @@ static void TGTestReactionFooter(void) {
                     for (NSNumber *active in [NSArray arrayWithObjects:@NO, @YES, nil]) {
                         CGFloat statusInk = TGProbeColorLuminance(TGMessageDeliveryStatusInkColor(sample, [active boolValue], [flipped boolValue]));
                         CGFloat statusContrast = (MAX(surface, statusInk) + 0.05) / (MIN(surface, statusInk) + 0.05);
-                        TGAssertTrue(statusContrast >= ([active boolValue] ? 4.5 : 3.0), @"delivery state must stay visible on every footer surface");
+                        CGFloat edgeContrast = TGStatusProbeContrast(TGMessageUnreadStatusOutlineColor(sample,[flipped boolValue]),TGMessageMetadataSurfaceColor(sample,[flipped boolValue]));
+                        TGAssertTrue(MAX(statusContrast,edgeContrast) >= 4.5, @"delivery fill or outline must stay visible on every footer surface");
                     }
                 }
             }

@@ -3,6 +3,8 @@
 #import "TGMessageLayoutSupport.h"
 #import "TGChatDisplayPreferences.h"
 #import "TGTheme.h"
+#import "TGThemeContrast.h"
+#import "TGIconAssets.h"
 #include <math.h>
 
 // Unrelated media dependencies; the receipt renderer, theme gradients and
@@ -84,11 +86,35 @@ static BOOL TGInlineReceiptHasFullRaster(TGMessageItem *item) {
     return area >= 33;
 }
 
+static BOOL TGOutlinedReceiptPreservesMask(void) {
+    NSColor *fill=TGColorFromHex(0xE5E7EA), *edge=TGColorFromHex(0x747A83);
+    NSImage *image=TGOutlinedTemplateIconAssetImage(@"done-mini",NSMakeSize(10,10),fill,edge,0.5);
+    if (!image || !NSEqualSizes([image size],NSMakeSize(10,10)) || image != TGOutlinedTemplateIconAssetImage(@"done-mini",NSMakeSize(10,10),fill,edge,0.5)) return NO;
+    NSBitmapImageRep *result=[[image representations] objectAtIndex:0];
+    NSBitmapImageRep *mask=[[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:40 pixelsHigh:40 bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSCalibratedRGBColorSpace bytesPerRow:0 bitsPerPixel:0] autorelease];
+    memset([mask bitmapData],0,[mask bytesPerRow]*40);
+    [NSGraphicsContext saveGraphicsState];
+    [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithBitmapImageRep:mask]];
+    [TGIconAssetImageNamed(@"done-mini") drawInRect:NSMakeRect(0,0,40,40) fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0 respectFlipped:NO hints:nil];
+    [NSGraphicsContext restoreGraphicsState];
+    NSUInteger lightPixels=0, edgePixels=0; NSInteger x,y;
+    for(y=0;y<40;y++) for(x=0;x<40;x++) {
+        NSColor *original=[mask colorAtX:x y:y], *outlined=[result colorAtX:x y:y];
+        if(fabs([original alphaComponent]-[outlined alphaComponent]) > 1.1/255.0) return NO;
+        if([outlined alphaComponent] > 0.98) {
+            if([outlined redComponent] > 0.88 && [outlined blueComponent] > 0.90) lightPixels++;
+            if([outlined redComponent] < 0.60 && [outlined blueComponent] < 0.65) edgePixels++;
+        }
+    }
+    printf("Unread mask: unchanged alpha/10pt bounds, %lu light-fill and %lu subtle-edge pixels at4x.\n",(unsigned long)lightPixels,(unsigned long)edgePixels);
+    return lightPixels>=10 && edgePixels>=10;
+}
+
 int main(int argc, const char **argv) {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     TGMessageItem *item = [[[TGMessageItem alloc] initWithChatID:@1 messageID:@2 date:@1 outgoing:YES preview:@"Text"] autorelease];
     NSUInteger samples = 0; CGFloat minimumInk = 10000, minimumChanged = 10000;
-    BOOL passed = YES;
+    BOOL passed = TGOutlinedReceiptPreservesMask();
     NSMutableArray *comparison = [NSMutableArray array];
     for (NSString *theme in TGThemeIdentifiers()) {
         TGSetActiveThemeIdentifier(theme);
@@ -110,20 +136,21 @@ int main(int argc, const char **argv) {
                     NSBitmapImageRep *sent = TGRenderReceipt(item, flip != 0, scale, YES);
                     [item setOutgoingRead:YES];
                     NSBitmapImageRep *read = TGRenderReceipt(item, flip != 0, scale, YES);
-                    CGFloat ink = 0, changed = 0, firstCheck = 0, secondCheck = 0; NSInteger x, y;
+                    CGFloat ink = 0, readInk = 0, changed = 0, firstCheck = 0, secondCheck = 0; NSInteger x, y;
                     for (y = 12 * scale; y < 40 * scale; y++) {
                         for (x = 132 * scale; x < 162 * scale; x++) {
-                            if (TGPixelDifference(sent, background, x, y) > 0.15 && TGPixelDifference(read, background, x, y) > 0.15) {
+                            if (TGThemeContrastRatio([sent colorAtX:x y:y],[background colorAtX:x y:y]) >= 1.6) {
                                 CGFloat area = 1.0 / (scale * scale);
                                 ink += area;
                                 if (x < 138 * scale) { firstCheck += area; }
                                 if (x >= 142 * scale) { secondCheck += area; }
                             }
+                            if (TGPixelDifference(read, background, x, y) > 0.15) { readInk += 1.0 / (scale * scale); }
                             if (TGPixelDifference(sent, read, x, y) > 0.15) { changed += 1.0 / (scale * scale); }
                         }
                     }
                     minimumInk = MIN(minimumInk, ink); minimumChanged = MIN(minimumChanged, changed); samples++;
-                    if (ink < 33.0 || changed < 28.0 || firstCheck < 5.0 || secondCheck < 5.0) {
+                    if (ink < 8.0 || readInk < 33.0 || changed < 28.0 || firstCheck < 2.0 || secondCheck < 2.0) {
                         fprintf(stderr, "Receipt raster visibility %s blocks%ld flip%ld scale%ld: ink%.2f changed%.2f first%.2f second%.2f\n", [theme UTF8String], (long)blocks, (long)flip, (long)scale, (double)ink, (double)changed, (double)firstCheck, (double)secondCheck);
                         passed = NO;
                     }
@@ -146,6 +173,6 @@ int main(int argc, const char **argv) {
         NSBitmapImageRep *render = [NSBitmapImageRep imageRepWithData:[sheet TIFFRepresentation]];
         [[render representationUsingType:NSPNGFileType properties:[NSDictionary dictionary]] writeToFile:[NSString stringWithUTF8String:argv[1]] atomically:YES];
     }
-    printf("Receipt raster probe: %lu actual asset/theme renders, minimum shared visible ink %.2fpx², minimum state change %.2fpx², %s.\n", (unsigned long)samples, (double)minimumInk, (double)minimumChanged, passed ? "PASS" : "FAIL");
+    printf("Receipt raster probe: %lu actual asset/theme renders, minimum unread edge/fill ink %.2fpx², minimum state change %.2fpx², %s.\n", (unsigned long)samples, (double)minimumInk, (double)minimumChanged, passed ? "PASS" : "FAIL");
     [pool drain]; return passed ? 0 : 1;
 }
