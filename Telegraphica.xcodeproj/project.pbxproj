@@ -189,6 +189,10 @@
 		D05900000000000000000011 /* TGDownloadProgressWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = D05900000000000000000013 /* TGDownloadProgressWindowController.m */; };
 		D5A1F7EB66B80A6920D83B65 /* TGButtonAppearance.m in Sources */ = {isa = PBXBuildFile; fileRef = 25291A9227E8164A9969858D /* TGButtonAppearance.m */; };
 		A592EDE76D20CA743BE03C60 /* TGThemeTextField.m in Sources */ = {isa = PBXBuildFile; fileRef = 956C0AF75C3C69DD2E59870D /* TGThemeTextField.m */; };
+		BCB9731CA1F92CB589042240 /* TGInterfaceDesign.m in Sources */ = {isa = PBXBuildFile; fileRef = 9EF86605CC06D4909FA00B64 /* TGInterfaceDesign.m */; };
+		445D07712254DF6E817BCFB0 /* TGAquaAppearance.m in Sources */ = {isa = PBXBuildFile; fileRef = 39627EC992664F3FAA647D1D /* TGAquaAppearance.m */; };
+		D4D3FDD1F3E4B741A464A8B5 /* TGAquaShellViews.m in Sources */ = {isa = PBXBuildFile; fileRef = E0F5F237E1202104898AEF06 /* TGAquaShellViews.m */; };
+		0BEA07CB7C959ACFFAE4845E /* TGAquaShellLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = EC9BF591F67C12654C8220CC /* TGAquaShellLayout.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -523,6 +527,13 @@
 		8EFFD97EBA2E8E6B163D1AA2 /* TGThemeContrast.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGThemeContrast.h; sourceTree = "<group>"; };
 		B56EC779FD8C4F687A80B57F /* TGThemeContrast.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGThemeContrast.inc; sourceTree = "<group>"; };
 		3DB2198457D4B107E5B820B2 /* TGThemeSurfaceAppearance.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGThemeSurfaceAppearance.inc; sourceTree = "<group>"; };
+		9EF86605CC06D4909FA00B64 /* TGInterfaceDesign.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGInterfaceDesign.m; sourceTree = "<group>"; };
+		D7184387EDA82CC02745D96B /* TGInterfaceDesign.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGInterfaceDesign.h; sourceTree = "<group>"; };
+		39627EC992664F3FAA647D1D /* TGAquaAppearance.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGAquaAppearance.m; sourceTree = "<group>"; };
+		03223C5DFBA2A394E05C1A1F /* TGAquaAppearance.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGAquaAppearance.h; sourceTree = "<group>"; };
+		E0F5F237E1202104898AEF06 /* TGAquaShellViews.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGAquaShellViews.m; sourceTree = "<group>"; };
+		9A0E35DB410D13BAC7CAC849 /* TGAquaShellViews.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGAquaShellViews.h; sourceTree = "<group>"; };
+		EC9BF591F67C12654C8220CC /* TGAquaShellLayout.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGAquaShellLayout.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -735,6 +746,13 @@
 				B56EC779FD8C4F687A80B57F /* TGThemeContrast.inc */,
 				3DB2198457D4B107E5B820B2 /* TGThemeSurfaceAppearance.inc */,
 				111111111111111111111235 /* TGTheme.h */,
+				9EF86605CC06D4909FA00B64 /* TGInterfaceDesign.m */,
+				D7184387EDA82CC02745D96B /* TGInterfaceDesign.h */,
+				39627EC992664F3FAA647D1D /* TGAquaAppearance.m */,
+				03223C5DFBA2A394E05C1A1F /* TGAquaAppearance.h */,
+				E0F5F237E1202104898AEF06 /* TGAquaShellViews.m */,
+				9A0E35DB410D13BAC7CAC849 /* TGAquaShellViews.h */,
+				EC9BF591F67C12654C8220CC /* TGAquaShellLayout.m */,
 				111111111111111111111236 /* TGTheme.m */,
 				111111111111111111111314 /* TGVisualWorldThemeSpec.h */,
 				111111111111111111111315 /* TGVisualWorldThemeSpec.m */,
@@ -1077,6 +1095,10 @@
 				A5C000000000000000000001 /* TGStorageCleanupPolicy.m in Sources */,
 				A5D000000000000000000001 /* TGAnimatedImageLoader.m in Sources */,
 				111111111111111111111120 /* TGInlineMediaPlaybackCoordinator.m in Sources */,
+				BCB9731CA1F92CB589042240 /* TGInterfaceDesign.m in Sources */,
+				445D07712254DF6E817BCFB0 /* TGAquaAppearance.m in Sources */,
+				D4D3FDD1F3E4B741A464A8B5 /* TGAquaShellViews.m in Sources */,
+				0BEA07CB7C959ACFFAE4845E /* TGAquaShellLayout.m in Sources */,
 				111111111111111111111121 /* TGTheme.m in Sources */,
 				111111111111111111111156 /* TGVisualWorldThemeSpec.m in Sources */,
 				111111111111111111111122 /* TGTGSAnimationView.m in Sources */,

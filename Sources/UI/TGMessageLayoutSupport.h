@@ -25,6 +25,7 @@ CGFloat TGMessageTopAccessoryHeightForItem(TGMessageItem *item);
 BOOL TGMessageUsesSeparateMetadataFooter(void);
 // Short, unadorned text reserves one indivisible time/status unit beside the body.
 BOOL TGMessageUsesInlineMetadataForItem(TGMessageItem *item, CGFloat maximumBubbleWidth, BOOL showSenderDetails);
+NSRect TGMessageInlineReactionRectForItem(TGMessageItem *item, NSRect bubbleRect, BOOL flipped);
 NSRect TGMessageInlineTextRectForItem(TGMessageItem *item, NSRect bubbleRect, BOOL flipped);
 NSRect TGMessageInlineTimeRectForItem(TGMessageItem *item, NSRect bubbleRect, BOOL flipped);
 NSString *TGDurationStringFromSecondsValue(id durationValue);
@@ -63,6 +64,7 @@ NSRect TGPollOptionRectForItem(TGMessageItem *item, NSRect bubbleRect, NSUIntege
 NSInteger TGPollOptionIndexForPoint(TGMessageItem *item, NSRect bubbleRect, NSPoint point, BOOL flipped);
 NSRect TGPollConfirmRectForItem(TGMessageItem *item, NSRect bubbleRect, BOOL flipped);
 BOOL TGPollPointIsInConfirmRect(TGMessageItem *item, NSRect bubbleRect, NSPoint point, BOOL flipped);
+CGFloat TGMessageReactionFooterHeight(TGMessageItem *item, CGFloat innerWidth);
 CGFloat TGMessageReactionContentWidth(TGMessageItem *item, CGFloat innerWidth);
 NSRect TGMessageReactionTimeRect(TGMessageItem *item, NSRect bandRect, BOOL flipped);
 CGFloat TGReactionBandHeightForMessageItem(TGMessageItem *item);

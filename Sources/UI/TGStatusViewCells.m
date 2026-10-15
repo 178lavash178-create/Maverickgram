@@ -635,7 +635,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
     CGFloat senderHeaderHeight = TGMessageSenderHeaderHeightForItem(item, showSenderDetails);
     CGFloat contextHeaderHeight = TGMessageContextHeaderHeightForItem(item);
     BOOL inlineMetadata = TGMessageUsesInlineMetadataForItem(item, maximumBubbleWidth, showSenderDetails);
-    CGFloat reactionBandHeight = TGReactionBandHeightForMessageItemWidth(item, NSWidth(bubbleRect));
+    CGFloat reactionBandHeight = inlineMetadata ? 0.0 : TGReactionBandHeightForMessageItemWidth(item, NSWidth(bubbleRect));
     CGFloat commentBarHeight = TGMessageCommentBarHeightForItem(item);
     if (TGChatMessagesAsBlocksEnabled()) {
         NSRect blockRect = NSInsetRect(bubbleRect, -5.0, -4.0);
@@ -909,6 +909,10 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
         TGDrawOutgoingStatusDotsForItem(item, timeRect, [controlView isFlipped]);
     }
 
+    if (inlineMetadata) {
+        NSRect inlineReaction = TGMessageInlineReactionRectForItem(item, bubbleRect, flipped);
+        if (!NSIsEmptyRect(inlineReaction)) { TGDrawReactionChipsForItem(item, inlineReaction, flipped); }
+    }
     if (reactionBandHeight > 0.0) {
         NSRect band = NSMakeRect(NSMinX(bubbleRect) + 10.0,
             [controlView isFlipped] ? NSMaxY(bubbleRect) - reactionBandHeight : NSMinY(bubbleRect),
@@ -1139,7 +1143,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
     }
 
     CGFloat reactionWidth = MAX(40.0, NSWidth(cellFrame) - 86.0);
-    CGFloat reactionHeight = TGReactionChipsHeightForItem(item, TGMessageReactionContentWidth(item, reactionWidth));
+    CGFloat reactionHeight = TGMessageReactionFooterHeight(item, reactionWidth);
     CGFloat reactionY = flipped ? NSMaxY(rowRect) - reactionHeight - 3.0 : NSMinY(rowRect) + 3.0;
     if (reactionHeight > 0.0) {
         NSRect band = NSMakeRect(textX, reactionY, reactionWidth, reactionHeight);

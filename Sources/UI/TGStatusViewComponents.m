@@ -1,3 +1,5 @@
+#import "TGInterfaceDesign.h"
+#import "TGAquaAppearance.h"
 #import "TGStatusViewComponents.h"
 #import "TGAvatarImagePresentation.h"
 #import "TGIconAssets.h"
@@ -232,6 +234,11 @@ static CGFloat const TGPanelCornerRadius = 8.0;
 @end
 
 @implementation TGMessageTableView
+- (void)drawBackgroundInClipRect:(NSRect)clipRect {
+    if (TGInterfaceDesignIsAqua()) TGAquaDrawConversationBackground(clipRect, [self isFlipped]);
+    else [super drawBackgroundInClipRect:clipRect];
+}
+
 
 @synthesize dropOverlayTarget = _dropOverlayTarget;
 

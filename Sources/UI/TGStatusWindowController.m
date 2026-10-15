@@ -49,6 +49,8 @@
 #import "TGStatusWindowStyling.h"
 #import "TGStorageUsageWindowController.h"
 #import "TGTheme.h"
+#import "TGInterfaceDesign.h"
+#import "TGAquaShellViews.h"
 #import "TGTypingIndicatorPresentation.h"
 #import "TGUpdateSupport.h"
 #import "TGTransparentSpinnerView.h"
@@ -299,6 +301,19 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 @property (nonatomic, retain) TGGroupedCardView *settingsSavedCardView;
 @property (nonatomic, retain) TGGroupedCardView *settingsPrivacyCardView;
 @property (nonatomic, retain) TGGroupedCardView *settingsThemeCardView;
+@property (nonatomic, retain) NSTextField *interfaceDesignLabel;
+@property (nonatomic, retain) NSTextField *interfaceDesignHint;
+@property (nonatomic, retain) NSPopUpButton *interfaceDesignPopUpButton;
+@property (nonatomic, retain) TGAquaMetalView *aquaToolbarView;
+@property (nonatomic, retain) TGAquaMetalView *aquaFooterView;
+@property (nonatomic, retain) NSButton *aquaFolderHeaderButton;
+@property (nonatomic, retain) NSButton *aquaFolderEditButton;
+@property (nonatomic, retain) NSButton *aquaSearchButton;
+@property (nonatomic, retain) NSButton *aquaDownloadsButton;
+@property (nonatomic, retain) NSButton *aquaArchiveButton;
+@property (nonatomic, retain) TGAquaFolderDivider *aquaFolderDivider;
+@property (nonatomic, assign) CGFloat aquaFolderPreferredHeight;
+@property (nonatomic, assign) BOOL aquaFoldersCollapsed;
 @property (nonatomic, retain) TGGroupedCardView *settingsSessionCardView;
 @property (nonatomic, retain) TGGroupedCardView *settingsDrawerCardView;
 @property (nonatomic, retain) TGGroupedCardView *settingsResourceCardView;
@@ -886,6 +901,19 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 @synthesize settingsSavedCardView = _settingsSavedCardView;
 @synthesize settingsPrivacyCardView = _settingsPrivacyCardView;
 @synthesize settingsThemeCardView = _settingsThemeCardView;
+@synthesize interfaceDesignLabel = _interfaceDesignLabel;
+@synthesize interfaceDesignHint = _interfaceDesignHint;
+@synthesize interfaceDesignPopUpButton = _interfaceDesignPopUpButton;
+@synthesize aquaToolbarView = _aquaToolbarView;
+@synthesize aquaFooterView = _aquaFooterView;
+@synthesize aquaFolderHeaderButton = _aquaFolderHeaderButton;
+@synthesize aquaFolderEditButton = _aquaFolderEditButton;
+@synthesize aquaSearchButton = _aquaSearchButton;
+@synthesize aquaDownloadsButton = _aquaDownloadsButton;
+@synthesize aquaArchiveButton = _aquaArchiveButton;
+@synthesize aquaFolderDivider = _aquaFolderDivider;
+@synthesize aquaFolderPreferredHeight = _aquaFolderPreferredHeight;
+@synthesize aquaFoldersCollapsed = _aquaFoldersCollapsed;
 @synthesize settingsSessionCardView = _settingsSessionCardView;
 @synthesize settingsDrawerCardView = _settingsDrawerCardView;
 @synthesize settingsResourceCardView = _settingsResourceCardView;
@@ -2045,6 +2073,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.callsPlaceholderView refreshLocalizedText];
     [self refreshProfileDisplay];
     [self refreshAccessibilityDescriptions];
+    [self refreshInterfaceDesignControls];
 }
 
 - (void)refreshAccessibilityDescriptions {
@@ -2159,6 +2188,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.settingsActiveSessionsDetailField setTextColor:cardMutedColor];
     [self.settingsThemeCategoryLabel setTextColor:cardInkColor];
     [self.settingsThemeLabel setTextColor:cardInkColor];
+    [self refreshInterfaceDesignControls];
     [self.settingsLanguageLabel setTextColor:cardInkColor];
     [self.pinnedMessageLabelField setTextColor:cardMutedColor];
     [self.pinnedMessageTextField setTextColor:cardInkColor];
@@ -4263,6 +4293,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.aboutLinkField setTextColor:TGClassicLinkColor()];
     [contentView addSubview:self.aboutLinkField];
 
+    [self configureInterfaceDesignControls];
     [self refreshLocalizedText];
     [self refreshThemeAppearance];
     [self refreshProfileDisplay];
@@ -4328,7 +4359,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
             selected = !self.showingArchivedChats;
         }
         [button setState:selected ? NSOnState : NSOffState];
-        [button setHidden:(!ready || drawerHidden || !self.drawerOpen)];
+        [button setHidden:(!ready || (!TGInterfaceDesignIsAqua() && (drawerHidden || !self.drawerOpen)))];
     }
 }
 
@@ -4370,7 +4401,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
         [drawerTitles addObject:buttonTitle];
 
         NSButton *folderButton = [[[NSButton alloc] initWithFrame:NSMakeRect(20, 500 - (index * 48), 92, 42)] autorelease];
-        TGNavigationButtonCell *folderCell = [[[TGNavigationButtonCell alloc] initTextCell:buttonTitle] autorelease];
+        TGNavigationButtonCell *folderCell = [[[(TGInterfaceDesignIsAqua() ? [TGAquaFolderButtonCell class] : [TGNavigationButtonCell class]) alloc] initTextCell:buttonTitle] autorelease];
         [folderCell setButtonType:NSToggleButton];
         [folderCell setIconOnly:NO];
         [folderButton setCell:folderCell];
@@ -4598,7 +4629,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     for (index = 0; index < [self.drawerFolderButtons count]; index++) {
         NSButton *button = [self.drawerFolderButtons objectAtIndex:index];
         [button setEnabled:(enabled && ready)];
-        [button setHidden:(!ready || drawerHidden || !self.drawerOpen)];
+        [button setHidden:(!ready || (!TGInterfaceDesignIsAqua() && (drawerHidden || !self.drawerOpen)))];
     }
     [self.workshopDrawerButton setEnabled:(enabled && ready)];
     [self.workshopDrawerButton setHidden:(!ready || drawerHidden || !self.drawerOpen)];
@@ -4735,6 +4766,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
 #include "TGStatusWindowController+ClosedChatNavigation.inc"
 
+#include "TGStatusWindowController+AquaShell.inc"
 #include "TGStatusWindowController+SectionLayout.inc"
 
 #include "TGStatusWindowController+ResourceSettings.inc"
@@ -4874,6 +4906,17 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [_settingsSavedCardView release];
     [_settingsPrivacyCardView release];
     [_settingsThemeCardView release];
+    [_interfaceDesignLabel release];
+    [_interfaceDesignHint release];
+    [_interfaceDesignPopUpButton release];
+    [_aquaToolbarView release];
+    [_aquaFooterView release];
+    [_aquaFolderHeaderButton release];
+    [_aquaFolderEditButton release];
+    [_aquaSearchButton release];
+    [_aquaDownloadsButton release];
+    [_aquaArchiveButton release];
+    [_aquaFolderDivider release];
     [_settingsSessionCardView release];
     [_settingsDrawerCardView release];
     [_settingsResourceCardView release];

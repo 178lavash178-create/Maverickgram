@@ -4,7 +4,7 @@
 static NSArray *TGThemeSurfaceSamples(TGThemeSurfaceRole role) {
     static NSCache *cache = nil;
     if (!cache) { cache = [[NSCache alloc] init]; [cache setCountLimit:224]; }
-    NSString *key = [NSString stringWithFormat:@"%@:%ld", TGCurrentThemeIdentifier(), (long)role];
+    NSString *key = [NSString stringWithFormat:@"%@:%d:%ld", TGCurrentThemeIdentifier(), TGInterfaceDesignIsAqua(), (long)role];
     NSArray *samples = [cache objectForKey:key];
     if (samples) { return samples; }
     NSBitmapImageRep *bitmap = [[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:256 pixelsHigh:128
@@ -52,7 +52,7 @@ static NSArray *TGThemeSurfaceSamples(TGThemeSurfaceRole role) {
 static NSColor *TGThemeSurfaceVeil(TGThemeSurfaceRole role) {
     static NSCache *cache = nil;
     if (!cache) { cache = [[NSCache alloc] init]; [cache setCountLimit:224]; }
-    NSString *key = [NSString stringWithFormat:@"%@:%ld", TGCurrentThemeIdentifier(), (long)role];
+    NSString *key = [NSString stringWithFormat:@"%@:%d:%ld", TGCurrentThemeIdentifier(), TGInterfaceDesignIsAqua(), (long)role];
     NSColor *veil = [cache objectForKey:key];
     if (veil) { return veil; }
     NSArray *samples = TGThemeSurfaceSamples(role);
@@ -74,7 +74,7 @@ static NSColor *TGThemeSurfaceVeil(TGThemeSurfaceRole role) {
 NSColor *TGThemeSurfaceInkColor(NSColor *preferred, TGThemeSurfaceRole role, CGFloat minimum) {
     static NSCache *cache = nil;
     if (!cache) { cache = [[NSCache alloc] init]; [cache setCountLimit:512]; }
-    NSString *key = [NSString stringWithFormat:@"%@:%ld:%@:%g",TGCurrentThemeIdentifier(),(long)role,preferred,(double)minimum];
+    NSString *key = [NSString stringWithFormat:@"%@:%d:%ld:%@:%g",TGCurrentThemeIdentifier(),TGInterfaceDesignIsAqua(),(long)role,preferred,(double)minimum];
     NSColor *ink = [cache objectForKey:key];
     if (ink) { return ink; }
     NSArray *samples = TGThemeSurfaceSamples(role);

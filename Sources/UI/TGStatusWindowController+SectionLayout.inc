@@ -291,6 +291,9 @@
     [self showView:self.settingsThemeCategoryLabel visible:showSettings];
     [self showView:self.themeCategoryPopUpButton visible:showSettings];
     [self showView:self.settingsThemeLabel visible:showSettings];
+    [self showView:self.interfaceDesignLabel visible:showSettings];
+    [self showView:self.interfaceDesignHint visible:showSettings];
+    [self showView:self.interfaceDesignPopUpButton visible:showSettings];
     [self showView:self.themePopUpButton visible:showSettings];
     [self showView:self.settingsNotificationsEnabledButton visible:showSettings];
     [self showView:self.settingsNotificationSoundButton visible:showSettings];
@@ -356,6 +359,7 @@
     [self showView:self.detailsScrollView visible:NO];
     [self showView:self.checkButton visible:NO];
     [self refreshUpdateAvailabilityBadge];
+    [self updateAquaShellVisibility];
     [self updateSectionTransitionPresentation];
     [self synchronizeUserOpenedChat];
     if ([self conversationAllowsAutomaticRead]) {
@@ -439,7 +443,7 @@
 }
 
 - (CGFloat)minimumChatSidebarWidth {
-    return 78.0;
+    return TGInterfaceDesignIsAqua() ? 270.0 : 78.0;
 }
 
 - (CGFloat)standardChatSidebarWidth {
@@ -447,11 +451,12 @@
 }
 
 - (CGFloat)maximumChatSidebarWidthForWindowWidth:(CGFloat)windowWidth mainX:(CGFloat)mainX margin:(CGFloat)margin {
-    CGFloat available = windowWidth - mainX - margin - 320.0 - 10.0;
+    CGFloat available = windowWidth - mainX - margin - (TGInterfaceDesignIsAqua() ? 420.0 : 320.0) - 10.0;
     return MAX([self minimumChatSidebarWidth], MIN(420.0, available));
 }
 
 - (BOOL)isChatSidebarCompactForWidth:(CGFloat)width {
+    if (TGInterfaceDesignIsAqua()) return NO;
     return (width < 248.0);
 }
 
@@ -462,9 +467,9 @@
 
 - (void)sidebarResizeHandle:(TGSidebarResizeHandleView *)handle requestedWidth:(CGFloat)width {
     NSView *contentView = [[self window] contentView];
-    CGFloat margin = 10.0;
+    CGFloat margin = TGInterfaceDesignIsAqua() ? 0.0 : 10.0;
     BOOL drawerHidden = TGUserDefaultBoolWithDefault(TGDrawerHiddenDefaultsKey, NO);
-    CGFloat mainX = (!drawerHidden && self.drawerOpen) ? 128.0 : margin;
+    CGFloat mainX = (!TGInterfaceDesignIsAqua() && !drawerHidden && self.drawerOpen) ? 128.0 : margin;
     CGFloat minimumWidth = [self minimumChatSidebarWidth];
     CGFloat maximumWidth = [self maximumChatSidebarWidthForWindowWidth:NSWidth([contentView bounds])
                                                                   mainX:mainX
@@ -503,17 +508,18 @@
     NSRect bounds = [contentView bounds];
     CGFloat width = NSWidth(bounds);
     CGFloat height = NSHeight(bounds);
-    CGFloat margin = 10.0;
+    CGFloat margin = TGInterfaceDesignIsAqua() ? 0.0 : 10.0;
     BOOL drawerHidden = TGUserDefaultBoolWithDefault(TGDrawerHiddenDefaultsKey, NO);
     BOOL profileActive = [(self.activeSection ? self.activeSection : TGSectionChats) isEqualToString:TGSectionProfile];
-    BOOL drawerVisible = (!drawerHidden && self.drawerOpen);
+    BOOL aqua = TGInterfaceDesignIsAqua();
+    BOOL drawerVisible = (!aqua && !drawerHidden && self.drawerOpen);
     BOOL drawerConsumesLayout = drawerVisible;
-    CGFloat railGutter = (!drawerHidden && self.drawerOpen) ? 10.0 : 0.0;
-    CGFloat panelGutter = 10.0;
-    CGFloat railWidth = (!drawerHidden && self.drawerOpen) ? 108.0 : 0.0;
+    CGFloat railGutter = drawerVisible ? 10.0 : 0.0;
+    CGFloat panelGutter = aqua ? 6.0 : 10.0;
+    CGFloat railWidth = drawerVisible ? 108.0 : 0.0;
     CGFloat railX = margin;
     CGFloat railY = margin;
-    CGFloat railHeight = height - (margin * 2.0);
+    CGFloat railHeight = height - (margin * 2.0) - (aqua ? 54.0 : 0.0);
     CGFloat railTop = railY + railHeight;
     CGFloat mainX = drawerConsumesLayout ? (railX + railWidth + railGutter) : margin;
     CGFloat mainY = margin;
@@ -891,7 +897,7 @@
         }
     }
 
-    CGFloat estimatedSendFieldWidth = conversationWidth - 198.0;
+    CGFloat estimatedSendFieldWidth = conversationWidth - (aqua ? (self.botComposerVisible ? 334.0 : 272.0) : 198.0);
     if (estimatedSendFieldWidth < 160.0) {
         estimatedSendFieldWidth = 160.0;
     }
@@ -1042,8 +1048,8 @@
         [bubbleColumn setWidth:bubbleWidth];
     }
 
-    CGFloat sendButtonWidth = 38.0;
-    CGFloat attachButtonWidth = 38.0;
+    CGFloat sendButtonWidth = aqua ? 94.0 : 38.0;
+    CGFloat attachButtonWidth = aqua ? 56.0 : 38.0;
     CGFloat smallComposerButtonWidth = 34.0;
     CGFloat composerButtonGap = 6.0;
     CGFloat attachButtonX = conversationX + 12.0;
@@ -1055,7 +1061,7 @@
         ? (botButtonX + attachButtonWidth + 8.0)
         : (attachButtonX + attachButtonWidth + 8.0);
     CGFloat sendFieldWidth = stickerButtonX - sendFieldX - 10.0;
-    if (sendFieldWidth < 160.0) {
+    if (!aqua && sendFieldWidth < 160.0) {
         sendFieldWidth = 160.0;
     }
     CGFloat composerInnerHeight = composerInputHeight + 10.0;
@@ -1331,7 +1337,7 @@
     CGFloat privacyCardHeight = 54.0;
     CGFloat drawerCardHeight = 104.0;
     CGFloat resourceCardHeight = 366.0;
-    CGFloat interfaceCardHeight = 184.0;
+    CGFloat interfaceCardHeight = 258.0;
     CGFloat sessionsCardHeight = 72.0;
     CGFloat filesCardHeight = 172.0;
     CGFloat helpCardHeight = 112.0;
@@ -1513,6 +1519,9 @@
                                                              interfaceCardY + 146.0,
                                                              textSizeValueWidth,
                                                              22.0)];
+    [self.interfaceDesignLabel setFrame:NSMakeRect(rowLeft, interfaceCardY + 182, labelWidth, 22)];
+    [self.interfaceDesignPopUpButton setFrame:NSMakeRect(popupX, interfaceCardY + 178, popupWidth, 28)];
+    [self.interfaceDesignHint setFrame:NSMakeRect(rowLeft, interfaceCardY + 214, rowWidth, 32)];
     settingsNextY = interfaceCardY + interfaceCardHeight + settingsGroupGap;
 
     [self.settingsStorageField setFrame:NSMakeRect(settingsGroupedX + 20.0, settingsNextY, settingsGroupedWidth - 40.0, settingsLabelHeight)];
@@ -1565,6 +1574,7 @@
     [self.detailsScrollView setFrame:NSMakeRect(logsCardX + 12.0, logsCardY + 12.0, logsCardWidth - 24.0, logsCardHeight - 24.0)];
     [self applyPointingHandCursorToButtonsInView:contentView];
     [self layoutMediaCenterWindowSubviews];
+    [self layoutAquaShell];
 }
 
 - (void)windowDidResize:(NSNotification *)notification {
