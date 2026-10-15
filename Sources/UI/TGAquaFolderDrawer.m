@@ -21,6 +21,25 @@ TGAquaFolderDrawerGeometry TGAquaFolderDrawerPlacement(NSRect parent, NSRect vis
     return result;
 }
 
+NSRect TGAquaFolderDrawerPreparedParentFrame(NSRect parent, NSRect visible, BOOL fullScreen) {
+    if (fullScreen || !isfinite(parent.origin.x) || !isfinite(parent.origin.y) ||
+        !isfinite(parent.size.width) || !isfinite(parent.size.height) ||
+        !isfinite(visible.origin.x) || !isfinite(visible.origin.y) ||
+        !isfinite(visible.size.width) || !isfinite(visible.size.height) ||
+        NSIsEmptyRect(parent) || NSIsEmptyRect(visible)) return parent;
+    CGFloat room = 240.0 + 16.0 + 8.0;
+    if (NSMinX(parent)-NSMinX(visible)>=room || NSMaxX(visible)-NSMaxX(parent)>=room ||
+        NSWidth(parent)+room>NSWidth(visible)) return parent;
+    CGFloat leftX = NSMinX(visible)+room;
+    CGFloat rightX = NSMaxX(visible)-NSWidth(parent)-room;
+    // Both candidates keep the complete parent and native drawer horizontally
+    // inside the selected display. Ties retain the preferred left drawer.
+    CGFloat candidateX = fabs(leftX-NSMinX(parent))<=fabs(rightX-NSMinX(parent)) ? leftX : rightX;
+    if (candidateX<NSMinX(visible) || candidateX+NSWidth(parent)>NSMaxX(visible)) return parent;
+    parent.origin.x = candidateX;
+    return parent;
+}
+
 @interface TGAquaDrawerDocumentView : NSView
 @end
 @implementation TGAquaDrawerDocumentView
@@ -72,6 +91,19 @@ TGAquaFolderDrawerGeometry TGAquaFolderDrawerPlacement(NSRect parent, NSRect vis
         NSHeight([[_parentWindow contentView] bounds]), [_folderButtons count], fullScreen);
 }
 - (BOOL)canShowExternally { return _parentWindow && [self currentPlacement].canShow; }
+- (BOOL)prepareToOpen {
+    if (![NSThread isMainThread] || !_parentWindow || ![_parentWindow isVisible] || [_parentWindow isMiniaturized] || [_folderButtons count]==0) return NO;
+    TGAquaFolderDrawerGeometry placement = [self currentPlacement];
+    if (placement.canShow) return YES;
+    NSScreen *screen = [_parentWindow screen];
+    if (!screen || NSHeight([[_parentWindow contentView] bounds])<98) return NO;
+    BOOL fullScreen = ([_parentWindow styleMask] & NSFullScreenWindowMask)!=0;
+    NSRect current = [_parentWindow frame];
+    NSRect proposed = TGAquaFolderDrawerPreparedParentFrame(current,[screen visibleFrame],fullScreen);
+    if (!NSEqualRects(current,proposed)) [_parentWindow setFrame:proposed display:YES animate:YES];
+    [self layout];
+    return [self canShowExternally];
+}
 - (BOOL)isOpen { NSInteger state = [_drawer state]; return state == NSDrawerOpenState || state == NSDrawerOpeningState; }
 - (void)setFolderButtons:(NSArray *)buttons {
     NSArray *next = buttons ? buttons : [NSArray array];

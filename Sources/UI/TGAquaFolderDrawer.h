@@ -11,6 +11,10 @@ typedef struct {
 TGAquaFolderDrawerGeometry TGAquaFolderDrawerPlacement(NSRect parentFrame, NSRect visibleFrame,
     CGFloat parentContentHeight, NSUInteger folderCount, BOOL fullScreen);
 
+// Explicit opening only: minimal horizontal shift to make room; unchanged when
+// an edge already fits, the window is too wide, or full-screen is active.
+NSRect TGAquaFolderDrawerPreparedParentFrame(NSRect parentFrame, NSRect visibleFrame, BOOL fullScreen);
+
 // The same scroll view/buttons move between this host and the inline source list.
 // Targets, tags, represented folder data and selection remain owned by the caller.
 @interface TGAquaFolderDrawer : NSObject <NSDrawerDelegate> {
@@ -35,6 +39,8 @@ TGAquaFolderDrawerGeometry TGAquaFolderDrawerPlacement(NSRect parentFrame, NSRec
 - (void)refreshLocalization;
 - (void)layout;
 - (BOOL)canShowExternally;
+// Main-thread explicit user intent only. Never called by automatic layout.
+- (BOOL)prepareToOpen;
 - (void)setVisible:(BOOL)visible;
 - (BOOL)isOpen;
 - (void)attachFolderScrollView;

@@ -45,6 +45,8 @@ signatures = [
 ]
 production = '\n'.join(method(drawer_source, signature) for signature in signatures)
 production += '\n' + method(shell_source, '- (void)updateAquaShellVisibility')
+if 'prepareToOpen' in method(drawer_source, '- (void)configureAquaFolderDrawer'):
+    raise AssertionError('Restoring the saved drawer on startup must not move the parent window')
 
 # This production block runs before layoutAquaShell. It must never resize a
 # scroll view currently owned by NSDrawer using the old 46pt Classic geometry.
@@ -125,25 +127,40 @@ enum { NSWindowAbove=1 };
     ProbeView *_scroll, *_host;
     NSArray *_buttons;
     NSUInteger _layoutCount;
+    NSUInteger _prepareCount;
+    BOOL _requestedOpenAtPreparation;
+    id _preparationObserver;
 }
 @property(nonatomic,assign) BOOL canShowExternally;
 @property(nonatomic,assign) BOOL visible;
 @property(nonatomic,readonly) ProbeView *host;
 @property(nonatomic,readonly) NSArray *buttons;
 @property(nonatomic,readonly) NSUInteger layoutCount;
+@property(nonatomic,readonly) NSUInteger prepareCount;
+@property(nonatomic,readonly) BOOL requestedOpenAtPreparation;
+@property(nonatomic,assign) id preparationObserver;
 - (id)initWithScroll:(ProbeView *)scroll;
 - (void)setFolderButtons:(NSArray *)buttons;
 - (void)layout;
 - (void)attachFolderScrollView;
 - (void)detachFolderScrollView;
+- (void)prepareToOpen;
 @end
 @implementation ProbeDrawer
 @synthesize canShowExternally=_canShowExternally, visible=_visible;
+@synthesize preparationObserver=_preparationObserver;
 - (id)initWithScroll:(ProbeView *)scroll { self=[super init]; if(self) { _scroll=[scroll retain]; _host=[[ProbeView alloc] init]; } return self; }
 - (void)dealloc { [_scroll release]; [_host release]; [_buttons release]; [super dealloc]; }
 - (ProbeView *)host { return _host; }
 - (NSArray *)buttons { return _buttons; }
 - (NSUInteger)layoutCount { return _layoutCount; }
+- (NSUInteger)prepareCount { return _prepareCount; }
+- (BOOL)requestedOpenAtPreparation { return _requestedOpenAtPreparation; }
+- (void)prepareToOpen {
+    _prepareCount++;
+    _requestedOpenAtPreparation=[[_preparationObserver valueForKey:@"aquaFolderDrawerRequestedOpen"] boolValue];
+    [[_preparationObserver valueForKey:@"events"] addObject:@"prepare"];
+}
 - (void)setFolderButtons:(NSArray *)buttons { [buttons retain]; [_buttons release]; _buttons=buttons; }
 - (void)layout { _layoutCount++; }
 - (void)attachFolderScrollView { [_host addSubview:_scroll positioned:NSWindowAbove relativeTo:nil]; }
@@ -191,6 +208,7 @@ __VIEW_DECLARATIONS__
     _window=[[ProbeView alloc] init]; _window.contentView=[[[ProbeView alloc] init] autorelease];
     self.drawerFolderScrollView.contentView=[[[ProbeView alloc] init] autorelease];
     self.aquaFolderDrawer=[[[ProbeDrawer alloc] initWithScroll:self.drawerFolderScrollView] autorelease];
+    self.aquaFolderDrawer.preparationObserver=self;
     self.currentAuthState=@"ready"; self.activeSection=@"chats";
     NSMutableArray *buttons=[NSMutableArray array];
     NSInteger tags[]={-1,-2,3,17};
@@ -226,18 +244,26 @@ int main(void) {
         [[ProbeDefaults standardUserDefaults] setBool:opened forKey:@"TGAquaFolderDrawerOpen"];
         [[ProbeDefaults standardUserDefaults] setBool:collapsed forKey:@"TGAquaFoldersCollapsed"];
         [probe toggleAquaFolders:nil];
+        BOOL explicitOpening=mode && preference && !opened;
+        Check(probe.aquaFolderDrawer.prepareCount==(explicitOpening ? 1U : 0U),"only an explicit closed-to-open Aqua drawer toggle requests accommodation once");
+        if(explicitOpening) Check(!probe.aquaFolderDrawer.requestedOpenAtPreparation,"opening preparation happens before requested-open changes to true");
         Check(probe.aquaFolderDrawerRequestedOpen==(mode && preference ? !opened : opened),"toggle only changes external requested-open preference in drawer mode");
         Check(probe.aquaFoldersCollapsed==(mode && !preference ? !collapsed : collapsed),"toggle preserves the inactive presentation's expansion state");
         Check([[[ProbeDefaults standardUserDefaults] objectForKey:@"TGAquaFolderDrawerOpen"] boolValue]==probe.aquaFolderDrawerRequestedOpen,"requested drawer expansion persists independently");
         Check([[[ProbeDefaults standardUserDefaults] objectForKey:@"TGAquaFoldersCollapsed"] boolValue]==probe.aquaFoldersCollapsed,"inline collapse preference persists independently");
-        Check([probe.events isEqual:(mode ? [NSArray arrayWithObjects:@"layout",@"visibility",nil] : [NSArray array])],"Classic toggle is inert; Aqua relayouts before visibility");
+        NSArray *toggleEvents=explicitOpening ? [NSArray arrayWithObjects:@"prepare",@"layout",@"visibility",nil]
+            : (mode ? [NSArray arrayWithObjects:@"layout",@"visibility",nil] : [NSArray array]);
+        Check([probe.events isEqual:toggleEvents],"explicit opening prepares before layout; closing and Classic/inline toggles never move the parent");
+        NSUInteger prepared=probe.aquaFolderDrawer.prepareCount;
         [probe.events removeAllObjects];
         probe.aquaFolderDrawer.visible=YES;
         [probe aquaFolderPresentationChanged:nil];
         Check([probe.events isEqual:(mode ? [NSArray arrayWithObjects:@"refresh",@"layout",@"visibility",nil] : [NSArray array])],"mode switch refreshes presentation and geometry once, Classic remains unchanged");
         Check(probe.aquaFolderDrawer.visible==!mode,"mode switch closes an old external drawer before reparenting");
+        Check(probe.aquaFolderDrawer.prepareCount==prepared,"changing presentation in Settings never accommodates or moves the parent window");
         [probe.events removeAllObjects]; [probe aquaFolderDrawerPlacementChanged:nil];
         Check([probe.events isEqual:(mode ? [NSArray arrayWithObjects:@"layout",@"visibility",nil] : [NSArray array])],"edge availability changes relayout Aqua without changing Classic");
+        Check(probe.aquaFolderDrawer.prepareCount==prepared,"passive edge availability notification never moves the parent window");
         if(mode) {
             NSRect inlineFrame=NSMakeRect(0,200,292,96);
             [probe layoutAquaFolderListInFrame:inlineFrame];
@@ -262,6 +288,7 @@ int main(void) {
                 }
             }
             probe.aquaFolderDrawer.canShowExternally=edge;
+            Check(probe.aquaFolderDrawer.prepareCount==prepared,"layout and fallback host transfers never request accommodation");
             for(NSUInteger i=0;i<[identity count];i++) {
                 ProbeView *button=[identity objectAtIndex:i];
                 Check(button.target==probe && button.action==@selector(folderFilterChanged:),"moving folders preserves their original action routing");
@@ -277,6 +304,7 @@ int main(void) {
             probe.aquaFolderDrawer.visible=YES;
             probe.drawerFolderScrollView.hidden=NO;
             [probe updateAquaShellVisibility];
+            Check(probe.aquaFolderDrawer.prepareCount==prepared,"passive auth/section visibility updates never request accommodation");
             if(mode) {
                 Check(probe.aquaFolderDrawer.visible==(chats && external && expanded && !empty),"external drawer cannot remain open in settings, other sections, auth or empty-folder state");
                 Check(probe.drawerFolderScrollView.hidden==(!chats || !expanded || empty),"shared folders visibility follows auth, section and expansion");
