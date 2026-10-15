@@ -1366,6 +1366,9 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
     self.mediaCenterGeneration = self.mediaCenterGeneration + 1;
     [self closeMediaCenterInlinePreview:nil];
     [self.mediaCenterPanelView setHidden:YES];
+    // A resize in Media Center removes the composer footer. Restore its live
+    // geometry before showing the conversation again.
+    if (TGInterfaceDesignIsAqua()) [self layoutContentView];
     [self updateVisibleSection];
     [self requestComposerRefocus];
 }

@@ -54,6 +54,7 @@
     self.autoOlderMessagesLoadArmed = YES;
     self.forceMessageScrollToNewest = YES;
     [self refreshSelectedChatHeaderDisplay];
+    if (TGInterfaceDesignIsAqua()) [self layoutContentView];
     [self updateVisibleSection];
     [self appendDetail:[NSString stringWithFormat:@"Opening chat %@.", self.selectedChatID]];
     [self reloadMessagesForChatID:self.selectedChatID interactive:NO];
