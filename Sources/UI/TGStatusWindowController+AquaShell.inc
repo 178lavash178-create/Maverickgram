@@ -156,6 +156,7 @@
     }
     [self.aquaDownloadsButton setFrame:NSMakeRect(width-124, height-42, 112, 30)];
     [self.aquaArchiveButton setFrame:NSMakeRect(12, controlY, floor((sidebarWidth-30)/2), 32)];
+    [content addSubview:self.aquaArchiveButton positioned:NSWindowAbove relativeTo:nil];
     NSButton *settings = [self.navigationButtons objectAtIndex:3];
     [settings setFrame:NSMakeRect(NSMaxX([self.aquaArchiveButton frame])+6, controlY, floor((sidebarWidth-30)/2), 32)];
     [content addSubview:settings positioned:NSWindowAbove relativeTo:nil];
