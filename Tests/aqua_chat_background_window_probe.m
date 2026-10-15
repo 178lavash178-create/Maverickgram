@@ -21,7 +21,10 @@ NSString * const TGAquaChatBackgroundDidChangeNotification = @"WallpaperProbe";
     for(NSUInteger mode=0;mode<3;mode++) for(NSUInteger i=0;i<(mode==0 ? 9 : 5);i++) {
         NSString *kind=mode==0 ? @"color" : (mode==1 ? @"texture" : @"wallpaper");
         NSString *identifier=mode==2 ? [wallpapers objectAtIndex:i] : [NSString stringWithFormat:@"%@-%lu",kind,(unsigned long)i];
-        [presets addObject:[NSDictionary dictionaryWithObjectsAndKeys:identifier,@"id",kind,@"kind",[NSString stringWithFormat:@"%@ %lu",kind,(unsigned long)i],@"title_en",[NSString stringWithFormat:@"Вариант %lu",(unsigned long)i],@"title_ru",nil]];
+        NSArray *ru=[NSArray arrayWithObjects:@"Ледяной",@"Слоновая кость",@"Небесный",@"Шалфей",@"Песочный",@"Лаванда",@"Розовый",@"Серебряный",@"Белый",nil];
+        NSArray *be=[NSArray arrayWithObjects:@"Ледзяны",@"Слановая косць",@"Нябесны",@"Шалфей",@"Пясочны",@"Лаванда",@"Ружовы",@"Срэбны",@"Белы",nil];
+        NSArray *en=[NSArray arrayWithObjects:@"Ice",@"Ivory",@"Sky",@"Sage",@"Sand",@"Lavender",@"Rose",@"Silver",@"White",nil];
+        [presets addObject:[NSDictionary dictionaryWithObjectsAndKeys:identifier,@"id",kind,@"kind",mode==0 ? [en objectAtIndex:i] : [NSString stringWithFormat:@"%@ %lu",kind,(unsigned long)i],@"title_en",mode==0 ? [ru objectAtIndex:i] : [NSString stringWithFormat:@"Вариант %lu",(unsigned long)i],@"title_ru",mode==0 ? [be objectAtIndex:i] : [NSString stringWithFormat:@"Варыянт %lu",(unsigned long)i],@"title_be",nil]];
     }
     return presets;
 }
@@ -54,6 +57,11 @@ NSString * const TGAquaChatBackgroundDidChangeNotification = @"WallpaperProbe";
     (void)flipped; LastDrawn=configuration; LastViewport=viewport;
     [[NSColor colorWithCalibratedWhite:0.85 alpha:1] set]; NSRectFill(clip);
 }
+@end
+@interface NSButtonCell (ColorRowProbe)
+- (NSRect)colorTitleRectForFrame:(NSRect)frame;
+- (NSDictionary *)colorTitleAttributes;
+- (BOOL)colorListRow;
 @end
 @interface TGAquaChatBackgroundWindowController (ProbeActions)
 - (void)chooseImage:(id)sender;
@@ -111,6 +119,23 @@ int main(void) {
             assert([colors count]==9 && [textures count]==5 && [wallpapers count]==5 && [scope numberOfItems]==(hasChat ? 2 : 1));
             assert([mode segmentCount]==3 && [mode selectedSegment]==0);
             assert([[colors objectAtIndex:8] state]==NSOnState);
+            NSUInteger colorIndex=0;
+            for(NSButton *button in colors) {
+                NSButtonCell *cell=[button cell];
+                assert([cell colorListRow]);
+                assert(NSWidth([button frame])==244 && NSHeight([button frame])==30);
+                assert(NSMinY([button frame])==248-colorIndex*30);
+                NSRect titleRect=[cell colorTitleRectForFrame:[button bounds]];
+                NSDictionary *attributes=[cell colorTitleAttributes];
+                NSSize actualName=[[cell title] sizeWithAttributes:attributes];
+                assert(NSWidth(titleRect)==198 && NSMinX(titleRect)==40);
+                assert(actualName.width<=NSWidth(titleRect) && actualName.height<=NSHeight(titleRect));
+                assert([[attributes objectForKey:NSFontAttributeName] pointSize]==12);
+                assert([[cell title] rangeOfString:@"…"].location==NSNotFound);
+                assert([[cell title] rangeOfString:@"..."].location==NSNotFound);
+                AssertContained(titleRect,[button bounds]);
+                colorIndex++;
+            }
             for(NSString *paneKey in [NSArray arrayWithObjects:@"colorPane",@"texturePane",@"imagePane",nil]) {
                 NSView *pane=[controller valueForKey:paneKey];
                 for(NSView *view in [pane subviews]) AssertContained([view frame],[pane bounds]);
@@ -203,6 +228,6 @@ int main(void) {
     ClosingController=nil; [ClosingPanel release]; ClosingPanel=nil;
     TGSetLanguageCode(originalLanguage); [originalLanguage release];
     [Saved release]; [Writes release]; [Discards release];
-    printf("Aqua wallpaper window: %lu localized common/chat flows, 9 colors, 5 textures, 5 wallpapers, explicit modes, staged preview/Apply/Cancel, inheritance, import cleanup, modal owner-close lifetime and contained layout PASS.\n",(unsigned long)cases);
+    printf("Aqua wallpaper window: %lu localized common/chat flows, 9 full-name color rows, 5 textures, 5 wallpapers, explicit modes, staged preview/Apply/Cancel, inheritance, import cleanup, modal owner-close lifetime and contained layout PASS.\n",(unsigned long)cases);
     [pool drain]; return 0;
 }

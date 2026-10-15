@@ -13,18 +13,50 @@ static NSString *TGAquaBackgroundPresetTitle(NSDictionary *preset) {
 
 @interface TGAquaBackgroundSwatchCell : NSButtonCell {
     NSDictionary *_configuration;
+    BOOL _colorListRow;
 }
 @property(nonatomic, copy) NSDictionary *configuration;
+@property(nonatomic, assign) BOOL colorListRow;
+- (NSRect)colorTitleRectForFrame:(NSRect)frame;
+- (NSDictionary *)colorTitleAttributes;
 @end
 @implementation TGAquaBackgroundSwatchCell
-@synthesize configuration = _configuration;
+@synthesize configuration = _configuration, colorListRow = _colorListRow;
 - (id)copyWithZone:(NSZone *)zone {
     TGAquaBackgroundSwatchCell *cell = [super copyWithZone:zone];
     cell->_configuration = [_configuration copy];
     return cell;
 }
 - (void)dealloc { [_configuration release]; [super dealloc]; }
+- (NSDictionary *)colorTitleAttributes {
+    return [NSDictionary dictionaryWithObjectsAndKeys:[NSFont systemFontOfSize:12],NSFontAttributeName,[NSColor colorWithCalibratedWhite:0.16 alpha:1],NSForegroundColorAttributeName,nil];
+}
+- (NSRect)colorTitleRectForFrame:(NSRect)frame {
+    CGFloat height = ceil([@"Ag" sizeWithAttributes:[self colorTitleAttributes]].height);
+    return NSMakeRect(NSMinX(frame)+40,floor(NSMidY(frame)-height/2),MAX(0,NSWidth(frame)-46),height);
+}
 - (void)drawWithFrame:(NSRect)frame inView:(NSView *)view {
+    if (self.colorListRow) {
+        BOOL selected = [self state]==NSOnState;
+        NSRect row = NSInsetRect(frame,0.5,0.5);
+        if (selected || [self isHighlighted]) {
+            NSBezierPath *rowShape = [NSBezierPath bezierPathWithRoundedRect:row xRadius:4 yRadius:4];
+            [(selected ? [NSColor colorWithCalibratedRed:0.89 green:0.94 blue:0.99 alpha:1] : [NSColor colorWithCalibratedWhite:0.93 alpha:1]) set];
+            [rowShape fill];
+            [[NSColor colorWithCalibratedRed:0.42 green:0.60 blue:0.77 alpha:1] set];
+            [rowShape setLineWidth:1]; [rowShape stroke];
+        }
+        NSRect swatch = NSMakeRect(NSMinX(frame)+7,floor(NSMidY(frame)-11),22,22);
+        NSBezierPath *shape = [NSBezierPath bezierPathWithRoundedRect:swatch xRadius:3 yRadius:3];
+        [NSGraphicsContext saveGraphicsState]; [shape addClip];
+        [[TGAquaChatBackgroundStore sharedStore] drawConfiguration:self.configuration clipRect:swatch viewportRect:swatch flipped:[view isFlipped]];
+        [NSGraphicsContext restoreGraphicsState];
+        [[NSColor colorWithCalibratedWhite:0.55 alpha:1] set]; [shape setLineWidth:1]; [shape stroke];
+        // The complete localized name has a dedicated 198pt column. Do not
+        // truncate it or substitute an ellipsis as thumbnail captions do.
+        [[self title] drawAtPoint:[self colorTitleRectForFrame:frame].origin withAttributes:[self colorTitleAttributes]];
+        return;
+    }
     CGFloat captionY = [view isFlipped] ? NSMaxY(frame)-14 : NSMinY(frame);
     CGFloat swatchY = [view isFlipped] ? NSMinY(frame)+2 : NSMinY(frame)+17;
     NSRect swatch = NSMakeRect(NSMinX(frame)+2, swatchY, NSWidth(frame)-4, NSHeight(frame)-19);
@@ -118,7 +150,7 @@ static NSString *TGAquaBackgroundPresetTitle(NSDictionary *preset) {
     NSUInteger index = 0;
     for (NSDictionary *preset in presets) {
         NSRect frame;
-        if (mode==0) frame = NSMakeRect((index%3)*86,210-(index/3)*84,72,64);
+        if (mode==0) frame = NSMakeRect(0,248-index*30,244,30);
         else if (mode==1) frame = NSMakeRect(0,232-index*55,244,48);
         else {
             CGFloat x = (index%2)*128;
@@ -128,6 +160,7 @@ static NSString *TGAquaBackgroundPresetTitle(NSDictionary *preset) {
         NSButton *button = [[[NSButton alloc] initWithFrame:frame] autorelease];
         TGAquaBackgroundSwatchCell *cell = [[[TGAquaBackgroundSwatchCell alloc] initTextCell:TGAquaBackgroundPresetTitle(preset)] autorelease];
         cell.configuration = [TGAquaChatBackgroundStore configurationForPresetIdentifier:[preset objectForKey:@"id"]];
+        cell.colorListRow = (mode==0);
         [button setCell:cell]; [button setButtonType:NSPushOnPushOffButton]; [button setBordered:NO];
         [button setTarget:self]; [button setAction:action]; [button setToolTip:TGAquaBackgroundPresetTitle(preset)];
         [parent addSubview:button]; [buttons addObject:button]; index++;
