@@ -22,6 +22,12 @@ NSString *TGLoc(NSString *key) {
 
     NSString *language = TGLanguageCode();
     NSDictionary *ru = [NSDictionary dictionaryWithObjectsAndKeys:
+                        @"Открыть или закрыть выдвижную панель папок", @"aqua.folders.toggleDrawer",
+                        @"Свернуть или развернуть список папок", @"aqua.folders.toggleInline",
+                        @"Папки", @"aqua.folders.presentationLabel",
+                        @"Выдвижная панель", @"aqua.folders.drawer",
+                        @"Внутри окна", @"aqua.folders.insideWindow",
+                        @"Расположение папок меняется сразу, без перезапуска.", @"aqua.folders.presentationHint",
                         @"Тип фона", @"aqua.background.type",
                         @"Изображение", @"aqua.background.images",
                         @"Белый фон", @"aqua.background.restoreWhite",
@@ -1283,6 +1289,12 @@ NSString *TGLoc(NSString *key) {
                         @"Можно открыть канал в браузере.", @"about.channel.open.browserFallback",
                         nil];
     NSDictionary *be = [NSDictionary dictionaryWithObjectsAndKeys:
+                        @"Адкрыць або закрыць высоўную панэль папак", @"aqua.folders.toggleDrawer",
+                        @"Згарнуць або разгарнуць спіс папак", @"aqua.folders.toggleInline",
+                        @"Папкі", @"aqua.folders.presentationLabel",
+                        @"Высоўная панэль", @"aqua.folders.drawer",
+                        @"Унутры акна", @"aqua.folders.insideWindow",
+                        @"Размяшчэнне папак змяняецца адразу, без перазапуску.", @"aqua.folders.presentationHint",
                         @"Тып фону", @"aqua.background.type",
                         @"Выява", @"aqua.background.images",
                         @"Белы фон", @"aqua.background.restoreWhite",
@@ -2544,6 +2556,12 @@ NSString *TGLoc(NSString *key) {
                         @"Можна адкрыць канал у браўзеры.", @"about.channel.open.browserFallback",
                         nil];
     NSDictionary *en = [NSDictionary dictionaryWithObjectsAndKeys:
+                        @"Open or close the attached folders drawer", @"aqua.folders.toggleDrawer",
+                        @"Collapse or expand the folder list", @"aqua.folders.toggleInline",
+                        @"Folders", @"aqua.folders.presentationLabel",
+                        @"Attached drawer", @"aqua.folders.drawer",
+                        @"Inside the window", @"aqua.folders.insideWindow",
+                        @"Folder placement changes immediately, without restarting.", @"aqua.folders.presentationHint",
                         @"Background type", @"aqua.background.type",
                         @"Image", @"aqua.background.images",
                         @"White background", @"aqua.background.restoreWhite",

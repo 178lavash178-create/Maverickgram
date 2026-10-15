@@ -53,6 +53,8 @@
 #import "TGAquaShellViews.h"
 #import "TGAquaChatBackgroundClipView.h"
 #import "TGAquaChatBackgroundWindowController.h"
+#import "TGAquaFolderDrawer.h"
+#import "TGAquaFolderPresentation.h"
 #import "TGTypingIndicatorPresentation.h"
 #import "TGUpdateSupport.h"
 #import "TGTransparentSpinnerView.h"
@@ -316,6 +318,9 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 @property (nonatomic, retain) TGAquaFolderDivider *aquaFolderDivider;
 @property (nonatomic, assign) CGFloat aquaFolderPreferredHeight;
 @property (nonatomic, assign) BOOL aquaFoldersCollapsed;
+@property (nonatomic, retain) TGAquaFolderDrawer *aquaFolderDrawer;
+@property (nonatomic, retain) TGAquaFolderPresentationSettingsView *aquaFolderPresentationSettingsView;
+@property (nonatomic, assign) BOOL aquaFolderDrawerRequestedOpen;
 @property (nonatomic, retain) TGGroupedCardView *settingsSessionCardView;
 @property (nonatomic, retain) TGGroupedCardView *settingsDrawerCardView;
 @property (nonatomic, retain) TGGroupedCardView *settingsResourceCardView;
@@ -919,6 +924,9 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 @synthesize aquaFolderDivider = _aquaFolderDivider;
 @synthesize aquaFolderPreferredHeight = _aquaFolderPreferredHeight;
 @synthesize aquaFoldersCollapsed = _aquaFoldersCollapsed;
+@synthesize aquaFolderDrawer = _aquaFolderDrawer;
+@synthesize aquaFolderPresentationSettingsView = _aquaFolderPresentationSettingsView;
+@synthesize aquaFolderDrawerRequestedOpen = _aquaFolderDrawerRequestedOpen;
 @synthesize settingsSessionCardView = _settingsSessionCardView;
 @synthesize settingsDrawerCardView = _settingsDrawerCardView;
 @synthesize settingsResourceCardView = _settingsResourceCardView;
@@ -4806,6 +4814,8 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
 #include "TGStatusWindowController+ClosedChatNavigation.inc"
 
+#include "TGStatusWindowController+AquaFolderDrawer.inc"
+
 #include "TGStatusWindowController+AquaShell.inc"
 #include "TGStatusWindowController+SectionLayout.inc"
 
@@ -4952,6 +4962,8 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [_aquaToolbarView release];
     [_aquaFooterView release];
     [_aquaChatHeaderView release];
+    [_aquaFolderDrawer release];
+    [_aquaFolderPresentationSettingsView release];
     [_aquaFolderHeaderButton release];
     [_aquaFolderEditButton release];
     [_aquaSearchButton release];

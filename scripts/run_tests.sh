@@ -542,3 +542,11 @@ HOME="$TEST_HOME" "$BUILD_DIR/aqua-chat-background-probe"
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_chat_background_window_probe.m Sources/UI/TGAquaChatBackgroundWindowController.m Sources/UI/TGAquaAppearance.m Sources/UI/TGTheme.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGLocalization.m -framework Cocoa -o "$BUILD_DIR/aqua-chat-background-window-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/aqua-chat-background-window-probe"
 "$PYTHON_BIN" Tests/aqua_background_texture_phase_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+
+
+echo "== Aqua attached folder drawer =="
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_folder_presentation_probe.m Sources/UI/TGAquaFolderPresentation.m Sources/UI/TGLocalization.m -framework Cocoa -o "$BUILD_DIR/aqua-folder-presentation-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/aqua-folder-presentation-probe"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_folder_drawer_probe.m Sources/UI/TGAquaFolderDrawer.m Sources/UI/TGAquaShellViews.m Sources/UI/TGAquaAppearance.m -framework Cocoa -o "$BUILD_DIR/aqua-folder-drawer-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/aqua-folder-drawer-probe"
+"$PYTHON_BIN" Tests/aqua_folder_drawer_routing_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"

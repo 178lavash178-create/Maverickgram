@@ -28,6 +28,9 @@
     [self.settingsContentView addSubview:self.interfaceDesignHint];
     [self.settingsContentView addSubview:self.interfaceDesignPopUpButton];
     if (!TGInterfaceDesignIsAqua()) return;
+    self.aquaFolderPresentationSettingsView = [[[TGAquaFolderPresentationSettingsView alloc] initWithFrame:NSZeroRect] autorelease];
+    [self.settingsContentView addSubview:self.aquaFolderPresentationSettingsView];
+    [self configureAquaFolderDrawer];
     NSView *content = [[self window] contentView];
     self.aquaToolbarView = [[[TGAquaMetalView alloc] initWithFrame:NSZeroRect] autorelease];
     self.aquaFooterView = [[[TGAquaMetalView alloc] initWithFrame:NSZeroRect] autorelease];
@@ -87,7 +90,9 @@
     [self.themeCategoryPopUpButton setEnabled:!TGInterfaceDesignIsAqua()];
     if (!TGInterfaceDesignIsAqua()) return;
     [self.aquaFolderHeaderButton setTitle:[NSString stringWithFormat:@"%@ · %lu", ru ? @"ПАПКИ" : @"FOLDERS", (unsigned long)[self.drawerFolderButtons count]]];
-    [self.aquaFolderHeaderButton setToolTip:ru ? @"Свернуть или развернуть список папок" : @"Collapse or expand folders"];
+    [self.aquaFolderPresentationSettingsView refreshAppearance];
+    [self.aquaFolderDrawer refreshLocalization];
+    [self.aquaFolderHeaderButton setToolTip:TGLoc(TGAquaFoldersUseDrawer() ? @"aqua.folders.toggleDrawer" : @"aqua.folders.toggleInline")];
     [self.aquaFolderEditButton setTitle:ru ? @"Изменить" : @"Edit"];
     [self.aquaSearchButton setTitle:ru ? @"Поиск чатов" : @"Search chats"];
     [self.aquaDownloadsButton setTitle:ru ? @"Загрузки" : @"Downloads"];
@@ -106,12 +111,6 @@
     }
 }
 
-- (void)toggleAquaFolders:(id)sender {
-    (void)sender;
-    self.aquaFoldersCollapsed = !self.aquaFoldersCollapsed;
-    [[NSUserDefaults standardUserDefaults] setBool:self.aquaFoldersCollapsed forKey:@"TGAquaFoldersCollapsed"];
-    [self layoutContentView]; [self updateVisibleSection];
-}
 
 - (void)resizeAquaFolders:(TGAquaFolderDivider *)sender {
     CGFloat current = NSHeight([self.drawerFolderScrollView frame]);
@@ -127,10 +126,14 @@
     for (NSView *view in [NSArray arrayWithObjects:self.aquaToolbarView, self.aquaSearchButton, self.aquaDownloadsButton, self.workshopDrawerButton, nil]) [view setHidden:!ready];
     [self.aquaFooterView setHidden:(!chats || self.chatNavigationClosed || self.mediaCenterVisible)];
     for (NSButton *button in self.navigationButtons) [button setHidden:!ready];
-    for (NSView *view in [NSArray arrayWithObjects:self.aquaFolderHeaderButton, self.aquaFolderEditButton, nil]) [view setHidden:!chats];
+    [self.aquaFolderHeaderButton setHidden:!chats];
+    [self.aquaFolderEditButton setHidden:(!chats || [self aquaUsesExternalFolderDrawer])];
     [self.aquaChatHeaderView setHidden:!chats];
-    [self.aquaFolderDivider setHidden:(!chats || self.aquaFoldersCollapsed || [self.drawerFolderButtons count] == 0)];
-    [self.drawerFolderScrollView setHidden:(!chats || self.aquaFoldersCollapsed || [self.drawerFolderButtons count] == 0)];
+    BOOL expanded = [self aquaFolderListExpanded];
+    BOOL external = [self aquaUsesExternalFolderDrawer];
+    [self.aquaFolderDivider setHidden:(!chats || external || !expanded || [self.drawerFolderButtons count] == 0)];
+    [self.drawerFolderScrollView setHidden:(!chats || !expanded || [self.drawerFolderButtons count] == 0)];
+    [self.aquaFolderDrawer setVisible:(chats && external && expanded && [self.drawerFolderButtons count] > 0)];
     for (NSButton *button in self.drawerFolderButtons) [button setHidden:NO];
     [self.topPanelView setHidden:YES]; [self.bottomNavigationView setHidden:YES];
     [self.accountBadgeView setHidden:!ready];
@@ -176,21 +179,13 @@
         [content addSubview:self.markAllChatsReadSpinner positioned:NSWindowAbove relativeTo:nil];
     }
     [self.aquaDownloadsButton setFrame:NSMakeRect(width-124, height-42, 112, 30)];
-    [self.aquaFolderHeaderButton setFrame:NSMakeRect(8, NSMaxY(sidebar)-30, MAX(86, sidebarWidth-104), 26)];
     [self.aquaFolderEditButton setFrame:NSMakeRect(sidebarWidth-88, NSMaxY(sidebar)-30, 80, 26)];
-    TGAquaSourceListGeometry frames = TGAquaSourceListFrames(sidebar, 0.0, self.aquaFolderPreferredHeight, [self.drawerFolderButtons count], self.aquaFoldersCollapsed);
-    [self.drawerFolderScrollView setFrame:frames.folders];
-    [content addSubview:self.drawerFolderScrollView positioned:NSWindowAbove relativeTo:nil];
+    [self.aquaFolderDrawer setFolderButtons:self.drawerFolderButtons];
+    BOOL external = [self aquaUsesExternalFolderDrawer];
+    [self.aquaFolderHeaderButton setFrame:NSMakeRect(8, NSMaxY(sidebar)-30, MAX(86, sidebarWidth-(external ? 16 : 104)), 26)];
+    TGAquaSourceListGeometry frames = TGAquaSourceListFrames(sidebar, 0.0, self.aquaFolderPreferredHeight, [self.drawerFolderButtons count], external || ![self aquaFolderListExpanded]);
     [self.aquaFolderDivider setFrame:frames.divider];
-    CGFloat folderWidth = NSWidth([[self.drawerFolderScrollView contentView] bounds]);
-    CGFloat documentHeight = MAX(NSHeight(frames.folders), [self.drawerFolderButtons count]*32.0);
-    [self.drawerFolderContentView setFrame:NSMakeRect(0,0,folderWidth,documentHeight)];
-    index = 0;
-    for (NSButton *button in self.drawerFolderButtons) { [button setFrame:NSMakeRect(0,index*32.0,folderWidth,32)]; index++; }
-    CGFloat maximumY = MAX(0, documentHeight-NSHeight([[self.drawerFolderScrollView contentView] bounds]));
-    NSPoint origin = [[self.drawerFolderScrollView contentView] bounds].origin;
-    [[self.drawerFolderScrollView contentView] setBoundsOrigin:NSMakePoint(0, MIN(MAX(0,origin.y), maximumY))];
-    [self.drawerFolderScrollView reflectScrolledClipView:[self.drawerFolderScrollView contentView]];
+    [self layoutAquaFolderListInFrame:frames.folders];
     [self.aquaChatHeaderView setFrame:frames.chatHeader];
     [content addSubview:self.aquaChatHeaderView positioned:NSWindowAbove relativeTo:nil];
     BOOL compact = [self isChatSidebarCompactForWidth:sidebarWidth];

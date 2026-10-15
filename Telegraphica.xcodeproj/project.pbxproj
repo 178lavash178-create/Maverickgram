@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C78AD8F279F019EA81D41ADF /* TGAquaFolderPresentation.m in Sources */ = {isa = PBXBuildFile; fileRef = 183E0433C619FD7BE94522A8 /* TGAquaFolderPresentation.m */; };
+		FB83D1592957DF5B25685648 /* TGAquaFolderDrawer.m in Sources */ = {isa = PBXBuildFile; fileRef = 65CC418B4633C65085A3606D /* TGAquaFolderDrawer.m */; };
 		A68400000000000000000001 /* Textures in Resources */ = {isa = PBXBuildFile; fileRef = A68400000000000000000002 /* Textures */; };
 		A65300000000000000000001 /* TGChatOpenState.m in Sources */ = {isa = PBXBuildFile; fileRef = A65300000000000000000003 /* TGChatOpenState.m */; };
 		A65200000000000000000001 /* TGMessageReactionParser.m in Sources */ = {isa = PBXBuildFile; fileRef = A65200000000000000000003 /* TGMessageReactionParser.m */; };
@@ -201,6 +203,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		405B726C0FF413570C056CA6 /* TGAquaFolderPresentation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGAquaFolderPresentation.h; sourceTree = "<group>"; };
+		183E0433C619FD7BE94522A8 /* TGAquaFolderPresentation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGAquaFolderPresentation.m; sourceTree = "<group>"; };
+		DCC7233205FD74EAC4862ADC /* TGAquaFolderDrawer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGAquaFolderDrawer.h; sourceTree = "<group>"; };
+		65CC418B4633C65085A3606D /* TGAquaFolderDrawer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGAquaFolderDrawer.m; sourceTree = "<group>"; };
 		A68400000000000000000002 /* Textures */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Textures; sourceTree = "<group>"; };
 		A65300000000000000000002 /* TGChatOpenState.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGChatOpenState.h; sourceTree = "<group>"; };
 		A65300000000000000000003 /* TGChatOpenState.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGChatOpenState.m; sourceTree = "<group>"; };
@@ -764,6 +770,10 @@
 				39627EC992664F3FAA647D1D /* TGAquaAppearance.m */,
 				03223C5DFBA2A394E05C1A1F /* TGAquaAppearance.h */,
 				3402628F7E2E97AD2009294A /* TGAquaChatBackgroundWindowController.h */,
+				405B726C0FF413570C056CA6 /* TGAquaFolderPresentation.h */,
+				183E0433C619FD7BE94522A8 /* TGAquaFolderPresentation.m */,
+				DCC7233205FD74EAC4862ADC /* TGAquaFolderDrawer.h */,
+				65CC418B4633C65085A3606D /* TGAquaFolderDrawer.m */,
 				AD9375684AC0B5E76F7AD0D4 /* TGAquaChatBackgroundWindowController.m */,
 				CE2C3950F20FBC5947A28148 /* TGAquaChatBackgroundClipView.h */,
 				4683EBD3B85C09F86986AAFC /* TGAquaChatBackgroundClipView.m */,
@@ -1121,6 +1131,8 @@
 				BCB9731CA1F92CB589042240 /* TGInterfaceDesign.m in Sources */,
 				445D07712254DF6E817BCFB0 /* TGAquaAppearance.m in Sources */,
 				08584D0BC4919A5F3A0BE135 /* TGAquaChatBackgroundWindowController.m in Sources */,
+				C78AD8F279F019EA81D41ADF /* TGAquaFolderPresentation.m in Sources */,
+				FB83D1592957DF5B25685648 /* TGAquaFolderDrawer.m in Sources */,
 				CCDF667465CFF6304F3CE80E /* TGAquaChatBackgroundClipView.m in Sources */,
 				60B69172298CC76A46E1E4B1 /* TGAquaChatBackground.m in Sources */,
 				D4D3FDD1F3E4B741A464A8B5 /* TGAquaShellViews.m in Sources */,

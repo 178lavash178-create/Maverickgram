@@ -339,6 +339,7 @@
     [self showView:self.settingsCheckUpdatesButton visible:showSettings];
     [self showView:self.settingsUpdateDotView visible:(showSettings && self.updateAvailable)];
     [self showView:self.settingsAppearanceButton visible:(showSettings && TGInterfaceDesignIsAqua())];
+    [self showView:self.aquaFolderPresentationSettingsView visible:(showSettings && TGInterfaceDesignIsAqua())];
     [self showView:self.settingsLogsButton visible:showSettings];
     [self showView:self.settingsAboutButton visible:showSettings];
 
@@ -612,6 +613,8 @@
     [[self.statusField cell] setLineBreakMode:NSLineBreakByTruncatingTail];
     [self.statusField setFrame:NSMakeRect(railX + 9.0, railTop - 66.0, railWidth - 18.0, 14.0)];
 
+    NSUInteger navigationIndex = 0;
+    if (!aqua) {
     CGFloat drawerFolderButtonHeight = 46.0;
     CGFloat drawerFolderButtonGap = 8.0;
     CGFloat drawerFolderInset = 4.0;
@@ -633,7 +636,6 @@
                                                       0.0,
                                                       drawerFolderContentWidth,
                                                       drawerFolderContentHeight)];
-    NSUInteger navigationIndex = 0;
     for (navigationIndex = 0; navigationIndex < [self.drawerFolderButtons count]; navigationIndex++) {
         NSButton *folderButton = [self.drawerFolderButtons objectAtIndex:navigationIndex];
         CGFloat folderButtonY = drawerFolderInset +
@@ -649,6 +651,8 @@
         [contentView addSubview:self.drawerButton positioned:NSWindowAbove relativeTo:nil];
         [contentView addSubview:self.workshopDrawerButton positioned:NSWindowAbove relativeTo:nil];
         [contentView addSubview:self.drawerFolderScrollView positioned:NSWindowAbove relativeTo:nil];
+    }
+
     }
 
     BOOL compactChatSidebar = [self isChatSidebarCompactForWidth:sidebarWidth];
@@ -1350,7 +1354,7 @@
     CGFloat privacyCardHeight = 54.0;
     CGFloat drawerCardHeight = 104.0;
     CGFloat resourceCardHeight = 366.0;
-    CGFloat interfaceCardHeight = TGInterfaceDesignIsAqua() ? 304.0 : 258.0;
+    CGFloat interfaceCardHeight = TGInterfaceDesignIsAqua() ? 346.0 : 258.0;
     CGFloat sessionsCardHeight = 72.0;
     CGFloat filesCardHeight = 172.0;
     CGFloat helpCardHeight = 112.0;
@@ -1537,6 +1541,7 @@
     [self.interfaceDesignLabel setFrame:NSMakeRect(rowLeft, interfaceCardY + 182, labelWidth, 22)];
     [self.interfaceDesignPopUpButton setFrame:NSMakeRect(popupX, interfaceCardY + 178, popupWidth, 28)];
     [self.interfaceDesignHint setFrame:NSMakeRect(rowLeft, interfaceCardY + 214, rowWidth, 32)];
+    [self.aquaFolderPresentationSettingsView setFrame:NSMakeRect(rowLeft, interfaceCardY + 302, rowWidth, 28)];
     settingsNextY = interfaceCardY + interfaceCardHeight + settingsGroupGap;
 
     [self.settingsStorageField setFrame:NSMakeRect(settingsGroupedX + 20.0, settingsNextY, settingsGroupedWidth - 40.0, settingsLabelHeight)];
@@ -1621,6 +1626,7 @@
 }
 
 - (void)windowDidBecomeKey:(NSNotification *)notification {
+    if ([notification object] == [self window] && TGInterfaceDesignIsAqua()) [self updateAquaShellVisibility];
     if ([notification object] == [self window]) [self conversationVisibilityDidChange:notification];
     if ([notification object] == [self window] && ![self.currentAuthState isEqualToString:@"ready"]) {
         [self scheduleLoginInputFocus];
@@ -1664,6 +1670,7 @@
 
 - (void)windowWillClose:(NSNotification *)notification {
     if ([notification object] == [self window]) {
+        [self.aquaFolderDrawer setVisible:NO];
         [self invalidateAutomaticReadRequests];
         [self.client setUserOpenedChatID:nil];
     }
