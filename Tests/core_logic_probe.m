@@ -1109,6 +1109,9 @@ static void TGTestReactionGeometry(void) {
         [item setMessageThreadReplyCount:@4];
         [item setChannelPost:YES];
         bubble = TGMessageBubbleRectForItem(item, frame, NO);
+        // The full discussion label may widen a channel bubble and reflow its
+        // reactions; compare against the footer measured for this final width.
+        band = TGReactionBandHeightForMessageItemWidth(item, NSWidth(bubble));
         NSRect flippedBar = TGMessageCommentBarRectForItem(item, bubble, YES);
         NSRect unflippedBar = TGMessageCommentBarRectForItem(item, bubble, NO);
         TGAssertTrue(NSContainsRect(bubble, flippedBar) && NSContainsRect(bubble, unflippedBar), @"comments must remain within the enlarged bubble");
