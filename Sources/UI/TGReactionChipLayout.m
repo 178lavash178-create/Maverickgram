@@ -2,6 +2,7 @@
 #import "TGMessageLayoutSupport.h"
 #import "TGTheme.h"
 #import "../Core/TGMessageItem.h"
+#include <math.h>
 
 static NSFont *TGReactionEmojiFont(void) {
     static NSFont *font = nil;
@@ -11,6 +12,35 @@ static NSFont *TGReactionEmojiFont(void) {
         if (!font) { font = [[NSFont systemFontOfSize:14.0] retain]; }
     });
     return font;
+}
+
+void TGDrawReactionTextVerticallyCentered(NSString *text, NSFont *font, NSColor *color, NSRect rect, BOOL flipped) {
+    if ([text length] == 0 || !font || NSIsEmptyRect(rect)) { return; }
+    static NSCache *metricsCache = nil;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{ metricsCache = [[NSCache alloc] init]; [metricsCache setCountLimit:256]; });
+    NSString *key = [NSString stringWithFormat:@"%@|%.2f|%@", [font fontName], [font pointSize], text];
+    NSArray *metrics = [metricsCache objectForKey:key];
+    NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys:font, NSFontAttributeName,
+                                color ? color : [NSColor blackColor], NSForegroundColorAttributeName, nil];
+    if (!metrics) {
+        NSSize limit = NSMakeSize(10000.0, 1000.0);
+        NSRect line = [text boundingRectWithSize:limit options:0 attributes:attributes];
+        // Available before 10.8. Unlike the line box, device metrics describe the
+        // actual emoji/fallback ink relative to its baseline on this OS's font.
+        NSRect ink = [text boundingRectWithSize:limit options:NSStringDrawingUsesDeviceMetrics attributes:attributes];
+        if (NSIsEmptyRect(ink) || !isfinite(NSMinY(ink)) || !isfinite(NSHeight(ink))) { ink = line; }
+        metrics = [NSArray arrayWithObjects:[NSValue valueWithRect:line], [NSValue valueWithRect:ink], nil];
+        [metricsCache setObject:metrics forKey:key];
+    }
+    NSRect line = [[metrics objectAtIndex:0] rectValue];
+    NSRect ink = [[metrics objectAtIndex:1] rectValue];
+    CGFloat originY = flipped ? NSMidY(rect) + NSMidY(ink) - NSMaxY(line)
+                             : NSMidY(rect) - NSMidY(ink) + NSMinY(line);
+    [NSGraphicsContext saveGraphicsState];
+    NSRectClip(rect);
+    [text drawAtPoint:NSMakePoint(NSMinX(rect), originY) withAttributes:attributes];
+    [NSGraphicsContext restoreGraphicsState];
 }
 
 static NSString *TGReactionDisplaySummary(TGMessageItem *item) {
@@ -127,18 +157,13 @@ void TGDrawReactionChipsForItem(TGMessageItem *item, NSRect bandRect, BOOL flipp
         NSColor *ink = TGReactionChipInkColor(chosen);
         [[background colorWithAlphaComponent:opacity] set];
         [[NSBezierPath bezierPathWithRoundedRect:rect xRadius:12.0 yRadius:12.0] fill];
-        NSDictionary *emojiAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
-            TGReactionEmojiFont(), NSFontAttributeName, [ink colorWithAlphaComponent:opacity], NSForegroundColorAttributeName, nil];
-        NSDictionary *countAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
-            [NSFont boldSystemFontOfSize:11.0], NSFontAttributeName, [ink colorWithAlphaComponent:opacity], NSForegroundColorAttributeName, nil];
         NSString *emoji = [entry objectForKey:@"display_emoji"], *count = [entry objectForKey:@"count"];
-        NSSize emojiSize = [emoji sizeWithAttributes:emojiAttributes], countSize = [count sizeWithAttributes:countAttributes];
         CGFloat emojiWidth = [[entry objectForKey:@"emoji_width"] doubleValue];
-        // Apple Color Emoji's line box places its visible glyph below the
-        // centre of ordinary numeric text on legacy AppKit.
-        CGFloat emojiY = NSMidY(rect) - floor(emojiSize.height / 2.0) + (flipped ? -2.0 : 2.0);
-        [emoji drawInRect:NSMakeRect(NSMinX(rect) + 8.0, emojiY, emojiWidth, emojiSize.height + 1.0) withAttributes:emojiAttributes];
-        [count drawInRect:NSMakeRect(NSMinX(rect) + 8.0 + emojiWidth + 4.0, NSMidY(rect) - floor(countSize.height / 2.0), MAX(0.0, NSWidth(rect) - emojiWidth - 20.0), countSize.height + 1.0) withAttributes:countAttributes];
+        NSColor *textColor = [ink colorWithAlphaComponent:opacity];
+        TGDrawReactionTextVerticallyCentered(emoji, TGReactionEmojiFont(), textColor,
+            NSMakeRect(NSMinX(rect) + 8.0, NSMinY(rect), emojiWidth, NSHeight(rect)), flipped);
+        TGDrawReactionTextVerticallyCentered(count, [NSFont boldSystemFontOfSize:11.0], textColor,
+            NSMakeRect(NSMinX(rect) + 8.0 + emojiWidth + 4.0, NSMinY(rect), MAX(0.0, NSWidth(rect) - emojiWidth - 20.0), NSHeight(rect)), flipped);
     }
     [NSGraphicsContext restoreGraphicsState];
 }

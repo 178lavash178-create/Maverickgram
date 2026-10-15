@@ -9,3 +9,6 @@ void TGDrawReactionChipsForItem(TGMessageItem *item, NSRect bandRect, BOOL flipp
 
 NSColor *TGReactionChipBackgroundColor(BOOL chosen);
 NSColor *TGReactionChipInkColor(BOOL chosen);
+
+// Centers visible glyph ink, including legacy emoji fallback text.
+void TGDrawReactionTextVerticallyCentered(NSString *text, NSFont *font, NSColor *color, NSRect rect, BOOL flipped);

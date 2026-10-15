@@ -697,7 +697,7 @@ static void TGTestDeliveryStatusPresentation(void) {
                 CGFloat distance = MAX(MAX(fabs([read redComponent] - [sent redComponent]), fabs([read greenComponent] - [sent greenComponent])), fabs([read blueComponent] - [sent blueComponent]));
                 minimumChroma = MIN(minimumChroma, chroma);
                 minimumDistance = MIN(minimumDistance, distance);
-                TGAssertTrue(chroma >= 0.29 && distance >= 0.20, [NSString stringWithFormat:@"read and sent need distinct saturated/neutral ink in %@", theme]);
+                TGAssertTrue(chroma >= 0.14 && distance >= 0.07, [NSString stringWithFormat:@"read and sent need distinct blue/neutral ink in %@", theme]);
                 TGAssertTrue(fabs([sent redComponent] - [sent blueComponent]) < 0.001, @"sent state remains neutral");
                 NSColor *surface = TGMessageMetadataSurfaceColor(item, flip);
                 CGFloat contrast = MIN(TGStatusProbeContrast(sent, surface), TGStatusProbeContrast(read, surface));
@@ -714,13 +714,17 @@ static void TGTestDeliveryStatusPresentation(void) {
                         [item setSending:state == 0]; [item setOutgoingRead:state == 2];
                         [TGStatusAssetTrace removeAllObjects];
                         TGDrawOutgoingStatusDotsForItem(item, time, flip);
-                        TGAssertTrue([TGStatusAssetTrace count] == (state == 1 ? 1 : 2), @"pending pair, sent single, and read pair must differ by visible count");
+                        TGAssertTrue([TGStatusAssetTrace count] == 2, @"preserve both visible receipt checks in sending, unread and read states");
                         TGAssertTrue(TGOutgoingStatusDotsWidthForItem(item) == width, @"receipt updates cannot move timestamp or wrap the body");
                         for (NSDictionary *asset in TGStatusAssetTrace) {
                             TGAssertEqualObjects([asset objectForKey:@"name"], @"done-mini", @"status uses the existing approved asset");
                             NSRect rect = [[asset objectForKey:@"rect"] rectValue];
                             TGAssertTrue(NSMinX(rect) > NSMaxX(time) && NSMaxX(rect) <= NSMaxX(time) + 4.0 + width, @"checks remain inside reserved width at every font size");
-                            if (state > 0) { TGAssertEqualObjects([asset objectForKey:@"color"], state == 1 ? sent : read, @"actual renderer must use semantic receipt ink"); }
+                            if (state > 0) {
+                                NSColor *actual = [asset objectForKey:@"color"];
+                                TGAssertTrue(TGStatusProbeContrast(actual, surface) >= 4.5, @"both unread checks must remain visible against the bubble");
+                                if (state == 2) { TGAssertEqualObjects(actual, read, @"read checks use the same restrained blue"); }
+                            }
                         }
                     }
                     [item setSending:NO]; [item setOutgoingRead:NO];
@@ -733,10 +737,11 @@ static void TGTestDeliveryStatusPresentation(void) {
                 [item setOutgoingRead:state != 0];
                 [TGStatusAssetTrace removeAllObjects];
                 TGAssertTrue(TGOutgoingStatusInlineAttributedStringForItem(item) != nil, @"inline receipt is available");
-                TGAssertTrue([TGStatusAssetTrace count] == (state ? 2 : 1), @"inline receipt needs fresh correct-count asset calls for each theme and mode");
+                TGAssertTrue([TGStatusAssetTrace count] == 2, @"inline receipt needs fresh correct-count asset calls for each theme and mode");
                 NSColor *expected = TGMessageDeliveryStatusInkColor(item, YES, NO);
                 for (NSDictionary *asset in TGStatusAssetTrace) {
-                    TGAssertEqualObjects([asset objectForKey:@"color"], expected, @"inline receipt uses this mode's readable ink");
+                    TGAssertTrue(TGStatusProbeContrast([asset objectForKey:@"color"], TGMessageMetadataSurfaceColor(item, NO)) >= 4.5, @"both inline checks remain readable in this mode");
+                    if (state != 0) { TGAssertEqualObjects([asset objectForKey:@"color"], expected, @"read inline receipt uses restrained blue"); }
                 }
                 [TGStatusAssetTrace removeAllObjects];
                 TGOutgoingStatusInlineAttributedStringForItem(item);

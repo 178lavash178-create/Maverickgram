@@ -62,12 +62,14 @@ NSColor *TGMessageMetadataInkColor(TGMessageItem *item, BOOL flipped) {
 
 NSColor *TGMessageDeliveryStatusInkColor(TGMessageItem *item, BOOL active, BOOL flipped) {
     if (active && ![item sending] && [item outgoingRead]) {
-        // Read receipts use an unmistakable blue/cyan pair; sent receipts keep
-        // neutral ink. This remains meaningful in monochrome via one/two checks.
+        // Preserve the familiar pair. Read receipts use a restrained blue;
+        // both unread checks stay visibly neutral instead of fading into the bubble.
         CGFloat surface = TGMessageColorLuminance(TGMessageMetadataSurfaceColor(item, flipped));
-        NSColor *preferred = surface > 0.179 ? TGColorFromHex(0x0033FF) : TGColorFromHex(0x69D7FF);
+        NSColor *preferred = surface > 0.179 ? TGColorFromHex(0x164FB0) : TGColorFromHex(0x6DD2FF);
         return TGMessageCachedFooterInk(@"status-read", item, flipped, preferred, 4.5);
     }
-    NSColor *preferred = [NSColor colorWithCalibratedWhite:(active ? 0.38 : 0.72) alpha:1.0];
-    return TGMessageCachedFooterInk(active ? @"status-sent" : @"status-pending", item, flipped, preferred, active ? 4.5 : 3.0);
+    BOOL sent = ![item sending];
+    NSColor *preferred = [NSColor colorWithCalibratedWhite:(sent ? (active ? 0.23 : 0.38) : 0.72) alpha:1.0];
+    NSString *role = sent ? (active ? @"status-sent-primary" : @"status-sent-secondary") : @"status-pending";
+    return TGMessageCachedFooterInk(role, item, flipped, preferred, sent ? 4.5 : 3.0);
 }

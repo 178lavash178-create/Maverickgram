@@ -427,6 +427,10 @@ echo "== Notification logout completion ownership =="
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/notification_logout_completion_probe.m -framework Foundation -o "$BUILD_DIR/notification-logout-completion-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/notification-logout-completion-probe"
 
+echo "== Reaction glyph pixel alignment =="
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/reaction_glyph_alignment_probe.m Sources/UI/TGReactionChipLayout.m -framework Cocoa -o "$BUILD_DIR/reaction-glyph-alignment-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/reaction-glyph-alignment-probe"
+
 echo "== Core logic probe =="
 
 "$CLANG" \
