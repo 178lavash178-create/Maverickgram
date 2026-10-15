@@ -524,3 +524,7 @@ HOME="$TEST_HOME" "$BUILD_DIR/aqua-shell-layout-probe"
 echo "== Closed-chat suggestions =="
 "$CLANG" "${COMPILE_FLAGS[@]}" -ISources/Core Tests/closed_chat_suggestions_probe.m Sources/Core/TGChatItem.m -framework Cocoa -o "$BUILD_DIR/closed_chat_suggestions_probe"
 HOME="$TEST_HOME" "$BUILD_DIR/closed_chat_suggestions_probe"
+
+echo "== Account badge bounds =="
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/account_badge_geometry_probe.m Sources/UI/TGStatusViewComponents.m -framework Cocoa -o "$BUILD_DIR/account_badge_geometry_probe"
+HOME="$TEST_HOME" "$BUILD_DIR/account_badge_geometry_probe"

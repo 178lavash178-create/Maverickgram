@@ -5,11 +5,51 @@
 #include <math.h>
 
 @implementation TGAquaMetalView
+@synthesize dividerX = _dividerX;
+- (void)setDividerX:(CGFloat)dividerX {
+    if (_dividerX == dividerX) return;
+    _dividerX = dividerX;
+    [self setNeedsDisplay:YES];
+}
 - (BOOL)isOpaque { return YES; }
 - (void)drawRect:(NSRect)dirtyRect {
     (void)dirtyRect;
     NSRect rect = [self bounds];
     TGAquaDrawSurfaceInPath([NSBezierPath bezierPathWithRect:rect], rect, TGThemeSurfaceHeader, [self isFlipped]);
+    if (self.dividerX > 0 && self.dividerX < NSWidth(rect)) {
+        CGFloat x = floor(self.dividerX);
+        [TGColorFromHex(0x9FA8B2) set]; NSRectFill(NSMakeRect(x,0,1,NSHeight(rect)));
+        [[NSColor colorWithCalibratedWhite:1 alpha:0.75] set]; NSRectFill(NSMakeRect(x+1,0,1,NSHeight(rect)));
+    }
+}
+@end
+
+// The sidebar utility is a toolbar segment, with the existing settings asset.
+@implementation TGAquaUtilityButtonCell
+- (void)drawWithFrame:(NSRect)frame inView:(NSView *)view {
+    BOOL selected = [self state] == NSOnState;
+    if ([self isHighlighted] || selected) {
+        NSRect inset = NSInsetRect(frame,6,1);
+        NSBezierPath *path = [NSBezierPath bezierPathWithRoundedRect:inset xRadius:5 yRadius:5];
+        TGAquaDrawButtonInPath(path,inset,[self isHighlighted],selected,[self isEnabled],[view isFlipped]);
+    }
+    NSColor *ink = selected ? [NSColor whiteColor] : TGColorFromHex(0x273847);
+    NSDictionary *attrs = [NSDictionary dictionaryWithObjectsAndKeys:[NSFont systemFontOfSize:13],NSFontAttributeName,ink,NSForegroundColorAttributeName,nil];
+    NSString *title = [self title] ? [self title] : @"";
+    NSSize size = [title sizeWithAttributes:attrs];
+    CGFloat badgeWidth = [self.badgeText length] ? ceil([self.badgeText sizeWithAttributes:attrs].width)+10 : 0;
+    CGFloat groupWidth = 20+8+size.width+(badgeWidth ? badgeWidth+8 : 0);
+    CGFloat left = floor(NSMidX(frame)-groupWidth/2);
+    TGDrawTemplateIconAsset(@"settings",NSMakeRect(left,floor(NSMidY(frame)-10),20,20),ink,1,[view isFlipped]);
+    [title drawAtPoint:NSMakePoint(left+28,floor(NSMidY(frame)-size.height/2)) withAttributes:attrs];
+    if (badgeWidth > 0) {
+        NSRect badge = NSMakeRect(left+28+size.width+8,floor(NSMidY(frame)-9),badgeWidth,18);
+        [TGColorFromHex(0xAE2931) set];
+        [[NSBezierPath bezierPathWithRoundedRect:badge xRadius:9 yRadius:9] fill];
+        NSDictionary *badgeAttrs = [NSDictionary dictionaryWithObjectsAndKeys:[NSFont boldSystemFontOfSize:11],NSFontAttributeName,[NSColor whiteColor],NSForegroundColorAttributeName,nil];
+        NSSize badgeSize = [self.badgeText sizeWithAttributes:badgeAttrs];
+        [self.badgeText drawAtPoint:NSMakePoint(floor(NSMidX(badge)-badgeSize.width/2),floor(NSMidY(badge)-badgeSize.height/2)) withAttributes:badgeAttrs];
+    }
 }
 @end
 

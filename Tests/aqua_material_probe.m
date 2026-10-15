@@ -56,12 +56,30 @@ static NSUInteger TGCheckAquaButtonMaterials(void) {
         else {
             const unsigned char *normal=[[directions objectForKey:directionKey] bytes],*reverse=[raster bytes];
             NSInteger stride=[bitmap bytesPerRow],pixelsHigh=[bitmap pixelsHigh],channel;
-            NSUInteger maximumDifference=0;
+            NSUInteger maximumDifference=0,unmirroredDifference=0;
             for(y=3*scale;y<pixelsHigh-(NSInteger)(3*scale);y++) for(x=6*scale;x<(NSInteger)(154*scale);x++) for(channel=0;channel<4;channel++) {
                 NSInteger difference=abs((int)normal[y*stride+x*4+channel]-(int)reverse[(pixelsHigh-1-y)*stride+x*4+channel]);
                 maximumDifference=MAX(maximumDifference,(NSUInteger)difference);
+                NSInteger wrongDirection=abs((int)normal[y*stride+x*4+channel]-(int)reverse[y*stride+x*4+channel]);
+                unmirroredDifference=MAX(unmirroredDifference,(NSUInteger)wrongDirection);
             }
-            if(maximumDifference>1) { fprintf(stderr,"Aqua flipped light profile mismatch: %lu channel levels\n",(unsigned long)maximumDifference);failures++; }
+            // Mavericks dithers NSGradient at 8-bit output: standalone AppKit
+            // +/-90-degree draws show channel rounding differences after reflection.
+            // Three channel levels cover legacy dithering; constrain each whole
+            // row's mean separately so a systematic lighting shift cannot hide
+            // inside that pixel tolerance. The unreflected image is a negative
+            // control for a genuinely reversed light source.
+            CGFloat maximumRowMeanDifference=0.0;
+            for(y=3*scale;y<pixelsHigh-(NSInteger)(3*scale);y++) for(channel=0;channel<3;channel++) {
+                NSInteger signedSum=0;
+                for(x=6*scale;x<(NSInteger)(154*scale);x++) {
+                    signedSum+=(NSInteger)normal[y*stride+x*4+channel]-(NSInteger)reverse[(pixelsHigh-1-y)*stride+x*4+channel];
+                }
+                maximumRowMeanDifference=MAX(maximumRowMeanDifference,fabs((double)signedSum)/(148.0*scale));
+            }
+            if(maximumRowMeanDifference>1.5) { fprintf(stderr,"Aqua flipped mean light profile mismatch: %.3f channel levels\n",(double)maximumRowMeanDifference);failures++; }
+            if(maximumDifference>3) { fprintf(stderr,"Aqua flipped light profile mismatch: %lu channel levels\n",(unsigned long)maximumDifference);failures++; }
+            if(unmirroredDifference<=3) { fprintf(stderr,"Aqua orientation negative control is indistinguishable\n");failures++; }
         }
         minimum=MIN(minimum,contrast);checks++;
         if(contrast<4.5) { fprintf(stderr,"Aqua button title contrast scale%lu flip%lu pressed%lu height%.0f %.3f\n",(unsigned long)scale,(unsigned long)flip,(unsigned long)pressed,(double)height,(double)contrast);failures++; }

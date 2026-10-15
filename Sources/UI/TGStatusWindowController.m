@@ -306,6 +306,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 @property (nonatomic, retain) NSPopUpButton *interfaceDesignPopUpButton;
 @property (nonatomic, retain) TGAquaMetalView *aquaToolbarView;
 @property (nonatomic, retain) TGAquaMetalView *aquaFooterView;
+@property (nonatomic, retain) TGAquaMetalView *aquaChatHeaderView;
 @property (nonatomic, retain) NSButton *aquaFolderHeaderButton;
 @property (nonatomic, retain) NSButton *aquaFolderEditButton;
 @property (nonatomic, retain) NSButton *aquaSearchButton;
@@ -907,6 +908,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 @synthesize interfaceDesignPopUpButton = _interfaceDesignPopUpButton;
 @synthesize aquaToolbarView = _aquaToolbarView;
 @synthesize aquaFooterView = _aquaFooterView;
+@synthesize aquaChatHeaderView = _aquaChatHeaderView;
 @synthesize aquaFolderHeaderButton = _aquaFolderHeaderButton;
 @synthesize aquaFolderEditButton = _aquaFolderEditButton;
 @synthesize aquaSearchButton = _aquaSearchButton;
@@ -4913,6 +4915,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [_interfaceDesignPopUpButton release];
     [_aquaToolbarView release];
     [_aquaFooterView release];
+    [_aquaChatHeaderView release];
     [_aquaFolderHeaderButton release];
     [_aquaFolderEditButton release];
     [_aquaSearchButton release];

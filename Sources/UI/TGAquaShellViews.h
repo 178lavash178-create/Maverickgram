@@ -10,7 +10,12 @@ typedef struct {
 // folderCount is the actual 32pt rows, including the built-in folder entries.
 TGAquaSourceListGeometry TGAquaSourceListFrames(NSRect sidebar, CGFloat footerTop, CGFloat preferredFolderHeight, NSUInteger folderCount, BOOL collapsed);
 
-@interface TGAquaMetalView : NSView
+@interface TGAquaMetalView : NSView {
+    CGFloat _dividerX;
+}
+@property(nonatomic, assign) CGFloat dividerX;
+@end
+@interface TGAquaUtilityButtonCell : TGNavigationButtonCell
 @end
 @interface TGAquaTextButtonCell : TGNavigationButtonCell {
     BOOL _accented;
