@@ -1078,10 +1078,6 @@
     CGFloat composerInnerHeight = composerInputHeight + 10.0;
     CGFloat composerControlY = composerY + floor((composerHeight - 32.0) / 2.0);
     CGFloat composerInputBackgroundY = composerY + floor((composerHeight - composerInnerHeight) / 2.0);
-    if (aqua) {
-        NSRect inputBounds = NSMakeRect(0, composerInputBackgroundY, 1, composerInnerHeight);
-        composerControlY = floor((TGAquaFooterHeight(YES, inputBounds) - 32.0) / 2.0);
-    }
     [self.sendLabel setFrame:NSMakeRect(conversationX + 14.0, composerY + 8.0, 0.0, 22.0)];
     [self.attachPhotoButton setFrame:NSMakeRect(attachButtonX, composerControlY, attachButtonWidth, 32.0)];
     [self.botActionButton setFrame:NSMakeRect(botButtonX, composerControlY, attachButtonWidth, 32.0)];
