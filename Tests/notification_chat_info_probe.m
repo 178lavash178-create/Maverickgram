@@ -7,10 +7,12 @@ static void Require(BOOL value, const char *message) {
 
 @interface TGTDLibClient : NSObject
 @property (nonatomic, retain) NSMutableArray *chats;
+- (NSNumber *)notificationMuteStateForChatID:(NSNumber *)chatID;
 - (NSDictionary *)chatSummaryForChatID:(NSNumber *)chatID downloadAvatar:(BOOL)avatar timeout:(NSTimeInterval)timeout error:(NSError **)error;
 @end
 @implementation TGTDLibClient
 @synthesize chats = _chats;
+- (NSNumber *)notificationMuteStateForChatID:(NSNumber *)chatID { (void)chatID; return @NO; }
 - (id)init { if ((self=[super init])) _chats=[[NSMutableArray alloc] init]; return self; }
 - (void)dealloc { [_chats release]; [super dealloc]; }
 - (NSDictionary *)chatSummaryForChatID:(NSNumber *)chatID downloadAvatar:(BOOL)avatar timeout:(NSTimeInterval)timeout error:(NSError **)error {
@@ -25,6 +27,8 @@ static void Require(BOOL value, const char *message) {
 @property (nonatomic, retain) TGTDLibClient *client;
 @property (nonatomic, retain) NSMutableDictionary *notificationChatInfoByChatID;
 @property (nonatomic, retain) NSDictionary *request, *result;
+- (void)deliverNotificationForValidatedSummary:(NSDictionary *)summary;
+- (void)removeMutedMessageNotifications;
 - (void)appendDetail:(NSString *)detail;
 - (void)requestNotificationChatInfoFetchForChatID:(NSNumber *)chatID cacheKey:(NSString *)cacheKey;
 - (void)fetchNotificationChatInfoInBackground:(NSDictionary *)request;
@@ -52,6 +56,8 @@ static void Require(BOOL value, const char *message) {
     }
 }
 - (void)appendDetail:(NSString *)detail { (void)detail; }
+- (void)deliverNotificationForValidatedSummary:(NSDictionary *)summary { (void)summary; }
+- (void)removeMutedMessageNotifications {}
 - (NSString *)notificationCacheKeyForChatID:(NSNumber *)chatID { return [chatID stringValue]; }
 - (TGChatItem *)chatItemForNotificationChatID:(NSNumber *)chatID { (void)chatID; return nil; }
 - (void)performSelectorInBackground:(SEL)selector withObject:(id)object {

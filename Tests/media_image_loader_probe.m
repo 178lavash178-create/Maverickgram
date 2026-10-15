@@ -21,6 +21,62 @@ NSImage *TGWebPImageFromFile(NSString *path) {
     return nil;
 }
 
+// Force a legitimate hash collision independent of Foundation's OS-specific
+// sampling algorithm. The production decoder still receives real bitmap bytes.
+@interface TGCollidingImageData : NSData {
+    NSData *_contents;
+}
+- (id)initWithContents:(NSData *)contents;
+@end
+@implementation TGCollidingImageData
+- (id)initWithContents:(NSData *)contents {
+    self = [super init];
+    if (self) { _contents = [contents copy]; }
+    return self;
+}
+- (const void *)bytes { return [_contents bytes]; }
+- (NSUInteger)length { return [_contents length]; }
+- (NSUInteger)hash { return 12345; }
+- (void)dealloc { [_contents release]; [super dealloc]; }
+@end
+
+static NSData *TGCollisionBitmap(BOOL blueCenter) {
+    const unsigned char header[54] = {'B','M',0x36,0x30,0,0,0,0,0,0,54,0,0,0,
+        40,0,0,0,64,0,0,0,64,0,0,0,1,0,24,0};
+    NSMutableData *data = [NSMutableData dataWithBytes:header length:sizeof(header)];
+    for (NSUInteger y = 0; y < 64; y++) {
+        for (NSUInteger x = 0; x < 64; x++) {
+            BOOL blue = blueCenter && x >= 8 && x < 56 && y >= 8 && y < 56;
+            unsigned char pixel[3] = {blue ? 255 : 0, 0, blue ? 0 : 255};
+            [data appendBytes:pixel length:sizeof(pixel)];
+        }
+    }
+    return [[[TGCollidingImageData alloc] initWithContents:data] autorelease];
+}
+
+static BOOL TGCheckDataCacheIdentity(void) {
+    NSData *red = TGCollisionBitmap(NO), *blue = TGCollisionBitmap(YES);
+    NSImage *redImage = TGImageThumbnailFromData(red, 16);
+    NSImage *blueImage = TGImageThumbnailFromData(blue, 16);
+    NSBitmapImageRep *redPixels = [NSBitmapImageRep imageRepWithData:[redImage TIFFRepresentation]];
+    NSBitmapImageRep *bluePixels = [NSBitmapImageRep imageRepWithData:[blueImage TIFFRepresentation]];
+    NSColor *redCenter = [[redPixels colorAtX:8 y:8] colorUsingColorSpace:[NSColorSpace sRGBColorSpace]];
+    NSColor *blueCenter = [[bluePixels colorAtX:8 y:8] colorUsingColorSpace:[NSColorSpace sRGBColorSpace]];
+    if ([red length] != [blue length] || [red hash] != [blue hash] || !redImage || !blueImage ||
+        redImage == blueImage || [redCenter redComponent] < 0.9 || [blueCenter blueComponent] < 0.9) {
+        fprintf(stderr, "different image bytes with equal length/hash reused the wrong thumbnail\n");
+        return NO;
+    }
+    NSData *sameBytes = [NSData dataWithBytes:[blue bytes] length:[blue length]];
+    NSImage *smaller = TGImageThumbnailFromData(sameBytes, 8);
+    if (TGImageThumbnailFromData(sameBytes, 16) != blueImage || smaller == blueImage ||
+        !NSEqualSizes([smaller size], NSMakeSize(8, 8))) {
+        fprintf(stderr, "data thumbnail cache failed byte identity or pixel-size separation\n");
+        return NO;
+    }
+    return YES;
+}
+
 static BOOL TGWritePNG(NSString *path, NSInteger width, NSInteger height, NSColor *color) {
     NSBitmapImageRep *bitmap = [[[NSBitmapImageRep alloc]
         initWithBitmapDataPlanes:NULL
@@ -54,6 +110,7 @@ static BOOL TGSizeMatches(NSImage *image, CGFloat width, CGFloat height) {
 int main(void) {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     int result = 0;
+    if (!TGCheckDataCacheIdentity()) { result = 13; }
     NSString *directory = [NSTemporaryDirectory() stringByAppendingPathComponent:
                            [NSString stringWithFormat:@"telegraphica-image-loader-%u", arc4random()]];
     NSString *path = [directory stringByAppendingPathComponent:@"fixture.png"];

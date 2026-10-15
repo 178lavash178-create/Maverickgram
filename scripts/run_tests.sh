@@ -411,6 +411,14 @@ echo "== Notification read cleanup =="
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/notification_read_state_probe.m Sources/Core/TGNotificationReadState.m Sources/Core/TGChatItem.m Sources/UI/TGNotificationDeliverySupport.m -framework Cocoa -o "$BUILD_DIR/notification-read-state-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/notification-read-state-probe"
 
+echo "== Authoritative notification mute policy =="
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/notification_mute_policy_probe.m Sources/Core/TGNotificationMuteState.m Sources/Core/TGNotificationReadState.m Sources/Core/TGChatItem.m Sources/UI/TGNotificationDeliverySupport.m -framework Cocoa -o "$BUILD_DIR/notification-mute-policy-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/notification-mute-policy-probe"
+
+echo "== Chat unread badge contrast =="
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/chat_unread_badge_probe.m Sources/UI/TGChatUnreadBadgeAppearance.m Sources/UI/TGTheme.m Sources/UI/TGVisualWorldThemeSpec.m -framework Cocoa -o "$BUILD_DIR/chat-unread-badge-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/chat-unread-badge-probe"
+
 echo "== Notification enrichment ownership =="
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/notification_chat_info_probe.m Sources/Core/TGChatItem.m -framework Foundation -o "$BUILD_DIR/notification-chat-info-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/notification-chat-info-probe"

@@ -131,6 +131,8 @@ extern NSString * const TGTDLibCallSignalingDataDidUpdateNotification;
 - (BOOL)isAuthorizationNetworkTimeoutError:(NSError *)error;
 - (void)shutdownWithTimeout:(NSTimeInterval)timeout;
 
+/* Nonblocking authoritative mute state; nil means policy has not arrived yet. */
+- (NSNumber *)notificationMuteStateForChatID:(NSNumber *)chatID;
 @end
 
 @interface TGTDLibClient (ReadReceipts)

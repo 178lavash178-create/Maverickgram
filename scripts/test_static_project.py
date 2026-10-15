@@ -1176,6 +1176,9 @@ def check_primary_navigation_contract(errors):
     client_rel = os.path.join("Sources", "Core", "TGTDLibClient.m")
     client_text = read_text(os.path.join(ROOT, client_rel))
     client_text += read_text(os.path.join(ROOT, "Sources", "Core", "TGTDLibClient+MessageThreads.m"))
+    if '#include "TGTDLibClient+NotificationMutePolicy.inc"' not in client_text:
+        errors.append("%s: notification mute policy helper is not connected" % client_rel)
+    client_text += read_text(os.path.join(ROOT, "Sources", "Core", "TGTDLibClient+NotificationMutePolicy.inc"))
     for fragment in [
         "getScopeNotificationSettings",
         "use_default_mute_for",

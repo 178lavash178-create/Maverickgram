@@ -1,6 +1,7 @@
 #import "TGTDLibClient.h"
 #import "TGChatOpenState.h"
 #import "TGNotificationReadState.h"
+#import "TGNotificationMuteState.h"
 #import "TGAuthorizationFlow.h"
 #import "TGFormattedTextCodec.h"
 #import "TGReactionCatalog.h"
@@ -230,7 +231,7 @@ static BOOL TGTDLibSendErrorLooksLikeSchemaMismatch(NSError *error) {
     NSArray *_chatFilterInfos;
     NSMutableDictionary *_senderSummaryCache;
     NSMutableDictionary *_syntheticMediaAlbumIDByMessageKey;
-    NSMutableDictionary *_notificationScopeMutedByType;
+    TGNotificationMuteState *_notificationMuteState;
     NSMutableDictionary *_savedMessagesTopicsByID;
     NSCache *_customEmojiDescriptorCache;
     TGTDLibCapabilities *_capabilities;
@@ -397,7 +398,7 @@ static BOOL TGTDLibSendErrorLooksLikeSchemaMismatch(NSError *error) {
         _pendingUpdateSummaries = [[NSMutableArray alloc] init];
         _senderSummaryCache = [[NSMutableDictionary alloc] init];
         _syntheticMediaAlbumIDByMessageKey = [[NSMutableDictionary alloc] init];
-        _notificationScopeMutedByType = [[NSMutableDictionary alloc] init];
+        _notificationMuteState = [[TGNotificationMuteState alloc] init];
         _savedMessagesTopicsByID = [[NSMutableDictionary alloc] init];
         _customEmojiDescriptorCache = [[NSCache alloc] init];
         [_customEmojiDescriptorCache setCountLimit:192];
@@ -543,7 +544,7 @@ static BOOL TGTDLibSendErrorLooksLikeSchemaMismatch(NSError *error) {
     [_chatFilterInfos release];
     [_senderSummaryCache release];
     [_syntheticMediaAlbumIDByMessageKey release];
-    [_notificationScopeMutedByType release];
+    [_notificationMuteState release];
     [_savedMessagesTopicsByID release];
     [_customEmojiDescriptorCache release];
     [_capabilities release];
@@ -1166,9 +1167,6 @@ static BOOL TGTDLibSendErrorLooksLikeSchemaMismatch(NSError *error) {
         NSString *chatListType = [chatListObject isKindOfClass:[NSDictionary class]] ? [(NSDictionary *)chatListObject objectForKey:@"@type"] : nil;
         if ([chatListType length] == 0 || [chatListType isEqualToString:@"chatListMain"]) {
             id unreadValue = [dictionary objectForKey:@"unread_unmuted_count"];
-            if (![unreadValue respondsToSelector:@selector(unsignedIntegerValue)]) {
-                unreadValue = [dictionary objectForKey:@"unread_count"];
-            }
             if ([unreadValue respondsToSelector:@selector(unsignedIntegerValue)]) {
                 return [NSDictionary dictionaryWithObjectsAndKeys:
                         @"account_unread", @"kind",
@@ -1178,11 +1176,12 @@ static BOOL TGTDLibSendErrorLooksLikeSchemaMismatch(NSError *error) {
         }
     }
 
-    if ([type isEqualToString:@"updateScopeNotificationSettings"]) {
-        return [NSDictionary dictionaryWithObjectsAndKeys:
-                @"notification_settings", @"kind",
-                type, @"type",
-                nil];
+    if ([type isEqualToString:@"updateScopeNotificationSettings"] || [type isEqualToString:@"updateChatNotificationSettings"]) {
+        NSMutableDictionary *summary = [NSMutableDictionary dictionaryWithObjectsAndKeys:
+            @"notification_settings", @"kind", type, @"type", nil];
+        id chatID = [dictionary objectForKey:@"chat_id"];
+        if ([chatID isKindOfClass:[NSNumber class]]) { [summary setObject:chatID forKey:@"chat_id"]; }
+        return summary;
     }
 
     if ([type isEqualToString:@"updateCall"]) {
@@ -1346,18 +1345,7 @@ static BOOL TGTDLibSendErrorLooksLikeSchemaMismatch(NSError *error) {
     }
     id extraObject = [dictionary objectForKey:@"@extra"];
     NSArray *chatFilterInfos = [self chatFilterInfoItemsFromUpdateObject:dictionary];
-    NSString *scopeUpdateType = nil;
-    NSNumber *scopeUpdateMuted = nil;
-    if ([[dictionary objectForKey:@"@type"] isEqualToString:@"updateScopeNotificationSettings"]) {
-        id scope = [dictionary objectForKey:@"scope"];
-        id settings = [dictionary objectForKey:@"notification_settings"];
-        id scopeType = [scope isKindOfClass:[NSDictionary class]] ? [(NSDictionary *)scope objectForKey:@"@type"] : nil;
-        id muteFor = [settings isKindOfClass:[NSDictionary class]] ? [(NSDictionary *)settings objectForKey:@"mute_for"] : nil;
-        if ([scopeType isKindOfClass:[NSString class]] && [muteFor respondsToSelector:@selector(integerValue)]) {
-            scopeUpdateType = (NSString *)scopeType;
-            scopeUpdateMuted = [NSNumber numberWithBool:([muteFor integerValue] > 0)];
-        }
-    }
+    [_notificationMuteState recordTDLibObject:dictionary atUnixTime:[[NSDate date] timeIntervalSince1970]];
     NSDictionary *updateSummary = nil;
     if (![extraObject isKindOfClass:[NSString class]]) {
         updateSummary = [self safeUpdateSummaryForObject:dictionary];
@@ -1382,9 +1370,6 @@ static BOOL TGTDLibSendErrorLooksLikeSchemaMismatch(NSError *error) {
         _chatFilterInfos = [chatFilterInfos copy];
         _chatFilterInfosKnown = YES;
         _chatFilterFallbackProbeFinished = NO;
-    }
-    if ([scopeUpdateType length] > 0 && scopeUpdateMuted) {
-        [_notificationScopeMutedByType setObject:scopeUpdateMuted forKey:scopeUpdateType];
     }
     if ([objectType isEqualToString:@"updateSavedMessagesTopic"]) {
         NSDictionary *topic = [[dictionary objectForKey:@"topic"] isKindOfClass:[NSDictionary class]]
@@ -4099,9 +4084,10 @@ static BOOL TGTDLibSendErrorLooksLikeSchemaMismatch(NSError *error) {
         [info setObject:avatarPath forKey:@"avatar_local_path"];
     }
 
-    if ([self chatNotificationsMutedFromObject:chatResponse]) {
-        [info setObject:[NSNumber numberWithBool:YES] forKey:@"notifications_muted"];
-    }
+    /* Resolve inherited settings off the main thread, then consult the live cache. */
+    [self chatNotificationsMutedFromObject:chatResponse];
+    NSNumber *muteState = [self notificationMuteStateForChatID:chatID];
+    if (muteState) { [info setObject:muteState forKey:@"notifications_muted"]; }
 
     NSDictionary *chatType = [[chatResponse objectForKey:@"type"] isKindOfClass:[NSDictionary class]]
         ? [chatResponse objectForKey:@"type"] : nil;
@@ -6775,82 +6761,7 @@ static BOOL TGTDLibSendErrorLooksLikeSchemaMismatch(NSError *error) {
     return TGMessageReactionInfoFromObject(messageObject);
 }
 
-- (NSString *)notificationScopeTypeForChatTypeObject:(id)chatTypeObject {
-    if (![chatTypeObject isKindOfClass:[NSDictionary class]]) {
-        return nil;
-    }
-    NSString *type = [(NSDictionary *)chatTypeObject objectForKey:@"@type"];
-    if ([type isEqualToString:@"chatTypePrivate"] || [type isEqualToString:@"chatTypeSecret"]) {
-        return @"notificationSettingsScopePrivateChats";
-    }
-    if ([type isEqualToString:@"chatTypeBasicGroup"]) {
-        return @"notificationSettingsScopeGroupChats";
-    }
-    if ([type isEqualToString:@"chatTypeSupergroup"]) {
-        return [[(NSDictionary *)chatTypeObject objectForKey:@"is_channel"] boolValue]
-            ? @"notificationSettingsScopeChannelChats"
-            : @"notificationSettingsScopeGroupChats";
-    }
-    return nil;
-}
-
-- (BOOL)scopeNotificationsMutedForType:(NSString *)scopeType timeout:(NSTimeInterval)timeout {
-    if ([scopeType length] == 0) {
-        return NO;
-    }
-    [_responseCondition lock];
-    NSNumber *cached = [[_notificationScopeMutedByType objectForKey:scopeType] retain];
-    [_responseCondition unlock];
-    if (cached) {
-        BOOL muted = [cached boolValue];
-        [cached release];
-        return muted;
-    }
-
-    NSDictionary *scope = [NSDictionary dictionaryWithObject:scopeType forKey:@"@type"];
-    NSDictionary *request = [NSDictionary dictionaryWithObjectsAndKeys:
-                             @"getScopeNotificationSettings", @"@type",
-                             scope, @"scope",
-                             nil];
-    NSDictionary *response = [self sendTDLibRequestAndWaitForExtra:request
-                                                        extraPrefix:@"telegraphica-notification-scope"
-                                                            timeout:MIN(MAX(timeout, 0.5), 1.2)
-                                                          errorCode:124
-                                                              error:NULL];
-    NSDictionary *settingsResponse = response;
-    id nestedSettings = [response objectForKey:@"notification_settings"];
-    if ([nestedSettings isKindOfClass:[NSDictionary class]]) {
-        settingsResponse = (NSDictionary *)nestedSettings;
-    }
-    id muteFor = [settingsResponse objectForKey:@"mute_for"];
-    BOOL muted = ([muteFor respondsToSelector:@selector(integerValue)] && [muteFor integerValue] > 0);
-    if ([[response objectForKey:@"@type"] isEqualToString:@"scopeNotificationSettings"] ||
-        [nestedSettings isKindOfClass:[NSDictionary class]]) {
-        [_responseCondition lock];
-        [_notificationScopeMutedByType setObject:[NSNumber numberWithBool:muted] forKey:scopeType];
-        [_responseCondition unlock];
-    }
-    return muted;
-}
-
-- (BOOL)chatNotificationsMutedFromObject:(NSDictionary *)chatObject {
-    if (![chatObject isKindOfClass:[NSDictionary class]]) {
-        return NO;
-    }
-
-    id settingsObject = [chatObject objectForKey:@"notification_settings"];
-    if (![settingsObject isKindOfClass:[NSDictionary class]]) {
-        return NO;
-    }
-
-    id muteFor = [(NSDictionary *)settingsObject objectForKey:@"mute_for"];
-    id useDefault = [(NSDictionary *)settingsObject objectForKey:@"use_default_mute_for"];
-    if ([useDefault respondsToSelector:@selector(boolValue)] && [useDefault boolValue]) {
-        NSString *scopeType = [self notificationScopeTypeForChatTypeObject:[chatObject objectForKey:@"type"]];
-        return [self scopeNotificationsMutedForType:scopeType timeout:0.8];
-    }
-    return ([muteFor respondsToSelector:@selector(integerValue)] && [muteFor integerValue] > 0);
-}
+#include "TGTDLibClient+NotificationMutePolicy.inc"
 
 - (NSString *)syntheticMediaAlbumMessageKeyForChatID:(NSNumber *)chatID messageID:(NSNumber *)messageID {
     if (![chatID respondsToSelector:@selector(longLongValue)] || ![messageID respondsToSelector:@selector(longLongValue)]) {

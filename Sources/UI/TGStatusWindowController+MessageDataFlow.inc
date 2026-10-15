@@ -1722,6 +1722,7 @@
     NSNumber *selectedChatID = [self.selectedChatID retain];
     NSString *latestAuthorizationState = nil;
     BOOL needsChatRefresh = NO;
+    BOOL needsNotificationMuteRefresh = NO;
     BOOL needsMessageRefresh = NO;
     BOOL needsChatFilterRefresh = NO;
     BOOL needsPinnedMessageRefresh = NO;
@@ -1783,6 +1784,7 @@
         }
 
         if ([kind isEqualToString:@"new_message"] || [kind isEqualToString:@"chat_update"] || [kind isEqualToString:@"message_update"]) {
+            if ([[summary objectForKey:@"type"] isEqualToString:@"updateNewChat"]) { needsNotificationMuteRefresh = YES; }
             if (!mountainLionSafeLoginMode) {
                 needsChatRefresh = YES;
                 self.chatsExhausted = NO;
@@ -1834,6 +1836,7 @@
                 [self updateApplicationBadge];
             }
         } else if ([kind isEqualToString:@"notification_settings"]) {
+            needsNotificationMuteRefresh = YES;
             if (!mountainLionSafeLoginMode) {
                 needsChatRefresh = YES;
             }
@@ -1841,6 +1844,8 @@
             needsChatFilterRefresh = YES;
         }
     }
+
+    if (needsNotificationMuteRefresh) { [self handleNotificationMuteSettingsChanged]; }
 
     if ([latestAuthorizationState length] > 0 && ![latestAuthorizationState isEqualToString:self.currentAuthState]) {
         [self updateAuthControlsForState:latestAuthorizationState];

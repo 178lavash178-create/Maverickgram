@@ -1,5 +1,6 @@
 #import "TGStatusViewCells.h"
 #import "TGChatDisplayPreferences.h"
+#import "TGChatUnreadBadgeAppearance.h"
 #import "TGIconAssets.h"
 #import "TGMessageLayoutSupport.h"
 #import "TGReactionChipLayout.h"
@@ -123,7 +124,8 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
     }
     BOOL drawsMarkedUnreadDot = ([item isMarkedAsUnread] && unreadCount == 0);
 
-    NSColor *unreadTextColor = selected ? TGClassicSelectedRowColor() : TGClassicNavigationTextColor(1.0);
+    NSColor *unreadFillColor = TGChatUnreadBadgeFillColor(selected, [item notificationsMuted]);
+    NSColor *unreadTextColor = TGChatUnreadBadgeTextColor(selected, [item notificationsMuted]);
     NSDictionary *unreadAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                       [NSFont boldSystemFontOfSize:10.0], NSFontAttributeName,
                                       unreadTextColor, NSForegroundColorAttributeName,
@@ -140,7 +142,7 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
             NSBezierPath *compactBadgePath = [NSBezierPath bezierPathWithRoundedRect:compactBadgeRect
                                                                             xRadius:8.0
                                                                             yRadius:8.0];
-            [TGClassicHeaderBottomColor() set];
+            [unreadFillColor set];
             [compactBadgePath fill];
             NSMutableParagraphStyle *compactParagraph = [[[NSMutableParagraphStyle alloc] init] autorelease];
             [compactParagraph setAlignment:NSCenterTextAlignment];
@@ -157,7 +159,8 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
                                                10.0,
                                                10.0);
             NSBezierPath *compactDotPath = [NSBezierPath bezierPathWithOvalInRect:compactDotRect];
-            NSColor *manualUnreadColor = selected ? TGClassicSelectedRowTextColor() : TGColorFromHex(0x2D8BD4);
+            NSColor *manualUnreadColor = [item notificationsMuted] ? unreadFillColor :
+                (selected ? TGClassicSelectedRowTextColor() : TGColorFromHex(0x2D8BD4));
             [manualUnreadColor set];
             [compactDotPath fill];
         }
@@ -251,7 +254,6 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
         NSBezierPath *unreadPath = [NSBezierPath bezierPathWithRoundedRect:unreadRect
                                                                     xRadius:(unreadHeight / 2.0)
                                                                     yRadius:(unreadHeight / 2.0)];
-        NSColor *unreadFillColor = selected ? TGClassicSelectedRowTextColor() : TGClassicHeaderBottomColor();
         [unreadFillColor set];
         [unreadPath fill];
 
@@ -266,8 +268,9 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
         [unreadString drawInRect:unreadTextRect withAttributes:centeredUnreadAttributes];
     } else if (drawsMarkedUnreadDot) {
         NSBezierPath *unreadDotPath = [NSBezierPath bezierPathWithOvalInRect:unreadRect];
-        NSColor *unreadFillColor = selected ? TGClassicSelectedRowTextColor() : TGColorFromHex(0x2D8BD4);
-        [unreadFillColor set];
+        NSColor *manualUnreadColor = [item notificationsMuted] ? unreadFillColor :
+            (selected ? TGClassicSelectedRowTextColor() : TGColorFromHex(0x2D8BD4));
+        [manualUnreadColor set];
         [unreadDotPath fill];
     }
 }

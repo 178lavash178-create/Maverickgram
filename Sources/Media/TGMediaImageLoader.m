@@ -1,6 +1,7 @@
 #import "TGMediaImageLoader.h"
 #import "TGWebPDecoder.h"
 #import <ImageIO/ImageIO.h>
+#import <CommonCrypto/CommonDigest.h>
 
 NSString * const TGMediaImageLoaderCacheDidClearNotification = @"TGMediaImageLoaderCacheDidClearNotification";
 
@@ -204,15 +205,37 @@ TGMediaImageLoadToken *TGLoadImageThumbnailFromFileAsync(NSString *path,
     return token;
 }
 
+static NSString *TGMediaDataCacheKey(NSData *data, NSUInteger maximumPixelSize) {
+    // NSData.hash is a bucket hint, not content identity: equal-sized images
+    // with different pixels can have the same hash and must not share a preview.
+    CC_SHA256_CTX context;
+    CC_SHA256_Init(&context);
+    const unsigned char *bytes = [data bytes];
+    NSUInteger remaining = [data length];
+    while (remaining > 0) {
+        CC_LONG length = (CC_LONG)MIN(remaining, (NSUInteger)(1024 * 1024));
+        CC_SHA256_Update(&context, bytes, length);
+        bytes += length;
+        remaining -= length;
+    }
+    unsigned char digest[CC_SHA256_DIGEST_LENGTH];
+    CC_SHA256_Final(digest, &context);
+    static const char digits[] = "0123456789abcdef";
+    char hex[CC_SHA256_DIGEST_LENGTH * 2 + 1];
+    for (NSUInteger index = 0; index < CC_SHA256_DIGEST_LENGTH; index++) {
+        hex[index * 2] = digits[digest[index] >> 4];
+        hex[index * 2 + 1] = digits[digest[index] & 15];
+    }
+    hex[CC_SHA256_DIGEST_LENGTH * 2] = '\0';
+    return [NSString stringWithFormat:@"data-thumbnail:%lu:%s", (unsigned long)maximumPixelSize, hex];
+}
+
 NSImage *TGImageThumbnailFromData(NSData *data, NSUInteger maximumPixelSize) {
     if (![data isKindOfClass:[NSData class]] || [data length] == 0 || maximumPixelSize == 0) {
         return nil;
     }
 
-    NSString *cacheKey = [NSString stringWithFormat:@"data-thumbnail:%lu:%lu:%lu",
-                          (unsigned long)maximumPixelSize,
-                          (unsigned long)[data length],
-                          (unsigned long)[data hash]];
+    NSString *cacheKey = TGMediaDataCacheKey(data, maximumPixelSize);
     NSImage *cachedImage = TGMediaCachedImage(cacheKey);
     if (cachedImage) {
         return cachedImage;

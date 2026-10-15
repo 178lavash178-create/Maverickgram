@@ -2071,9 +2071,15 @@ static NSColor *TGOutgoingStatusCheckColorForIndex(TGMessageItem *item, NSUInteg
     return TGMessageDeliveryStatusInkColor(item, active, flipped);
 }
 
+static NSUInteger TGOutgoingStatusCheckCountForItem(TGMessageItem *item) {
+    // Keep the existing pending pair; a delivered, unread message gets one
+    // check and a read message gets two. The reserved width stays unchanged.
+    return ([item sending] || [item outgoingRead]) ? 2 : 1;
+}
+
 static NSImage *TGOutgoingStatusPairImageForItem(TGMessageItem *item) {
     NSString *state = [item sending] ? @"sending" : ([item outgoingRead] ? @"read" : @"sent");
-    NSString *cacheKey = [NSString stringWithFormat:@"%@|%@", TGCurrentThemeIdentifier(), state];
+    NSString *cacheKey = [NSString stringWithFormat:@"%@|%@|%d", TGCurrentThemeIdentifier(), state, TGChatMessagesAsBlocksEnabled()];
     static NSMutableDictionary *cache = nil;
     if (!cache) {
         cache = [[NSMutableDictionary alloc] init];
@@ -2089,7 +2095,7 @@ static NSImage *TGOutgoingStatusPairImageForItem(TGMessageItem *item) {
     NSImage *pair = [[[NSImage alloc] initWithSize:pairSize] autorelease];
     [pair lockFocus];
     NSUInteger index = 0;
-    for (index = 0; index < 2; index++) {
+    for (index = 0; index < TGOutgoingStatusCheckCountForItem(item); index++) {
         NSImage *check = TGTemplateIconAssetImage(@"done-mini",
                                                   NSMakeSize(TGOutgoingStatusCheckSide, TGOutgoingStatusCheckSide),
                                                   TGOutgoingStatusCheckColorForIndex(item, index, NO),
@@ -2157,7 +2163,7 @@ void TGDrawOutgoingStatusDotsForItem(TGMessageItem *item, NSRect timeRect, BOOL 
     CGFloat checkX = NSMaxX(timeRect) + 4.0;
     CGFloat checkY = NSMinY(timeRect) + floor((NSHeight(timeRect) - checkSide) / 2.0) + 1.0;
     NSUInteger index = 0;
-    for (index = 0; index < 2; index++) {
+    for (index = 0; index < TGOutgoingStatusCheckCountForItem(item); index++) {
         NSRect checkRect = NSMakeRect(checkX + (checkStep * (CGFloat)index), checkY, checkSide, checkSide);
         TGDrawTemplateIconAsset(@"done-mini",
                                 checkRect,

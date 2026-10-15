@@ -65,7 +65,12 @@ NSImage *TGIconAssetImageNamed(NSString *name) {
     return nil;
 }
 
+static NSMutableArray *TGStatusAssetTrace = nil;
+
 void TGDrawTemplateIconAsset(NSString *name, NSRect rect, NSColor *color, CGFloat alpha, BOOL flipped) {
+    if (TGStatusAssetTrace) {
+        [TGStatusAssetTrace addObject:[NSDictionary dictionaryWithObjectsAndKeys:name, @"name", color, @"color", [NSValue valueWithRect:rect], @"rect", nil]];
+    }
     (void)name;
     (void)rect;
     (void)color;
@@ -74,6 +79,15 @@ void TGDrawTemplateIconAsset(NSString *name, NSRect rect, NSColor *color, CGFloa
 }
 
 NSImage *TGTemplateIconAssetImage(NSString *name, NSSize size, NSColor *color, CGFloat alpha) {
+    if (TGStatusAssetTrace) {
+        [TGStatusAssetTrace addObject:[NSDictionary dictionaryWithObjectsAndKeys:name, @"name", color, @"color", nil]];
+        NSImage *image = [[[NSImage alloc] initWithSize:size] autorelease];
+        [image lockFocus];
+        [[NSColor clearColor] set];
+        NSRectFill(NSMakeRect(0.0, 0.0, size.width, size.height));
+        [image unlockFocus];
+        return image;
+    }
     (void)name;
     (void)size;
     (void)color;
@@ -656,6 +670,91 @@ static CGFloat TGProbeColorLuminance(NSColor *color) {
     return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
 }
 
+static CGFloat TGStatusProbeContrast(NSColor *first, NSColor *second) {
+    CGFloat a = TGProbeColorLuminance(first), b = TGProbeColorLuminance(second);
+    return (MAX(a, b) + 0.05) / (MIN(a, b) + 0.05);
+}
+
+static void TGTestDeliveryStatusPresentation(void) {
+    TGClearProbeDefaults();
+    TGStatusAssetTrace = [[NSMutableArray alloc] init];
+    TGMessageItem *item = [[[TGMessageItem alloc] initWithChatID:@1 messageID:@2 date:@1700000000 outgoing:YES preview:@"Short"] autorelease];
+    CGFloat minimumContrast = 100.0, minimumChroma = 1.0, minimumDistance = 1.0;
+    NSUInteger surfaces = 0;
+    NSImage *canvas = [[[NSImage alloc] initWithSize:NSMakeSize(100.0, 50.0)] autorelease];
+    [canvas lockFocus];
+    for (NSString *theme in TGThemeIdentifiers()) {
+        TGSetActiveThemeIdentifier(theme);
+        for (NSNumber *blocks in [NSArray arrayWithObjects:@NO, @YES, nil]) {
+            TGSetChatMessagesAsBlocksEnabled([blocks boolValue]);
+            for (NSNumber *flipped in [NSArray arrayWithObjects:@NO, @YES, nil]) {
+                BOOL flip = [flipped boolValue];
+                [item setOutgoingRead:NO];
+                NSColor *sent = [TGMessageDeliveryStatusInkColor(item, YES, flip) colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
+                [item setOutgoingRead:YES];
+                NSColor *read = [TGMessageDeliveryStatusInkColor(item, YES, flip) colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
+                CGFloat chroma = MAX(MAX([read redComponent], [read greenComponent]), [read blueComponent]) - MIN(MIN([read redComponent], [read greenComponent]), [read blueComponent]);
+                CGFloat distance = MAX(MAX(fabs([read redComponent] - [sent redComponent]), fabs([read greenComponent] - [sent greenComponent])), fabs([read blueComponent] - [sent blueComponent]));
+                minimumChroma = MIN(minimumChroma, chroma);
+                minimumDistance = MIN(minimumDistance, distance);
+                TGAssertTrue(chroma >= 0.29 && distance >= 0.20, [NSString stringWithFormat:@"read and sent need distinct saturated/neutral ink in %@", theme]);
+                TGAssertTrue(fabs([sent redComponent] - [sent blueComponent]) < 0.001, @"sent state remains neutral");
+                NSColor *surface = TGMessageMetadataSurfaceColor(item, flip);
+                CGFloat contrast = MIN(TGStatusProbeContrast(sent, surface), TGStatusProbeContrast(read, surface));
+                minimumContrast = MIN(minimumContrast, contrast);
+                TGAssertTrue(contrast >= 4.5, [NSString stringWithFormat:@"sent and read require 4.5:1 on %@ bubble/list footer", theme]);
+                surfaces++;
+                for (NSNumber *fontLevel in [NSArray arrayWithObjects:@0, @1, @2, @3, nil]) {
+                    TGSetChatMessageTextSizeLevel([fontLevel integerValue]);
+                    CGFloat lineHeight = ceil([TGChatMessageMetaFont() ascender] - [TGChatMessageMetaFont() descender]) + 2.0;
+                    NSRect time = NSMakeRect(4.0, 4.0, 30.0, lineHeight);
+                    NSUInteger state = 0;
+                    CGFloat width = TGOutgoingStatusDotsWidthForItem(item);
+                    for (state = 0; state < 3; state++) {
+                        [item setSending:state == 0]; [item setOutgoingRead:state == 2];
+                        [TGStatusAssetTrace removeAllObjects];
+                        TGDrawOutgoingStatusDotsForItem(item, time, flip);
+                        TGAssertTrue([TGStatusAssetTrace count] == (state == 1 ? 1 : 2), @"pending pair, sent single, and read pair must differ by visible count");
+                        TGAssertTrue(TGOutgoingStatusDotsWidthForItem(item) == width, @"receipt updates cannot move timestamp or wrap the body");
+                        for (NSDictionary *asset in TGStatusAssetTrace) {
+                            TGAssertEqualObjects([asset objectForKey:@"name"], @"done-mini", @"status uses the existing approved asset");
+                            NSRect rect = [[asset objectForKey:@"rect"] rectValue];
+                            TGAssertTrue(NSMinX(rect) > NSMaxX(time) && NSMaxX(rect) <= NSMaxX(time) + 4.0 + width, @"checks remain inside reserved width at every font size");
+                            if (state > 0) { TGAssertEqualObjects([asset objectForKey:@"color"], state == 1 ? sent : read, @"actual renderer must use semantic receipt ink"); }
+                        }
+                    }
+                    [item setSending:NO]; [item setOutgoingRead:NO];
+                }
+            }
+            // The inline attachment cache must not reuse bubble ink in list mode.
+            // Exercise both state images, then verify the same-mode cache is reused.
+            NSUInteger state = 0;
+            for (state = 0; state < 2; state++) {
+                [item setOutgoingRead:state != 0];
+                [TGStatusAssetTrace removeAllObjects];
+                TGAssertTrue(TGOutgoingStatusInlineAttributedStringForItem(item) != nil, @"inline receipt is available");
+                TGAssertTrue([TGStatusAssetTrace count] == (state ? 2 : 1), @"inline receipt needs fresh correct-count asset calls for each theme and mode");
+                NSColor *expected = TGMessageDeliveryStatusInkColor(item, YES, NO);
+                for (NSDictionary *asset in TGStatusAssetTrace) {
+                    TGAssertEqualObjects([asset objectForKey:@"color"], expected, @"inline receipt uses this mode's readable ink");
+                }
+                [TGStatusAssetTrace removeAllObjects];
+                TGOutgoingStatusInlineAttributedStringForItem(item);
+                TGAssertTrue([TGStatusAssetTrace count] == 0, @"unchanged receipt uses its cached image");
+            }
+        }
+    }
+    [item setFailedToSend:YES];
+    [TGStatusAssetTrace removeAllObjects];
+    TGDrawOutgoingStatusDotsForItem(item, NSMakeRect(4, 4, 30, 14), YES);
+    TGAssertTrue([TGStatusAssetTrace count] == 0, @"failed-send warning does not draw successful checks");
+    TGAssertEqualObjects([TGOutgoingStatusInlineAttributedStringForItem(item) string], @" !", @"failed-send inline warning is preserved");
+    [canvas unlockFocus];
+    [TGStatusAssetTrace release]; TGStatusAssetTrace = nil;
+    printf("Delivery receipt audit: %lu themes, %lu footer surfaces; minimum contrast %.2f:1, read chroma %.2f, state RGB separation %.2f.\n", (unsigned long)[TGThemeIdentifiers() count], (unsigned long)surfaces, (double)minimumContrast, (double)minimumChroma, (double)minimumDistance);
+    TGClearProbeDefaults();
+}
+
 static void TGTestCompactMessageGeometry(void) {
     TGClearProbeDefaults();
     TGSetChatMessagesAsBlocksEnabled(NO);
@@ -1017,6 +1116,7 @@ int main(int argc, const char **argv) {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     TGClearProbeDefaults();
     TGTestThemes();
+    TGTestDeliveryStatusPresentation();
     TGTestChatDisplayPreferences();
     TGTestResourcePolicy();
     TGTestMediaSupport();

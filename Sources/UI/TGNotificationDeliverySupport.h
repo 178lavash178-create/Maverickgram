@@ -8,3 +8,5 @@ void TGRemoveConfirmedReadNotifications(id center, TGNotificationReadState *read
 void TGRemoveMessageNotificationsAfterLogout(id center);
 /* Only authoritative ordinary-chat snapshots may advance chat-wide reads. */
 void TGRecordConfirmedNotificationChatReads(NSArray *items, TGNotificationReadState *readState);
+/* Remove only message notifications selected by current mute policy. */
+void TGRemoveMutedMessageNotifications(id center, BOOL (^isMuted)(NSNumber *chatID));

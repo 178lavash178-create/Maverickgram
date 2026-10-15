@@ -77,6 +77,7 @@
     return nil;
 }
 
+#include "TGStatusWindowController+NotificationMutePolicy.inc"
 #include "TGStatusWindowController+NotificationChatInfo.inc"
 
 - (NSString *)chatMuteDefaultsKeyForChatID:(NSNumber *)chatID {
@@ -129,7 +130,9 @@
     if (![item isKindOfClass:[TGChatItem class]]) {
         return NO;
     }
-    return ([item serverNotificationsMuted] || [self isChatIDLocallyMuted:[self notificationChatIDForChatItem:item]]);
+    NSNumber *chatID = [self notificationChatIDForChatItem:item];
+    NSNumber *liveState = [self.client notificationMuteStateForChatID:chatID];
+    return ([self isChatIDLocallyMuted:chatID] || (liveState ? [liveState boolValue] : [item serverNotificationsMuted]));
 }
 
 - (void)applyLocalNotificationMuteStateToItems:(NSArray *)items {
@@ -145,7 +148,8 @@
         BOOL locallyMuted = [self isChatIDLocallyMuted:chatID];
         if ([chatKey length] > 0 && ![item isForumTopic]) {
             NSNumber *unreadCount = [item unreadCount];
-            if (locallyMuted && ![item serverNotificationsMuted]) {
+            NSNumber *serverState = [self.client notificationMuteStateForChatID:chatID];
+            if (locallyMuted && !(serverState ? [serverState boolValue] : [item serverNotificationsMuted])) {
                 NSUInteger localUnreadCount = [unreadCount respondsToSelector:@selector(unsignedIntegerValue)] ? [unreadCount unsignedIntegerValue] : 0;
                 [self.localMuteUnreadCountsByChatID setObject:[NSNumber numberWithUnsignedInteger:localUnreadCount] forKey:chatKey];
             } else {
@@ -177,25 +181,10 @@
 }
 
 - (BOOL)isChatIDMutedForNotifications:(NSNumber *)chatID {
-    if (![chatID respondsToSelector:@selector(longLongValue)]) {
-        return NO;
-    }
-    if ([self isChatIDLocallyMuted:chatID]) {
-        return YES;
-    }
-    NSUInteger index = 0;
-    for (index = 0; index < [self.chatItems count]; index++) {
-        id candidate = [self.chatItems objectAtIndex:index];
-        if (![candidate isKindOfClass:[TGChatItem class]]) {
-            continue;
-        }
-        TGChatItem *item = (TGChatItem *)candidate;
-        NSNumber *itemChatID = [self notificationChatIDForChatItem:item];
-        if ([itemChatID respondsToSelector:@selector(longLongValue)] && [itemChatID longLongValue] == [chatID longLongValue]) {
-            return [item notificationsMuted];
-        }
-    }
-    return NO;
+    if ([self isChatIDLocallyMuted:chatID]) { return YES; }
+    NSNumber *state = [self.client notificationMuteStateForChatID:chatID];
+    /* Missing policy is handled by deferred delivery, never assumed unmuted. */
+    return state && [state boolValue];
 }
 
 - (void)setLocalNotificationMuteForChatID:(NSNumber *)chatID duration:(NSTimeInterval)duration {
@@ -217,6 +206,7 @@
     [[NSUserDefaults standardUserDefaults] setObject:overrides forKey:TGChatNotificationMuteOverridesDefaultsKey];
     [[NSUserDefaults standardUserDefaults] synchronize];
     [self applyLocalNotificationMuteStateToItems:self.chatItems];
+    [self removeMutedMessageNotifications];
     [self.chatTableView reloadData];
     [self updateApplicationBadge];
 }
@@ -230,7 +220,7 @@
             continue;
         }
         TGChatItem *item = (TGChatItem *)candidate;
-        if ([item notificationsMuted]) {
+        if ([self isChatItemEffectivelyMuted:item] || ![self.client notificationMuteStateForChatID:[self notificationChatIDForChatItem:item]]) {
             continue;
         }
         NSNumber *unreadCount = [item unreadCount];
@@ -736,7 +726,8 @@
 
 - (BOOL)userNotificationCenter:(NSUserNotificationCenter *)center shouldPresentNotification:(NSUserNotification *)notification {
     (void)center;
-    if ([self.notificationReadState isReadNotificationInfo:[notification userInfo]]) { return NO; }
+    if ([self notificationInfoSuppressedByMute:[notification userInfo]] ||
+        [self.notificationReadState isReadNotificationInfo:[notification userInfo]]) { return NO; }
     if (!TGUserDefaultBoolWithDefault(TGNotificationsEnabledDefaultsKey, YES)) {
         return NO;
     }
@@ -749,7 +740,8 @@
 
 - (void)userNotificationCenter:(NSUserNotificationCenter *)center didDeliverNotification:(NSUserNotification *)notification {
     /* Delivery may finish after the successful read callback scanned the center. */
-    if ([self.notificationReadState isReadNotificationInfo:[notification userInfo]]) {
+    if ([self notificationInfoSuppressedByMute:[notification userInfo]] ||
+        [self.notificationReadState isReadNotificationInfo:[notification userInfo]]) {
         [center removeDeliveredNotification:notification];
     }
 }
@@ -876,71 +868,4 @@
     return notificationImage;
 }
 
-- (void)presentNotificationForUpdateSummary:(NSDictionary *)summary {
-    if (TGMountainLionSafeLoginModeEnabled()) {
-        return;
-    }
-    if (!TGUserDefaultBoolWithDefault(TGNotificationsEnabledDefaultsKey, YES)) {
-        return;
-    }
-    if (![summary isKindOfClass:[NSDictionary class]]) {
-        return;
-    }
-    NSString *direction = [summary objectForKey:@"direction"];
-    if (![direction isEqualToString:@"Incoming"]) {
-        return;
-    }
-
-    NSNumber *chatID = [summary objectForKey:@"chat_id"];
-    if ([self isChatIDMutedForNotifications:chatID]) {
-        return;
-    }
-    /* Reject replay before chat/avatar enrichment can schedule background work. */
-    if (![self.notificationReadState consumeIncomingNotificationSummary:summary
-                                                            atUnixTime:[[NSDate date] timeIntervalSince1970]]) { return; }
-    NSDictionary *notificationChatInfo = [self notificationChatInfoForChatID:chatID];
-    id serverMuted = [notificationChatInfo objectForKey:@"notifications_muted"];
-    if ([serverMuted respondsToSelector:@selector(boolValue)] && [serverMuted boolValue]) {
-        return;
-    }
-    NSString *title = [notificationChatInfo objectForKey:@"title"];
-    if ([title length] == 0) {
-        title = @"New message";
-    }
-    NSString *preview = [summary objectForKey:@"preview"];
-    if (![preview isKindOfClass:[NSString class]] || [preview length] == 0) {
-        preview = @"New message";
-    }
-    if (!TGUserDefaultBoolWithDefault(TGNotificationPreviewEnabledDefaultsKey, YES)) {
-        preview = TGLoc(@"notification.hiddenPreview");
-    }
-    NSUserNotification *notification = [[[NSUserNotification alloc] init] autorelease];
-    [notification setTitle:title];
-    [notification setInformativeText:preview];
-    NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
-    if ([chatID respondsToSelector:@selector(longLongValue)]) {
-        [userInfo setObject:[NSNumber numberWithLongLong:[chatID longLongValue]] forKey:@"chat_id"];
-    }
-    id messageID = [summary objectForKey:@"message_id"];
-    if ([messageID respondsToSelector:@selector(longLongValue)]) {
-        [userInfo setObject:[NSNumber numberWithLongLong:[messageID longLongValue]] forKey:@"message_id"];
-    }
-    id messageThreadID = [summary objectForKey:@"message_thread_id"];
-    if ([messageThreadID respondsToSelector:@selector(longLongValue)] && [messageThreadID longLongValue] > 0) {
-        [userInfo setObject:[NSNumber numberWithLongLong:[messageThreadID longLongValue]] forKey:@"message_thread_id"];
-    }
-    if ([self.notificationReadState isReadNotificationInfo:userInfo]) { return; }
-    if ([userInfo count] > 0) {
-        [notification setUserInfo:userInfo];
-    }
-    if ([notification respondsToSelector:NSSelectorFromString(@"setContentImage:")]) {
-        NSImage *avatarImage = [self notificationAvatarImageForChatID:chatID];
-        if (avatarImage) {
-            [notification setValue:avatarImage forKey:@"contentImage"];
-        }
-    }
-    if (TGUserDefaultBoolWithDefault(TGNotificationSoundEnabledDefaultsKey, YES)) {
-        [notification setSoundName:NSUserNotificationDefaultSoundName];
-    }
-    [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
-}
+#include "TGStatusWindowController+NotificationPresentation.inc"
