@@ -10,9 +10,14 @@
     NSMutableSet *_changedScopes;
     NSMutableArray *_importedConfigurations;
     NSArray *_colorButtons;
-    NSArray *_texturePresets;
+    NSArray *_textureButtons;
+    NSArray *_wallpaperButtons;
+    NSMutableDictionary *_modeChoices;
+    NSSegmentedControl *_modeControl;
+    NSView *_colorPane;
+    NSView *_texturePane;
+    NSView *_imagePane;
     NSPopUpButton *_scopePopUp;
-    NSPopUpButton *_texturePopUp;
     NSTextField *_scopeHint;
     NSTextField *_imageNameField;
     NSButton *_inheritButton;

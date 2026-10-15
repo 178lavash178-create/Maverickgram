@@ -13,6 +13,7 @@ harness=r'''
 #import "TGAquaChatBackground.h"
 #import "TGAquaChatBackgroundClipView.h"
 #include <assert.h>
+#include <string.h>
 static BOOL Flipped;
 static TGAquaChatBackgroundStore *Store;
 static id ProbeSharedStore(id object,SEL selector) { (void)object;(void)selector;return Store; }
@@ -28,7 +29,7 @@ static id ProbeSharedStore(id object,SEL selector) { (void)object;(void)selector
 @implementation PhaseDocument
 - (BOOL)isFlipped { return Flipped; }
 @end
-static NSData *Render(TGAquaChatBackgroundClipView *clip,NSUInteger scale) {
+static NSData *Render(TGAquaChatBackgroundClipView *clip,NSUInteger scale,BOOL requirePattern) {
     NSRect bounds=[clip bounds];
     NSUInteger width=NSWidth(bounds)*scale,height=NSHeight(bounds)*scale;
     NSBitmapImageRep *bitmap=[[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:width pixelsHigh:height bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSDeviceRGBColorSpace bytesPerRow:width*4 bitsPerPixel:32] autorelease];
@@ -39,6 +40,16 @@ static NSData *Render(TGAquaChatBackgroundClipView *clip,NSUInteger scale) {
     [clip drawRect:bounds];
     [NSGraphicsContext restoreGraphicsState];
     assert([[bitmap colorAtX:8 y:8] alphaComponent]>0.99);
+    if(requirePattern) {
+        // A missing resource silently paints the solid fallback. Demand real
+        // variation so stationary fallback pixels cannot masquerade as a pass.
+        const unsigned char *pixels=[bitmap bitmapData];
+        BOOL varied=NO;
+        for(NSUInteger pixel=1;pixel<width*height;pixel++) {
+            if(memcmp(pixels,pixels+pixel*4,3)!=0) { varied=YES;break; }
+        }
+        assert(varied);
+    }
     return [NSData dataWithBytes:[bitmap bitmapData] length:[bitmap bytesPerRow]*[bitmap pixelsHigh]];
 }
 int main(void) {
@@ -47,31 +58,40 @@ int main(void) {
     Store=[[[TGAquaChatBackgroundStore alloc] initWithDefaults:defaults rootDirectory:@"/unused-wallpaper-phase-probe"] autorelease];
     Method shared=class_getClassMethod([TGAquaChatBackgroundStore class],@selector(sharedStore));
     IMP original=method_setImplementation(shared,(IMP)ProbeSharedStore);
-    NSUInteger checks=0;
-    for(NSString *name in [NSArray arrayWithObjects:@"black-Linen",@"brushed_alu",@"brushed",nil])
-        assert([[NSBundle mainBundle] pathForResource:name ofType:@"png" inDirectory:@"Textures"]);
-    for(NSUInteger texture=0;texture<3;texture++) for(NSUInteger scale=1;scale<=2;scale++) for(NSUInteger flip=0;flip<2;flip++) {
+    NSUInteger checks=0,textureCount=0,wallpaperCount=0;
+    NSMutableArray *patterns=[NSMutableArray array];
+    for(NSDictionary *preset in [TGAquaChatBackgroundStore presets]) {
+        NSString *kind=[preset objectForKey:@"kind"];
+        if([kind isEqualToString:@"color"]) continue;
+        if([kind isEqualToString:@"texture"]) textureCount++; else wallpaperCount++;
+        [patterns addObject:preset];
+    }
+    assert(textureCount==5 && wallpaperCount==5);
+    for(NSDictionary *preset in patterns) for(NSUInteger scale=1;scale<=2;scale++) for(NSUInteger flip=0;flip<2;flip++) {
+        NSAutoreleasePool *iterationPool=[[NSAutoreleasePool alloc] init];
         Flipped=flip;
-        NSDictionary *configuration=[TGAquaChatBackgroundStore configurationForPresetIdentifier:[NSString stringWithFormat:@"texture-%lu",(unsigned long)texture]];
-        assert([Store setConfiguration:configuration forAccountID:nil chatID:nil error:NULL]);
+        NSString *identifier=[preset objectForKey:@"id"];
+        NSDictionary *configuration=[TGAquaChatBackgroundStore configurationForPresetIdentifier:identifier];
+        assert(configuration && [Store setConfiguration:configuration forAccountID:nil chatID:nil error:NULL]);
         TGAquaChatBackgroundClipView *clip=[[[TGAquaChatBackgroundClipView alloc] initWithFrame:NSMakeRect(0,0,180,120)] autorelease];
         PhaseDocument *document=[[[PhaseDocument alloc] initWithFrame:NSMakeRect(0,0,180,3000)] autorelease];
         [clip setDocumentView:document];
         assert([clip isFlipped]==Flipped && ![clip copiesOnScroll]);
-        [clip setBoundsOrigin:NSZeroPoint]; NSData *reference=Render(clip,scale);
+        [clip setBoundsOrigin:NSZeroPoint]; NSData *reference=Render(clip,scale,YES);
         // Integer and fractional origins catch phase shifts and backing-scale errors.
         CGFloat origins[]={1,2,17,38,75,123,260,512.5};
         for(NSUInteger i=0;i<sizeof(origins)/sizeof(origins[0]);i++) {
             [clip setBoundsOrigin:NSMakePoint(0,origins[i])];
-            if(![reference isEqualToData:Render(clip,scale)]) {
-                fprintf(stderr,"Wallpaper moved: texture%lu scale%lu flipped%lu origin%.1f\n",(unsigned long)texture,(unsigned long)scale,(unsigned long)flip,(double)origins[i]);
+            if(![reference isEqualToData:Render(clip,scale,NO)]) {
+                fprintf(stderr,"Wallpaper moved: %s scale%lu flipped%lu origin%.1f\n",[identifier UTF8String],(unsigned long)scale,(unsigned long)flip,(double)origins[i]);
                 return 1;
             }
             checks++;
         }
+        [iterationPool drain];
     }
     method_setImplementation(shared,original);
-    printf("Aqua actual texture viewport anchoring: %lu scroll rasters,3bundled tiles,1x/2x,both orientations PASS.\n",(unsigned long)checks);
+    printf("Aqua actual wallpaper viewport anchoring: %lu scroll rasters,5bundled tiles+5wallpaperimages,nonuniform pixels,1x/2x,both orientations PASS.\n",(unsigned long)checks);
     [pool drain];return 0;
 }
 '''
@@ -81,7 +101,8 @@ try:
     macos=os.path.join(app,'Contents','MacOS')
     resources=os.path.join(app,'Contents','Resources')
     os.makedirs(macos)
-    shutil.copytree(os.path.join(ROOT,'Sources','Resources','Textures'),os.path.join(resources,'Textures'))
+    for resource_folder in ('Textures','Wallpapers'):
+        shutil.copytree(os.path.join(ROOT,'Sources','Resources',resource_folder),os.path.join(resources,resource_folder))
     source=os.path.join(folder,'probe.m')
     binary=os.path.join(macos,'probe')
     with open(source,'wb') as handle:

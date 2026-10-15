@@ -19,6 +19,19 @@ https://creativecommons.org/licenses/by-sa/3.0/
 https://creativecommons.org/licenses/by-sa/3.0/legalcode
 Upstream license declaration: https://github.com/atlemo/SubtlePatterns
 
-The three PNG files are redistributed unmodified. Telegraphica composites them
+The five PNG files are redistributed unmodified. Telegraphica composites them
 at reduced opacity over Aqua surfaces. These textures and adaptations remain
 available under CC BY-SA 3.0. Their authors do not endorse Telegraphica.
+
+
+ricepaper.png: “Rice Paper”, Atle Mo, 13 November 2011.
+https://www.toptal.com/designers/subtlepatterns/rice-paper/
+Original file: https://raw.githubusercontent.com/atlemo/SubtlePatterns/gh-pages/ricepaper.png
+
+subtle_white_feathers.png: “Subtle White Feathers”, Viahorizon, 2 March 2013.
+https://www.toptal.com/designers/subtlepatterns/subtle-white-feathers/
+Original file: https://raw.githubusercontent.com/atlemo/SubtlePatterns/gh-pages/subtle_white_feathers.png
+Both additional textures use the CC BY-SA 3.0 license described above and are
+redistributed unmodified.
+SHA256 ricepaper.png: b87222277c5af6974fc48941be75a0ecac7cd186799f9354b59ad7c83c202f24
+SHA256 subtle_white_feathers.png: 64781e1ffa1d19a4f564cb389ea08bafebc3a3c976c23732f7014859a87041ec

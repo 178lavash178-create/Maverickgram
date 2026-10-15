@@ -22,6 +22,9 @@ NSString *TGLoc(NSString *key) {
 
     NSString *language = TGLanguageCode();
     NSDictionary *ru = [NSDictionary dictionaryWithObjectsAndKeys:
+                        @"Тип фона", @"aqua.background.type",
+                        @"Изображение", @"aqua.background.images",
+                        @"Белый фон", @"aqua.background.restoreWhite",
                         @"Чаты · Фон диалогов…", @"aqua.background.settings",
                         @"Локальное оформление фона: для всех чатов или одного диалога.", @"aqua.background.localHint",
                         @"Чаты — фон диалогов", @"aqua.background.windowTitle",
@@ -1280,6 +1283,9 @@ NSString *TGLoc(NSString *key) {
                         @"Можно открыть канал в браузере.", @"about.channel.open.browserFallback",
                         nil];
     NSDictionary *be = [NSDictionary dictionaryWithObjectsAndKeys:
+                        @"Тып фону", @"aqua.background.type",
+                        @"Выява", @"aqua.background.images",
+                        @"Белы фон", @"aqua.background.restoreWhite",
                         @"Чаты · Фон дыялогаў…", @"aqua.background.settings",
                         @"Лакальнае афармленне фону: для ўсіх чатаў або аднаго дыялогу.", @"aqua.background.localHint",
                         @"Чаты — фон дыялогаў", @"aqua.background.windowTitle",
@@ -2538,6 +2544,9 @@ NSString *TGLoc(NSString *key) {
                         @"Можна адкрыць канал у браўзеры.", @"about.channel.open.browserFallback",
                         nil];
     NSDictionary *en = [NSDictionary dictionaryWithObjectsAndKeys:
+                        @"Background type", @"aqua.background.type",
+                        @"Image", @"aqua.background.images",
+                        @"White background", @"aqua.background.restoreWhite",
                         @"Chats · Conversation background…", @"aqua.background.settings",
                         @"Local wallpaper for all chats or a single conversation.", @"aqua.background.localHint",
                         @"Chats — conversation background", @"aqua.background.windowTitle",

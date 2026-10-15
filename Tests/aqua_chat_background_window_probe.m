@@ -17,16 +17,20 @@ NSString * const TGAquaChatBackgroundDidChangeNotification = @"WallpaperProbe";
 + (TGAquaChatBackgroundStore *)sharedStore { static id store=nil; if(!store) store=[[self alloc] init]; return store; }
 + (NSArray *)presets {
     NSMutableArray *presets=[NSMutableArray array];
-    for(NSUInteger i=0;i<11;i++) {
-        NSString *identifier=[NSString stringWithFormat:@"%@-%lu",i<8 ? @"color" : @"texture",(unsigned long)(i<8 ? i : i-8)];
-        [presets addObject:[NSDictionary dictionaryWithObjectsAndKeys:identifier,@"id",i<8 ? @"color" : @"texture",@"kind",[NSString stringWithFormat:@"Color %lu",(unsigned long)i],@"title_en",[NSString stringWithFormat:@"Цвет %lu",(unsigned long)i],@"title_ru",nil]];
+    NSArray *wallpapers=[NSArray arrayWithObjects:@"wallpaper-botanical",@"wallpaper-stars",@"wallpaper-sea",@"wallpaper-mountains",@"wallpaper-clouds",nil];
+    for(NSUInteger mode=0;mode<3;mode++) for(NSUInteger i=0;i<(mode==0 ? 9 : 5);i++) {
+        NSString *kind=mode==0 ? @"color" : (mode==1 ? @"texture" : @"wallpaper");
+        NSString *identifier=mode==2 ? [wallpapers objectAtIndex:i] : [NSString stringWithFormat:@"%@-%lu",kind,(unsigned long)i];
+        [presets addObject:[NSDictionary dictionaryWithObjectsAndKeys:identifier,@"id",kind,@"kind",[NSString stringWithFormat:@"%@ %lu",kind,(unsigned long)i],@"title_en",[NSString stringWithFormat:@"Вариант %lu",(unsigned long)i],@"title_ru",nil]];
     }
     return presets;
 }
 + (NSDictionary *)configurationForPresetIdentifier:(NSString *)identifier {
-    return [NSDictionary dictionaryWithObjectsAndKeys:identifier,@"id",[identifier hasPrefix:@"color"] ? @"color" : @"texture",@"kind",nil];
+    NSString *kind=[identifier hasPrefix:@"color"] ? @"color" : ([identifier hasPrefix:@"texture"] ? @"texture" : @"wallpaper");
+    return [NSDictionary dictionaryWithObjectsAndKeys:identifier,@"id",kind,@"kind",nil];
 }
-+ (NSDictionary *)defaultConfiguration { return [self configurationForPresetIdentifier:@"texture-0"]; }
++ (NSDictionary *)defaultConfiguration { return [self configurationForPresetIdentifier:@"color-8"]; }
+
 - (NSString *)keyForAccount:(NSNumber *)account chat:(NSNumber *)chat {
     return account && chat ? [NSString stringWithFormat:@"%@:%@",account,chat] : @"common";
 }
@@ -55,6 +59,8 @@ NSString * const TGAquaChatBackgroundDidChangeNotification = @"WallpaperProbe";
 - (void)chooseImage:(id)sender;
 - (void)colorSelected:(id)sender;
 - (void)textureSelected:(id)sender;
+- (void)wallpaperSelected:(id)sender;
+- (void)modeChanged:(id)sender;
 - (void)scopeChanged:(id)sender;
 - (void)stageImportedConfiguration:(NSDictionary *)configuration;
 - (NSDictionary *)previewConfiguration;
@@ -99,8 +105,18 @@ int main(void) {
             assert(NSWidth(bounds)==760 && NSHeight(bounds)==610);
             assert(![[window title] hasPrefix:@"aqua."]);
             NSArray *colors=[controller valueForKey:@"colorButtons"];
-            NSPopUpButton *scope=[controller valueForKey:@"scopePopUp"], *texture=[controller valueForKey:@"texturePopUp"];
-            assert([colors count]==8 && [texture numberOfItems]==4 && [scope numberOfItems]==(hasChat ? 2 : 1));
+            NSArray *textures=[controller valueForKey:@"textureButtons"], *wallpapers=[controller valueForKey:@"wallpaperButtons"];
+            NSPopUpButton *scope=[controller valueForKey:@"scopePopUp"];
+            NSSegmentedControl *mode=[controller valueForKey:@"modeControl"];
+            assert([colors count]==9 && [textures count]==5 && [wallpapers count]==5 && [scope numberOfItems]==(hasChat ? 2 : 1));
+            assert([mode segmentCount]==3 && [mode selectedSegment]==0);
+            assert([[colors objectAtIndex:8] state]==NSOnState);
+            for(NSString *paneKey in [NSArray arrayWithObjects:@"colorPane",@"texturePane",@"imagePane",nil]) {
+                NSView *pane=[controller valueForKey:paneKey];
+                for(NSView *view in [pane subviews]) AssertContained([view frame],[pane bounds]);
+            }
+            assert(![[controller valueForKey:@"colorPane"] isHidden]);
+            assert([[controller valueForKey:@"texturePane"] isHidden] && [[controller valueForKey:@"imagePane"] isHidden]);
             assert([[controller valueForKey:@"inheritButton"] isHidden]);
             for(NSView *view in [[window contentView] subviews]) AssertContained([view frame],bounds);
             assert([[controller previewConfiguration] isEqual:[TGAquaChatBackgroundStore defaultConfiguration]]);
@@ -131,8 +147,23 @@ int main(void) {
                 assert(![Saved objectForKey:@"10:-500"] && [Saved objectForKey:@"common"]);
             }
             [controller showWindow:nil];
-            [texture selectItemAtIndex:3]; [controller textureSelected:texture];
-            assert([[[controller previewConfiguration] objectForKey:@"id"] isEqualToString:@"texture-2"]);
+            [mode setSelectedSegment:1]; [controller modeChanged:mode];
+            assert([[[controller previewConfiguration] objectForKey:@"kind"] isEqualToString:@"texture"]);
+            [controller textureSelected:[textures objectAtIndex:4]];
+            assert([[[controller previewConfiguration] objectForKey:@"id"] isEqualToString:@"texture-4"]);
+            assert(![[controller valueForKey:@"texturePane"] isHidden] && [[controller valueForKey:@"colorPane"] isHidden]);
+            [mode setSelectedSegment:2]; [controller modeChanged:mode];
+            assert([[[controller previewConfiguration] objectForKey:@"kind"] isEqualToString:@"wallpaper"]);
+            [controller wallpaperSelected:[wallpapers objectAtIndex:4]];
+            assert([[[controller previewConfiguration] objectForKey:@"id"] isEqualToString:@"wallpaper-clouds"]);
+            assert([[wallpapers objectAtIndex:4] state]==NSOnState && [[wallpapers objectAtIndex:0] state]==NSOffState);
+            assert(![[controller valueForKey:@"imagePane"] isHidden] && [[controller valueForKey:@"texturePane"] isHidden]);
+            [mode setSelectedSegment:1]; [controller modeChanged:mode];
+            assert([[[controller previewConfiguration] objectForKey:@"id"] isEqualToString:@"texture-4"]);
+            [mode setSelectedSegment:2]; [controller modeChanged:mode];
+            assert([[[controller previewConfiguration] objectForKey:@"id"] isEqualToString:@"wallpaper-clouds"]);
+            [mode setSelectedSegment:0]; [controller modeChanged:mode];
+            assert([[[controller previewConfiguration] objectForKey:@"kind"] isEqualToString:@"color"]);
             [controller cancelChanges:nil];
             // Imported images are previews until Apply and are discarded on Cancel.
             NSDictionary *image=[NSDictionary dictionaryWithObjectsAndKeys:@"image",@"kind",@"test.png",@"image",nil];
@@ -172,6 +203,6 @@ int main(void) {
     ClosingController=nil; [ClosingPanel release]; ClosingPanel=nil;
     TGSetLanguageCode(originalLanguage); [originalLanguage release];
     [Saved release]; [Writes release]; [Discards release];
-    printf("Aqua wallpaper window: %lu localized common/chat flows, 8 colors, textures, staged preview/Apply/Cancel, inheritance, import cleanup, modal owner-close lifetime and contained layout PASS.\n",(unsigned long)cases);
+    printf("Aqua wallpaper window: %lu localized common/chat flows, 9 colors, 5 textures, 5 wallpapers, explicit modes, staged preview/Apply/Cancel, inheritance, import cleanup, modal owner-close lifetime and contained layout PASS.\n",(unsigned long)cases);
     [pool drain]; return 0;
 }

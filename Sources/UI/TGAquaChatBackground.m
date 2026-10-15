@@ -4,6 +4,7 @@
 
 NSString * const TGAquaChatBackgroundDidChangeNotification = @"TGAquaChatBackgroundDidChangeNotification";
 static NSString * const TGBackgroundDefaultsKey = @"TGAquaChatBackgroundsV1";
+static NSString * const TGBackgroundDefaultVersionKey = @"TGAquaChatBackgroundDefaultVersion";
 
 static NSError *TGBackgroundError(NSString *text) {
     return [NSError errorWithDomain:@"TGAquaChatBackground" code:1 userInfo:[NSDictionary dictionaryWithObject:text forKey:NSLocalizedDescriptionKey]];
@@ -25,9 +26,26 @@ static BOOL TGBackgroundImageNameValid(id value) {
     return [value rangeOfCharacterFromSet:[allowed invertedSet]].location == NSNotFound;
 }
 
+static NSArray *TGBackgroundBundledWallpaperIdentifiers(void) {
+    return [NSArray arrayWithObjects:@"wallpaper-botanical",@"wallpaper-stars",@"wallpaper-sea",@"wallpaper-mountains",@"wallpaper-clouds",nil];
+}
+
+static NSURL *TGBackgroundBundledWallpaperURL(NSString *identifier) {
+    for (NSString *extension in [NSArray arrayWithObjects:@"png",@"jpg",@"jpeg",nil]) {
+        NSString *path=[[NSBundle mainBundle] pathForResource:identifier ofType:extension inDirectory:@"Wallpapers"];
+        if ([path length]>0) return [NSURL fileURLWithPath:path];
+    }
+    return nil;
+}
+
 static NSDictionary *TGBackgroundNormalizedConfiguration(id value) {
     if (![value isKindOfClass:[NSDictionary class]]) return nil;
     NSString *kind = [value objectForKey:@"kind"];
+    if ([kind isEqual:@"wallpaper"]) {
+        NSString *identifier=[value objectForKey:@"wallpaper"];
+        return [identifier isKindOfClass:[NSString class]] && [TGBackgroundBundledWallpaperIdentifiers() containsObject:identifier]
+            ? [NSDictionary dictionaryWithObjectsAndKeys:@"wallpaper",@"kind",identifier,@"wallpaper",nil] : nil;
+    }
     if ([kind isEqual:@"image"]) {
         NSString *name = [value objectForKey:@"image"];
         return TGBackgroundImageNameValid(name) ? [NSDictionary dictionaryWithObjectsAndKeys:@"image",@"kind",name,@"image",nil] : nil;
@@ -37,7 +55,7 @@ static NSDictionary *TGBackgroundNormalizedConfiguration(id value) {
         [color rangeOfCharacterFromSet:[[NSCharacterSet characterSetWithCharactersInString:@"0123456789abcdefABCDEF"] invertedSet]].location != NSNotFound) return nil;
     if ([kind isEqual:@"color"]) return [NSDictionary dictionaryWithObjectsAndKeys:@"color",@"kind",[color uppercaseString],@"color",nil];
     NSString *texture = [value objectForKey:@"texture"];
-    if (![kind isEqual:@"texture"] || ![[NSArray arrayWithObjects:@"black-Linen",@"brushed_alu",@"brushed",nil] containsObject:texture]) return nil;
+    if (![kind isEqual:@"texture"] || ![[NSArray arrayWithObjects:@"black-Linen",@"brushed_alu",@"brushed",@"ricepaper",@"subtle_white_feathers",nil] containsObject:texture]) return nil;
     id rawOpacity = [value objectForKey:@"opacity"];
     CGFloat opacity = [rawOpacity isKindOfClass:[NSNumber class]] ? [rawOpacity doubleValue] : 0.12;
     if (!isfinite(opacity)) return nil;
@@ -93,16 +111,25 @@ static NSImage *TGBackgroundLoadBoundedImage(NSURL *url) {
     static NSArray *presets = nil;
     if (!presets) {
         NSMutableArray *result = [NSMutableArray array];
-        NSArray *colors = [NSArray arrayWithObjects:@"E7EEF4",@"F7F6F2",@"E5EDF5",@"E5EDE6",@"F3E9DC",@"EDE7F3",@"F4E6E9",@"D5DCE4",nil];
-        NSArray *ru = [NSArray arrayWithObjects:@"Ледяной",@"Слоновая кость",@"Небесный",@"Шалфей",@"Песочный",@"Лаванда",@"Розовый",@"Серебряный",nil];
-        NSArray *en = [NSArray arrayWithObjects:@"Ice",@"Ivory",@"Sky",@"Sage",@"Sand",@"Lavender",@"Rose",@"Silver",nil];
+        NSArray *colors = [NSArray arrayWithObjects:@"E7EEF4",@"F7F6F2",@"E5EDF5",@"E5EDE6",@"F3E9DC",@"EDE7F3",@"F4E6E9",@"D5DCE4",@"FFFFFF",nil];
+        NSArray *ru = [NSArray arrayWithObjects:@"Ледяной",@"Слоновая кость",@"Небесный",@"Шалфей",@"Песочный",@"Лаванда",@"Розовый",@"Серебряный",@"Белый",nil];
+        NSArray *be = [NSArray arrayWithObjects:@"Ледзяны",@"Слановая косць",@"Нябесны",@"Шалфей",@"Пясочны",@"Лаванда",@"Ружовы",@"Срэбны",@"Белы",nil];
+        NSArray *en = [NSArray arrayWithObjects:@"Ice",@"Ivory",@"Sky",@"Sage",@"Sand",@"Lavender",@"Rose",@"Silver",@"White",nil];
         for (NSUInteger i=0;i<[colors count];i++) [result addObject:[NSDictionary dictionaryWithObjectsAndKeys:
-            [NSString stringWithFormat:@"color-%lu",(unsigned long)i],@"id",[ru objectAtIndex:i],@"title_ru",[ru objectAtIndex:i],@"title_be",[en objectAtIndex:i],@"title_en",@"color",@"kind",[colors objectAtIndex:i],@"color",nil]];
-        NSArray *textures = [NSArray arrayWithObjects:@"black-Linen",@"brushed_alu",@"brushed",nil];
-        NSArray *textureRU = [NSArray arrayWithObjects:@"Светлый лён",@"Алюминий",@"Белый металл",nil];
-        NSArray *textureEN = [NSArray arrayWithObjects:@"Light linen",@"Aluminium",@"White brushed",nil];
+            [NSString stringWithFormat:@"color-%lu",(unsigned long)i],@"id",[ru objectAtIndex:i],@"title_ru",[be objectAtIndex:i],@"title_be",[en objectAtIndex:i],@"title_en",@"color",@"kind",[colors objectAtIndex:i],@"color",nil]];
+        NSArray *textures = [NSArray arrayWithObjects:@"black-Linen",@"brushed_alu",@"brushed",@"ricepaper",@"subtle_white_feathers",nil];
+        NSArray *textureRU = [NSArray arrayWithObjects:@"Светлый лён",@"Алюминий",@"Белый металл",@"Рисовая бумага",@"Белые перья",nil];
+        NSArray *textureBE = [NSArray arrayWithObjects:@"Светлы лён",@"Алюміній",@"Белы метал",@"Рысавая папера",@"Белыя пёры",nil];
+        NSArray *textureEN = [NSArray arrayWithObjects:@"Light linen",@"Aluminium",@"White brushed",@"Rice paper",@"White feathers",nil];
         for (NSUInteger i=0;i<[textures count];i++) [result addObject:[NSDictionary dictionaryWithObjectsAndKeys:
-            [NSString stringWithFormat:@"texture-%lu",(unsigned long)i],@"id",[textureRU objectAtIndex:i],@"title_ru",[textureRU objectAtIndex:i],@"title_be",[textureEN objectAtIndex:i],@"title_en",@"texture",@"kind",@"E7EEF4",@"color",[textures objectAtIndex:i],@"texture",[NSNumber numberWithDouble:i==0 ? 0.08 : 0.32],@"opacity",nil]];
+            [NSString stringWithFormat:@"texture-%lu",(unsigned long)i],@"id",[textureRU objectAtIndex:i],@"title_ru",[textureBE objectAtIndex:i],@"title_be",[textureEN objectAtIndex:i],@"title_en",@"texture",@"kind",i<3 ? @"E7EEF4" : @"FFFFFF",@"color",[textures objectAtIndex:i],@"texture",[NSNumber numberWithDouble:i==0 ? 0.08 : (i<3 ? 0.32 : 1.0)],@"opacity",nil]];
+        NSArray *wallpaperRU=[NSArray arrayWithObjects:@"Ботаника",@"Звёздное небо",@"Море",@"Горы",@"Облака",nil];
+        NSArray *wallpaperBE=[NSArray arrayWithObjects:@"Батаніка",@"Зорнае неба",@"Мора",@"Горы",@"Воблакі",nil];
+        NSArray *wallpaperEN=[NSArray arrayWithObjects:@"Botanical",@"Stars",@"Sea",@"Mountains",@"Clouds",nil];
+        NSArray *wallpapers=TGBackgroundBundledWallpaperIdentifiers();
+        for(NSUInteger i=0;i<[wallpapers count];i++) [result addObject:[NSDictionary dictionaryWithObjectsAndKeys:
+            [wallpapers objectAtIndex:i],@"id",@"wallpaper",@"kind",[wallpapers objectAtIndex:i],@"wallpaper",
+            [wallpaperRU objectAtIndex:i],@"title_ru",[wallpaperBE objectAtIndex:i],@"title_be",[wallpaperEN objectAtIndex:i],@"title_en",nil]];
         presets = [result copy];
     }
     return presets;
@@ -111,7 +138,7 @@ static NSImage *TGBackgroundLoadBoundedImage(NSURL *url) {
     for (NSDictionary *preset in [self presets]) if ([[preset objectForKey:@"id"] isEqual:identifier]) return TGBackgroundNormalizedConfiguration(preset);
     return nil;
 }
-+ (NSDictionary *)defaultConfiguration { return [self configurationForPresetIdentifier:@"texture-0"]; }
++ (NSDictionary *)defaultConfiguration { return [self configurationForPresetIdentifier:@"color-8"]; }
 - (id)initWithDefaults:(NSUserDefaults *)defaults rootDirectory:(NSString *)directory {
     self = [super init];
     if (self) {
@@ -127,6 +154,18 @@ static NSImage *TGBackgroundLoadBoundedImage(NSURL *url) {
                 NSDictionary *config = TGBackgroundNormalizedConfiguration([saved objectForKey:key]);
                 if (valid && config) [_storedConfigurations setObject:config forKey:key];
             }
+        }
+        // Older Aqua's Restore Default explicitly saved light linen as common.
+        // Upgrade just that old common default once; personal chat choices and
+        // all other saved backgrounds remain exactly as selected.
+        id defaultVersion=[_defaults objectForKey:TGBackgroundDefaultVersionKey];
+        if (![defaultVersion respondsToSelector:@selector(integerValue)] || [defaultVersion integerValue]<2) {
+            if ([[_storedConfigurations objectForKey:@"common"] isEqual:[[self class] configurationForPresetIdentifier:@"texture-0"]]) {
+                [_storedConfigurations removeObjectForKey:@"common"];
+                [_defaults setObject:[NSDictionary dictionaryWithDictionary:_storedConfigurations] forKey:TGBackgroundDefaultsKey];
+            }
+            [_defaults setObject:[NSNumber numberWithInt:2] forKey:TGBackgroundDefaultVersionKey];
+            [_defaults synchronize];
         }
     }
     return self;
@@ -193,15 +232,21 @@ static NSImage *TGBackgroundLoadBoundedImage(NSURL *url) {
     NSDictionary *config=TGBackgroundNormalizedConfiguration(configuration);
     if(!config) config=[[self class] defaultConfiguration];
     [NSGraphicsContext saveGraphicsState]; NSRectClip(NSIntersectionRect(clip,viewport));
-    unsigned int rgb=0xE7EEF4; NSString *hex=[config objectForKey:@"color"];
+    unsigned int rgb=0xFFFFFF; NSString *hex=[config objectForKey:@"color"];
     if(hex) [[NSScanner scannerWithString:hex] scanHexInt:&rgb];
     [[NSColor colorWithCalibratedRed:((rgb>>16)&255)/255.0 green:((rgb>>8)&255)/255.0 blue:(rgb&255)/255.0 alpha:1] set]; NSRectFill(viewport);
     NSString *kind=[config objectForKey:@"kind"];
-    if([kind isEqual:@"image"]) {
-        NSString *path=[_rootDirectory stringByAppendingPathComponent:[config objectForKey:@"image"]];
-        id cached=[_imageCache objectForKey:path];
+    if([kind isEqual:@"image"] || [kind isEqual:@"wallpaper"]) {
+        BOOL bundled=[kind isEqual:@"wallpaper"];
+        NSString *identifier=bundled ? [config objectForKey:@"wallpaper"] : [config objectForKey:@"image"];
+        NSString *key=bundled ? [@"wallpaper:" stringByAppendingString:identifier] : [_rootDirectory stringByAppendingPathComponent:identifier];
+        id cached=[_imageCache objectForKey:key];
         NSImage *image=[cached isKindOfClass:[NSImage class]] ? cached : nil;
-        if(!cached) { image=TGBackgroundLoadBoundedImage([NSURL fileURLWithPath:path]); [_imageCache setObject:image ? (id)image : (id)[NSNull null] forKey:path cost:image ? (NSUInteger)([image size].width*[image size].height*4) : 1]; }
+        if(!cached) {
+            NSURL *url=bundled ? TGBackgroundBundledWallpaperURL(identifier) : [NSURL fileURLWithPath:key];
+            image=url ? TGBackgroundLoadBoundedImage(url) : nil;
+            [_imageCache setObject:image ? (id)image : (id)[NSNull null] forKey:key cost:image ? (NSUInteger)([image size].width*[image size].height*4) : 1];
+        }
         if(image) [image drawInRect:TGAquaChatBackgroundCoverRect([image size],viewport) fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1 respectFlipped:flipped hints:nil];
     } else if([kind isEqual:@"texture"]) {
         NSString *texture=[config objectForKey:@"texture"];

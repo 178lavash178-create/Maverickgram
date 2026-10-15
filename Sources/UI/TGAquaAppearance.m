@@ -94,8 +94,7 @@ void TGAquaDrawVerticalSeam(NSRect rect) {
 
 void TGAquaDrawConversationBackground(NSRect rect, BOOL flipped) {
     (void)flipped;
-    [TGAquaColor(0xE7EEF4) set]; NSRectFill(rect);
-    TGAquaDrawTexture(rect,TGAquaTextureLinen,0.08);
+    [[NSColor whiteColor] set]; NSRectFill(rect);
 }
 
 static NSGradient *TGAquaButtonFinish(BOOL highlighted, BOOL accented, BOOL enabled) {

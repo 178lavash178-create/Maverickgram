@@ -25,7 +25,9 @@ static NSString *TGAquaBackgroundPresetTitle(NSDictionary *preset) {
 }
 - (void)dealloc { [_configuration release]; [super dealloc]; }
 - (void)drawWithFrame:(NSRect)frame inView:(NSView *)view {
-    NSRect swatch = NSMakeRect(NSMinX(frame)+2, NSMinY(frame)+17, NSWidth(frame)-4, NSHeight(frame)-19);
+    CGFloat captionY = [view isFlipped] ? NSMaxY(frame)-14 : NSMinY(frame);
+    CGFloat swatchY = [view isFlipped] ? NSMinY(frame)+2 : NSMinY(frame)+17;
+    NSRect swatch = NSMakeRect(NSMinX(frame)+2, swatchY, NSWidth(frame)-4, NSHeight(frame)-19);
     NSBezierPath *shape = [NSBezierPath bezierPathWithRoundedRect:swatch xRadius:4 yRadius:4];
     [NSGraphicsContext saveGraphicsState];
     [shape addClip];
@@ -38,7 +40,7 @@ static NSString *TGAquaBackgroundPresetTitle(NSDictionary *preset) {
     [paragraph setAlignment:NSCenterTextAlignment];
     [paragraph setLineBreakMode:NSLineBreakByTruncatingTail];
     NSDictionary *attrs = [NSDictionary dictionaryWithObjectsAndKeys:[NSFont systemFontOfSize:10],NSFontAttributeName,[NSColor colorWithCalibratedWhite:0.16 alpha:1],NSForegroundColorAttributeName,paragraph,NSParagraphStyleAttributeName,nil];
-    [[self title] drawInRect:NSMakeRect(NSMinX(frame),NSMinY(frame),NSWidth(frame),14) withAttributes:attrs];
+    [[self title] drawInRect:NSMakeRect(NSMinX(frame),captionY,NSWidth(frame),14) withAttributes:attrs];
 }
 @end
 
@@ -88,6 +90,8 @@ static NSString *TGAquaBackgroundPresetTitle(NSDictionary *preset) {
 - (void)scopeChanged:(id)sender;
 - (void)colorSelected:(id)sender;
 - (void)textureSelected:(id)sender;
+- (void)wallpaperSelected:(id)sender;
+- (void)modeChanged:(id)sender;
 - (void)chooseImage:(id)sender;
 - (void)restoreDefault:(id)sender;
 - (void)inheritCommon:(id)sender;
@@ -109,6 +113,27 @@ static NSString *TGAquaBackgroundPresetTitle(NSDictionary *preset) {
     [button setFont:[NSFont systemFontOfSize:12]]; [button setTarget:self]; [button setAction:action];
     [[[self window] contentView] addSubview:button]; return button;
 }
+- (NSArray *)presetButtons:(NSArray *)presets inView:(NSView *)parent mode:(NSUInteger)mode action:(SEL)action {
+    NSMutableArray *buttons = [NSMutableArray array];
+    NSUInteger index = 0;
+    for (NSDictionary *preset in presets) {
+        NSRect frame;
+        if (mode==0) frame = NSMakeRect((index%3)*86,210-(index/3)*84,72,64);
+        else if (mode==1) frame = NSMakeRect(0,232-index*55,244,48);
+        else {
+            CGFloat x = (index%2)*128;
+            if (index+1==[presets count] && [presets count]%2) x = 64;
+            frame = NSMakeRect(x,214-(index/2)*82,116,72);
+        }
+        NSButton *button = [[[NSButton alloc] initWithFrame:frame] autorelease];
+        TGAquaBackgroundSwatchCell *cell = [[[TGAquaBackgroundSwatchCell alloc] initTextCell:TGAquaBackgroundPresetTitle(preset)] autorelease];
+        cell.configuration = [TGAquaChatBackgroundStore configurationForPresetIdentifier:[preset objectForKey:@"id"]];
+        [button setCell:cell]; [button setButtonType:NSPushOnPushOffButton]; [button setBordered:NO];
+        [button setTarget:self]; [button setAction:action]; [button setToolTip:TGAquaBackgroundPresetTitle(preset)];
+        [parent addSubview:button]; [buttons addObject:button]; index++;
+    }
+    return buttons;
+}
 - (id)initWithAccountID:(NSNumber *)accountID chatID:(NSNumber *)chatID chatTitle:(NSString *)chatTitle {
     NSWindow *window = [[[NSWindow alloc] initWithContentRect:NSMakeRect(0,0,760,610) styleMask:(NSTitledWindowMask|NSClosableWindowMask) backing:NSBackingStoreBuffered defer:NO] autorelease];
     self = [super initWithWindow:window];
@@ -119,6 +144,7 @@ static NSString *TGAquaBackgroundPresetTitle(NSDictionary *preset) {
     _chatTitle = [([chatTitle length] ? chatTitle : TGLoc(@"chats")) copy];
     _drafts = [[NSMutableDictionary alloc] init]; _changedScopes = [[NSMutableSet alloc] init];
     _importedConfigurations = [[NSMutableArray alloc] init];
+    _modeChoices = [[NSMutableDictionary alloc] init];
     [window setTitle:TGLoc(@"aqua.background.windowTitle")]; [window setReleasedWhenClosed:NO]; [window setDelegate:self]; [window center];
     NSView *content = [window contentView];
     [self label:TGLoc(@"aqua.background.scope") frame:NSMakeRect(24,555,58,22) font:[NSFont systemFontOfSize:13]];
@@ -128,37 +154,40 @@ static NSString *TGAquaBackgroundPresetTitle(NSDictionary *preset) {
     [_scopePopUp setTarget:self]; [_scopePopUp setAction:@selector(scopeChanged:)]; [content addSubview:_scopePopUp];
     _scopeHint = [self label:@"" frame:NSMakeRect(24,506,712,36) font:[NSFont systemFontOfSize:12]];
     [[_scopeHint cell] setWraps:YES];
-    [self label:TGLoc(@"aqua.background.colors") frame:NSMakeRect(24,476,244,22) font:[NSFont boldSystemFontOfSize:12]];
-    NSMutableArray *colors = [NSMutableArray array], *textures = [NSMutableArray array];
+    [self label:TGLoc(@"aqua.background.type") frame:NSMakeRect(24,476,244,22) font:[NSFont boldSystemFontOfSize:12]];
+    _modeControl = [[[NSSegmentedControl alloc] initWithFrame:NSMakeRect(24,444,244,28)] autorelease];
+    [_modeControl setSegmentCount:3]; [_modeControl setSegmentStyle:NSSegmentStyleTexturedRounded];
+    NSArray *modeKeys = [NSArray arrayWithObjects:@"aqua.background.colors",@"aqua.background.textures",@"aqua.background.images",nil];
+    CGFloat modeWidths[] = {57,82,105};
+    for (NSUInteger i=0;i<3;i++) { [_modeControl setLabel:TGLoc([modeKeys objectAtIndex:i]) forSegment:i]; [_modeControl setWidth:modeWidths[i] forSegment:i]; }
+    [_modeControl setFont:[NSFont systemFontOfSize:11]];
+    [_modeControl setTarget:self]; [_modeControl setAction:@selector(modeChanged:)]; [content addSubview:_modeControl];
+    _colorPane = [[[NSView alloc] initWithFrame:NSMakeRect(24,150,244,286)] autorelease];
+    _texturePane = [[[NSView alloc] initWithFrame:NSMakeRect(24,150,244,286)] autorelease];
+    _imagePane = [[[NSView alloc] initWithFrame:NSMakeRect(24,150,244,286)] autorelease];
+    [content addSubview:_colorPane]; [content addSubview:_texturePane]; [content addSubview:_imagePane];
+    NSMutableArray *colors = [NSMutableArray array], *textures = [NSMutableArray array], *wallpapers = [NSMutableArray array];
     for (NSDictionary *preset in [TGAquaChatBackgroundStore presets]) {
-        if ([[preset objectForKey:@"kind"] isEqualToString:@"color"]) {
-            if ([colors count]>=8) continue;
-            NSUInteger index = [colors count];
-            NSButton *button = [[[NSButton alloc] initWithFrame:NSMakeRect(24+(index%4)*61,416-(index/4)*55,54,48)] autorelease];
-            TGAquaBackgroundSwatchCell *cell = [[[TGAquaBackgroundSwatchCell alloc] initTextCell:TGAquaBackgroundPresetTitle(preset)] autorelease];
-            cell.configuration = [TGAquaChatBackgroundStore configurationForPresetIdentifier:[preset objectForKey:@"id"]];
-            [button setCell:cell]; [button setButtonType:NSPushOnPushOffButton]; [button setBordered:NO];
-            [button setTarget:self]; [button setAction:@selector(colorSelected:)]; [button setToolTip:TGAquaBackgroundPresetTitle(preset)];
-            [content addSubview:button]; [colors addObject:button];
-        } else if ([[preset objectForKey:@"kind"] isEqualToString:@"texture"]) [textures addObject:preset];
+        NSString *kind = [preset objectForKey:@"kind"];
+        if ([kind isEqualToString:@"color"]) [colors addObject:preset];
+        else if ([kind isEqualToString:@"texture"]) [textures addObject:preset];
+        else if ([kind isEqualToString:@"wallpaper"]) [wallpapers addObject:preset];
     }
-    _colorButtons = [colors copy]; _texturePresets = [textures copy];
-    [self label:TGLoc(@"aqua.background.textures") frame:NSMakeRect(24,330,244,22) font:[NSFont boldSystemFontOfSize:12]];
-    _texturePopUp = [[[NSPopUpButton alloc] initWithFrame:NSMakeRect(24,294,244,30) pullsDown:NO] autorelease];
-    [_texturePopUp addItemWithTitle:TGLoc(@"aqua.background.chooseTexture")]; [[_texturePopUp itemAtIndex:0] setEnabled:NO];
-    for (NSDictionary *preset in _texturePresets) [_texturePopUp addItemWithTitle:TGAquaBackgroundPresetTitle(preset)];
-    [_texturePopUp setTarget:self]; [_texturePopUp setAction:@selector(textureSelected:)]; [content addSubview:_texturePopUp];
-    [self button:TGLoc(@"aqua.background.chooseImage") frame:NSMakeRect(24,244,244,32) action:@selector(chooseImage:)];
-    _imageNameField = [self label:@"" frame:NSMakeRect(27,211,238,30) font:[NSFont systemFontOfSize:11]];
+    _colorButtons = [[self presetButtons:colors inView:_colorPane mode:0 action:@selector(colorSelected:)] retain];
+    _textureButtons = [[self presetButtons:textures inView:_texturePane mode:1 action:@selector(textureSelected:)] retain];
+    _wallpaperButtons = [[self presetButtons:wallpapers inView:_imagePane mode:2 action:@selector(wallpaperSelected:)] retain];
+    NSButton *chooseImage = [self button:TGLoc(@"aqua.background.chooseImage") frame:NSMakeRect(0,2,244,32) action:@selector(chooseImage:)];
+    [chooseImage retain]; [chooseImage removeFromSuperview]; [_imagePane addSubview:chooseImage]; [chooseImage release];
+    _imageNameField = [self label:@"" frame:NSMakeRect(24,122,244,22) font:[NSFont systemFontOfSize:11]];
     [[_imageNameField cell] setLineBreakMode:NSLineBreakByTruncatingMiddle];
-    [self button:TGLoc(@"aqua.background.restore") frame:NSMakeRect(24,162,244,32) action:@selector(restoreDefault:)];
-    _inheritButton = [self button:TGLoc(@"aqua.background.inherit") frame:NSMakeRect(24,122,244,32) action:@selector(inheritCommon:)];
     [self label:TGLoc(@"aqua.background.preview") frame:NSMakeRect(292,476,444,22) font:[NSFont boldSystemFontOfSize:12]];
     _previewView = [[[TGAquaBackgroundPreviewView alloc] initWithFrame:NSMakeRect(292,122,444,342)] autorelease];
     [content addSubview:_previewView];
     NSBox *separator = [[[NSBox alloc] initWithFrame:NSMakeRect(24,106,712,1)] autorelease]; [separator setBoxType:NSBoxSeparator]; [content addSubview:separator];
     NSTextField *note = [self label:TGLoc(@"aqua.background.localNote") frame:NSMakeRect(24,62,712,34) font:[NSFont systemFontOfSize:11]];
     [[note cell] setWraps:YES]; [note setTextColor:[NSColor colorWithCalibratedWhite:0.38 alpha:1]];
+    [self button:TGLoc(@"aqua.background.restoreWhite") frame:NSMakeRect(24,20,196,32) action:@selector(restoreDefault:)];
+    _inheritButton = [self button:TGLoc(@"aqua.background.inherit") frame:NSMakeRect(232,20,258,32) action:@selector(inheritCommon:)];
     NSButton *cancel = [self button:TGLoc(@"cancel") frame:NSMakeRect(504,20,110,32) action:@selector(cancelChanges:)]; [cancel setKeyEquivalent:@"\033"];
     NSButton *apply = [self button:TGLoc(@"apply") frame:NSMakeRect(626,20,110,32) action:@selector(applyChanges:)]; [apply setKeyEquivalent:@"\r"];
     [self reloadDrafts]; return self;
@@ -167,7 +196,7 @@ static NSString *TGAquaBackgroundPresetTitle(NSDictionary *preset) {
     [[self window] setDelegate:nil];
     [self discardUnusedImports];
     [_importedConfigurations release];
-    [_accountID release]; [_chatID release]; [_chatTitle release]; [_drafts release]; [_changedScopes release]; [_colorButtons release]; [_texturePresets release];
+    [_accountID release]; [_chatID release]; [_chatTitle release]; [_drafts release]; [_changedScopes release]; [_colorButtons release]; [_textureButtons release]; [_wallpaperButtons release]; [_modeChoices release];
     [super dealloc];
 }
 - (void)showWindow:(id)sender { [self reloadDrafts]; [super showWindow:sender]; }
@@ -179,7 +208,7 @@ static NSString *TGAquaBackgroundPresetTitle(NSDictionary *preset) {
 - (void)windowWillClose:(NSNotification *)notification { (void)notification; [self discardUnusedImports]; }
 - (void)reloadDrafts {
     [self discardUnusedImports];
-    [_changedScopes removeAllObjects]; [_drafts removeAllObjects];
+    [_changedScopes removeAllObjects]; [_drafts removeAllObjects]; [_modeChoices removeAllObjects];
     TGAquaChatBackgroundStore *store = [TGAquaChatBackgroundStore sharedStore];
     [_drafts setObject:([store overrideConfigurationForAccountID:nil chatID:nil] ? [store overrideConfigurationForAccountID:nil chatID:nil] : (id)[NSNull null]) forKey:@"common"];
     if (_chatID) [_drafts setObject:([store overrideConfigurationForAccountID:_accountID chatID:_chatID] ? [store overrideConfigurationForAccountID:_accountID chatID:_chatID] : (id)[NSNull null]) forKey:@"chat"];
@@ -190,24 +219,34 @@ static NSString *TGAquaBackgroundPresetTitle(NSDictionary *preset) {
     if (draft==[NSNull null] && [[self scopeKey] isEqualToString:@"chat"]) draft = [_drafts objectForKey:@"common"];
     return [draft isKindOfClass:[NSDictionary class]] ? draft : [TGAquaChatBackgroundStore defaultConfiguration];
 }
+- (NSInteger)modeForConfiguration:(NSDictionary *)configuration {
+    NSString *kind = [configuration objectForKey:@"kind"];
+    if ([kind isEqualToString:@"texture"]) return 1;
+    return ([kind isEqualToString:@"image"] || [kind isEqualToString:@"wallpaper"]) ? 2 : 0;
+}
+- (NSString *)modeKey:(NSInteger)mode { return [NSString stringWithFormat:@"%@:%ld",[self scopeKey],(long)mode]; }
 - (void)refreshPreview {
     NSDictionary *configuration = [self previewConfiguration];
     [(TGAquaBackgroundPreviewView *)_previewView setConfiguration:configuration];
     BOOL chat = [[self scopeKey] isEqualToString:@"chat"];
     [_scopeHint setStringValue:TGLoc(chat ? @"aqua.background.chatHint" : @"aqua.background.commonHint")];
     [_inheritButton setHidden:!chat];
-    for (NSButton *button in _colorButtons) [button setState:[[(TGAquaBackgroundSwatchCell *)[button cell] configuration] isEqual:configuration] ? NSOnState : NSOffState];
-    [_texturePopUp selectItemAtIndex:0];
-    NSUInteger index = 0;
-    for (NSDictionary *preset in _texturePresets) {
-        NSDictionary *candidate = [TGAquaChatBackgroundStore configurationForPresetIdentifier:[preset objectForKey:@"id"]];
-        if ([candidate isEqual:configuration]) { [_texturePopUp selectItemAtIndex:index+1]; break; }
-        index++;
+    NSInteger mode = [self modeForConfiguration:configuration];
+    [_modeControl setSelectedSegment:mode];
+    [_colorPane setHidden:mode!=0]; [_texturePane setHidden:mode!=1]; [_imagePane setHidden:mode!=2];
+    if (configuration) [_modeChoices setObject:configuration forKey:[self modeKey:mode]];
+    NSString *description = nil;
+    for (NSArray *buttons in [NSArray arrayWithObjects:_colorButtons,_textureButtons,_wallpaperButtons,nil]) {
+        for (NSButton *button in buttons) {
+            BOOL selected = [[(TGAquaBackgroundSwatchCell *)[button cell] configuration] isEqual:configuration];
+            [button setState:selected ? NSOnState : NSOffState];
+            if (selected) description = [button toolTip];
+        }
     }
     BOOL inherited = chat && [_drafts objectForKey:@"chat"]==[NSNull null];
-    NSString *description = inherited ? TGLoc(@"aqua.background.inherited") : TGLoc(@"aqua.background.imageHint");
-    if ([[configuration objectForKey:@"kind"] isEqualToString:@"image"] && !inherited) description = TGLoc(@"aqua.background.customImage");
-    [_imageNameField setStringValue:description];
+    if (inherited) description = TGLoc(@"aqua.background.inherited");
+    else if ([[configuration objectForKey:@"kind"] isEqualToString:@"image"]) description = TGLoc(@"aqua.background.customImage");
+    [_imageNameField setStringValue:description ? description : TGLoc(@"aqua.background.imageHint")];
 }
 - (void)stageConfiguration:(NSDictionary *)configuration {
     NSString *scope = [self scopeKey];
@@ -216,11 +255,21 @@ static NSString *TGAquaBackgroundPresetTitle(NSDictionary *preset) {
 }
 - (void)scopeChanged:(id)sender { (void)sender; [self refreshPreview]; }
 - (void)colorSelected:(id)sender { [self stageConfiguration:[(TGAquaBackgroundSwatchCell *)[sender cell] configuration]]; }
-- (void)textureSelected:(id)sender {
-    (void)sender; NSInteger index = [_texturePopUp indexOfSelectedItem]-1;
-    if (index<0 || (NSUInteger)index>=[_texturePresets count]) return;
-    [self stageConfiguration:[TGAquaChatBackgroundStore configurationForPresetIdentifier:[[_texturePresets objectAtIndex:index] objectForKey:@"id"]]];
+- (void)textureSelected:(id)sender { [self stageConfiguration:[(TGAquaBackgroundSwatchCell *)[sender cell] configuration]]; }
+- (void)wallpaperSelected:(id)sender { [self stageConfiguration:[(TGAquaBackgroundSwatchCell *)[sender cell] configuration]]; }
+- (void)modeChanged:(id)sender {
+    (void)sender; NSInteger mode = [_modeControl selectedSegment];
+    NSDictionary *configuration = [_modeChoices objectForKey:[self modeKey:mode]];
+    if (!configuration) {
+        NSArray *buttons = mode==1 ? _textureButtons : _wallpaperButtons;
+        configuration = mode==0 ? [TGAquaChatBackgroundStore defaultConfiguration] : ([buttons count] ? [(TGAquaBackgroundSwatchCell *)[[buttons objectAtIndex:0] cell] configuration] : nil);
+    }
+    // Browsing an already selected category must not turn an inherited choice
+    // into an unnecessary per-chat override.
+    if (configuration && ![configuration isEqual:[self previewConfiguration]]) [self stageConfiguration:configuration];
+    else [self refreshPreview];
 }
+
 - (void)showError:(NSError *)error title:(NSString *)title {
     NSAlert *alert = [[[NSAlert alloc] init] autorelease]; [alert setMessageText:title];
     [alert setInformativeText:[error localizedDescription] ? [error localizedDescription] : TGLoc(@"aqua.background.errorGeneric")]; [alert runModal];

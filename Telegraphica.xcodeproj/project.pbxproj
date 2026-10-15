@@ -197,6 +197,7 @@
 		60B69172298CC76A46E1E4B1 /* TGAquaChatBackground.m in Sources */ = {isa = PBXBuildFile; fileRef = BA7D4175214D2B266819047D /* TGAquaChatBackground.m */; };
 		CCDF667465CFF6304F3CE80E /* TGAquaChatBackgroundClipView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4683EBD3B85C09F86986AAFC /* TGAquaChatBackgroundClipView.m */; };
 		08584D0BC4919A5F3A0BE135 /* TGAquaChatBackgroundWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = AD9375684AC0B5E76F7AD0D4 /* TGAquaChatBackgroundWindowController.m */; };
+		A68400000000000000000003 /* Wallpapers in Resources */ = {isa = PBXBuildFile; fileRef = A68400000000000000000004 /* Wallpapers */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -545,6 +546,7 @@
 		4683EBD3B85C09F86986AAFC /* TGAquaChatBackgroundClipView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGAquaChatBackgroundClipView.m; sourceTree = "<group>"; };
 		3402628F7E2E97AD2009294A /* TGAquaChatBackgroundWindowController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGAquaChatBackgroundWindowController.h; sourceTree = "<group>"; };
 		AD9375684AC0B5E76F7AD0D4 /* TGAquaChatBackgroundWindowController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGAquaChatBackgroundWindowController.m; sourceTree = "<group>"; };
+		A68400000000000000000004 /* Wallpapers */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Wallpapers; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -956,6 +958,7 @@
 				111111111111111111111224 /* TelegraphicaNotificationIcon.png */,
 				111111111111111111111277 /* Icons */,
 				A68400000000000000000002 /* Textures */,
+				A68400000000000000000004 /* Wallpapers */,
 				111111111111111111111229 /* ThirdPartyNotices.txt */,
 				221000000000000000000016 /* WorkshopCatalog.json */,
 				221000000000000000000017 /* WorkshopCatalogPublicKey.der */,
@@ -1060,6 +1063,7 @@
 				111111111111111111111114 /* TelegraphicaNotificationIcon.png in Resources */,
 				111111111111111111111141 /* Icons in Resources */,
 				A68400000000000000000001 /* Textures in Resources */,
+				A68400000000000000000003 /* Wallpapers in Resources */,
 				111111111111111111111119 /* ThirdPartyNotices.txt in Resources */,
 				220000000000000000000016 /* WorkshopCatalog.json in Resources */,
 				220000000000000000000017 /* WorkshopCatalogPublicKey.der in Resources */,

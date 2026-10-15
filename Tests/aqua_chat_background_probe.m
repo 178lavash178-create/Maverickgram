@@ -60,14 +60,23 @@ int main(void) {
     TGAquaChatBackgroundStore *store=[[[TGAquaChatBackgroundStore alloc] initWithDefaults:defaults rootDirectory:library] autorelease];
     TGBackgroundProbeObserver *observer=[[[TGBackgroundProbeObserver alloc] init] autorelease];
     [[NSNotificationCenter defaultCenter] addObserver:observer selector:@selector(changed:) name:TGAquaChatBackgroundDidChangeNotification object:store];
-    Check([[TGAquaChatBackgroundStore presets] count]==11,"eight colors and three approved textures");
+    Check([[TGAquaChatBackgroundStore presets] count]==19,"nine colors, five approved textures and five bundled wallpapers");
+    NSUInteger colorCount=0,textureCount=0,wallpaperCount=0;
     for(NSDictionary *preset in [TGAquaChatBackgroundStore presets]) {
-        Check([[preset objectForKey:@"title_ru"] length]>0 && [[preset objectForKey:@"title_en"] length]>0,"preset labels are available");
+        Check([[preset objectForKey:@"title_ru"] length]>0 && [[preset objectForKey:@"title_be"] length]>0 && [[preset objectForKey:@"title_en"] length]>0,"preset labels are available in all three languages");
         Check([TGAquaChatBackgroundStore configurationForPresetIdentifier:[preset objectForKey:@"id"]]!=nil,"every preset produces a valid configuration");
+        if([[preset objectForKey:@"kind"] isEqual:@"color"]) colorCount++;
+        if([[preset objectForKey:@"kind"] isEqual:@"texture"]) textureCount++;
+        if([[preset objectForKey:@"kind"] isEqual:@"wallpaper"]) wallpaperCount++;
     }
+    Check(colorCount==9 && textureCount==5 && wallpaperCount==5,"each gallery category has its expected content");
     NSDictionary *common=[TGAquaChatBackgroundStore configurationForPresetIdentifier:@"color-3"];
     NSDictionary *specific=[TGAquaChatBackgroundStore configurationForPresetIdentifier:@"color-5"];
-    Check([[store effectiveConfigurationForAccountID:nil chatID:nil] isEqual:[TGAquaChatBackgroundStore defaultConfiguration]],"default is light linen");
+    Check([[store effectiveConfigurationForAccountID:nil chatID:nil] isEqual:[TGAquaChatBackgroundStore defaultConfiguration]],"fresh defaults use the standard background");
+    Check([[[TGAquaChatBackgroundStore defaultConfiguration] objectForKey:@"kind"] isEqual:@"color"] && [[[TGAquaChatBackgroundStore defaultConfiguration] objectForKey:@"color"] isEqual:@"FFFFFF"],"standard background is pure white without a texture");
+    NSColor *white=[[Render(store,[TGAquaChatBackgroundStore defaultConfiguration],NO) colorAtX:30 y:30] colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
+    Check([white redComponent]>0.99 && [white greenComponent]>0.99 && [white blueComponent]>0.99,"standard background renders as white pixels");
+    Check([[[TGAquaChatBackgroundStore configurationForPresetIdentifier:@"color-0"] objectForKey:@"color"] isEqual:@"E7EEF4"],"existing color identifiers retain their original color");
     Check([store setConfiguration:common forAccountID:nil chatID:nil error:NULL],"set common background");
     Check([store setConfiguration:specific forAccountID:@1 chatID:@-20 error:NULL],"set account-specific group background");
     Check([[store effectiveConfigurationForAccountID:@1 chatID:@-20] isEqual:specific],"matching chat uses override");
@@ -83,6 +92,24 @@ int main(void) {
     Check(![store setConfiguration:[NSDictionary dictionaryWithObjectsAndKeys:@"image",@"kind",@"../outside.png",@"image",nil] forAccountID:nil chatID:nil error:NULL],"reject image path traversal");
     Check(![store setConfiguration:[NSDictionary dictionaryWithObjectsAndKeys:@"color",@"kind",@"red",@"color",nil] forAccountID:nil chatID:nil error:NULL],"reject malformed color");
     Check(![store setConfiguration:[NSDictionary dictionaryWithObjectsAndKeys:@"texture",@"kind",@"FFFFFF",@"color",@"../image",@"texture",nil] forAccountID:nil chatID:nil error:NULL],"reject unapproved texture");
+    Check(![store setConfiguration:[NSDictionary dictionaryWithObjectsAndKeys:@"wallpaper",@"kind",@"../wallpaper-stars",@"wallpaper",nil] forAccountID:nil chatID:nil error:NULL],"bundled wallpaper rejects path traversal");
+    Check(![store setConfiguration:[NSDictionary dictionaryWithObjectsAndKeys:@"wallpaper",@"kind",@"not-approved",@"wallpaper",nil] forAccountID:nil chatID:nil error:NULL],"bundled wallpaper rejects unknown identifiers");
+    Check(![store setConfiguration:[NSDictionary dictionaryWithObject:@"wallpaper" forKey:@"kind"] forAccountID:nil chatID:nil error:NULL],"bundled wallpaper requires a valid identifier");
+    NSDictionary *bundled=[TGAquaChatBackgroundStore configurationForPresetIdentifier:@"wallpaper-stars"];
+    Check([store setConfiguration:bundled forAccountID:@2 chatID:@-20 error:NULL],"bundled wallpaper can be saved independently of imported files");
+    Check([[store effectiveConfigurationForAccountID:@2 chatID:@-20] isEqual:bundled],"bundled wallpaper retains its stable identifier");
+    [store discardImportedConfiguration:bundled];
+    Check([[store effectiveConfigurationForAccountID:@2 chatID:@-20] isEqual:bundled],"import cleanup never removes a bundled selection");
+    Render(store,bundled,NO); Render(store,bundled,NO);
+    NSCache *imageCache=[store valueForKey:@"imageCache"];
+    Check([imageCache objectForKey:@"wallpaper:wallpaper-stars"]!=nil,"bundled image or missing-resource fallback is cached");
+    Check([imageCache countLimit]<=8 && [imageCache totalCostLimit]<=64*1024*1024,"wallpapers share a bounded image cache");
+    BOOL bundledAvailable=NO;
+    for(NSString *extension in [NSArray arrayWithObjects:@"png",@"jpg",@"jpeg",nil]) if([[NSBundle mainBundle] pathForResource:@"wallpaper-stars" ofType:extension inDirectory:@"Wallpapers"]) bundledAvailable=YES;
+    if(!bundledAvailable) {
+        NSColor *missing=[[Render(store,bundled,NO) colorAtX:30 y:30] colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
+        Check([missing redComponent]>0.99 && [missing greenComponent]>0.99 && [missing blueComponent]>0.99,"missing optional bundled artwork falls back to pure white");
+    }
     NSString *bad=[root stringByAppendingPathComponent:@"bad.png"];
     [@"not a bitmap" writeToFile:bad atomically:YES encoding:NSUTF8StringEncoding error:NULL];
     Check(![store importImageAtURL:[NSURL fileURLWithPath:bad] error:NULL],"reject malformed image");
@@ -133,6 +160,26 @@ int main(void) {
     [files createFileAtPath:large contents:[NSData data] attributes:nil];
     NSFileHandle *handle=[NSFileHandle fileHandleForWritingAtPath:large]; [handle truncateFileAtOffset:33ULL*1024*1024]; [handle closeFile];
     Check(![store importImageAtURL:[NSURL fileURLWithPath:large] error:NULL],"reject oversized input before decoding");
+    TGBackgroundProbeDefaults *oldDefaults=[[[TGBackgroundProbeDefaults alloc] init] autorelease];
+    NSDictionary *oldLinen=[TGAquaChatBackgroundStore configurationForPresetIdentifier:@"texture-0"];
+    [oldDefaults setObject:[NSDictionary dictionaryWithObjectsAndKeys:oldLinen,@"common",oldLinen,@"1:-20",specific,@"2:-20",import,@"3:-20",nil] forKey:@"TGAquaChatBackgroundsV1"];
+    TGAquaChatBackgroundStore *migrated=[[[TGAquaChatBackgroundStore alloc] initWithDefaults:oldDefaults rootDirectory:library] autorelease];
+    Check([[migrated effectiveConfigurationForAccountID:nil chatID:nil] isEqual:[TGAquaChatBackgroundStore defaultConfiguration]],"old saved common linen default migrates to white");
+    Check([[migrated overrideConfigurationForAccountID:@1 chatID:@-20] isEqual:oldLinen],"migration preserves explicitly saved chat linen");
+    Check([[migrated overrideConfigurationForAccountID:@2 chatID:@-20] isEqual:specific] && [[migrated overrideConfigurationForAccountID:@3 chatID:@-20] isEqual:import],"migration preserves other chat colors and imported image references");
+    Check([[oldDefaults objectForKey:@"TGAquaChatBackgroundDefaultVersion"] integerValue]==2,"new default migration records its completed version");
+    [migrated setConfiguration:oldLinen forAccountID:nil chatID:nil error:NULL];
+    TGAquaChatBackgroundStore *secondStart=[[[TGAquaChatBackgroundStore alloc] initWithDefaults:oldDefaults rootDirectory:library] autorelease];
+    Check([[secondStart effectiveConfigurationForAccountID:nil chatID:nil] isEqual:oldLinen],"migration runs once so a later deliberate linen choice survives restart");
+    TGBackgroundProbeDefaults *customDefaults=[[[TGBackgroundProbeDefaults alloc] init] autorelease];
+    [customDefaults setObject:[NSDictionary dictionaryWithObject:specific forKey:@"common"] forKey:@"TGAquaChatBackgroundsV1"];
+    TGAquaChatBackgroundStore *custom=[[[TGAquaChatBackgroundStore alloc] initWithDefaults:customDefaults rootDirectory:library] autorelease];
+    Check([[custom effectiveConfigurationForAccountID:nil chatID:nil] isEqual:specific],"new default migration preserves a custom common color");
+    NSMutableDictionary *customLinen=[NSMutableDictionary dictionaryWithDictionary:oldLinen]; [customLinen setObject:@0.09 forKey:@"opacity"];
+    TGBackgroundProbeDefaults *tunedDefaults=[[[TGBackgroundProbeDefaults alloc] init] autorelease];
+    [tunedDefaults setObject:[NSDictionary dictionaryWithObject:customLinen forKey:@"common"] forKey:@"TGAquaChatBackgroundsV1"];
+    TGAquaChatBackgroundStore *tuned=[[[TGAquaChatBackgroundStore alloc] initWithDefaults:tunedDefaults rootDirectory:library] autorelease];
+    Check([[tuned effectiveConfigurationForAccountID:nil chatID:nil] isEqual:customLinen],"migration matches exact old common default and preserves a tuned texture");
     [[NSNotificationCenter defaultCenter] removeObserver:observer];
     [files removeItemAtPath:root error:NULL];
     printf("Aqua chat background probe passed: %lu checks.\n",(unsigned long)checks);

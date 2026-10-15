@@ -16,8 +16,9 @@ NSRect TGAquaChatBackgroundCoverRect(NSSize imageSize, NSRect viewportRect);
 + (NSArray *)presets;
 + (NSDictionary *)defaultConfiguration;
 + (NSDictionary *)configurationForPresetIdentifier:(NSString *)identifier;
-// Configuration kinds: color {color:"D8E0E8"}; texture additionally contains
-// texture:"black-Linen"/"brushed_alu"/"brushed", opacity:Number; image contains
+// Configuration kinds: color {color:"FFFFFF"}; texture additionally contains
+// an approved texture name and opacity:Number; wallpaper contains one bundled
+// identifier {wallpaper:"wallpaper-botanical"}. image contains
 // image:"opaque-local-filename.png". Import returns the only accepted image form.
 - (id)initWithDefaults:(NSUserDefaults *)defaults rootDirectory:(NSString *)directory;
 // Common scope is nil/nil. A chat scope requires accountID > 0 and chatID != 0.
