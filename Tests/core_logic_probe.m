@@ -729,9 +729,11 @@ static void TGTestDeliveryStatusPresentation(void) {
             for (NSNumber *flipped in [NSArray arrayWithObjects:@NO, @YES, nil]) {
                 BOOL flip = [flipped boolValue];
                 [item setOutgoingRead:NO];
-                NSColor *sent = [TGMessageDeliveryStatusInkColor(item, YES, flip) colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
+                NSColor *firstBeforeRead = TGMessageDeliveryStatusInkColor(item, YES, flip);
+                NSColor *sent = [TGMessageDeliveryStatusInkColor(item, NO, flip) colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
                 [item setOutgoingRead:YES];
                 NSColor *read = [TGMessageDeliveryStatusInkColor(item, YES, flip) colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
+                TGAssertEqualObjects(firstBeforeRead,read,@"first delivered check must keep its blue when second check becomes read");
                 CGFloat chroma = MAX(MAX([read redComponent], [read greenComponent]), [read blueComponent]) - MIN(MIN([read redComponent], [read greenComponent]), [read blueComponent]);
                 CGFloat distance = MAX(MAX(fabs([read redComponent] - [sent redComponent]), fabs([read greenComponent] - [sent greenComponent])), fabs([read blueComponent] - [sent blueComponent]));
                 minimumChroma = MIN(minimumChroma, chroma);
@@ -765,7 +767,9 @@ static void TGTestDeliveryStatusPresentation(void) {
                                 NSColor *outline = [asset objectForKey:@"outline"];
                                 CGFloat edgeContrast = outline ? TGStatusProbeContrast(outline,surface) : 0.0;
                                 TGAssertTrue(MAX(TGStatusProbeContrast(actual,surface),edgeContrast) >= 4.5, @"unread outline or fill must remain visible against the bubble");
-                                TGAssertTrue((state == 1) == (outline != nil), @"only unread state gets an outline");
+                                BOOL secondCheck = [TGStatusAssetTrace indexOfObjectIdenticalTo:asset] == 1;
+                                TGAssertTrue((state == 1 && secondCheck) == (outline != nil), @"only the inactive second check gets an outline");
+                                if (!secondCheck) TGAssertEqualObjects(actual,read,@"first delivered check stays blue before and after read");
                                 if (outline) TGAssertTrue([[asset objectForKey:@"outlineWidth"] doubleValue] == 0.5, @"unread edge remains thin");
                                 if (state == 2) { TGAssertEqualObjects(actual, read, @"read checks use the same saturated blue"); }
                             }
@@ -787,7 +791,9 @@ static void TGTestDeliveryStatusPresentation(void) {
                     NSColor *outline = [asset objectForKey:@"outline"];
                     NSColor *surface = TGMessageMetadataSurfaceColor(item,NO);
                     TGAssertTrue(MAX(TGStatusProbeContrast([asset objectForKey:@"color"],surface),outline ? TGStatusProbeContrast(outline,surface) : 0.0) >= 4.5, @"inline unread edge or fill remains readable");
-                    TGAssertTrue((state == 0) == (outline != nil), @"only unread inline pair gets an outline");
+                    BOOL secondCheck = [TGStatusAssetTrace indexOfObjectIdenticalTo:asset] == 1;
+                    TGAssertTrue((state == 0 && secondCheck) == (outline != nil), @"only the inactive second inline check gets an outline");
+                    if (!secondCheck) TGAssertEqualObjects([asset objectForKey:@"color"],expected,@"first inline delivered check stays blue before and after read");
                     if (state != 0) { TGAssertEqualObjects([asset objectForKey:@"color"], expected, @"read inline receipt uses saturated blue"); }
                 }
                 [TGStatusAssetTrace removeAllObjects];

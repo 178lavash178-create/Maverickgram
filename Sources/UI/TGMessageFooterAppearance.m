@@ -62,14 +62,14 @@ NSColor *TGMessageMetadataInkColor(TGMessageItem *item, BOOL flipped) {
 }
 
 NSColor *TGMessageDeliveryStatusInkColor(TGMessageItem *item, BOOL active, BOOL flipped) {
-    if (active && ![item sending] && [item outgoingRead]) {
-        // Preserve the familiar pair. Read receipts use saturated blue;
-        // both unread checks stay visibly neutral instead of fading into the bubble.
+    if (active && ![item sending]) {
+        // The first delivered check stays blue; the second joins it on read.
+        // Adapt blue/cyan to the actual theme surface.
         CGFloat surface = TGMessageColorLuminance(TGMessageMetadataSurfaceColor(item, flipped));
         NSColor *preferred = surface > 0.179 ? TGColorFromHex(0x0033FF) : TGColorFromHex(0x00DFFF);
         return TGMessageCachedFooterInk(@"status-read", item, flipped, preferred, 4.5);
     }
-    if (![item sending] && ![item outgoingRead] && ![item failedToSend]) {
+    if (!active && ![item sending] && ![item outgoingRead] && ![item failedToSend]) {
         return TGColorFromHex(0xE5E7EA);
     }
     BOOL sent = ![item sending];

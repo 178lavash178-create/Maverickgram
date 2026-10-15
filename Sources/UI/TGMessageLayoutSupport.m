@@ -2102,6 +2102,10 @@ static NSColor *TGOutgoingStatusCheckColorForIndex(TGMessageItem *item, NSUInteg
     return TGMessageDeliveryStatusInkColor(item, active, flipped);
 }
 
+static BOOL TGOutgoingStatusCheckNeedsOutline(TGMessageItem *item, NSUInteger index) {
+    return index == 1 && ![item sending] && ![item outgoingRead] && ![item failedToSend];
+}
+
 static NSImage *TGOutgoingStatusPairImageForItem(TGMessageItem *item) {
     NSString *state = [item sending] ? @"sending" : ([item outgoingRead] ? @"read" : @"sent");
     NSString *cacheKey = [NSString stringWithFormat:@"%@|%@|%d", TGCurrentThemeIdentifier(), state, TGChatMessagesAsBlocksEnabled()];
@@ -2121,7 +2125,7 @@ static NSImage *TGOutgoingStatusPairImageForItem(TGMessageItem *item) {
     [pair lockFocus];
     NSUInteger index = 0;
     for (index = 0; index < 2; index++) {
-        BOOL unread = ![item sending] && ![item outgoingRead] && ![item failedToSend];
+        BOOL unread = TGOutgoingStatusCheckNeedsOutline(item,index);
         NSImage *check = unread
             ? TGOutlinedTemplateIconAssetImage(@"done-mini", NSMakeSize(TGOutgoingStatusCheckSide,TGOutgoingStatusCheckSide),
                 TGOutgoingStatusCheckColorForIndex(item,index,NO), TGMessageUnreadStatusOutlineColor(item,NO), 0.5)
@@ -2192,7 +2196,7 @@ void TGDrawOutgoingStatusDotsForItem(TGMessageItem *item, NSRect timeRect, BOOL 
     NSUInteger index = 0;
     for (index = 0; index < 2; index++) {
         NSRect checkRect = NSMakeRect(checkX + (checkStep * (CGFloat)index), checkY, checkSide, checkSide);
-        if (![item sending] && ![item outgoingRead]) {
+        if (TGOutgoingStatusCheckNeedsOutline(item,index)) {
             TGDrawOutlinedTemplateIconAsset(@"done-mini",checkRect,TGOutgoingStatusCheckColorForIndex(item,index,flipped),
                 TGMessageUnreadStatusOutlineColor(item,flipped),0.5,flipped);
         } else {

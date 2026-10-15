@@ -116,6 +116,7 @@ int main(int argc, const char **argv) {
     NSUInteger samples = 0; CGFloat minimumInk = 10000, minimumChanged = 10000;
     BOOL passed = TGOutlinedReceiptPreservesMask();
     NSMutableArray *comparison = [NSMutableArray array];
+    NSMutableArray *comparisonNames = [NSMutableArray array];
     for (NSString *theme in TGThemeIdentifiers()) {
         TGSetActiveThemeIdentifier(theme);
         NSInteger blocks, flip, scale;
@@ -136,7 +137,8 @@ int main(int argc, const char **argv) {
                     NSBitmapImageRep *sent = TGRenderReceipt(item, flip != 0, scale, YES);
                     [item setOutgoingRead:YES];
                     NSBitmapImageRep *read = TGRenderReceipt(item, flip != 0, scale, YES);
-                    CGFloat ink = 0, readInk = 0, changed = 0, firstCheck = 0, secondCheck = 0; NSInteger x, y;
+                    CGFloat ink = 0, readInk = 0, changed = 0, firstCheck = 0, secondCheck = 0;
+                    BOOL unchangedFirstRegion = YES; NSInteger x, y;
                     for (y = 12 * scale; y < 40 * scale; y++) {
                         for (x = 132 * scale; x < 162 * scale; x++) {
                             if (TGThemeContrastRatio([sent colorAtX:x y:y],[background colorAtX:x y:y]) >= 1.6) {
@@ -146,33 +148,42 @@ int main(int argc, const char **argv) {
                                 if (x >= 142 * scale) { secondCheck += area; }
                             }
                             if (TGPixelDifference(read, background, x, y) > 0.15) { readInk += 1.0 / (scale * scale); }
-                            if (TGPixelDifference(sent, read, x, y) > 0.15) { changed += 1.0 / (scale * scale); }
+                            if (TGPixelDifference(sent, read, x, y) > 0.15) {
+                                changed += 1.0 / (scale * scale);
+                                // Only the second original10pt image (x138..148)
+                                // may change, including its overlap with the first.
+                                if (x < 138 * scale || x >= 148 * scale) unchangedFirstRegion = NO;
+                            }
                         }
                     }
                     minimumInk = MIN(minimumInk, ink); minimumChanged = MIN(minimumChanged, changed); samples++;
-                    if (ink < 8.0 || readInk < 33.0 || changed < 28.0 || firstCheck < 2.0 || secondCheck < 2.0) {
+                    if (ink < 8.0 || readInk < 33.0 || changed < 12.0 || firstCheck < 2.0 || secondCheck < 2.0 || !unchangedFirstRegion) {
                         fprintf(stderr, "Receipt raster visibility %s blocks%ld flip%ld scale%ld: ink%.2f changed%.2f first%.2f second%.2f\n", [theme UTF8String], (long)blocks, (long)flip, (long)scale, (double)ink, (double)changed, (double)firstCheck, (double)secondCheck);
                         passed = NO;
                     }
-                    if (!blocks && flip && scale == 1 && ([theme isEqualToString:TGThemeIdentifierVKBlue] || [theme isEqualToString:TGThemeIdentifierVisualNotebook])) {
+                    if (!blocks && flip && scale == 1 && ([theme isEqualToString:TGThemeIdentifierVKBlue] || [theme isEqualToString:TGThemeIdentifierVisualNotebook] || [theme isEqualToString:TGThemeIdentifierVisualSpaceTerminal] || [theme isEqualToString:TGThemeIdentifierMidnightGraphite])) {
                         [comparison addObject:sent]; [comparison addObject:read];
+                        [comparisonNames addObject:theme];
                     }
                 }
             }
         }
     }
-    if (argc > 1 && [comparison count] == 4) {
-        NSImage *sheet = [[[NSImage alloc] initWithSize:NSMakeSize(352, 104)] autorelease];
-        [sheet lockFocus]; NSUInteger i;
-        for (i = 0; i < 4; i++) {
+    if (argc > 1 && [comparison count] == 8) {
+        NSImage *sheet = [[[NSImage alloc] initWithSize:NSMakeSize(352, 264)] autorelease];
+        [sheet lockFocus]; [[NSColor whiteColor] set]; NSRectFill(NSMakeRect(0,0,352,264)); NSUInteger i;
+        for (i = 0; i < 8; i++) {
             NSImage *image = [[[NSImage alloc] initWithSize:NSMakeSize(176, 52)] autorelease];
             [image addRepresentation:[comparison objectAtIndex:i]];
-            [image drawInRect:NSMakeRect((i % 2) * 176, (1 - i / 2) * 52, 176, 52) fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0];
+            [image drawInRect:NSMakeRect((i % 2) * 176, (3 - i / 2) * 66, 176, 52) fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0];
+        }
+        for (i=0;i<[comparisonNames count];i++) {
+            [[comparisonNames objectAtIndex:i] drawAtPoint:NSMakePoint(8,(3-i)*66+53) withAttributes:[NSDictionary dictionaryWithObjectsAndKeys:[NSFont systemFontOfSize:8],NSFontAttributeName,[NSColor blackColor],NSForegroundColorAttributeName,nil]];
         }
         [sheet unlockFocus];
         NSBitmapImageRep *render = [NSBitmapImageRep imageRepWithData:[sheet TIFFRepresentation]];
         [[render representationUsingType:NSPNGFileType properties:[NSDictionary dictionary]] writeToFile:[NSString stringWithUTF8String:argv[1]] atomically:YES];
     }
-    printf("Receipt raster probe: %lu actual asset/theme renders, minimum unread edge/fill ink %.2fpx², minimum state change %.2fpx², %s.\n", (unsigned long)samples, (double)minimumInk, (double)minimumChanged, passed ? "PASS" : "FAIL");
+    printf("Receipt raster probe: %lu actual asset/theme renders, minimum unread edge/fill ink %.2fpx², minimum second-check-only change %.2fpx², %s.\n", (unsigned long)samples, (double)minimumInk, (double)minimumChanged, passed ? "PASS" : "FAIL");
     [pool drain]; return passed ? 0 : 1;
 }
