@@ -73,6 +73,10 @@ NSRect TGMessageContentRectByRemovingFooter(NSRect rect, CGFloat footerHeight, B
 CGFloat TGMessageSenderHeaderHeightForItem(TGMessageItem *item, BOOL showSenderDetails);
 CGFloat TGMessageContextHeaderHeightForItem(TGMessageItem *item);
 BOOL TGMessageItemHasCommentThread(TGMessageItem *item);
+BOOL TGMessageItemShowsCommentBar(TGMessageItem *item);
+CGFloat TGMessageReplyIndicatorWidthForItem(TGMessageItem *item);
+NSRect TGMessageReplyIndicatorRectForTimeRect(TGMessageItem *item, NSRect timeRect);
+void TGDrawMessageReplyIndicatorForTimeRect(TGMessageItem *item, NSRect timeRect, BOOL flipped);
 NSString *TGMessageCommentTitleForItem(TGMessageItem *item);
 CGFloat TGMessageCommentBarHeightForItem(TGMessageItem *item);
 NSRect TGMessageCommentBarRectForItem(TGMessageItem *item, NSRect bubbleRect, BOOL flipped);

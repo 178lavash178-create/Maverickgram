@@ -663,6 +663,7 @@ static void TGTestMessageItemsAndLayout(void) {
 
 static void TGTestCommentPresentation(void) {
     TGMessageItem *item = [[[TGMessageItem alloc] initWithChatID:@1 messageID:@2 date:@0 outgoing:NO preview:@"Comments"] autorelease];
+    [item setChannelPost:YES];
     [item setCanGetMessageThread:YES];
     NSArray *counts = [NSArray arrayWithObjects:@1, @2, @4, @5, @11, @12, @14, @21, @22, @111, @112, nil];
     NSArray *languages = [NSArray arrayWithObjects:@"en", @"ru", @"be", nil];
@@ -891,9 +892,9 @@ static void TGTestCompactMessageGeometry(void) {
         TGAssertTrue(!TGMessageUsesInlineMetadataForItem(item, 400.0, NO), @"reply block must retain separate geometry");
         [item setReplyPreview:nil]; [item setForwardSourceDisplayName:@"Forward"];
         TGAssertTrue(!TGMessageUsesInlineMetadataForItem(item, 400.0, NO), @"forward block must retain separate geometry");
-        [item setForwardSourceDisplayName:nil]; [item setCanGetMessageThread:YES];
+        [item setForwardSourceDisplayName:nil]; [item setCanGetMessageThread:YES]; [item setChannelPost:YES];
         TGAssertTrue(!TGMessageUsesInlineMetadataForItem(item, 400.0, NO), @"comment control must retain separate geometry");
-        [item setCanGetMessageThread:NO]; [item setPinned:YES];
+        [item setCanGetMessageThread:NO]; [item setChannelPost:NO]; [item setPinned:YES];
         TGAssertTrue(!TGMessageUsesInlineMetadataForItem(item, 400.0, NO), @"pinned icon must not overlap compact body");
         [item setPinned:NO]; [item setPreview:@"line one\nline two"];
         TGAssertTrue(!TGMessageUsesInlineMetadataForItem(item, 400.0, NO), @"explicit multiline messages keep normal wrapping");
@@ -965,6 +966,7 @@ static void TGTestReactionFooter(void) {
     for (NSNumber *outgoing in [NSArray arrayWithObjects:@NO, @YES, nil]) {
         TGMessageItem *item = [[[TGMessageItem alloc] initWithChatID:@1 messageID:@2 date:@1700000000 outgoing:[outgoing boolValue] preview:@"Hello"] autorelease];
         [item setReactionSummary:@"👍 1  ❤️ 23  😱 104  🔥 5  🎉 3  👏 6"];
+        [item setChannelPost:YES];
         [item setCanGetMessageThread:YES];
         [item setMessageThreadReplyCount:@4];
         for (NSNumber *width in [NSArray arrayWithObjects:@280, @400, @640, nil]) {
@@ -1007,6 +1009,7 @@ static void TGTestAnimatedReactionFooterBounds(void) {
                     TGMessageItem *item = [[[TGMessageItem alloc] initWithChatID:@1 messageID:@2
                         date:@1700000000 outgoing:[outgoing boolValue] preview:@"Animated footer"] autorelease];
                     [item setCanGetMessageThread:YES];
+                    [item setChannelPost:YES];
                     [item setMessageThreadReplyCount:@1234];
                     [item setReactionAnimationDisplaySummary:summary];
                     [item setReactionAnimationChangesHeight:YES];
@@ -1104,6 +1107,7 @@ static void TGTestReactionGeometry(void) {
         TGAssertTrue(fabs(playableHeight - TGPlayableMediaBubbleHeightForItem(item)) < 0.01, @"playable content height must not include reactions already removed by its owning cell");
         [item setCanGetMessageThread:YES];
         [item setMessageThreadReplyCount:@4];
+        [item setChannelPost:YES];
         bubble = TGMessageBubbleRectForItem(item, frame, NO);
         NSRect flippedBar = TGMessageCommentBarRectForItem(item, bubble, YES);
         NSRect unflippedBar = TGMessageCommentBarRectForItem(item, bubble, NO);
@@ -1144,6 +1148,7 @@ static void TGTestReactionGeometry(void) {
     CGFloat compactBand = TGReactionChipsHeightForItem(compact, 250.0 - 86.0);
     TGAssertTrue(fabs(TGMessageBubbleHeightForItem(compact, 250.0, NO) - compactHeight - compactBand) < 0.01, @"compact rows must measure reactions using the renderer's available content width");
     [compact setCanGetMessageThread:YES];
+    [compact setChannelPost:YES];
     [compact setMessageThreadReplyCount:@4];
     TGSetChatMessageTextSizeLevel(TGChatMessageTextSizeVeryLarge);
     CGFloat compactRowHeight = TGMessageBubbleHeightForItem(compact, 250.0, NO);
@@ -1257,7 +1262,7 @@ static void TGTestMessageControlReadability(void) {
                 } else if ([kind isEqualToString:@"playable"]) {
                     TGDrawPlayableMediaContentForItem(item, rect, NO);
                 } else if ([kind isEqualToString:@"comments"]) {
-                    [item setCanGetMessageThread:YES]; [item setMessageThreadReplyCount:@4];
+                    [item setCanGetMessageThread:YES]; [item setMessageThreadReplyCount:@4]; [item setChannelPost:YES];
                     TGDrawMessageCommentBarForItem(item, rect, [outgoing boolValue], NO);
                 } else {
                     [item setLinkPreviewInfo:[NSDictionary dictionaryWithObjectsAndKeys:@"https://example.org", @"url", @"Site", @"site_name", @"Title", @"title", @"Description", @"description", nil]];

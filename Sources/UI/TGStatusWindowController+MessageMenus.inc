@@ -818,7 +818,8 @@ static NSString *TGMessageViewerMenuTitle(NSDictionary *summary) {
     }
 
     if (TGMessageItemHasCommentThread(item)) {
-        NSMenuItem *commentsItem = [[[NSMenuItem alloc] initWithTitle:TGLoc(@"message.comments.open")
+        NSString *commentActionTitle = TGLoc([[item messageThreadReplyCount] integerValue] > 0 ? @"message.comments.open" : @"message.comments.add");
+        NSMenuItem *commentsItem = [[[NSMenuItem alloc] initWithTitle:commentActionTitle
                                                                action:@selector(openMessageCommentsFromMenu:)
                                                         keyEquivalent:@""] autorelease];
         [commentsItem setRepresentedObject:item];

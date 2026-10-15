@@ -39,6 +39,8 @@ static void CheckFooter(TGMessageItem *item, CGFloat width, BOOL flipped) {
     NSRect time=TGMessageReactionTimeRect(item,band,flipped);
     Require(!NSIsEmptyRect(time),@"settled footer must contain timestamp");
     NSRect metadata=time; metadata.size.width+=TGOutgoingStatusDotsWidthForItem(item)+(TGOutgoingStatusDotsWidthForItem(item)>0 ? 5.0 : 0.0);
+    NSRect reply=TGMessageReplyIndicatorRectForTimeRect(item,time);
+    if (!NSIsEmptyRect(reply)) metadata=NSUnionRect(metadata,reply);
     Require(NSContainsRect(band,metadata),@"timestamp plus unchanged check slot stays inside footer");
     NSArray *chips=TGReactionChipLayoutForItem(item,TGMessageReactionContentWidth(item,width));
     for(NSDictionary *entry in chips) {
@@ -54,12 +56,80 @@ static void CheckFooter(TGMessageItem *item, CGFloat width, BOOL flipped) {
     TGDrawOutgoingStatusDotsForItem(item,time,flipped);
     [NSGraphicsContext restoreGraphicsState];
 }
+
+static void CheckCommentPresentation(void) {
+    for (NSNumber *outgoing in [NSArray arrayWithObjects:@NO,@YES,nil]) {
+        TGMessageItem *item=[[[TGMessageItem alloc] initWithChatID:@1 messageID:@2 date:@1720000000 outgoing:[outgoing boolValue] preview:@"Thanks"] autorelease];
+        [item setContentType:@"messageText"];
+        [item setCanGetMessageThread:YES];
+        for (NSInteger level=0;level<=3;level++) {
+            TGSetChatMessageTextSizeLevel(level);
+            for (id count in [NSArray arrayWithObjects:[NSNull null],@0,@1,@5,@10000,nil]) {
+                [item setMessageThreadReplyCount:count==[NSNull null] ? nil : count];
+                BOOL hasReplies=count!=[NSNull null] && [count integerValue]>0;
+                Require(TGMessageItemHasCommentThread(item),@"ordinary group retains context-menu thread capability even without replies");
+                Require(!TGMessageItemShowsCommentBar(item),@"ordinary groups never draw a clickable channel discussion bar");
+                Require(TGMessageCommentBarHeightForItem(item)==0,@"ordinary groups reserve no channel discussion height");
+                Require((TGMessageReplyIndicatorWidthForItem(item)>0)==hasReplies,@"only a positive group reply count reserves passive metadata");
+                for (NSNumber *available in [NSArray arrayWithObjects:@280,@400,@640,nil]) {
+                    [item setReactionSummary:nil];
+                    NSRect bubble=TGMessageBubbleRectForItem(item,NSMakeRect(0,0,[available doubleValue],1000),NO);
+                    BOOL inlineMetadata=TGMessageUsesInlineMetadataForItem(item,NSWidth(bubble),NO);
+                    if ([available doubleValue]>=640) Require(inlineMetadata,@"short group messages keep compact text and metadata when the measured unit fits");
+                    if (!inlineMetadata) continue;
+                    for (NSNumber *flip in [NSArray arrayWithObjects:@NO,@YES,nil]) {
+                        BOOL flipped=[flip boolValue];
+                        NSRect body=TGMessageInlineTextRectForItem(item,bubble,flipped);
+                        NSRect time=TGMessageInlineTimeRectForItem(item,bubble,flipped);
+                        NSRect indicator=TGMessageReplyIndicatorRectForTimeRect(item,time);
+                        NSRect status=time;
+                        status.size.width+=TGOutgoingStatusDotsWidthForItem(item)+(TGOutgoingStatusDotsWidthForItem(item)>0?5.0:0.0);
+                        Require(NSContainsRect(bubble,body)&&NSContainsRect(bubble,status),@"group text, time and delivery checks remain inside compact bubble");
+                        Require(NSIsEmptyRect(TGMessageCommentBarRectForItem(item,bubble,flipped)),@"ordinary group has no clickable discussion hit target");
+                        Require(NSIsEmptyRect(indicator)!=hasReplies,@"zero/nil counts have no visible passive indicator");
+                        if (hasReplies) {
+                            Require(NSContainsRect(bubble,indicator),@"passive reply icon/count remain inside the bubble");
+                            Require(!NSIntersectsRect(body,indicator)&&!NSIntersectsRect(indicator,status),@"passive reply indicator is separate from text, time and checks");
+                            Require(fabs(NSMinX(time)-NSMaxX(indicator)-7.0)<0.01,@"reply icon/count sit immediately before time with a fixed gap");
+                            Require(fabs(NSMidY(indicator)-NSMidY(time))<0.01,@"passive count and timestamp share a baseline band in both coordinate systems");
+                        }
+                    }
+                }
+                for (NSString *reactions in [NSArray arrayWithObjects:@"❤️ 1",@"❤️ 11  👍 5  🔥 10000",nil]) {
+                    [item setReactionSummary:reactions];
+                    for (NSNumber *width in [NSArray arrayWithObjects:@160,@240,@360,nil])
+                        for (NSNumber *flip in [NSArray arrayWithObjects:@NO,@YES,nil])
+                            CheckFooter(item,[width doubleValue],[flip boolValue]);
+                }
+            }
+            [item setReactionSummary:nil];
+            [item setChannelPost:YES];
+            for (NSNumber *count in [NSArray arrayWithObjects:@0,@5,nil]) {
+                [item setMessageThreadReplyCount:count];
+                Require(TGMessageItemShowsCommentBar(item),@"channel posts retain actionable discussions for zero and positive reply counts");
+                Require(TGMessageReplyIndicatorWidthForItem(item)==0,@"channel discussion does not duplicate a group reply indicator");
+                NSRect bubble=TGMessageBubbleRectForItem(item,NSMakeRect(0,0,400,1000),NO);
+                Require(!TGMessageUsesInlineMetadataForItem(item,NSWidth(bubble),NO),@"channel discussions keep a separate action row");
+                for (NSNumber *flip in [NSArray arrayWithObjects:@NO,@YES,nil]) {
+                    BOOL flipped=[flip boolValue];
+                    NSRect bar=TGMessageCommentBarRectForItem(item,bubble,flipped);
+                    NSRect body=TGMessageContentRectByRemovingFooter(bubble,TGMessageCommentBarHeightForItem(item),flipped);
+                    Require(!NSIsEmptyRect(bar)&&NSContainsRect(bubble,bar),@"channel discussion control remains visible and contained");
+                    Require(!NSIntersectsRect(NSInsetRect(body,0,4),bar),@"channel discussion action stays outside message body");
+                }
+            }
+            [item setChannelPost:NO];
+        }
+    }
+    TGSetChatMessageTextSizeLevel(TGChatMessageTextSizeNormal);
+}
 int main(int argc,const char **argv) {
     NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];
     BOOL aqua=argc>1 && strcmp(argv[1],"aqua")==0;
     [[NSUserDefaults standardUserDefaults] setObject:aqua ? @"aqua" : @"classic" forKey:TGInterfaceDesignDefaultsKey];
     Require(TGInterfaceDesignIsAqua()==aqua,@"production design gate selects requested process mode");
     TGSetChatMessagesAsBlocksEnabled(NO);
+    CheckCommentPresentation();
     for(NSNumber *outgoing in [NSArray arrayWithObjects:@NO,@YES,nil]) {
         TGMessageItem *item=[[[TGMessageItem alloc] initWithChatID:@1 messageID:@2 date:@1720000000 outgoing:[outgoing boolValue] preview:@"Hi"] autorelease];
         [item setContentType:@"messageText"];

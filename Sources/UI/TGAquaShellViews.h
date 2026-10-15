@@ -8,11 +8,21 @@ typedef struct {
     NSRect chats;
 } TGAquaSourceListGeometry;
 // folderCount is the actual 32pt rows, including the built-in folder entries.
-// Keep one-line composer and utility pages on the same chrome baseline.
-// Only a visible multiline composer may enlarge the footer.
+// The footer belongs only to the conversation composer; other pages use the full height.
+// Only a visible multiline composer may enlarge the base height.
 CGFloat TGAquaFooterBaseHeight(void);
 CGFloat TGAquaFooterHeight(BOOL composerVisible, NSRect composerInputFrame);
 CGFloat TGAquaFooterControlY(BOOL composerVisible, NSRect attachFrame);
+
+typedef struct {
+    NSRect back;
+    NSRect title;
+    NSRect compose;
+    NSRect search;
+    NSRect refresh;
+} TGAquaChatHeaderGeometry;
+TGAquaChatHeaderGeometry TGAquaChatHeaderFrames(NSRect header, BOOL forum);
+NSRect TGAquaToolbarSectionFrame(CGFloat windowWidth, CGFloat windowHeight, NSUInteger index);
 
 TGAquaSourceListGeometry TGAquaSourceListFrames(NSRect sidebar, CGFloat footerTop, CGFloat preferredFolderHeight, NSUInteger folderCount, BOOL collapsed);
 
@@ -21,7 +31,10 @@ TGAquaSourceListGeometry TGAquaSourceListFrames(NSRect sidebar, CGFloat footerTo
 }
 @property(nonatomic, assign) CGFloat dividerX;
 @end
-@interface TGAquaUtilityButtonCell : TGNavigationButtonCell
+@interface TGAquaUtilityButtonCell : TGNavigationButtonCell {
+    NSString *_iconAssetName;
+}
+@property(nonatomic, copy) NSString *iconAssetName;
 @end
 @interface TGAquaTextButtonCell : TGNavigationButtonCell {
     BOOL _accented;

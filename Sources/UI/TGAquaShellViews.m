@@ -22,14 +22,32 @@
 }
 @end
 
-// The sidebar utility keeps its bezel in every state, with the approved settings asset.
+// Toolbar navigation uses only the existing approved template assets.
 @implementation TGAquaUtilityButtonCell
+@synthesize iconAssetName = _iconAssetName;
+- (void)dealloc { [_iconAssetName release]; [super dealloc]; }
 - (void)drawWithFrame:(NSRect)frame inView:(NSView *)view {
     BOOL selected = [self state] == NSOnState;
     NSRect inset = NSInsetRect(frame,1,1);
     NSBezierPath *path = [NSBezierPath bezierPathWithRoundedRect:inset xRadius:5 yRadius:5];
     TGAquaDrawButtonInPath(path,inset,[self isHighlighted],selected,[self isEnabled],[view isFlipped]);
     NSColor *ink = ![self isEnabled] ? TGColorFromHex(0x666666) : (selected ? [NSColor whiteColor] : TGColorFromHex(0x273847));
+    if (self.iconOnly) {
+        BOOL hasBadge = [self.badgeText length] > 0;
+        CGFloat iconX = floor(NSMidX(frame) - 10.0 - (hasBadge ? 5.0 : 0.0));
+        TGDrawTemplateIconAsset(self.iconAssetName ? self.iconAssetName : @"settings", NSMakeRect(iconX, floor(NSMidY(frame)-10),20,20), ink, [self isEnabled] ? 1 : 0.55, [view isFlipped]);
+        if (hasBadge) {
+            NSDictionary *badgeAttrs = [NSDictionary dictionaryWithObjectsAndKeys:[NSFont boldSystemFontOfSize:10], NSFontAttributeName, [NSColor whiteColor], NSForegroundColorAttributeName, nil];
+            NSString *badgeText = [self.badgeText length] > 3 ? @"99+" : self.badgeText;
+            NSSize size = [badgeText sizeWithAttributes:badgeAttrs];
+            CGFloat badgeWidth = MAX(16.0, ceil(size.width) + 6.0);
+            NSRect badge = NSMakeRect(NSMaxX(frame)-badgeWidth-2.0, NSMaxY(frame)-17.0, badgeWidth, 16.0);
+            [TGColorFromHex(0xAE2931) set];
+            [[NSBezierPath bezierPathWithRoundedRect:badge xRadius:8 yRadius:8] fill];
+            [badgeText drawAtPoint:NSMakePoint(floor(NSMidX(badge)-size.width/2.0),floor(NSMidY(badge)-size.height/2.0)) withAttributes:badgeAttrs];
+        }
+        return;
+    }
     NSDictionary *attrs = [NSDictionary dictionaryWithObjectsAndKeys:[NSFont systemFontOfSize:13],NSFontAttributeName,ink,NSForegroundColorAttributeName,nil];
     NSString *title = [self title] ? [self title] : @"";
     NSSize size = [title sizeWithAttributes:attrs];

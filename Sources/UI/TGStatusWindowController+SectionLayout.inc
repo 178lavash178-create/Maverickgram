@@ -569,7 +569,7 @@
     [self.profilePanelView setFrame:NSMakeRect(mainX, mainY, mainWidth, mainHeight)];
     [self.settingsPanelView setFrame:NSMakeRect(mainX, mainY, mainWidth, mainHeight)];
     [self.aboutPanelView setFrame:NSMakeRect(mainX, mainY, mainWidth, mainHeight)];
-    CGFloat auxiliaryBottom = aqua ? TGAquaFooterBaseHeight() : 80.0;
+    CGFloat auxiliaryBottom = aqua ? 0.0 : 80.0;
     [[self.contactsViewController view] setFrame:NSMakeRect(mainX,
                                                             mainY + auxiliaryBottom,
                                                             mainWidth,
@@ -578,7 +578,7 @@
                                                    mainY + auxiliaryBottom,
                                                    mainWidth,
                                                    MAX(220.0, mainHeight - auxiliaryBottom))];
-    CGFloat workshopBottom = aqua ? TGAquaFooterBaseHeight() : 72.0;
+    CGFloat workshopBottom = aqua ? 0.0 : 72.0;
     [[self.workshopViewController view] setFrame:NSMakeRect(mainX,
                                                             mainY + workshopBottom,
                                                             mainWidth,
@@ -925,9 +925,9 @@
     CGFloat botCommandPanelGap = self.botCommandPanelVisible ? 6.0 : 0.0;
     messageBottom += botCommandPanelHeight + botCommandPanelGap;
     if (self.chatNavigationClosed) {
-        messageBottom = mainY + (aqua ? TGAquaFooterBaseHeight() : 18.0);
+        messageBottom = mainY + (aqua ? 0.0 : 18.0);
     }
-    if (aqua) messageBottom = MAX(messageBottom, TGAquaFooterBaseHeight());
+    if (aqua && !self.chatNavigationClosed) messageBottom = MAX(messageBottom, TGAquaFooterBaseHeight());
     CGFloat messageTop = mainTop - TGPanelHeaderHeight - 7.0;
     CGFloat panelInsetX = conversationX + 8.0;
     CGFloat panelWidth = conversationWidth - 16.0;
@@ -1123,7 +1123,7 @@
                                                 panelTitleY,
                                                 MAX(120.0, mainWidth - 176.0),
                                                 20.0)];
-    CGFloat profileScrollBottom = aqua ? TGAquaFooterBaseHeight() : bottomNavigationY + bottomNavigationHeight + 10.0;
+    CGFloat profileScrollBottom = aqua ? 8.0 : bottomNavigationY + bottomNavigationHeight + 10.0;
     CGFloat profileScrollTop = mainTop - TGPanelHeaderHeight - 8.0;
     CGFloat profileScrollHeight = profileScrollTop - profileScrollBottom;
     if (profileScrollHeight < 180.0) {
@@ -1317,7 +1317,7 @@
                                                  MAX(120.0, mainWidth - 116.0),
                                                  20.0)];
 
-    CGFloat settingsScrollBottom = aqua ? TGAquaFooterBaseHeight() : bottomNavigationY + bottomNavigationHeight + 10.0;
+    CGFloat settingsScrollBottom = aqua ? 8.0 : bottomNavigationY + bottomNavigationHeight + 10.0;
     CGFloat settingsScrollTop = mainTop - (aqua ? 0.0 : TGPanelHeaderHeight) - 8.0;
     CGFloat settingsScrollHeight = settingsScrollTop - settingsScrollBottom;
     if (settingsScrollHeight < 180.0) {

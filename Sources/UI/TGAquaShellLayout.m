@@ -4,7 +4,7 @@
 CGFloat TGAquaFooterBaseHeight(void) { return 58.0; }
 
 CGFloat TGAquaFooterHeight(BOOL composerVisible, NSRect composerInputFrame) {
-    return composerVisible ? MAX(TGAquaFooterBaseHeight(), NSMaxY(composerInputFrame) + 6.0) : TGAquaFooterBaseHeight();
+    return composerVisible ? MAX(TGAquaFooterBaseHeight(), NSMaxY(composerInputFrame) + 6.0) : 0.0;
 }
 
 CGFloat TGAquaFooterControlY(BOOL composerVisible, NSRect attachFrame) {
@@ -31,4 +31,22 @@ TGAquaSourceListGeometry TGAquaSourceListFrames(NSRect sidebar, CGFloat footerTo
     result.chatHeader = NSMakeRect(NSMinX(sidebar), NSMinY(result.divider) - headerHeight, width, headerHeight);
     result.chats = NSMakeRect(NSMinX(sidebar) + chatInset, bottom, MAX(0.0, width - 2.0 * chatInset), MAX(0.0, NSMinY(result.chatHeader) - bottom));
     return result;
+}
+
+// Icons keep one consistent hit target across languages and available window widths.
+NSRect TGAquaToolbarSectionFrame(CGFloat width, CGFloat height, NSUInteger index) {
+    CGFloat searchWidth = MIN(200.0, floor(width * 0.18));
+    return NSMakeRect(66.0 + searchWidth + index * 54.0, height - 43.0, 48.0, 32.0);
+}
+
+TGAquaChatHeaderGeometry TGAquaChatHeaderFrames(NSRect header, BOOL forum) {
+    TGAquaChatHeaderGeometry g;
+    CGFloat x = NSMinX(header), y = NSMinY(header) + 3.0, width = NSWidth(header);
+    g.back = forum ? NSMakeRect(x + 8.0, y, 30.0, 30.0) : NSZeroRect;
+    g.refresh = NSMakeRect(x + width - 38.0, y, 30.0, 30.0);
+    g.search = NSMakeRect(x + width - 74.0, y, 30.0, 30.0);
+    g.compose = NSMakeRect(x + width - 110.0, y, 30.0, 30.0);
+    CGFloat titleX = x + (forum ? 46.0 : 10.0);
+    g.title = NSMakeRect(titleX, y + 5.0, MAX(0.0, NSMinX(g.compose) - 8.0 - titleX), 20.0);
+    return g;
 }

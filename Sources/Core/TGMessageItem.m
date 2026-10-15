@@ -109,6 +109,7 @@ static NSString *TGReactionSummaryByMergingSummaries(NSString *leftSummary, NSSt
 @synthesize editDate = _editDate;
 @synthesize editableText = _editableText;
 @synthesize formattedEntities = _formattedEntities;
+@synthesize channelPost = _channelPost;
 @synthesize canGetMessageThread = _canGetMessageThread;
 @synthesize messageThreadReplyCount = _messageThreadReplyCount;
 @synthesize commentThreadMessageID = _commentThreadMessageID;
@@ -463,6 +464,7 @@ static NSString *TGReactionSummaryByMergingSummaries(NSString *leftSummary, NSSt
     [copy setEditDate:_editDate];
     [copy setEditableText:_editableText];
     [copy setFormattedEntities:_formattedEntities];
+    [copy setChannelPost:_channelPost];
     [copy setCanGetMessageThread:_canGetMessageThread];
     [copy setMessageThreadReplyCount:_messageThreadReplyCount];
     [copy setCommentThreadMessageID:_commentThreadMessageID];

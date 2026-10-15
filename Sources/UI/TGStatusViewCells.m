@@ -919,6 +919,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
                                      timeSize.width,
                                      metaHeight);
         if (inlineMetadata) { timeRect = TGMessageInlineTimeRectForItem(item, bubbleRect, flipped); }
+        TGDrawMessageReplyIndicatorForTimeRect(item,timeRect,flipped);
         [timeString drawInRect:timeRect withAttributes:timeAttributes];
         TGDrawOutgoingStatusDotsForItem(item, timeRect, [controlView isFlipped]);
     }
@@ -936,6 +937,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
         TGDrawReactionChipsForItem(item, chipsBand, [controlView isFlipped]);
         NSRect reactionTime = TGMessageReactionTimeRect(item, band, [controlView isFlipped]);
         if (!NSIsEmptyRect(reactionTime)) {
+            TGDrawMessageReplyIndicatorForTimeRect(item,reactionTime,flipped);
             [timeString drawInRect:reactionTime withAttributes:timeAttributes];
             TGDrawOutgoingStatusDotsForItem(item, reactionTime, [controlView isFlipped]);
         }
@@ -1003,12 +1005,13 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
                                  timeSize.width,
                                  metaHeight);
     if ([timeString length] > 0 && TGReactionChipsMinimumWidthForItem(item) <= 0.0) {
+        TGDrawMessageReplyIndicatorForTimeRect(item,timeRect,flipped);
         [timeString drawInRect:timeRect withAttributes:timeAttributes];
         TGDrawOutgoingStatusDotsForItem(item, timeRect, flipped);
     }
 
     CGFloat textX = NSMaxX(iconRect) + 10.0;
-    CGFloat textRight = NSMinX(timeRect) - 10.0;
+    CGFloat textRight = NSMinX(timeRect) - TGMessageReplyIndicatorWidthForItem(item) - 10.0;
     if ([timeString length] == 0) {
         textRight = NSMaxX(rowRect) - 12.0;
     }
@@ -1166,11 +1169,12 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
         TGDrawReactionChipsForItem(item, chipsBand, flipped);
         NSRect reactionTime = TGMessageReactionTimeRect(item, band, flipped);
         if (!NSIsEmptyRect(reactionTime)) {
+            TGDrawMessageReplyIndicatorForTimeRect(item,reactionTime,flipped);
             [timeString drawInRect:reactionTime withAttributes:timeAttributes];
             TGDrawOutgoingStatusDotsForItem(item, reactionTime, flipped);
         }
     }
-    if (TGMessageItemHasCommentThread(item)) {
+    if (TGMessageItemShowsCommentBar(item)) {
         NSString *title = TGMessageCommentTitleForItem(item);
         NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys:
             TGChatMessageSecondaryFont(), NSFontAttributeName,

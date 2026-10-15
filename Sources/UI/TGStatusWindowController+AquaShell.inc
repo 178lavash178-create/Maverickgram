@@ -53,14 +53,19 @@
     self.aquaFolderPreferredHeight = [[NSUserDefaults standardUserDefaults] doubleForKey:@"TGAquaFolderHeight"];
     if (self.aquaFolderPreferredHeight < 76.0) self.aquaFolderPreferredHeight = 210.0;
     self.aquaFoldersCollapsed = [[NSUserDefaults standardUserDefaults] boolForKey:@"TGAquaFoldersCollapsed"];
-    for (NSButton *button in self.navigationButtons) [self installAquaTextCellOnButton:button accented:NO];
-    NSButton *settings = [self.navigationButtons objectAtIndex:3];
-    id settingsTarget = [settings target]; SEL settingsAction = [settings action];
-    NSString *settingsTitle = [[settings title] copy];
-    [settings setCell:[[[TGAquaUtilityButtonCell alloc] initTextCell:settingsTitle] autorelease]];
-    [settings setTarget:settingsTarget]; [settings setAction:settingsAction];
-    [settings setBordered:NO]; [settingsTitle release];
-    [self installAquaTextCellOnButton:self.workshopDrawerButton accented:NO];
+    NSArray *toolbarButtons = [self.navigationButtons arrayByAddingObject:self.workshopDrawerButton];
+    NSArray *toolbarAssets = [NSArray arrayWithObjects:@"contacts", @"call-receive", @"chat", @"settings", @"workshop", nil];
+    for (NSUInteger toolbarIndex=0; toolbarIndex<[toolbarButtons count]; toolbarIndex++) {
+        NSButton *button = [toolbarButtons objectAtIndex:toolbarIndex];
+        id target = [button target]; SEL action = [button action];
+        NSString *title = [[button title] copy]; NSInteger state = [button state];
+        TGAquaUtilityButtonCell *cell = [[[TGAquaUtilityButtonCell alloc] initTextCell:title] autorelease];
+        [cell setButtonType:NSToggleButton]; [cell setIconOnly:YES];
+        [cell setIconAssetName:[toolbarAssets objectAtIndex:toolbarIndex]];
+        [button setCell:cell]; [button setTitle:title]; [button setState:state];
+        [button setTarget:target]; [button setAction:action]; [button setBordered:NO];
+        [title release];
+    }
     [self installAquaTextCellOnButton:self.attachPhotoButton accented:NO];
     [self.attachPhotoButton setImage:TGIconAssetImageNamed(@"attach")];
     [self installAquaTextCellOnButton:self.sendMessageButton accented:YES];
@@ -119,7 +124,8 @@
     if (!TGInterfaceDesignIsAqua()) return;
     BOOL ready = [self.currentAuthState isEqualToString:@"ready"];
     BOOL chats = ready && [self.activeSection isEqualToString:TGSectionChats];
-    for (NSView *view in [NSArray arrayWithObjects:self.aquaToolbarView, self.aquaFooterView, self.aquaSearchButton, self.aquaDownloadsButton, self.workshopDrawerButton, nil]) [view setHidden:!ready];
+    for (NSView *view in [NSArray arrayWithObjects:self.aquaToolbarView, self.aquaSearchButton, self.aquaDownloadsButton, self.workshopDrawerButton, nil]) [view setHidden:!ready];
+    [self.aquaFooterView setHidden:(!chats || self.chatNavigationClosed || self.mediaCenterVisible)];
     for (NSButton *button in self.navigationButtons) [button setHidden:!ready];
     for (NSView *view in [NSArray arrayWithObjects:self.aquaFolderHeaderButton, self.aquaFolderEditButton, nil]) [view setHidden:!chats];
     [self.aquaChatHeaderView setHidden:!chats];
@@ -140,16 +146,16 @@
     CGFloat sidebarWidth = NSWidth(sidebar);
     BOOL showingChats = [self.activeSection isEqualToString:TGSectionChats];
     BOOL composerVisible = showingChats && !self.chatNavigationClosed && !self.mediaCenterVisible;
-    CGFloat controlY = TGAquaFooterControlY(composerVisible, [self.attachPhotoButton frame]);
     CGFloat footerHeight = TGAquaFooterHeight(composerVisible, [self.sendTextFieldBackgroundView frame]);
     [self.aquaToolbarView setFrame:NSMakeRect(0, height-54, width, 54)];
-    [self.aquaFooterView setFrame:NSMakeRect(0, 0, width, footerHeight)];
-    [self.aquaFooterView setDividerX:showingChats ? NSMaxX(sidebar)+3 : 0];
+    CGFloat conversationX = NSMaxX(sidebar) + 6.0;
+    [self.aquaFooterView setFrame:NSMakeRect(conversationX, 0, MAX(0, width-conversationX), footerHeight)];
+    [self.aquaFooterView setDividerX:0];
     // Chrome is behind the live controls, not an overlay over the composer.
     [content addSubview:self.aquaFooterView positioned:NSWindowAbove relativeTo:nil];
     NSRect resizeFrame = [self.sidebarResizeHandleView frame];
-    resizeFrame.size.height = MAX(0, NSMaxY(resizeFrame)-footerHeight);
-    resizeFrame.origin.y = footerHeight;
+    resizeFrame.size.height = MAX(0, NSMaxY(resizeFrame));
+    resizeFrame.origin.y = 0;
     [self.sidebarResizeHandleView setFrame:resizeFrame];
     for (NSView *control in [NSArray arrayWithObjects:self.attachPhotoButton, self.botActionButton, self.sendTextFieldBackgroundView, self.sendTextField, self.stickerButton, self.voiceRecordButton, self.sendMessageButton, nil]) {
         [content addSubview:control positioned:NSWindowAbove relativeTo:nil];
@@ -158,11 +164,10 @@
     [content addSubview:self.accountBadgeView positioned:NSWindowAbove relativeTo:nil];
     CGFloat searchWidth = MIN(200.0, floor(width*0.18));
     [self.aquaSearchButton setFrame:NSMakeRect(54, height-42, searchWidth, 30)];
-    CGFloat navigationX = 66 + searchWidth;
-    NSArray *order = [NSArray arrayWithObjects:[self.navigationButtons objectAtIndex:2], [self.navigationButtons objectAtIndex:0], [self.navigationButtons objectAtIndex:1], self.workshopDrawerButton, nil];
+    NSArray *order = [NSArray arrayWithObjects:[self.navigationButtons objectAtIndex:2], [self.navigationButtons objectAtIndex:0], [self.navigationButtons objectAtIndex:1], self.workshopDrawerButton, [self.navigationButtons objectAtIndex:3], nil];
     NSUInteger index = 0;
     for (NSButton *button in order) {
-        [button setFrame:NSMakeRect(navigationX + index*78, height-42, button == self.workshopDrawerButton ? 104 : 77, 30)];
+        [button setFrame:TGAquaToolbarSectionFrame(width, height, index)];
         [content addSubview:button positioned:NSWindowAbove relativeTo:nil]; index++;
     }
     if (self.markAllChatsReadSpinner) {
@@ -171,12 +176,9 @@
         [content addSubview:self.markAllChatsReadSpinner positioned:NSWindowAbove relativeTo:nil];
     }
     [self.aquaDownloadsButton setFrame:NSMakeRect(width-124, height-42, 112, 30)];
-    NSButton *settings = [self.navigationButtons objectAtIndex:3];
-    [settings setFrame:NSMakeRect(12, controlY, MIN(196.0, MAX(0.0, sidebarWidth-24.0)), 32)];
-    [content addSubview:settings positioned:NSWindowAbove relativeTo:nil];
     [self.aquaFolderHeaderButton setFrame:NSMakeRect(8, NSMaxY(sidebar)-30, MAX(86, sidebarWidth-104), 26)];
     [self.aquaFolderEditButton setFrame:NSMakeRect(sidebarWidth-88, NSMaxY(sidebar)-30, 80, 26)];
-    TGAquaSourceListGeometry frames = TGAquaSourceListFrames(sidebar, footerHeight, self.aquaFolderPreferredHeight, [self.drawerFolderButtons count], self.aquaFoldersCollapsed);
+    TGAquaSourceListGeometry frames = TGAquaSourceListFrames(sidebar, 0.0, self.aquaFolderPreferredHeight, [self.drawerFolderButtons count], self.aquaFoldersCollapsed);
     [self.drawerFolderScrollView setFrame:frames.folders];
     [content addSubview:self.drawerFolderScrollView positioned:NSWindowAbove relativeTo:nil];
     [self.aquaFolderDivider setFrame:frames.divider];
@@ -191,12 +193,22 @@
     [self.drawerFolderScrollView reflectScrolledClipView:[self.drawerFolderScrollView contentView]];
     [self.aquaChatHeaderView setFrame:frames.chatHeader];
     [content addSubview:self.aquaChatHeaderView positioned:NSWindowAbove relativeTo:nil];
-    CGFloat headerY = NSMinY(frames.chatHeader)+3;
-    NSArray *headerControls = [NSArray arrayWithObjects:self.topicBackButton,self.chatsLabel,self.composeChatButton,self.chatSearchButton,self.loadChatsButton,nil];
-    for (NSView *view in headerControls) { NSRect r = [view frame]; r.origin.y = headerY + (view==self.chatsLabel ? 5 : 0); [view setFrame:r]; [content addSubview:view positioned:NSWindowAbove relativeTo:nil]; }
-    if (!self.showingForumTopicList) {
-        [self.chatsLabel setFrame:NSMakeRect(10, headerY+5, MAX(60,sidebarWidth-126), 20)];
+    BOOL compact = [self isChatSidebarCompactForWidth:sidebarWidth];
+    if (!compact) {
+        TGAquaChatHeaderGeometry header = TGAquaChatHeaderFrames(frames.chatHeader, self.showingForumTopicList);
+        [self.topicBackButton setFrame:header.back];
+        [self.chatsLabel setFrame:header.title];
+        [[self.chatsLabel cell] setWraps:NO];
+        [[self.chatsLabel cell] setScrollable:YES];
+        [[self.chatsLabel cell] setLineBreakMode:NSLineBreakByTruncatingTail];
+        [self.chatsLabel setToolTip:[self.chatsLabel stringValue]];
+        [self.composeChatButton setFrame:header.compose];
+        [self.chatSearchButton setFrame:header.search];
+        [self.loadChatsButton setFrame:header.refresh];
+        [self.loadMoreChatsButton setFrame:header.refresh];
     }
+    NSArray *headerControls = [NSArray arrayWithObjects:self.topicBackButton,self.chatsLabel,self.composeChatButton,self.chatSearchButton,self.loadChatsButton,self.loadMoreChatsButton,nil];
+    for (NSView *view in headerControls) [content addSubview:view positioned:NSWindowAbove relativeTo:nil];
     [self.chatScrollSurfaceView setFrame:frames.chats];
     [self.chatScrollView setFrame:NSInsetRect(frames.chats,2,2)];
     [self.chatScrollView tile];

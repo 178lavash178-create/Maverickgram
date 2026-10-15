@@ -45,7 +45,7 @@ void TGThemeDrawHeaderBackgroundInRect(NSRect rect, BOOL flipped) {
 }
 void TGDrawTemplateIconAsset(NSString *name, NSRect rect, NSColor *ink, CGFloat alpha, BOOL flipped) {
     (void)alpha; (void)flipped;
-    assert([name isEqualToString:@"settings"]);
+    assert([name length]>0);
     IconCalls++; IconFrame=rect; IconInk=ink;
 }
 @implementation TGNavigationButtonCell
@@ -119,6 +119,24 @@ int main(void) {
         if(first) assert([first isEqualToData:mask]); else [alphaMasks setObject:mask forKey:key];
         cases++;
     }
+    NSArray *assets=[NSArray arrayWithObjects:@"chat",@"contacts",@"call-receive",@"workshop",@"settings",nil];
+    for(NSString *asset in assets) for(NSUInteger selected=0;selected<2;selected++) for(NSUInteger pressed=0;pressed<2;pressed++) for(NSUInteger badge=0;badge<3;badge++) {
+        TGAquaUtilityButtonCell *cell=[[[TGAquaUtilityButtonCell alloc] initTextCell:@"Title remains accessible"] autorelease];
+        cell.iconOnly=YES; cell.iconAssetName=asset; cell.badgeText=badge==2 ? @"12345" : (badge ? @"7" : nil);
+        [cell setState:selected ? NSOnState : NSOffState]; [cell setHighlighted:pressed];
+        NSView *view=[[[NSView alloc] initWithFrame:NSMakeRect(0,0,64,48)] autorelease];
+        NSBitmapImageRep *bitmap=Bitmap(64,48);
+        [NSGraphicsContext saveGraphicsState]; [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithBitmapImageRep:bitmap]];
+        IconCalls=0; [cell drawWithFrame:NSMakeRect(8,8,48,32) inView:view];
+        assert(IconCalls==1 && NSWidth(IconFrame)==20 && NSHeight(IconFrame)==20);
+        assert(NSMinX(IconFrame)>=9 && NSMaxX(IconFrame)<=55 && NSMinY(IconFrame)==14);
+        [NSGraphicsContext restoreGraphicsState];
+        for(NSUInteger y=0;y<48;y++) for(NSUInteger x=0;x<64;x++) {
+            if([[bitmap colorAtX:x y:y] alphaComponent]>0.01)
+                assert(x>=8 && x<56 && y>=8 && y<40);
+        }
+        cases++;
+    }
     for(NSUInteger aqua=0;aqua<2;aqua++) for(NSUInteger hidden=0;hidden<2;hidden++) {
         Aqua=aqua; TGPanelView *view=[[[TGPanelView alloc] initWithFrame:NSMakeRect(0,0,400,200)] autorelease];
         assert(!view.headerHidden); view.headerHidden=hidden;
@@ -133,10 +151,10 @@ int main(void) {
         [geometry layoutAqua:aqua width:width top:top];
         NSRect frame=[geometry.settingsScrollView frame];
         assert(NSMaxY(frame)==top-(aqua ? 8 : 48));
-        assert(NSMinY(frame)==(aqua ? TGAquaFooterBaseHeight() : 82));
+        assert(NSMinY(frame)==(aqua ? 8 : 82));
         assert(NSMinX(frame)==8 && NSWidth(frame)==width-16);
     }
-    printf("Aqua Settings chrome: %lu idle/selected/pressed/disabled real-button rasters; identical bezels; approved icon ink; headerless Aqua/Classic preservation; actual settings viewport PASS.\n",(unsigned long)cases);
+    printf("Aqua Settings chrome: %lu idle/selected/pressed/disabled real-button and toolbar rasters; contained badges; identical bezels; approved icon ink; headerless Aqua/Classic preservation; actual settings viewport PASS.\n",(unsigned long)cases);
     [pool drain]; return 0;
 }
 '''

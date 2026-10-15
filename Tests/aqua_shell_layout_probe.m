@@ -50,7 +50,7 @@ int main(void) {
     // section may enlarge the navigation footer or move its controls.
     NSRect inputs[] = {NSZeroRect,NSMakeRect(300,14,400,30),NSMakeRect(300,14,400,94),NSMakeRect(300,1000,400,94)};
     for (NSUInteger i=0;i<sizeof(inputs)/sizeof(inputs[0]);i++) {
-        assert(TGAquaFooterHeight(NO,inputs[i])==58);
+        assert(TGAquaFooterHeight(NO,inputs[i])==0);
         assert(TGAquaFooterControlY(NO,inputs[i])==13);
         CGFloat expanded=TGAquaFooterHeight(YES,inputs[i]);
         assert(expanded>=58 && expanded>=NSMaxY(inputs[i])+6);
@@ -60,14 +60,42 @@ int main(void) {
         assert(NSMinX(footerList.chats)==NSMinX(sidebar));
         assert(NSWidth(footerList.chats)==NSWidth(sidebar));
     }
-    // One-line empty and typed drafts have the same footer as Settings/other pages.
+    // The composer retains its single-line baseline; utility pages have no footer.
     for (CGFloat input=20; input<=30; input++) {
         CGFloat composerHeight=MAX(42.0,input+16.0);
         CGFloat backgroundY=8.0+floor((composerHeight-input-10.0)/2.0);
         NSRect background=NSMakeRect(300,backgroundY,400,input+10);
-        assert(TGAquaFooterHeight(YES,background)==TGAquaFooterHeight(NO,background));
+        assert(TGAquaFooterHeight(YES,background)==58 && TGAquaFooterHeight(NO,background)==0);
     }
-    printf("Aqua footer stable one-line/utility baseline, multiline and flush list geometry PASS\n");
+    // Moving Settings to the toolbar returns the former 58pt dock to chats.
+    TGAquaSourceListGeometry full=TGAquaSourceListFrames(sidebar,0,210,20,NO);
+    TGAquaSourceListGeometry dock=TGAquaSourceListFrames(sidebar,58,210,20,NO);
+    assert(NSMinY(full.chats)==0 && NSHeight(full.chats)==NSHeight(dock.chats)+58);
+    for (CGFloat width=760; width<=1600; width+=20) {
+        NSRect search=NSMakeRect(54,658,MIN(200,floor(width*0.18)),30);
+        NSRect previous=search;
+        for (NSUInteger i=0;i<5;i++) {
+            NSRect frame=TGAquaToolbarSectionFrame(width,700,i);
+            assert(NSMinX(frame)>=NSMaxX(previous)+5 && NSMinY(frame)==657);
+            assert(NSWidth(frame)==48 && NSHeight(frame)==32);
+            assert(NSMaxX(frame)<width-124);
+            previous=frame;
+        }
+    }
+    for (CGFloat width=200; width<=420; width+=10) for (NSUInteger forum=0;forum<2;forum++) {
+        NSRect area=NSMakeRect(0,200,width,36);
+        TGAquaChatHeaderGeometry header=TGAquaChatHeaderFrames(area,forum);
+        AssertContained(header.title,area); AssertContained(header.compose,area);
+        AssertContained(header.search,area); AssertContained(header.refresh,area);
+        assert(NSMaxX(header.title)+8<=NSMinX(header.compose));
+        assert(NSMaxX(header.compose)+6==NSMinX(header.search));
+        assert(NSMaxX(header.search)+6==NSMinX(header.refresh));
+        if(forum) {
+            AssertContained(header.back,area);
+            assert(NSMinX(header.back)==8 && NSMaxX(header.back)+8==NSMinX(header.title));
+        } else assert(NSEqualRects(header.back,NSZeroRect));
+    }
+    printf("Aqua icon toolbar, forum header, reclaimed sidebar and composer-only footer PASS\n");
     printf("Aqua source list geometry: %lu cases plus count-change/collapse PASS\n",(unsigned long)count);
     [pool drain]; return 0;
 }
