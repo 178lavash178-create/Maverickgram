@@ -13,7 +13,9 @@ CGFloat TGAquaFooterControlY(BOOL composerVisible, NSRect attachFrame) {
 
 TGAquaSourceListGeometry TGAquaSourceListFrames(NSRect sidebar, CGFloat footerTop, CGFloat preferredFolderHeight, NSUInteger folderCount, BOOL collapsed) {
     TGAquaSourceListGeometry result;
-    CGFloat top = MAX(NSMinY(sidebar), NSMaxY(sidebar) - 32.0);
+    // Leave breathing room below the folder caption without adding empty rows.
+    CGFloat folderTopInset = (!collapsed && folderCount > 0) ? 4.0 : 0.0;
+    CGFloat top = MAX(NSMinY(sidebar), NSMaxY(sidebar) - 32.0 - folderTopInset);
     CGFloat bottom = MIN(top, MAX(NSMinY(sidebar), footerTop));
     CGFloat available = MAX(0.0, top - bottom);
     CGFloat headerHeight = MIN(36.0, available);

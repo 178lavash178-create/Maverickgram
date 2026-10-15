@@ -20,7 +20,7 @@ int main(void) {
         TGAquaSourceListGeometry g = TGAquaSourceListFrames(sidebar,footers[f],requested[r],folders[n],c);
         AssertContained(g.folders,sidebar); AssertContained(g.divider,sidebar);
         AssertContained(g.chatHeader,sidebar); AssertContained(g.chats,sidebar);
-        CGFloat top=MAX(NSMinY(sidebar),NSMaxY(sidebar)-32);
+        CGFloat top=MAX(NSMinY(sidebar),NSMaxY(sidebar)-32-((!c && folders[n]>0) ? 4 : 0));
         CGFloat bottom=MIN(top,MAX(NSMinY(sidebar),footers[f]));
         CGFloat available=top-bottom;
         assert(NSMinY(g.chats)>=bottom);
@@ -45,7 +45,7 @@ int main(void) {
     TGAquaSourceListGeometry closed=TGAquaSourceListFrames(sidebar,52,340,2,YES);
     assert(NSHeight(many.folders)==340 && NSHeight(few.folders)==64);
     assert(NSHeight(few.chats)>NSHeight(many.chats));
-    assert(NSHeight(closed.chats)==NSHeight(few.chats)+64+18);
+    assert(NSHeight(closed.chats)==NSHeight(few.chats)+64+18+4);
     // Hidden composer frames are stale state: neither a draft nor a previous
     // section may enlarge the navigation footer or move its controls.
     NSRect inputs[] = {NSZeroRect,NSMakeRect(300,14,400,30),NSMakeRect(300,14,400,94),NSMakeRect(300,1000,400,94)};
@@ -56,7 +56,7 @@ int main(void) {
         assert(expanded>=58 && expanded>=NSMaxY(inputs[i])+6);
         assert(TGAquaFooterControlY(YES,inputs[i])==NSMinY(inputs[i]));
         TGAquaSourceListGeometry footerList=TGAquaSourceListFrames(sidebar,expanded,210,20,NO);
-        assert(NSMinY(footerList.chats)==MIN(NSMaxY(sidebar)-32,expanded));
+        assert(NSMinY(footerList.chats)==MIN(NSMaxY(sidebar)-36,expanded));
         assert(NSMinX(footerList.chats)==NSMinX(sidebar));
         assert(NSWidth(footerList.chats)==NSWidth(sidebar));
     }

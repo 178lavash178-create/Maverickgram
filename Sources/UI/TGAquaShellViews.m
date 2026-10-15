@@ -124,11 +124,12 @@
 @implementation TGAquaFolderButtonCell
 - (void)drawWithFrame:(NSRect)frame inView:(NSView *)view {
     BOOL selected = [self state] == NSOnState;
+    [TGColorFromHex(0xE1E8F0) set]; NSRectFill(frame);
     if (selected || [self isHighlighted]) {
         NSGradient *gradient = [[[NSGradient alloc] initWithStartingColor:TGColorFromHex(0x316DA9) endingColor:TGColorFromHex(0x214B78)] autorelease];
-        [gradient drawInRect:frame angle:[view isFlipped] ? 90 : -90];
-    } else {
-        [TGColorFromHex(0xE1E8F0) set]; NSRectFill(frame);
+        NSRect selection = NSInsetRect(frame, 4.0, 2.0);
+        NSBezierPath *outline = [NSBezierPath bezierPathWithRoundedRect:selection xRadius:4 yRadius:4];
+        [gradient drawInBezierPath:outline angle:[view isFlipped] ? 90 : -90];
     }
     NSColor *ink = (selected || [self isHighlighted]) ? [NSColor whiteColor] : TGColorFromHex(0x203145);
     TGDrawTemplateIconAsset([(NSControl *)view tag] == -2 ? @"archive" : @"folder", NSMakeRect(NSMinX(frame)+12, floor(NSMidY(frame)-8), 16, 16), ink, [self isEnabled] ? 1.0 : 0.55, [view isFlipped]);
