@@ -75,6 +75,8 @@ int main(void) {
             NSView *tabDocument=[panel valueForKey:@"tabDocumentView"];
             Contains([panel bounds],[tabs frame]);
             assert([tabs hasHorizontalScroller] && ![tabs hasVerticalScroller]);
+            assert([tabs scrollerStyle]==NSScrollerStyleLegacy && ![[tabs horizontalScroller] isHidden]);
+            assert(NSHeight([[tabs contentView] bounds])>=30.0);
             assert([tabs documentView]==tabDocument);
             assert(NSWidth([tabDocument frame])>NSWidth([[tabs contentView] bounds]));
             NSArray *buttons=[panel valueForKey:@"actionButtons"];

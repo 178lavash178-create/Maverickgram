@@ -21,6 +21,7 @@
     TGAquaRecordingConfigureClock(self.timerField,24);[root addSubview:self.timerField];
     self.statusField=TGAquaRecordingLabel(NSMakeRect(42,112,496,26),@"",[NSFont systemFontOfSize:12],NO);[root addSubview:self.statusField];
     self.spinner=[[[NSProgressIndicator alloc] initWithFrame:NSMakeRect(282,86,16,16)] autorelease];
+    [self.spinner setControlSize:NSSmallControlSize];
     [self.spinner setStyle:NSProgressIndicatorSpinningStyle];[self.spinner setDisplayedWhenStopped:NO];[root addSubview:self.spinner];
     self.cancelButton=TGAquaRecordingButton(NSMakeRect(24,26,124,34),TGLoc(@"cancel"),self,@selector(cancelPressed:),NO);
     [self.cancelButton setKeyEquivalent:@"\e"];[self.cancelButton setKeyEquivalentModifierMask:0];[root addSubview:self.cancelButton];

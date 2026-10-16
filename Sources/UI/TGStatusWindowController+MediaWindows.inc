@@ -2048,7 +2048,7 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
     [self ensureMediaPlaybackWindow];
     [self resetMediaPlaybackState];
     self.mediaPlaybackVideoNote = videoNote;
-    [self layoutMediaPlaybackWindowForAudioOnly:audioOnly title:title];
+    [self layoutMediaPlaybackWindowForAudioOnly:audioOnly title:(TGInterfaceDesignIsAqua() && videoNote) ? TGLoc(@"media.viewer.videoNote") : title];
     self.mediaPlaybackKnownDuration = ([duration respondsToSelector:@selector(doubleValue)] && [duration doubleValue] > 0.0) ? [duration doubleValue] : 0.0;
     self.mediaPlaybackResumeIdentifier = (!audioOnly && !videoNote)
         ? [self mediaPlaybackResumeIdentifierForPath:playablePath]
@@ -2232,18 +2232,18 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
     id typeObject = [mediaItem objectForKey:@"content_type"];
     NSString *contentType = [typeObject isKindOfClass:[NSString class]] ? (NSString *)typeObject : nil;
     if ([contentType isEqualToString:@"messageVideoNote"]) {
-        return @"Video message";
+        return TGInterfaceDesignIsAqua() ? TGLoc(@"media.viewer.videoNote") : @"Video message";
     }
     if ([contentType isEqualToString:@"messageAnimation"]) {
         return @"GIF";
     }
     if ([contentType isEqualToString:@"messageVideo"]) {
-        return @"Video";
+        return TGInterfaceDesignIsAqua() ? TGLoc(@"media.viewer.video") : @"Video";
     }
     id mimeTypeObject = [mediaItem objectForKey:@"mime_type"];
     NSString *mimeType = [mimeTypeObject isKindOfClass:[NSString class]] ? [(NSString *)mimeTypeObject lowercaseString] : nil;
     if ([mimeType hasPrefix:@"video/"]) {
-        return @"Video";
+        return TGInterfaceDesignIsAqua() ? TGLoc(@"media.viewer.video") : @"Video";
     }
     if ([mimeType hasPrefix:@"audio/"]) {
         return @"Audio";
@@ -2590,7 +2590,8 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
     self.mediaPreviewScrollView = scrollView;
     self.mediaPreviewImageView = imageView;
 
-    NSButton *zoomOutButton = [[[NSButton alloc] initWithFrame:NSMakeRect(16, 18, 42, 30)] autorelease];
+    Class photoButtonClass=TGInterfaceDesignIsAqua() ? [TGAquaMediaControlButton class] : [NSButton class];
+    NSButton *zoomOutButton = [[[photoButtonClass alloc] initWithFrame:NSMakeRect(16, 18, 42, 30)] autorelease];
     [zoomOutButton setTitle:@"zoom-out"];
     [zoomOutButton setCell:[[[TGHeaderIconButtonCell alloc] initTextCell:@"zoom-out"] autorelease]];
     [zoomOutButton setBordered:NO];
@@ -2602,7 +2603,7 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
     [contentView addSubview:zoomOutButton];
     self.mediaPreviewZoomOutButton = zoomOutButton;
 
-    NSButton *fitButton = [[[NSButton alloc] initWithFrame:NSMakeRect(66, 18, 74, 30)] autorelease];
+    NSButton *fitButton = [[[photoButtonClass alloc] initWithFrame:NSMakeRect(66, 18, 74, 30)] autorelease];
     [fitButton setTitle:@"Fit"];
     [fitButton setToolTip:@"Fit media to window"];
     [fitButton setTarget:self];
@@ -2612,7 +2613,7 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
     [contentView addSubview:fitButton];
     self.mediaPreviewFitButton = fitButton;
 
-    NSButton *zoomInButton = [[[NSButton alloc] initWithFrame:NSMakeRect(148, 18, 42, 30)] autorelease];
+    NSButton *zoomInButton = [[[photoButtonClass alloc] initWithFrame:NSMakeRect(148, 18, 42, 30)] autorelease];
     [zoomInButton setTitle:@"zoom-in"];
     [zoomInButton setCell:[[[TGHeaderIconButtonCell alloc] initTextCell:@"zoom-in"] autorelease]];
     [zoomInButton setBordered:NO];
@@ -2629,10 +2630,15 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
         NSArray *buttons=[NSArray arrayWithObjects:zoomOutButton,zoomInButton,nil];
         NSArray *assets=[NSArray arrayWithObjects:@"remove-ellipse",@"add-ellipse",nil];
         for (NSUInteger index=0;index<2;index++) {
-            TGAquaUtilityButtonCell *cell=[[[TGAquaUtilityButtonCell alloc] initTextCell:@""] autorelease];
-            [cell setIconOnly:YES]; [cell setIconAssetName:[assets objectAtIndex:index]]; [[buttons objectAtIndex:index] setCell:cell];
+            TGAquaMediaControlCell *cell=[[[TGAquaMediaControlCell alloc] initTextCell:@""] autorelease];
+            [cell setIconAssetName:[assets objectAtIndex:index]];
+            NSButton *button=[buttons objectAtIndex:index]; [button setCell:cell];
+            [button setTarget:self]; [button setAction:index==0 ? @selector(zoomOutMediaPreview:) : @selector(zoomInMediaPreview:)];
         }
-        [fitButton setCell:[[[TGAquaTextButtonCell alloc] initTextCell:TGLoc(@"media.viewer.fit")] autorelease]];
+        [fitButton setCell:[[[TGAquaMediaControlCell alloc] initTextCell:TGLoc(@"media.viewer.fit")] autorelease]];
+        [fitButton setBordered:NO]; [fitButton setFocusRingType:NSFocusRingTypeNone];
+        [fitButton setTarget:self]; [fitButton setAction:@selector(fitMediaPreview:)];
+        [fitButton setToolTip:TGLoc(@"media.viewer.fit")];
         [fitButton setTitle:TGLoc(@"media.viewer.fit")];
     }
     self.mediaPreviewWindow = window;

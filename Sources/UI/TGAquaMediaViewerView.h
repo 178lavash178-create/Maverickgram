@@ -10,7 +10,19 @@ TGAquaMediaViewerGeometry TGAquaMediaViewerFrames(NSRect bounds, TGAquaMediaView
 @interface TGAquaMediaImageClipView : NSClipView
 @end
 
-/* One material/structure for photographs, films and circular video notes.
+@interface TGAquaMediaControlCell : NSButtonCell {
+    NSString *_iconAssetName;
+    BOOL _hovered;
+}
+@property(nonatomic, copy) NSString *iconAssetName;
+@property(nonatomic, assign) BOOL hovered;
+@end
+@interface TGAquaMediaControlButton : NSButton {
+    NSTrackingArea *_mediaTrackingArea;
+}
+@end
+
+/* Shared media geometry, with a dark borderless gallery for photographs.
  * Playback and image/zoom ownership remain in their existing controllers. */
 @interface TGAquaMediaViewerView : NSView {
     NSView *_headerView, *_footerView, *_stageView;

@@ -64,6 +64,7 @@ static NSString *TGChatInfoString(id object) { return [object isKindOfClass:[NSS
     _mediaHostView = [[NSView alloc] initWithFrame:NSZeroRect]; [_sheetView addSubview:_mediaHostView];
     _tabScrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
     [_tabScrollView setBorderType:NSNoBorder]; [_tabScrollView setHasHorizontalScroller:YES];
+    [_tabScrollView setScrollerStyle:NSScrollerStyleLegacy];
     [_tabScrollView setAutohidesScrollers:YES]; [_tabScrollView setDrawsBackground:NO];
     [[_tabScrollView contentView] setDrawsBackground:NO];
     _tabDocumentView = [[NSView alloc] initWithFrame:NSZeroRect];
@@ -167,6 +168,7 @@ static NSString *TGChatInfoString(id object) { return [object isKindOfClass:[NSS
         [button setState:([button tag]==_selectedMediaTab ? NSOnState : NSOffState)];
     }
     [_tabDocumentView setFrameSize:NSMakeSize(MAX(x-6,NSWidth([[_tabScrollView contentView] bounds])),30)];
+    [_tabScrollView tile];
     NSRect body=NSMakeRect(1,1,MAX(0,width-2),MAX(0,tabsTop-tabsHeight-5));
     [_scrollView setFrame:body]; [_scrollView tile]; [_mediaHostView setFrame:body];
     [_scrollView setHidden:(_selectedMediaTab>=0)]; [_mediaHostView setHidden:(_selectedMediaTab<0)];

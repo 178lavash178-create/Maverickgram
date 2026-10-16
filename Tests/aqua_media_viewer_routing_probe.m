@@ -2,14 +2,14 @@
 #import <QuartzCore/QuartzCore.h>
 #import "TGAquaMediaViewerView.h"
 #import "TGAquaShellViews.h"
+#import "TGIconAssets.h"
 #import "TGStatusViewComponents.h"
 #import "TGStatusViewCells.h"
 #import "TGKeyboardInputSupport.h"
 #include <assert.h>
 static BOOL Aqua;
 BOOL TGInterfaceDesignIsAqua(void) { return Aqua; }
-NSString *TGLoc(NSString *key) { return key; }
-NSImage *TGIconAssetImageNamed(NSString *name) { (void)name; return nil; }
+NSString *TGLoc(NSString *key) { return [key isEqual:@"media.viewer.fit"] ? @"Сброс" : key; }
 NSColor *TGClassicCardInkColor(void) { return [NSColor blackColor]; }
 NSArray *TGMediaPlaybackSupportedRates(void) { return [NSArray arrayWithObjects:@1.0,@1.5,@2.0,nil]; }
 double TGMediaPlaybackPreferredRate(BOOL audio) { (void)audio; return 1; }
@@ -70,6 +70,60 @@ __RELEASE__
  [super dealloc];
 }
 @end
+
+static NSBitmapImageRep *DrawControl(NSButton *button,NSUInteger scale,BOOL flipped) {
+ NSRect frame=NSMakeRect(0,0,NSWidth([button frame]),NSHeight([button frame]));
+ NSInteger width=NSWidth(frame)*scale,height=NSHeight(frame)*scale;
+ NSBitmapImageRep *rep=[[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:width pixelsHigh:height bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSCalibratedRGBColorSpace bytesPerRow:0 bitsPerPixel:0] autorelease];
+ [NSGraphicsContext saveGraphicsState];NSGraphicsContext *context=[NSGraphicsContext graphicsContextWithBitmapImageRep:rep];[NSGraphicsContext setCurrentContext:context];
+ [[NSColor blackColor] set];NSRectFill(NSMakeRect(0,0,width,height));
+ NSAffineTransform *transform=[NSAffineTransform transform];if(flipped)[transform translateXBy:0 yBy:height];[transform scaleXBy:scale yBy:flipped ? -(CGFloat)scale : scale];[transform concat];
+ [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithGraphicsPort:[context graphicsPort] flipped:flipped]];
+ [[button cell] drawWithFrame:frame inView:button];[NSGraphicsContext restoreGraphicsState];return rep;
+}
+static NSUInteger Brightness(NSBitmapImageRep *rep,NSInteger x,NSInteger y) {
+ NSColor *c=[[rep colorAtX:x y:y] colorUsingColorSpaceName:NSCalibratedRGBColorSpace];return lround([c redComponent]*255);
+}
+static NSUInteger CheckDarkPhoto(ViewerRouting *owner) {
+ NSUInteger checks=0;
+ NSMutableArray *controls=[NSMutableArray arrayWithObjects:owner.mediaPreviewZoomOutButton,owner.mediaPreviewFitButton,owner.mediaPreviewZoomInButton,nil];
+ for(NSView *header in [[owner.mediaPreviewWindow contentView] subviews])for(NSView *child in [header subviews])if([child isKindOfClass:[TGAquaMediaControlButton class]])[controls addObject:child];
+ assert([controls count]==4);checks++;
+ NSEvent *entered=[NSEvent enterExitEventWithType:NSMouseEntered location:NSZeroPoint modifierFlags:0 timestamp:0 windowNumber:0 context:nil eventNumber:0 trackingNumber:0 userData:NULL];
+ NSEvent *exited=[NSEvent enterExitEventWithType:NSMouseExited location:NSZeroPoint modifierFlags:0 timestamp:0 windowNumber:0 context:nil eventNumber:0 trackingNumber:0 userData:NULL];
+ for(NSButton *button in controls) {
+  TGAquaMediaControlCell *cell=(id)[button cell];assert([cell isKindOfClass:[TGAquaMediaControlCell class]]);checks++;
+  if([[cell iconAssetName] length]) {assert(TGIconAssetImageNamed([cell iconAssetName])!=nil);checks++;}
+  [button updateTrackingAreas];[button mouseEntered:entered];assert([cell hovered]);[button mouseExited:exited];assert(![cell hovered]);checks+=2;
+  for(NSUInteger scale=1;scale<=2;scale++)for(NSUInteger flipped=0;flipped<2;flipped++) {
+   [cell setHovered:NO];[cell setHighlighted:NO];NSBitmapImageRep *normal=DrawControl(button,scale,flipped);
+   assert(Brightness(normal,4*scale,14*scale)==0);checks++;
+   NSUInteger bright=0;for(NSInteger y=0;y<[normal pixelsHigh];y++)for(NSInteger x=0;x<[normal pixelsWide];x++)if(Brightness(normal,x,y)>150)bright++;
+   assert(bright>8*scale);checks++;
+   [cell setHovered:YES];NSBitmapImageRep *hover=DrawControl(button,scale,flipped);
+   [cell setHighlighted:YES];NSBitmapImageRep *pressed=DrawControl(button,scale,flipped);
+   assert(Brightness(hover,4*scale,14*scale)>15 && Brightness(pressed,4*scale,14*scale)>Brightness(hover,4*scale,14*scale)+15);checks++;
+   [cell setEnabled:NO];NSBitmapImageRep *disabled=DrawControl(button,scale,flipped);NSUInteger visible=0;
+   for(NSInteger y=0;y<[disabled pixelsHigh];y++)for(NSInteger x=0;x<[disabled pixelsWide];x++)if(Brightness(disabled,x,y)>100)visible++;
+   assert(visible>5*scale && Brightness(disabled,4*scale,14*scale)==0);checks++;[cell setEnabled:YES];
+  }
+  [cell setHovered:NO];[cell setHighlighted:NO];
+ }
+ NSView *view=[owner.mediaPreviewWindow contentView];[owner.mediaPreviewWindow setContentSize:NSMakeSize(640,500)];[owner layoutMediaPreviewWindowControls];
+ NSBitmapImageRep *raster=[view bitmapImageRepForCachingDisplayInRect:[view bounds]];[view cacheDisplayInRect:[view bounds] toBitmapImageRep:raster];
+ for(NSValue *point in [NSArray arrayWithObjects:[NSValue valueWithPoint:NSMakePoint(2,2)],[NSValue valueWithPoint:NSMakePoint(2,250)],[NSValue valueWithPoint:NSMakePoint(2,490)],nil]) {
+  NSPoint p=[point pointValue];assert(Brightness(raster,p.x,p.y)<4);checks++;
+ }
+ const char *output=getenv("TG_MEDIA_VIEWER_PNG");if(output) {
+  NSImage *sample=[[[NSImage alloc] initWithSize:NSMakeSize(320,220)] autorelease];[sample lockFocus];
+  [[NSColor colorWithCalibratedRed:0.30 green:0.48 blue:0.62 alpha:1] set];NSRectFill(NSMakeRect(0,0,320,220));
+  [[NSColor colorWithCalibratedRed:0.76 green:0.83 blue:0.86 alpha:1] set];NSRectFill(NSMakeRect(0,0,320,70));[sample unlockFocus];
+  [owner.mediaPreviewImageView setImage:sample];[owner.mediaPreviewImageView setFrame:NSMakeRect(0,0,320,220)];[[owner.mediaPreviewScrollView contentView] scrollToPoint:NSZeroPoint];
+  [view cacheDisplayInRect:[view bounds] toBitmapImageRep:raster];[[raster representationUsingType:NSPNGFileType properties:[NSDictionary dictionary]] writeToFile:[NSString stringWithUTF8String:output] atomically:YES];
+ }
+ return checks;
+}
+
 int main(void) {
  NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];[NSApplication sharedApplication];NSUInteger checks=0;
  for(NSUInteger mode=0;mode<2;mode++) {
@@ -77,8 +131,11 @@ int main(void) {
   assert([[[owner mediaPreviewWindow] contentView] isKindOfClass:[TGAquaMediaViewerView class]]==Aqua);checks++;
   assert([[[owner mediaPlaybackWindow] contentView] isKindOfClass:[TGAquaMediaViewerView class]]==Aqua);checks++;
   if(Aqua) {
-   assert([(TGAquaUtilityButtonCell *)[owner.mediaPreviewZoomOutButton cell] iconOnly]);assert([(TGAquaUtilityButtonCell *)[owner.mediaPreviewZoomInButton cell] iconOnly]);checks+=2;
-   assert([[(TGAquaUtilityButtonCell *)[owner.mediaPreviewZoomOutButton cell] iconAssetName] isEqual:@"remove-ellipse"]);checks++;
+   assert([[owner.mediaPreviewZoomOutButton cell] isKindOfClass:[TGAquaMediaControlCell class]]);assert([[owner.mediaPreviewZoomInButton cell] isKindOfClass:[TGAquaMediaControlCell class]]);checks+=2;
+   assert([owner.mediaPreviewZoomOutButton isKindOfClass:[TGAquaMediaControlButton class]]);assert([owner.mediaPreviewFitButton isKindOfClass:[TGAquaMediaControlButton class]]);checks+=2;
+   assert([owner.mediaPreviewZoomOutButton action]==@selector(zoomOutMediaPreview:) && [owner.mediaPreviewFitButton action]==@selector(fitMediaPreview:) && [owner.mediaPreviewZoomInButton action]==@selector(zoomInMediaPreview:));checks++;
+   assert([[owner.mediaPreviewFitButton title] isEqual:@"Сброс"] && ![owner.mediaPreviewFitButton isBordered]);checks++;
+   assert([[(TGAquaMediaControlCell *)[owner.mediaPreviewZoomOutButton cell] iconAssetName] isEqual:@"remove-ellipse"]);checks++;
    assert([[owner.mediaPreviewScrollView contentView] isKindOfClass:[TGAquaMediaImageClipView class]]);checks++;
    [owner.mediaPreviewImageView setFrame:NSMakeRect(0,0,100,80)];
    [[owner.mediaPreviewScrollView contentView] scrollToPoint:NSZeroPoint];
@@ -86,14 +143,15 @@ int main(void) {
    assert(fabs(NSMidX(centered)-50)<=0.5 && fabs(NSMidY(centered)-40)<=0.5);checks++;
    NSUInteger closes=0;
    for(NSView *header in [[[owner mediaPreviewWindow] contentView] subviews]) for(NSView *child in [header subviews]) {
-    if([child isKindOfClass:[NSButton class]] && [[(NSButton *)child cell] isKindOfClass:[TGAquaUtilityButtonCell class]]) {
-     TGAquaUtilityButtonCell *cell=[(NSButton *)child cell];
-     assert([cell iconOnly] && [[cell iconAssetName] isEqual:@"cross"]);checks++;
+    if([child isKindOfClass:[NSButton class]] && [[(NSButton *)child cell] isKindOfClass:[TGAquaMediaControlCell class]]) {
+     TGAquaMediaControlCell *cell=[(NSButton *)child cell];
+     assert([[cell iconAssetName] isEqual:@"cross"] && ![(NSButton *)child isBordered]);checks++;
      assert([(NSButton *)child target]==owner && [(NSButton *)child action]==@selector(closeAquaMediaViewer:));checks++;
      closes++;
     }
    }
    assert(closes==1);checks++;
+   checks+=CheckDarkPhoto(owner);
   }
   CGFloat widths[]={420,640,900},heights[]={340,500,700};
   for(NSUInteger i=0;i<3;i++) for(NSUInteger j=0;j<3;j++) {
@@ -113,6 +171,7 @@ int main(void) {
      assert(NSEqualRects([owner.mediaPlaybackPlayPauseButton frame],g.playPause));checks++;
      assert(NSEqualRects([owner.mediaPlaybackProgressSlider frame],g.progress));checks++;
      assert([owner.mediaPlaybackCloseButton isHidden]&&[owner.mediaPlaybackTitleField isHidden]);checks++;
+     NSUInteger closeCount=0;for(NSView *header in [[owner.mediaPlaybackWindow contentView] subviews])for(NSView *child in [header subviews])if([child isKindOfClass:[TGAquaMediaControlButton class]]){assert([(NSButton *)child target]==owner && [(NSButton *)child action]==@selector(closeAquaMediaViewer:));closeCount++;}assert(closeCount==1);checks++;
      assert(!NSIntersectsRect(g.header,g.viewport)&&!NSIntersectsRect(g.footer,g.viewport));checks++;
      assert([[owner.mediaPlaybackContainerView layer] masksToBounds]);checks++;
      if(circle) { assert(NSWidth(g.viewport)==NSHeight(g.viewport));assert([[owner.mediaPlaybackContainerView layer] cornerRadius]==NSWidth(g.viewport)/2);checks+=2; }

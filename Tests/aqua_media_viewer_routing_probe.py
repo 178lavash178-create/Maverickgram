@@ -20,8 +20,10 @@ with open(os.path.join(ROOT,'Tests/aqua_media_viewer_routing_probe.m'),'rb') as 
 for token,value in [('__FIELDS__',fields),('__PROPERTIES__',properties),('__SYNTHESIS__',synthesis),('__RELEASE__',release),('__PRODUCTION_METHODS__','\n'.join(methods))]:harness=harness.replace(token,value)
 folder=tempfile.mkdtemp(prefix='telegraphica-media-viewer-routing-')
 try:
- path=os.path.join(folder,'probe.m');binary=os.path.join(folder,'probe')
+ path=os.path.join(folder,'probe.m');app=os.path.join(folder,'Probe.app');contents=os.path.join(app,'Contents');os.makedirs(os.path.join(contents,'MacOS'));os.makedirs(os.path.join(contents,'Resources'));binary=os.path.join(contents,'MacOS','probe')
+ shutil.copytree(os.path.join(ROOT,'Sources/Resources/Icons'),os.path.join(contents,'Resources/Icons'))
+ with open(os.path.join(contents,'Info.plist'),'w') as f:f.write('<?xml version="1.0"?><plist version="1.0"><dict><key>CFBundleExecutable</key><string>probe</string><key>CFBundleIdentifier</key><string>local.telegraphica.media-probe</string></dict></plist>')
  with open(path,'wb') as f:f.write(harness.encode('utf-8'))
- subprocess.check_call(sys.argv[1:]+[path,os.path.join(ROOT,'Sources/UI/TGAquaMediaViewerView.m'),'-I'+os.path.join(ROOT,'Sources/UI'),'-framework','Cocoa','-framework','QuartzCore','-o',binary])
+ subprocess.check_call(sys.argv[1:]+[path,os.path.join(ROOT,'Sources/UI/TGAquaMediaViewerView.m'),os.path.join(ROOT,'Sources/UI/TGIconAssets.m'),'-I'+os.path.join(ROOT,'Sources/UI'),'-framework','Cocoa','-framework','QuartzCore','-o',binary])
  subprocess.check_call([binary])
 finally:shutil.rmtree(folder)
