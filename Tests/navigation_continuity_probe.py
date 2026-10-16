@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """Exercise production semantic anchors, real AppKit viewports and async guards."""
 from __future__ import print_function
 import os
@@ -302,6 +303,9 @@ int main(void) {
  [pool drain];return 0;
 }
 '''
+# Keep the embedded Cyrillic fixture Unicode on both Python 2.7 and Python 3.
+if not isinstance(harness, type(u'')):
+    harness = harness.decode('utf-8')
 for token,value in [('__IVARS__',ivars),('__PROPERTIES__',properties),('__SYNTH__',synth),('__RELEASES__',releases),('__GUARDS__',guards),('__SEARCH_CANCEL__',search_cancel),('__RELOAD_METHOD__',reload_method),('__JUMP_METHOD__',jump_method)]:
     harness=harness.replace(token,value)
 folder=tempfile.mkdtemp(prefix='telegraphica-navigation-')
