@@ -72,15 +72,22 @@ int main(void) {
     TGAquaSourceListGeometry dock=TGAquaSourceListFrames(sidebar,58,210,20,NO);
     assert(NSMinY(full.chats)==0 && NSHeight(full.chats)==NSHeight(dock.chats)+58);
     for (CGFloat width=760; width<=1600; width+=20) {
-        NSRect search=NSMakeRect(54,658,MIN(200,floor(width*0.18)),30);
-        NSRect previous=search;
+        TGAquaToolbarGeometry toolbar=TGAquaToolbarFrames(width,700);
+        NSRect bar=NSMakeRect(0,700-TGAquaToolbarHeight(),width,TGAquaToolbarHeight());
+        assert(TGAquaToolbarHeight()==64);
+        AssertContained(toolbar.avatar,bar);AssertContained(toolbar.account,bar);
+        AssertContained(toolbar.search,bar);AssertContained(toolbar.downloads,bar);
+        assert(NSMinX(toolbar.account)>=NSMaxX(toolbar.avatar)+6);
+        NSRect previous=toolbar.account;
         for (NSUInteger i=0;i<5;i++) {
             NSRect frame=TGAquaToolbarSectionFrame(width,700,i);
-            assert(NSMinX(frame)>=NSMaxX(previous)+5 && NSMinY(frame)==660);
-            assert(NSWidth(frame)==48 && NSHeight(frame)==32);
-            assert(NSMaxX(frame)<width-124);
+            assert(NSEqualRects(frame,toolbar.sections[i]));AssertContained(frame,bar);
+            assert(NSMinX(frame)>=NSMaxX(previous));
+            assert(NSWidth(frame)>=64 && NSHeight(frame)==52);
             previous=frame;
         }
+        assert(NSMaxX(previous)+12<=NSMinX(toolbar.search));
+        assert(NSWidth(toolbar.search)>=106 && NSMaxX(toolbar.search)+12<=NSMinX(toolbar.downloads));
     }
     for (CGFloat width=200; width<=420; width+=10) for (NSUInteger forum=0;forum<2;forum++) {
         NSRect area=NSMakeRect(0,200,width,36);

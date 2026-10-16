@@ -936,10 +936,34 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 - (void)previousAquaPhoto:(id)sender;
 - (void)nextAquaPhoto:(id)sender;
 - (void)toggleAquaPhotoFullscreen:(id)sender;
+- (void)closeAquaStickerPicker;
+- (void)invalidateStickerPickerPresentation;
+- (void)disposeAquaStickerPicker;
+- (void)closeAquaScheduledMessages;
+- (BOOL)toggleAquaScheduledMessages;
+- (NSButton *)aquaScheduledMessagesButton;
+- (CGFloat)aquaScheduledButtonWidthForConversationWidth:(CGFloat)width bot:(BOOL)bot;
+- (void)ensureAquaScheduledMessagesButton;
+- (CGFloat)layoutAquaScheduledShelfAtX:(CGFloat)x bottom:(CGFloat)bottom width:(CGFloat)width top:(CGFloat)top;
+- (NSMutableDictionary *)aquaSearchFilterState;
+- (void)toggleAquaSearchFilters:(id)sender;
+- (BOOL)messageMatchesAquaSearchDate:(TGMessageItem *)item;
+- (CGFloat)aquaSearchFilterHeightForWidth:(CGFloat)width availableHeight:(CGFloat)height;
+- (void)layoutAquaSearchFiltersInRect:(NSRect)rect visible:(BOOL)visible;
+- (void)refreshAquaSearchFilterControls;
+- (void)installAquaToolbarCellOnButton:(NSButton *)button asset:(NSString *)asset toggle:(BOOL)toggle;
+- (NSPopUpButton *)aquaToolbarAccountButton;
+- (NSSearchField *)aquaToolbarSearchField;
+- (void)configureAquaToolbarAccessories;
+- (void)refreshAquaToolbarAccount;
+- (void)commitAquaToolbarSearch:(id)sender;
+
 
 @end
 
 #include "TGChatSearchPanelView.inc"
+
+#include "TGAquaPinnedStripView.inc"
 
 @implementation TGStatusWindowController
 @synthesize mainWindowFramePersistence=_mainWindowFramePersistence;
@@ -1509,6 +1533,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
         [self.mediaCenterDownloadingFileIDs removeAllObjects];
     }
     if (![_selectedChatID isEqual:chatID]) {
+        [self closeAquaStickerPicker]; [self closeAquaScheduledMessages];
         [self invalidateAutomaticReadRequests];
         [self.transcriptMotionController cancelAllAnimations];
         [self.pendingArrivalMessageIDs removeAllObjects];
@@ -1525,6 +1550,8 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 - (void)setProfileUserID:(NSNumber *)userID {
     if (_profileUserID != userID) {
       if (![_profileUserID isEqual:userID]) {
+        [self invalidateStickerPickerPresentation]; [self closeAquaScheduledMessages];
+        [self.downloadManagerWindowController closeCompactPopover];
         [self clearNavigationContinuity];
         [self invalidateAquaPhotoPreview]; [self.mediaPreviewWindow close];
         [self invalidateAquaChatInfoPanel];
@@ -1551,6 +1578,8 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
         [self.sectionTransitionController reset];
     }
     if ([_currentAuthState isEqualToString:@"ready"] && ![state isEqualToString:@"ready"]) {
+        [self invalidateStickerPickerPresentation]; [self closeAquaScheduledMessages];
+        [self.downloadManagerWindowController closeCompactPopover];
         [self clearNavigationContinuity];
         [self invalidateAquaPhotoPreview]; [self.mediaPreviewWindow close];
         [self invalidateAquaChatInfoPanel];
@@ -1576,7 +1605,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     }
     if (![_selectedMessageThreadID isEqual:threadID]) [self invalidateAutomaticReadRequests];
     if (_selectedMessageThreadID != threadID) {
-        if (![_selectedMessageThreadID isEqual:threadID]) { [self invalidateAquaPhotoPreview]; [self invalidateAquaChatInfoPanel]; }
+        if (![_selectedMessageThreadID isEqual:threadID]) { [self closeAquaStickerPicker]; [self closeAquaScheduledMessages]; [self invalidateAquaPhotoPreview]; [self invalidateAquaChatInfoPanel]; }
         [_selectedMessageThreadID release];
         _selectedMessageThreadID = [threadID retain];
     }
@@ -1585,7 +1614,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 - (void)setSelectedMessageTopicKind:(NSString *)topicKind {
     if (![_selectedMessageTopicKind isEqual:topicKind]) [self invalidateAutomaticReadRequests];
     if (_selectedMessageTopicKind != topicKind) {
-        if (![_selectedMessageTopicKind isEqual:topicKind]) { [self invalidateAquaPhotoPreview]; [self invalidateAquaChatInfoPanel]; }
+        if (![_selectedMessageTopicKind isEqual:topicKind]) { [self closeAquaStickerPicker]; [self closeAquaScheduledMessages]; [self invalidateAquaPhotoPreview]; [self invalidateAquaChatInfoPanel]; }
         [_selectedMessageTopicKind release];
         _selectedMessageTopicKind = [topicKind copy];
     }
@@ -1594,6 +1623,8 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 - (void)setActiveSection:(NSString *)section {
     BOOL sectionChanged = ![_activeSection isEqualToString:section];
     if (sectionChanged) {
+        [self closeAquaStickerPicker]; [self closeAquaScheduledMessages];
+        [self.downloadManagerWindowController closeCompactPopover];
         [self invalidateAquaPhotoPreview];
         [self invalidateAquaChatInfoPanel];
         [self invalidateAutomaticReadRequests];
@@ -1615,6 +1646,8 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
 - (void)setClient:(TGTDLibClient *)client {
     if (_client != client) {
+        [self invalidateStickerPickerPresentation]; [self closeAquaScheduledMessages];
+        [self.downloadManagerWindowController closeCompactPopover];
         [self clearNavigationContinuity];
         [self clearClosedChatSuggestionsForSessionChange];
         [self invalidateAutomaticReadRequests];
@@ -2218,6 +2251,8 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     }
     [self.contactsViewController refreshLocalizedText];
     [self.callsPlaceholderView refreshLocalizedText];
+    [self refreshAquaSearchFilterControls];
+    [[self aquaScheduledMessagesButton] setTitle:TGLoc(@"scheduled.shelf.title")];
     [self refreshProfileDisplay];
     [self refreshAccessibilityDescriptions];
     [[self.searchTextField cell] setPlaceholderString:TGLoc(@"search.messages.prompt")];
@@ -2467,6 +2502,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 - (void)refreshProfileDisplay {
     NSString *displayName = TGProfileDisplayName(self.profileDisplayName);
     [self.accountBadgeView setDisplayName:displayName];
+    [self refreshAquaToolbarAccount];
     [self.accountBadgeView setAvatarLocalPath:self.profileAvatarLocalPath];
     [self.accountBadgeView setConnected:[self.currentAuthState isEqualToString:@"ready"]];
     [self.profileAvatarView setDisplayName:displayName];
@@ -3424,7 +3460,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.messageDropOverlayView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [contentView addSubview:self.messageDropOverlayView];
 
-    self.pinnedMessagePanelView = [[[TGGroupedCardView alloc] initWithFrame:NSMakeRect(24, 180, 600, 42)] autorelease];
+    self.pinnedMessagePanelView = [[[(TGInterfaceDesignIsAqua() ? [TGAquaPinnedStripView class] : [TGGroupedCardView class]) alloc] initWithFrame:NSMakeRect(24, 180, 600, 42)] autorelease];
     [self.pinnedMessagePanelView setHidden:YES];
     [contentView addSubview:self.pinnedMessagePanelView];
 
@@ -4965,6 +5001,8 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
 #include "TGStatusWindowController+ChatSearchWindow.inc"
 
+#include "TGStatusWindowController+AquaSearchFilters.inc"
+#include "TGStatusWindowController+AquaQueuePresentation.inc"
 #include "TGStatusWindowController+InlineSearchPresentation.inc"
 #include "TGStatusWindowController+SearchNavigation.inc"
 
@@ -4988,6 +5026,9 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 }
 
 - (void)dealloc {
+    [self disposeAquaStickerPicker];
+    [self closeAquaScheduledMessages];
+    [self.downloadManagerWindowController closeCompactPopover];
     [self cancelMediaPreviewImageLoad];
     [_mainWindowFramePersistence release];
     _mainWindowFramePersistence = nil;

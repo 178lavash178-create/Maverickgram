@@ -1,3 +1,4 @@
+static char TGSearchRawAnchorKey;
 static NSString *TGSearchFilterIdentifierForIndex(NSInteger index) {
     switch (index) {
         case 1: return @"photos";
@@ -101,16 +102,7 @@ static NSString *TGSearchFilterIdentifierForIndex(NSInteger index) {
 }
 
 - (NSNumber *)searchPaginationAnchorMessageID {
-    NSInteger index = (NSInteger)[self.searchResultItems count] - 1;
-    for (; index >= 0; index--) {
-        TGSearchResultItem *result = [self.searchResultItems objectAtIndex:(NSUInteger)index];
-        if ([result isKindOfClass:[TGSearchResultItem class]] &&
-            !result.chatTitleOnly &&
-            [result.messageID respondsToSelector:@selector(longLongValue)]) {
-            return [NSNumber numberWithLongLong:[result.messageID longLongValue]];
-        }
-    }
-    return nil;
+    return objc_getAssociatedObject(self,&TGSearchRawAnchorKey);
 }
 
 - (void)openSearchPanelGlobal:(BOOL)global {
@@ -121,10 +113,12 @@ static NSString *TGSearchFilterIdentifierForIndex(NSInteger index) {
         [self openChatSearchWindow:self];
         return;
     }
+    [self closeAquaScheduledMessages];
     if(self.selectedChatID) { self.activeSection=TGSectionChats; self.chatNavigationClosed=NO; }
     self.chatTitleSearchOnly = NO;
     self.searchInlineCurrentChatOnly = (self.selectedChatID != nil);
     self.searchPanelVisible = YES;
+    objc_setAssociatedObject(self,&TGSearchRawAnchorKey,nil,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     self.searchEndReached = NO;
     self.globalSearchOffset = nil;
     [self.searchScopePopUpButton selectItemAtIndex:0];
@@ -207,6 +201,7 @@ static NSString *TGSearchFilterIdentifierForIndex(NSInteger index) {
 }
 
 - (void)showAdvancedMessageSearchFilters:(id)sender {
+    if(TGInterfaceDesignIsAqua()) { [self toggleAquaSearchFilters:sender]; return; }
     (void)sender;
     NSView *accessory = [[[NSView alloc] initWithFrame:NSMakeRect(0.0, 0.0, 360.0, 82.0)] autorelease];
     NSTextField *senderLabel = [self labelWithFrame:NSMakeRect(0.0, 61.0, 126.0, 18.0)
@@ -260,6 +255,7 @@ static NSString *TGSearchFilterIdentifierForIndex(NSInteger index) {
     if (![item isKindOfClass:[TGMessageItem class]]) {
         return NO;
     }
+    if (![self messageMatchesAquaSearchDate:item]) return NO;
     if ([self.searchSenderQuery length] > 0) {
         NSString *sender = [[item senderDisplayName] length] > 0 ? [item senderDisplayName] : @"";
         if ([[sender lowercaseString] rangeOfString:[self.searchSenderQuery lowercaseString]].location == NSNotFound) {
@@ -330,7 +326,7 @@ static NSString *TGSearchFilterIdentifierForIndex(NSInteger index) {
     if (!self.searchPanelVisible) {
         return;
     }
-    if (reset) [self advanceInlineSearchJumpGeneration];
+    if (reset) { [self advanceInlineSearchJumpGeneration]; objc_setAssociatedObject(self,&TGSearchRawAnchorKey,nil,OBJC_ASSOCIATION_RETAIN_NONATOMIC); }
     NSString *query = [[self.searchTextField stringValue] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     if ([query length] == 0) {
         self.searchGeneration++;
@@ -500,12 +496,16 @@ static NSString *TGSearchFilterIdentifierForIndex(NSInteger index) {
             [self.searchResultItems addObjectsFromArray:results];
             [self.searchResultsTableView reloadData];
             self.globalSearchOffset = newOffset;
-            BOOL hasNextOffset = global ? ([newOffset length] > 0) : ([messageItems count] >= 30);
+            TGMessageItem *rawLast=[messageItems lastObject];
+            NSNumber *rawAnchor=[rawLast isKindOfClass:[TGMessageItem class]] ? [rawLast messageID] : nil;
+            if(!global && rawAnchor) objc_setAssociatedObject(self,&TGSearchRawAnchorKey,rawAnchor,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            BOOL hasNextOffset = global ? ([newOffset length] > 0 && ![newOffset isEqualToString:offset])
+                : ([messageItems count] >= 30 && rawAnchor && ![rawAnchor isEqual:fromMessageID]);
             self.searchEndReached = !hasNextOffset || ([messageItems count] == 0);
             if ([errorMessage length] > 0 && !messageItems) {
                 [self setSearchStatusText:[NSString stringWithFormat:TGLoc(@"search.messages.failed"), errorMessage]];
             } else if ([self.searchResultItems count] == 0) {
-                [self setSearchStatusText:TGLoc(@"search.messages.noResults")];
+                [self setSearchStatusText:TGLoc(!self.searchEndReached && TGInterfaceDesignIsAqua() ? @"search.messages.noMatchesYet" : @"search.messages.noResults")];
             } else {
                 [self setSearchStatusText:[NSString stringWithFormat:TGLoc(@"search.messages.found"), (unsigned long)[self.searchResultItems count]]];
             }

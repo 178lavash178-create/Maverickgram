@@ -67,6 +67,51 @@
 }
 @end
 
+NSRect TGAquaToolbarItemIconFrame(NSRect frame, BOOL flipped) {
+    return NSMakeRect(floor(NSMidX(frame)-13),flipped ? NSMinY(frame)+4 : NSMaxY(frame)-30,26,26);
+}
+NSRect TGAquaToolbarItemLabelFrame(NSRect frame, BOOL flipped) {
+    return NSMakeRect(NSMinX(frame)+2,flipped ? NSMaxY(frame)-17 : NSMinY(frame)+2,MAX(0,NSWidth(frame)-4),15);
+}
+NSRect TGAquaToolbarItemBadgeFrame(NSRect frame, CGFloat badgeWidth, BOOL flipped) {
+    NSRect icon=TGAquaToolbarItemIconFrame(frame,flipped);
+    return NSMakeRect(NSMidX(frame)+4,flipped ? NSMinY(icon)-2 : NSMaxY(icon)-13,MIN(28,MAX(15,badgeWidth)),15);
+}
+
+@implementation TGAquaToolbarItemCell
+@synthesize selectedIconAssetName=_selectedIconAssetName, usesOriginalIconColors=_usesOriginalIconColors;
+- (void)dealloc { [_selectedIconAssetName release];[super dealloc]; }
+- (void)drawWithFrame:(NSRect)frame inView:(NSView *)view {
+    BOOL enabled=[self isEnabled];
+    BOOL selected=[self isHighlighted] || ([self showsStateBy]!=0 && [self state]==NSOnState);
+    BOOL flipped=[view isFlipped];
+    NSColor *ink=TGColorFromHex(!enabled ? 0x737B83 : (selected ? 0x1469A6 : 0x47515D));
+    NSString *asset=(selected && [_selectedIconAssetName length]) ? _selectedIconAssetName : self.iconAssetName;
+    NSRect icon=TGAquaToolbarItemIconFrame(frame,flipped);
+    NSImage *image=(selected && [self alternateImage]) ? [self alternateImage] : [self image];
+    if(_usesOriginalIconColors) {
+        [image drawInRect:icon fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:enabled ? 1.0 : 0.45 respectFlipped:flipped hints:nil];
+    } else if([asset length]) {
+        TGDrawTemplateIconAsset(asset,icon,ink,1,flipped);
+    }
+    NSMutableParagraphStyle *paragraph=[[[NSMutableParagraphStyle alloc] init] autorelease];
+    [paragraph setAlignment:NSCenterTextAlignment];[paragraph setLineBreakMode:NSLineBreakByTruncatingTail];
+    NSShadow *emboss=[[[NSShadow alloc] init] autorelease];[emboss setShadowColor:[NSColor colorWithCalibratedWhite:1 alpha:0.72]];[emboss setShadowOffset:NSMakeSize(0,flipped ? -1:1)];
+    NSDictionary *attrs=[NSDictionary dictionaryWithObjectsAndKeys:[NSFont systemFontOfSize:11],NSFontAttributeName,
+        TGColorFromHex(!enabled ? 0x737B83 : (selected ? 0x145A93 : 0x2E353D)),NSForegroundColorAttributeName,
+        paragraph,NSParagraphStyleAttributeName,emboss,NSShadowAttributeName,nil];
+    [[self title] drawInRect:TGAquaToolbarItemLabelFrame(frame,flipped) withAttributes:attrs];
+    if([self.badgeText length]) {
+        NSString *text=[self.badgeText length]>3 ? @"99+" : self.badgeText;
+        NSDictionary *badgeAttrs=[NSDictionary dictionaryWithObjectsAndKeys:[NSFont boldSystemFontOfSize:10],NSFontAttributeName,[NSColor whiteColor],NSForegroundColorAttributeName,nil];
+        NSSize size=[text sizeWithAttributes:badgeAttrs];
+        NSRect badge=TGAquaToolbarItemBadgeFrame(frame,ceil(size.width)+6,flipped);
+        [TGColorFromHex(0xB52E35) set];[[NSBezierPath bezierPathWithRoundedRect:badge xRadius:7.5 yRadius:7.5] fill];
+        [text drawAtPoint:NSMakePoint(floor(NSMidX(badge)-size.width/2),floor(NSMidY(badge)-size.height/2)) withAttributes:badgeAttrs];
+    }
+}
+@end
+
 @implementation TGAquaTextButtonCell
 @synthesize accented = _accented;
 - (void)drawWithFrame:(NSRect)frame inView:(NSView *)view {

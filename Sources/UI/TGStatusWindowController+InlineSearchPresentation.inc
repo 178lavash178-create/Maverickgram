@@ -54,18 +54,30 @@ static char TGInlineSearchJumpPendingKey;
     [previous setTitle:TGLoc(@"back")]; [previous setToolTip:TGLoc(@"search.messages.previous")];
     [next setTitle:TGLoc(@"search.messages.nextShort")]; [next setToolTip:TGLoc(@"search.messages.next")];
     [latest setTitle:TGLoc(@"search.messages.returnLatest")]; [latest setToolTip:TGLoc(@"search.messages.returnLatestHint")];
-    [previous setEnabled:row>0]; [next setEnabled:count>0 && row<(NSInteger)count-1];
+    [previous setEnabled:row>0];
+    BOOL more=!self.searchEndReached && !self.searchLoading && [[self.searchTextField stringValue] length]>0;
+    [next setEnabled:(count>0 && row<(NSInteger)count-1) || more];
+    if(more && row>=(NSInteger)count-1) [next setToolTip:TGLoc(@"search.messages.more")];
     [latest setEnabled:self.selectedChatID!=nil];
     NSString *position=[NSString stringWithFormat:TGLoc(self.searchEndReached ? @"search.messages.position" : @"search.messages.positionMore"),[NSString stringWithFormat:@"%ld",(long)(row<0 ? 0 : row+1)],[NSString stringWithFormat:@"%lu",(unsigned long)count]];
     NSTextField *counter=[controls objectForKey:@"counter"];
     [counter setStringValue:count ? position : @""]; [counter setToolTip:count ? position : nil];
     [counter setTextColor:TGClassicCardInkColor()];
-    [[self inlineSearchNavigationView] setHidden:!self.searchPanelVisible || !TGInterfaceDesignIsAqua() || [self.searchPanelView isHidden]];
+    BOOL hidden=!self.searchPanelVisible || !TGInterfaceDesignIsAqua() || [self.searchPanelView isHidden];
+    [[self inlineSearchNavigationView] setHidden:hidden];
+    if(hidden) [[[self aquaSearchFilterState] objectForKey:@"view"] setHidden:YES];
     [self.searchStatusField setToolTip:[self.searchStatusField stringValue]];
 }
 - (CGFloat)layoutAquaInlineSearchInRect:(NSRect)rect {
     BOOL results=[self.searchResultItems count]>0 || self.searchLoading;
-    TGAquaSearchGeometry g=TGAquaSearchFrames(rect,self.chatTitleSearchOnly || self.searchInlineCurrentChatOnly,results);
+    CGFloat extra=[self aquaSearchFilterHeightForWidth:NSWidth(rect) availableHeight:NSHeight(rect)];
+    NSRect baseRect=rect; baseRect.size.height=MAX(0,baseRect.size.height-extra);
+    TGAquaSearchGeometry g=TGAquaSearchFrames(baseRect,self.chatTitleSearchOnly || self.searchInlineCurrentChatOnly,results);
+    g.query.origin.y+=extra; g.close.origin.y+=extra; g.filter.origin.y+=extra; g.advanced.origin.y+=extra;
+    if(!NSIsEmptyRect(g.scope)) g.scope.origin.y+=extra;
+    g.height+=extra;
+    [self layoutAquaSearchFiltersInRect:NSMakeRect(NSMinX(rect)+10,NSMinY(g.filter)-extra-2,NSWidth(rect)-20,extra)
+                              visible:self.searchPanelVisible && ![self.searchPanelView isHidden] && extra>0];
     [self.searchPanelView setFrame:NSMakeRect(NSMinX(rect),NSMaxY(rect)-g.height,NSWidth(rect),g.height)];
     [self.searchTextField setFrame:g.query]; [self.searchCloseButton setFrame:g.close];
     [self.searchScopePopUpButton setFrame:g.scope]; [self.searchScopePopUpButton setHidden:NSIsEmptyRect(g.scope)];
@@ -93,7 +105,10 @@ static char TGInlineSearchJumpPendingKey;
 }
 - (void)nextInlineSearchResult:(id)sender {
     (void)sender; NSInteger row=[self.searchResultsTableView selectedRow]+1;
-    if(row<0 || row>=(NSInteger)[self.searchResultItems count]) return;
+    if(row<0 || row>=(NSInteger)[self.searchResultItems count]) {
+        if(!self.searchEndReached && !self.searchLoading && [[self.searchTextField stringValue] length]>0) [self performSearchReset:NO];
+        return;
+    }
     [self.searchResultsTableView selectRowIndexes:[NSIndexSet indexSetWithIndex:(NSUInteger)row] byExtendingSelection:NO];
     [self.searchResultsTableView scrollRowToVisible:row]; [self activateSearchResult:self];
 }

@@ -124,6 +124,11 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
 }
 
 - (void)showDownloadManagerWindow:(id)sender {
+    if(TGInterfaceDesignIsAqua() && sender==self.aquaDownloadsButton) {
+        [self closeAquaStickerPicker];
+        if(!self.downloadManagerWindowController) self.downloadManagerWindowController=[[[TGDownloadManagerWindowController alloc] init] autorelease];
+        if([self.downloadManagerWindowController toggleCompactPopoverRelativeToView:self.aquaDownloadsButton]) return;
+    }
     [self.downloadProgressWindowController showProgress:sender];
     (void)sender;
     if (!self.downloadManagerWindowController) {

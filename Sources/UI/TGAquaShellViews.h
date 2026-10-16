@@ -29,6 +29,14 @@ typedef struct {
     CGFloat subtitleY;
 } TGAquaConversationHeaderVerticalGeometry;
 TGAquaConversationHeaderVerticalGeometry TGAquaConversationHeaderVerticalFrames(NSRect header, BOOL subtitle);
+typedef struct {
+    NSRect avatar, account, search, downloads;
+    NSRect sections[5];
+} TGAquaToolbarGeometry;
+TGAquaToolbarGeometry TGAquaToolbarFrames(CGFloat windowWidth, CGFloat windowHeight);
+NSRect TGAquaToolbarItemIconFrame(NSRect frame, BOOL flipped);
+NSRect TGAquaToolbarItemLabelFrame(NSRect frame, BOOL flipped);
+NSRect TGAquaToolbarItemBadgeFrame(NSRect frame, CGFloat badgeWidth, BOOL flipped);
 NSRect TGAquaToolbarSectionFrame(CGFloat windowWidth, CGFloat windowHeight, NSUInteger index);
 
 TGAquaSourceListGeometry TGAquaSourceListFrames(NSRect sidebar, CGFloat footerTop, CGFloat preferredFolderHeight, NSUInteger folderCount, BOOL collapsed);
@@ -42,6 +50,15 @@ TGAquaSourceListGeometry TGAquaSourceListFrames(NSRect sidebar, CGFloat footerTo
     NSString *_iconAssetName;
 }
 @property(nonatomic, copy) NSString *iconAssetName;
+@end
+// Toolbar items share action/state ownership with existing navigation controls.
+// The original-color path accepts approved raster/system artwork without retinting.
+@interface TGAquaToolbarItemCell : TGAquaUtilityButtonCell {
+    NSString *_selectedIconAssetName;
+    BOOL _usesOriginalIconColors;
+}
+@property(nonatomic, copy) NSString *selectedIconAssetName;
+@property(nonatomic, assign) BOOL usesOriginalIconColors;
 @end
 @interface TGAquaTextButtonCell : TGNavigationButtonCell {
     BOOL _accented;

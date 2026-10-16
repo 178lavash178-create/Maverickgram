@@ -11,8 +11,8 @@ def methods(first,last):
 production='\n'.join([
  methods('- (void)closeSearchPanel:','- (void)searchDebounceTimerFired:'),
  methods('- (void)jumpToSearchResult:','- (BOOL)handleSearchKeyEquivalent:')])
-objects=[('NSWindow *','hostWindow'),('TGTDLibClient *','client'),('NSNumber *','profileUserID'),('NSString *','activeSection'),('NSString *','currentAuthState'),('NSNumber *','selectedChatID'),('NSString *','selectedChatTitle'),('NSNumber *','selectedMessageThreadID'),('NSString *','selectedMessageTopicKind'),('NSNumber *','highlightedSearchMessageID'),('NSMutableArray *','searchResultItems'),('NSMutableArray *','messageItems'),('NSMutableArray *','chatItems'),('SearchCardProbe *','searchPanelView'),('NSTextField *','searchTextField'),('NSTextField *','sendTextField'),('NSButton *','searchCloseButton'),('NSButton *','searchAdvancedButton'),('NSPopUpButton *','searchScopePopUpButton'),('NSPopUpButton *','searchFilterPopUpButton'),('NSTextField *','searchStatusField'),('NSScrollView *','searchResultsScrollView'),('TGInlineSearchResultsTableView *','searchResultsTableView'),('NSTableView *','messageTableView'),('NSTableView *','chatTableView'),('NSProgressIndicator *','messageLoadingSpinner'),('NSTimer *','searchHighlightTimer'),('NSTimer *','searchDebounceTimer'),('TGNavigationPositionStore *','navigationPositionStore')]
-scalars=[('BOOL',p) for p in ['searchEndReached','searchPanelVisible','searchLoading','chatTitleSearchOnly','searchInlineCurrentChatOnly','messageLoadingIndicatorVisible','messageItemsRepresentFocusedContext','showingForumTopicList','forumTopicsPresentedInTopBar']]+[('NSUInteger',p) for p in ['searchGeneration','messageLoadingGeneration','activations','latestRequests','headerRefreshes','visibleUpdates']]
+objects=[('NSWindow *','hostWindow'),('TGTDLibClient *','client'),('NSNumber *','profileUserID'),('NSString *','searchSenderQuery'),('NSString *','activeSection'),('NSString *','currentAuthState'),('NSNumber *','selectedChatID'),('NSString *','selectedChatTitle'),('NSNumber *','selectedMessageThreadID'),('NSString *','selectedMessageTopicKind'),('NSNumber *','highlightedSearchMessageID'),('NSMutableArray *','searchResultItems'),('NSMutableArray *','messageItems'),('NSMutableArray *','chatItems'),('SearchCardProbe *','searchPanelView'),('NSTextField *','searchTextField'),('NSTextField *','sendTextField'),('NSButton *','searchCloseButton'),('NSButton *','searchAdvancedButton'),('NSPopUpButton *','searchScopePopUpButton'),('NSPopUpButton *','searchFilterPopUpButton'),('NSTextField *','searchStatusField'),('NSScrollView *','searchResultsScrollView'),('TGInlineSearchResultsTableView *','searchResultsTableView'),('NSTableView *','messageTableView'),('NSTableView *','chatTableView'),('NSProgressIndicator *','messageLoadingSpinner'),('NSTimer *','searchHighlightTimer'),('NSTimer *','searchDebounceTimer'),('TGNavigationPositionStore *','navigationPositionStore')]
+scalars=[('NSInteger','searchDateRangeIndex')]+[('BOOL',p) for p in ['searchEndReached','searchPanelVisible','searchLoading','chatTitleSearchOnly','searchInlineCurrentChatOnly','messageLoadingIndicatorVisible','messageItemsRepresentFocusedContext','showingForumTopicList','forumTopicsPresentedInTopBar']]+[('NSUInteger',p) for p in ['searchGeneration','messageLoadingGeneration','activations','latestRequests','headerRefreshes','visibleUpdates','searchRequests']]
 props=objects+scalars
 ivars='\n'.join(' %s _%s;'%(t,n) for t,n in props)
 properties='\n'.join('@property(nonatomic,%s) %s %s;'%('retain' if '*' in t else 'assign',t,n) for t,n in props)
@@ -40,12 +40,14 @@ static void Require(BOOL condition,const char *message) { Checks++;if(!condition
 static NSMutableArray *Workers,*Mains;
 static void Dispatch(dispatch_queue_t queue,dispatch_block_t block) {id copy=[block copy];[(queue==dispatch_get_main_queue()?Mains:Workers) addObject:copy];[copy release];}
 static void Run(NSMutableArray *queue) { Require([queue count]>0,"expected queued production callback");dispatch_block_t block=[[queue objectAtIndex:0] copy];[queue removeObjectAtIndex:0];block();[block release]; }
-@interface TGMessageItem : NSObject { NSNumber *_messageID; }
+@interface TGMessageItem : NSObject { NSNumber *_messageID; NSNumber *_date; NSString *_senderDisplayName; }
+@property(nonatomic,retain) NSNumber *date;
+@property(nonatomic,copy) NSString *senderDisplayName;
 @property(nonatomic,retain) NSNumber *messageID;
 @end
 @implementation TGMessageItem
-@synthesize messageID=_messageID;
-- (void)dealloc {[_messageID release];[super dealloc];}
+@synthesize messageID=_messageID, date=_date,senderDisplayName=_senderDisplayName;
+- (void)dealloc {[_messageID release];[_date release];[_senderDisplayName release];[super dealloc];}
 @end
 @interface TGTDLibClient : NSObject { NSArray *_items; }
 @property(nonatomic,retain) NSArray *items;
@@ -86,7 +88,8 @@ __SYNTH__
 - (void)refreshSelectedChatHeaderDisplay {self.headerRefreshes++;}
 - (void)updateVisibleSection {self.visibleUpdates++;[self updateInlineSearchNavigation];}
 - (void)layoutContentView {}
-- (void)performSearchReset:(BOOL)reset {(void)reset;}
+- (void)performSearchReset:(BOOL)reset {(void)reset; self.searchRequests++;}
+__FILTERS__
 __INLINE__
 #define dispatch_async(queue, ...) Dispatch(queue, (__VA_ARGS__))
 __SEARCH__
@@ -117,7 +120,7 @@ int main(void) {
   TGSetLanguageCode(language);
   for(NSUInteger ended=0;ended<2;ended++) for(NSInteger row=-1;row<3;row++) {
    p.searchEndReached=ended!=0;if(row<0) [p.searchResultsTableView deselectAll:nil];else [p.searchResultsTableView selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:NO];[p updateInlineSearchNavigation];
-   Require([[buttons objectAtIndex:0] isEnabled]==(row>0) && [[buttons objectAtIndex:1] isEnabled]==(row<2),"previous/next states match first/last/unselected bounds");
+   Require([[buttons objectAtIndex:0] isEnabled]==(row>0) && [[buttons objectAtIndex:1] isEnabled]==(row<2 || !ended),"previous/next states match first/last/unselected bounds");
    Require([[counter stringValue] hasPrefix:[NSString stringWithFormat:@"%ld",(long)(row+1)]] && [[counter stringValue] rangeOfString:@"3"].location!=NSNotFound && [[counter stringValue] rangeOfString:@"search."].location==NSNotFound,"counter shows localized selected position and result total");
   }
   for(NSNumber *width in [NSArray arrayWithObjects:@340,@480,@800,nil]) for(NSNumber *height in [NSArray arrayWithObjects:@340,@500,nil]) {
@@ -145,12 +148,37 @@ int main(void) {
  p.searchPanelVisible=YES;Fill(p);[p.hostWindow makeFirstResponder:p.searchResultsTableView];[p.searchResultsTableView keyDown:Key(27,0)];Require(!p.searchPanelVisible,"Escape from inline results closes only search");
  p.selectedChatID=nil;[p updateInlineSearchNavigation];Require(![[buttons objectAtIndex:2] isEnabled],"latest is unavailable without selected conversation");p.selectedChatID=@10;
  NSMenuItem *find=[[[NSMenuItem alloc] initWithTitle:@"Find" action:@selector(openChatSearch:) keyEquivalent:@"f"] autorelease];p.currentAuthState=@"ready";Require([p validateMenuItem:find],"conversation search menu enabled in ready selected chat");p.currentAuthState=@"waitCode";Require(![p validateMenuItem:find],"search menu disabled before authorization");p.currentAuthState=@"ready";p.selectedChatID=nil;Require(![p validateMenuItem:find],"conversation search menu disabled with no conversation");[find setAction:@selector(openChatListSearch:)];Require([p validateMenuItem:find],"find-chat menu remains available outside a conversation");
+
+ p.selectedChatID=@10;p.searchPanelVisible=YES;[p.searchPanelView setHidden:NO];
+ [p toggleAquaSearchFilters:nil];Require([p aquaSearchFiltersExpanded],"filters expand without a modal");
+ NSDictionary *filterState=[p aquaSearchFilterState];
+ for(NSString *language in [NSArray arrayWithObjects:@"ru",@"be",@"en",nil]) {
+  TGSetLanguageCode(language);[p refreshAquaSearchFilterControls];
+  for(NSNumber *width in [NSArray arrayWithObjects:@260,@320,@390,@440,@600,@1000,nil]) for(NSNumber *height in [NSArray arrayWithObjects:@340,@420,@600,nil]) {
+   NSRect available=NSMakeRect(40,50,[width doubleValue],[height doubleValue]);[p layoutAquaInlineSearchInRect:available];
+   NSScrollView *scroll=[filterState objectForKey:@"view"];NSView *doc=[filterState objectForKey:@"content"];
+   Require(![scroll isHidden] && NSContainsRect(available,[scroll frame]),"expanded filters stay inside available search area");
+   for(NSString *key in [NSArray arrayWithObjects:@"sender",@"period",@"from",@"to",@"reset",nil]) Require(NSContainsRect([doc bounds],[[filterState objectForKey:key] frame]),"all localized filter controls fit their scroll document");
+   Require(!NSIntersectsRect([scroll frame],[p.searchStatusField frame]) && !NSIntersectsRect([scroll frame],[p.searchResultsScrollView frame]),"filter area does not overlap results/status");
+   Require(NSMinY([p.searchPanelView frame])-NSMinY(available)>=160,"expanded search preserves transcript minimum");
+  }
+ }
+ [[filterState objectForKey:@"sender"] setStringValue:@"Anna"];[[filterState objectForKey:@"period"] selectItemAtIndex:4];
+ NSTimeZone *zone=[NSTimeZone timeZoneWithName:@"America/New_York"];[NSTimeZone setDefaultTimeZone:zone];
+ NSCalendar *cal=[NSCalendar currentCalendar];NSDateComponents *parts=[[[NSDateComponents alloc] init] autorelease];[parts setYear:2026];[parts setMonth:11];[parts setDay:1];NSDate *start=[cal dateFromComponents:parts];
+ [[filterState objectForKey:@"from"] setDateValue:start];[[filterState objectForKey:@"to"] setDateValue:start];[p applyAquaSearchFilters:nil];
+ TGMessageItem *dated=Message(900);dated.date=[NSNumber numberWithDouble:[start timeIntervalSince1970]-1];Require(![p messageMatchesAquaSearchDate:dated],"custom dates exclude previous day");dated.date=[NSNumber numberWithDouble:[start timeIntervalSince1970]];Require([p messageMatchesAquaSearchDate:dated],"custom dates include start midnight");
+ NSDateComponents *day=[[[NSDateComponents alloc] init] autorelease];[day setDay:1];NSDate *end=[cal dateByAddingComponents:day toDate:start options:0];Require([end timeIntervalSinceDate:start]==25*3600,"fixture crosses daylight-saving 25-hour day");dated.date=[NSNumber numberWithDouble:[end timeIntervalSince1970]-1];Require([p messageMatchesAquaSearchDate:dated],"custom dates include last second of 25-hour day");dated.date=[NSNumber numberWithDouble:[end timeIntervalSince1970]];Require(![p messageMatchesAquaSearchDate:dated],"custom dates exclude following midnight");
+ [p.searchResultItems removeAllObjects];[p.searchResultsTableView reloadData];p.searchEndReached=NO;p.searchLoading=NO;[p updateInlineSearchNavigation];Require([[buttons objectAtIndex:1] isEnabled],"Next can continue a filtered-empty page");NSUInteger requests=p.searchRequests;[p nextInlineSearchResult:nil];Require(p.searchRequests==requests+1,"Next fetches a subsequent raw page without visible results");p.searchEndReached=YES;[p updateInlineSearchNavigation];Require(![[buttons objectAtIndex:1] isEnabled],"Next stops at true backend end");
+ [p resetAquaSearchFilters:nil];Require(![p.searchSenderQuery length] && !p.searchDateRangeIndex && [p messageMatchesAquaSearchDate:dated],"Reset clears sender and custom date constraints");
+ [p closeSearchPanel:nil];Require([[filterState objectForKey:@"view"] isHidden],"closing search hides filter view");
+ [p toggleAquaSearchFilters:nil];Require(![p aquaSearchFiltersExpanded],"filters can collapse independently of their values");
  Aqua=NO;p.searchPanelVisible=YES;[p updateInlineSearchNavigation];Require([[p inlineSearchNavigationView] isHidden],"Classic does not display Aqua search navigation chrome");
  [p.searchHighlightTimer invalidate];[p.searchDebounceTimer invalidate];Require(![Workers count] && ![Mains count],"all production async callbacks drained");[Workers release];[Mains release];
  printf("Inline search PASS: %lu production UI, keyboard, IME, bounds and queued jump checks.\n",(unsigned long)Checks);[pool drain];return 0;
 }
 '''
-for token,value in [('__IVARS__',ivars),('__PROPERTIES__',properties),('__SYNTH__',synth),('__RELEASE__',release),('__INLINE__',read('Sources/UI/TGStatusWindowController+InlineSearchPresentation.inc')),('__SEARCH__',production)]: harness=harness.replace(token,value)
+for token,value in [('__IVARS__',ivars),('__PROPERTIES__',properties),('__SYNTH__',synth),('__RELEASE__',release),('__FILTERS__',read('Sources/UI/TGStatusWindowController+AquaSearchFilters.inc')),('__INLINE__',read('Sources/UI/TGStatusWindowController+InlineSearchPresentation.inc')),('__SEARCH__',production)]: harness=harness.replace(token,value)
 folder=tempfile.mkdtemp(prefix='telegraphica-inline-search-')
 try:
  path=os.path.join(folder,'probe.m');binary=os.path.join(folder,'probe')

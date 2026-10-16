@@ -22,6 +22,19 @@ NSString *TGLoc(NSString *key) {
 
     NSString *language = TGLanguageCode();
     NSDictionary *ru = [NSDictionary dictionaryWithObjectsAndKeys:
+                        @"Совпадений пока нет. Нажмите «Далее», чтобы продолжить поиск.", @"search.messages.noMatchesYet",
+                        @"Загрузить следующие результаты", @"search.messages.more",
+                        @"Наборы", @"stickers.sets.tab",
+                        @"Загрузка наборов…", @"stickers.sets.loading",
+                        @"Нет установленных наборов", @"stickers.sets.empty",
+                        @"Загрузки", @"downloads.compact.title",
+                        @"Все загрузки…", @"downloads.all",
+                        @"Отложенные", @"scheduled.shelf.title",
+                        @"Очередь", @"scheduled.shelf.short",
+                        @"С", @"search.messages.from",
+                        @"По", @"search.messages.to",
+                        @"Выбрать даты", @"search.messages.dateCustom",
+
                         @"Открыть или закрыть выдвижную панель папок", @"aqua.folders.toggleDrawer",
                         @"Свернуть или развернуть список папок", @"aqua.folders.toggleInline",
                         @"Папки", @"aqua.folders.presentationLabel",
@@ -1348,6 +1361,19 @@ NSString *TGLoc(NSString *key) {
                         @"Можно открыть канал в браузере.", @"about.channel.open.browserFallback",
                         nil];
     NSDictionary *be = [NSDictionary dictionaryWithObjectsAndKeys:
+                        @"Супадзенняў пакуль няма. Націсніце «Далей», каб працягнуць пошук.", @"search.messages.noMatchesYet",
+                        @"Загрузіць наступныя вынікі", @"search.messages.more",
+                        @"Наборы", @"stickers.sets.tab",
+                        @"Загрузка набораў…", @"stickers.sets.loading",
+                        @"Няма ўсталяваных набораў", @"stickers.sets.empty",
+                        @"Спампоўкі", @"downloads.compact.title",
+                        @"Усе спампоўкі…", @"downloads.all",
+                        @"Адкладзеныя", @"scheduled.shelf.title",
+                        @"Чарга", @"scheduled.shelf.short",
+                        @"З", @"search.messages.from",
+                        @"Па", @"search.messages.to",
+                        @"Выбраць даты", @"search.messages.dateCustom",
+
                         @"Адкрыць або закрыць высоўную панэль папак", @"aqua.folders.toggleDrawer",
                         @"Згарнуць або разгарнуць спіс папак", @"aqua.folders.toggleInline",
                         @"Папкі", @"aqua.folders.presentationLabel",
@@ -2674,6 +2700,19 @@ NSString *TGLoc(NSString *key) {
                         @"Можна адкрыць канал у браўзеры.", @"about.channel.open.browserFallback",
                         nil];
     NSDictionary *en = [NSDictionary dictionaryWithObjectsAndKeys:
+                        @"No matches yet. Choose Next to continue searching.", @"search.messages.noMatchesYet",
+                        @"Load more results", @"search.messages.more",
+                        @"Sets", @"stickers.sets.tab",
+                        @"Loading sets…", @"stickers.sets.loading",
+                        @"No installed sets", @"stickers.sets.empty",
+                        @"Downloads", @"downloads.compact.title",
+                        @"All downloads…", @"downloads.all",
+                        @"Scheduled", @"scheduled.shelf.title",
+                        @"Queue", @"scheduled.shelf.short",
+                        @"From", @"search.messages.from",
+                        @"To", @"search.messages.to",
+                        @"Custom dates", @"search.messages.dateCustom",
+
                         @"Open or close the attached folders drawer", @"aqua.folders.toggleDrawer",
                         @"Collapse or expand the folder list", @"aqua.folders.toggleInline",
                         @"Folders", @"aqua.folders.presentationLabel",

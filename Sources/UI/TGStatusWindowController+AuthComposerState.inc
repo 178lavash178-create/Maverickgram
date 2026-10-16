@@ -1153,6 +1153,11 @@
 }
 
 - (void)controlTextDidChange:(NSNotification *)notification {
+    if([notification object]==[[self aquaSearchFilterState] objectForKey:@"sender"]) {
+        self.searchSenderQuery=[[[notification object] stringValue] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        [self.searchAdvancedButton setTitle:TGLoc([self.searchSenderQuery length] || self.searchDateRangeIndex>0 || [[[self aquaSearchFilterState] objectForKey:@"custom"] boolValue] ? @"search.messages.filtersActive" : @"search.messages.filters")];
+        [self scheduleSearchRequest]; return;
+    }
     if ([notification object] == self.searchTextField) {
         [self scheduleSearchRequest];
         return;

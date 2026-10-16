@@ -157,7 +157,7 @@ echo "== Download identity after restart =="
 HOME="$TEST_HOME" "$BUILD_DIR/download-restart-identity-probe"
 
 echo "== Download manager layout and themes =="
-"$CLANG" "${COMPILE_FLAGS[@]}" -I"$ROOT_DIR/Sources/UI" -I"$ROOT_DIR/Sources/Services" -I"$ROOT_DIR/Sources/Media" Tests/download_manager_presentation_probe.m Sources/UI/TGDownloadManagerPresentation.m Sources/UI/TGDownloadManagerWindowController.m Sources/UI/TGLocalization.m Sources/UI/TGTheme.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGAquaAppearance.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGStatusButtonCells.m Sources/UI/TGButtonAppearance.m Sources/UI/TGIconAssets.m Sources/UI/TGIconDrawing.m -framework Cocoa -framework CoreGraphics -o "$BUILD_DIR/download-manager-presentation-probe"
+"$CLANG" "${COMPILE_FLAGS[@]}" -I"$ROOT_DIR/Sources/UI" -I"$ROOT_DIR/Sources/Services" -I"$ROOT_DIR/Sources/Media" Tests/download_manager_presentation_probe.m Sources/UI/TGDownloadManagerPresentation.m Sources/UI/TGDownloadManagerWindowController.m Sources/UI/TGDownloadCompactPopover.m Sources/UI/TGAnimationSupport.m Sources/Services/TGResourcePolicy.m Sources/UI/TGAquaShellViews.m Sources/UI/TGLocalization.m Sources/UI/TGTheme.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGAquaAppearance.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGStatusButtonCells.m Sources/UI/TGButtonAppearance.m Sources/UI/TGIconAssets.m Sources/UI/TGIconDrawing.m -framework Cocoa -framework CoreGraphics -o "$BUILD_DIR/download-manager-presentation-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/download-manager-presentation-probe"
 
 echo "== Nonblocking download progress presentation =="
@@ -557,6 +557,11 @@ HOME="$TEST_HOME" "$BUILD_DIR/aqua-folder-drawer-probe"
 
 
 echo "== Local window state, gallery and playback updates =="
+"$PYTHON_BIN" Tests/aqua_toolbar_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$PYTHON_BIN" Tests/aqua_sticker_popover_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+TELEGRAPHICA_TEST_ARCH="$ARCH" TELEGRAPHICA_TEST_DEPLOYMENT_TARGET="$DEPLOYMENT_TARGET" scripts/run_aqua_queue_surfaces_probe.sh
+"$PYTHON_BIN" Tests/aqua_queue_integration_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$PYTHON_BIN" Tests/aqua_search_filter_backend_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 "$PYTHON_BIN" Tests/inline_search_navigation_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 "$PYTHON_BIN" Tests/gallery_image_routing_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 TELEGRAPHICA_TEST_SDK="$SDK_NAME" scripts/run_gallery_image_benchmark.sh
@@ -601,7 +606,7 @@ cp -R Sources/Resources/Textures "$AUXILIARY_APP/Contents/Resources/Textures"
 cat > "$AUXILIARY_APP/Contents/Info.plist" <<'AUX_PLIST'
 <?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict><key>CFBundleExecutable</key><string>probe</string><key>CFBundleIdentifier</key><string>local.telegraphica.auxiliary-probe</string></dict></plist>
 AUX_PLIST
-"$CLANG" "${COMPILE_FLAGS[@]}" -I"$ROOT_DIR/Sources/UI" -I"$ROOT_DIR/Sources/Services" -I"$ROOT_DIR/Sources/Media" Tests/aqua_auxiliary_surfaces_probe.m Sources/UI/TGDownloadManagerPresentation.m Sources/UI/TGDownloadManagerWindowController.m Sources/UI/TGLocalization.m Sources/UI/TGTheme.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGAquaAppearance.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGStatusButtonCells.m Sources/UI/TGButtonAppearance.m Sources/UI/TGIconAssets.m Sources/UI/TGIconDrawing.m Sources/UI/TGDownloadProgressWindowController.m Sources/UI/TGMessageViewersWindowController.m -framework Cocoa -framework CoreGraphics -framework QuartzCore -o "$AUXILIARY_APP/Contents/MacOS/probe"
+"$CLANG" "${COMPILE_FLAGS[@]}" -I"$ROOT_DIR/Sources/UI" -I"$ROOT_DIR/Sources/Services" -I"$ROOT_DIR/Sources/Media" Tests/aqua_auxiliary_surfaces_probe.m Sources/UI/TGDownloadManagerPresentation.m Sources/UI/TGDownloadManagerWindowController.m Sources/UI/TGDownloadCompactPopover.m Sources/UI/TGAnimationSupport.m Sources/Services/TGResourcePolicy.m Sources/UI/TGAquaShellViews.m Sources/UI/TGLocalization.m Sources/UI/TGTheme.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGAquaAppearance.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGStatusButtonCells.m Sources/UI/TGButtonAppearance.m Sources/UI/TGIconAssets.m Sources/UI/TGIconDrawing.m Sources/UI/TGDownloadProgressWindowController.m Sources/UI/TGMessageViewersWindowController.m -framework Cocoa -framework CoreGraphics -framework QuartzCore -o "$AUXILIARY_APP/Contents/MacOS/probe"
 HOME="$TEST_HOME" "$AUXILIARY_APP/Contents/MacOS/probe" aqua
 HOME="$TEST_HOME" "$AUXILIARY_APP/Contents/MacOS/probe" classic
 

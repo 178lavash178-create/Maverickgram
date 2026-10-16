@@ -53,6 +53,18 @@
         [summary setObject:[NSNumber numberWithLongLong:[messageID longLongValue]] forKey:@"message_id"];
         NSString *preview = [self messageContentPreviewForObject:[message objectForKey:@"content"]];
         [summary setObject:[preview length] > 0 ? preview : @"[Message]" forKey:@"preview"];
+        // Only messageText is edited through editTextMessage. Preview is often
+        // shortened/decorated and must never be used as the editable source.
+        NSDictionary *content=[[message objectForKey:@"content"] isKindOfClass:[NSDictionary class]]?[message objectForKey:@"content"]:nil;
+        if([[content objectForKey:@"@type"] isEqualToString:@"messageText"]) {
+            id formatted=[content objectForKey:@"text"];
+            NSString *text=[formatted isKindOfClass:[NSDictionary class]]?[formatted objectForKey:@"text"]:([formatted isKindOfClass:[NSString class]]?formatted:nil);
+            NSArray *entities=[formatted isKindOfClass:[NSDictionary class]]?[formatted objectForKey:@"entities"]:nil;
+            if([text isKindOfClass:[NSString class]]) {
+                [summary setObject:text forKey:@"editable_text"];
+                [summary setObject:[entities isKindOfClass:[NSArray class]]?entities:[NSArray array] forKey:@"entities"];
+            }
+        }
         NSDictionary *state = [[message objectForKey:@"scheduling_state"] isKindOfClass:[NSDictionary class]]
             ? [message objectForKey:@"scheduling_state"]
             : nil;

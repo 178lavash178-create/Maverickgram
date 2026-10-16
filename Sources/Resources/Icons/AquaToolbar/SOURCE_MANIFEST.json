@@ -1,0 +1,234 @@
+{
+  "annotated_tag_object": "d7eb7275c83bdc9584bca9567b820c4d5b82ff0e",
+  "assets": [
+    {
+      "logical_size": 32,
+      "original_pixels": 64,
+      "primary_png": "chats.png",
+      "role": "chats",
+      "source_svgz": "source/chats.svgz",
+      "upstream_icon": "actions/view-conversation-balloon"
+    },
+    {
+      "logical_size": 32,
+      "original_pixels": 64,
+      "primary_png": "contacts.png",
+      "role": "contacts",
+      "source_svgz": "source/contacts.svgz",
+      "upstream_icon": "apps/system-users"
+    },
+    {
+      "logical_size": 32,
+      "original_pixels": 64,
+      "primary_png": "calls.png",
+      "role": "calls",
+      "source_svgz": "source/calls.svgz",
+      "upstream_icon": "apps/internet-telephony"
+    },
+    {
+      "logical_size": 32,
+      "original_pixels": 64,
+      "primary_png": "workshop.png",
+      "role": "workshop",
+      "source_svgz": "source/workshop.svgz",
+      "upstream_icon": "categories/preferences-system"
+    },
+    {
+      "logical_size": 32,
+      "original_pixels": 64,
+      "primary_png": "settings.png",
+      "role": "settings",
+      "source_svgz": "source/settings.svgz",
+      "upstream_icon": "categories/applications-system"
+    },
+    {
+      "logical_size": 32,
+      "original_pixels": 64,
+      "primary_png": "downloads.png",
+      "role": "downloads",
+      "source_svgz": "source/downloads.svgz",
+      "upstream_icon": "actions/go-down"
+    }
+  ],
+  "commit": "44040e666e0677bcd4cb1f666cbb1d05cbbc477f",
+  "documentation": "https://develop.kde.org/frameworks/oxygen-icons/",
+  "files": [
+    {
+      "bytes": 3952,
+      "path": "chats.png",
+      "sha256": "8861575acf7f61f09aa7c4da5b695ae07dc79215917f67243811a11499382fdb",
+      "upstream_git_blob_sha1": "4f168210fe4b0c15617bcef72f6468a15865d79f",
+      "upstream_path": "64x64/actions/view-conversation-balloon.png",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/64x64/actions/view-conversation-balloon.png"
+    },
+    {
+      "bytes": 1894,
+      "path": "original-32/chats.png",
+      "sha256": "9df6abadce3552fe0023b1453c2b7fef7014a0d052f9c1bbde9b944b315f5e8a",
+      "upstream_git_blob_sha1": "1aa0c0003ecf4060ec0d923482f54d78cfcf4ad0",
+      "upstream_path": "32x32/actions/view-conversation-balloon.png",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/32x32/actions/view-conversation-balloon.png"
+    },
+    {
+      "bytes": 5559,
+      "path": "source/chats.svgz",
+      "sha256": "1cb7c8531b0aa1a0f21f17bbb7aa0a2dd39d4fa17045f364790d48d8dcfed16e",
+      "upstream_git_blob_sha1": "f922999c5506979abe40d8f3de2f1f6d4bc41761",
+      "upstream_path": "scalable/actions/view-conversation-balloon.svgz",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/scalable/actions/view-conversation-balloon.svgz"
+    },
+    {
+      "bytes": 4641,
+      "path": "contacts.png",
+      "sha256": "8e87b599859a36c913db84f3f81c31b4098bd12694c24063f45bee4c8a8bf63b",
+      "upstream_git_blob_sha1": "e2bd558524778b172cebf3abe93e9af96f1b9c31",
+      "upstream_path": "64x64/apps/system-users.png",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/64x64/apps/system-users.png"
+    },
+    {
+      "bytes": 2196,
+      "path": "original-32/contacts.png",
+      "sha256": "1b4b4e417ed7b01faac900f61980f4461fdc15a2abe769e60b7d62af34d7ab57",
+      "upstream_git_blob_sha1": "372273202c034b1de8e999c4b85596b7454c01b1",
+      "upstream_path": "32x32/categories/system-users.png",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/32x32/categories/system-users.png"
+    },
+    {
+      "bytes": 62141,
+      "path": "source/contacts.svgz",
+      "sha256": "63c6eca778ba03826c78ddda28b40c49915b312bac192ed1382bede0a0736d2b",
+      "upstream_git_blob_sha1": "1af3dfef4908f9b488bac65df9fc314c8e0a9b71",
+      "upstream_path": "scalable/apps/system-users.svgz",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/scalable/apps/system-users.svgz"
+    },
+    {
+      "bytes": 4827,
+      "path": "calls.png",
+      "sha256": "9865d63fc52f56ba0962027f561d1adb15d7960630c7d6142750a576d28c8082",
+      "upstream_git_blob_sha1": "59056b85cb6516f73c5d764cda673a845a7a2198",
+      "upstream_path": "64x64/apps/internet-telephony.png",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/64x64/apps/internet-telephony.png"
+    },
+    {
+      "bytes": 1827,
+      "path": "original-32/calls.png",
+      "sha256": "c95fccad64151116fdfb1be117afa48bf86ae7d77b24b2458bcdb6f2ea30e5a7",
+      "upstream_git_blob_sha1": "3abff8199902c6ee8e33a7ff1a7bf8ef502ed208",
+      "upstream_path": "32x32/apps/internet-telephony.png",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/32x32/apps/internet-telephony.png"
+    },
+    {
+      "bytes": 9493,
+      "path": "source/calls.svgz",
+      "sha256": "38f834a59d8718e769f2df6d4a39cc2424367cbdd683c66284b5512df146f175",
+      "upstream_git_blob_sha1": "c51ff5ff52de411f419db7f0f79d9bbbff190e42",
+      "upstream_path": "scalable/apps/internet-telephony.svgz",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/scalable/apps/internet-telephony.svgz"
+    },
+    {
+      "bytes": 6296,
+      "path": "workshop.png",
+      "sha256": "4382f3fde075b8ed828f191d109429761f4ea9dce4fd1d664d6f88e61cc3ff70",
+      "upstream_git_blob_sha1": "9ea5cec4472df7f11ead994b9a3248251f38bdc7",
+      "upstream_path": "64x64/categories/preferences-system.png",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/64x64/categories/preferences-system.png"
+    },
+    {
+      "bytes": 2171,
+      "path": "original-32/workshop.png",
+      "sha256": "d9bb4bf1ea9bd2f8901019fd3c22af77bb596167740309592e9741355d81f27d",
+      "upstream_git_blob_sha1": "2afbd23ccc523e9ff83d22d5dfa13b46db40b604",
+      "upstream_path": "32x32/categories/preferences-system.png",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/32x32/categories/preferences-system.png"
+    },
+    {
+      "bytes": 12026,
+      "path": "source/workshop.svgz",
+      "sha256": "4876b49840a4072ad7899209ded24ea73db642c283449fc7c05a69aefa11419f",
+      "upstream_git_blob_sha1": "b58b30e663fa6b2114eb9f8fa8036c3a5ae8ea12",
+      "upstream_path": "scalable/categories/preferences-system.svgz",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/scalable/categories/preferences-system.svgz"
+    },
+    {
+      "bytes": 4724,
+      "path": "settings.png",
+      "sha256": "b7e68498035d30bb0a16271f436abb06a8ecd1e5802b354242f280466cc7a476",
+      "upstream_git_blob_sha1": "4a3765167e76b331bc6e20781954e67bae13790a",
+      "upstream_path": "64x64/categories/applications-system.png",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/64x64/categories/applications-system.png"
+    },
+    {
+      "bytes": 1836,
+      "path": "original-32/settings.png",
+      "sha256": "17c41ef38ef961565e676910fab05c9e595b96cb26f8b89307e6bef33db98220",
+      "upstream_git_blob_sha1": "4d9a9dc4a3a4d3181ae0db3c96d0f540d19fd7fd",
+      "upstream_path": "32x32/categories/applications-system.png",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/32x32/categories/applications-system.png"
+    },
+    {
+      "bytes": 4119,
+      "path": "source/settings.svgz",
+      "sha256": "07389c408b3cee00ed8aac3649dd5f2a2e00fc670ccd4b53a99ed81efefa3abb",
+      "upstream_git_blob_sha1": "b29f3f72aade45c9e8a9e44341e53f385de1744f",
+      "upstream_path": "scalable/categories/applications-system.svgz",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/scalable/categories/applications-system.svgz"
+    },
+    {
+      "bytes": 3375,
+      "path": "downloads.png",
+      "sha256": "0eadea1e53a7a39c8638b9f6fc80cdd403fbe23d43f25b87d3ec391237aee5f2",
+      "upstream_git_blob_sha1": "c23774b63eab57fa4e3a2bfa67041270d7b2f5eb",
+      "upstream_path": "64x64/actions/go-down.png",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/64x64/actions/go-down.png"
+    },
+    {
+      "bytes": 1437,
+      "path": "original-32/downloads.png",
+      "sha256": "31c1bb9f36f80d0c5cd65922dfee34dac31ba884d6d27f5f503eabdf11803a0a",
+      "upstream_git_blob_sha1": "b834f25a5375d9bcdca8385153bbca357efd292b",
+      "upstream_path": "32x32/actions/go-down.png",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/32x32/actions/go-down.png"
+    },
+    {
+      "bytes": 6582,
+      "path": "source/downloads.svgz",
+      "sha256": "964715b04710ad8a228bffeaaec45f53ba046bd4e1d7275194d104b5ca6b452e",
+      "upstream_git_blob_sha1": "8cf8e829bfb164cc77ccc652c26e4e718583b87c",
+      "upstream_path": "scalable/actions/go-down.svgz",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/scalable/actions/go-down.svgz"
+    },
+    {
+      "bytes": 9684,
+      "path": "upstream/COPYING",
+      "sha256": "64a812ef99d8d5ece3c7fa14b7a96933dca30a51c39ba7e01d62a53df1681bf6",
+      "upstream_git_blob_sha1": "045b62e8b775746c89311d6b100aaa0bcc31d947",
+      "upstream_path": "COPYING",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/COPYING"
+    },
+    {
+      "bytes": 824,
+      "path": "upstream/AUTHORS",
+      "sha256": "8fd61909ef7db717ed52cc498fcf4bcd529a9602201d4e600349dbda04dc13c4",
+      "upstream_git_blob_sha1": "1eb68a7633d3cd097800ce006df4f9ae7f49bd15",
+      "upstream_path": "AUTHORS",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/AUTHORS"
+    },
+    {
+      "bytes": 109,
+      "path": "upstream/README.md",
+      "sha256": "06b1186dcf2862605dccf6f041ec44d472121b15fe7a5edc7f724d9793b059cb",
+      "upstream_git_blob_sha1": "1d030dd99965abb1362d17bd7e70654d87ba620c",
+      "upstream_path": "README.md",
+      "url": "https://raw.githubusercontent.com/KDE/oxygen-icons/44040e666e0677bcd4cb1f666cbb1d05cbbc477f/README.md"
+    },
+    {
+      "bytes": 34674,
+      "path": "GPL-3.0.txt",
+      "sha256": "fb981668c18a279e285fc4d83fba1e836cc84dd4daa73c9697d3cfd2d8aca6e0",
+      "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.22/text/GPL-3.0-only.txt"
+    }
+  ],
+  "license": "LGPL-3.0-or-later",
+  "project": "KDE Oxygen Icons",
+  "tag": "v5.116.0"
+}

@@ -1062,6 +1062,8 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [queueItems release];
 }
 
+#include "TGStatusWindowController+StickerPresentation.inc"
+
 - (void)ensureStickerPickerWindow {
     if (self.stickerPickerWindow) {
         return;
@@ -1192,6 +1194,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     self.stickerPickerRailThumbnailPrefetcher = [[[TGMessageThumbnailPrefetcher alloc] init] autorelease];
     self.stickerPickerMode = 0;
     self.stickerPickerWindow = window;
+    [self configureAquaStickerPickerWithLegacyView:contentView panels:[NSArray arrayWithObjects:controlsPanel,railPanel,gridPanel,stickerSearchBackground,nil] removeSetButton:removeSetButton];
 }
 
 - (void)updateStickerPickerSelectionState {
@@ -1200,6 +1203,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [self.stickerPickerRecentButton setNeedsDisplay:YES];
     [self.stickerPickerFavoriteButton setNeedsDisplay:YES];
     [self rebuildStickerPickerSetRail];
+    [self updateAquaStickerPickerTabState];
 }
 
 - (void)updateStickerPickerRailThumbnailForSetID:(NSNumber *)setID withItem:(NSDictionary *)item {
@@ -1294,6 +1298,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     if ([self.stickerPickerStickerSets count] == 0 || !self.client) {
         return;
     }
+    NSDictionary *loadContext=[self stickerPickerLoadContext];
     TGTDLibClient *client = [self.client retain];
     NSArray *setsSnapshot = [self.stickerPickerStickerSets copy];
     NSMutableArray *setIDsToLoad = [NSMutableArray array];
@@ -1335,7 +1340,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
             NSString *errorMessage = [[setError localizedDescription] copy];
             dispatch_async(dispatch_get_main_queue(), ^{
                 NSString *key = [setID stringValue];
-                if (client == self.client) {
+                if (client == self.client && [self stickerPickerLoadContextIsCurrent:loadContext]) {
                     if (firstItem) {
                         [[TGLogger sharedLogger] log:[NSString stringWithFormat:@"Stickers: rail preview loaded for set %@", key]];
                         [self updateStickerPickerRailThumbnailForSetID:setID withItem:firstItem];
@@ -1447,6 +1452,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     }
 
     [self.stickerPickerStatusField setStringValue:@"Removing sticker set..."];
+    NSDictionary *accountContext=[self stickerPickerAccountContext];
     TGTDLibClient *client = [self.client retain];
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -1454,6 +1460,9 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         BOOL ok = [client setStickerSetInstalledForStickerSetID:setID installed:NO timeout:8.0 error:&changeError];
         NSString *errorMessage = [[changeError localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
+            if (client!=self.client || ![accountContext isEqual:[self stickerPickerAccountContext]]) {
+                [errorMessage release];[setID release];[client release];return;
+            }
             if (ok) {
                 [self.stickerPickerSetCache removeObjectForKey:[setID stringValue]];
                 [self.stickerPickerRailPreviewState removeObjectForKey:[setID stringValue]];
@@ -1617,6 +1626,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         [self preloadStickerPickerRailPreviews];
         return;
     }
+    NSDictionary *loadContext=[self stickerPickerLoadContext];
     TGTDLibClient *client = [self.client retain];
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -1624,7 +1634,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         NSArray *sets = [[client installedStickerSetInfoItemsWithTimeout:8.0 error:&setError] copy];
         NSString *errorMessage = [[setError localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
-            BOOL resultIsCurrent = (client == self.client);
+            BOOL resultIsCurrent = (client == self.client && [self stickerPickerLoadContextIsCurrent:loadContext]);
             if (resultIsCurrent) {
                 self.stickerPickerStickerSets = ([sets count] > 0 ? sets : [NSArray array]);
                 [self rebuildStickerPickerSetRail];
@@ -1634,18 +1644,21 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
                                               (unsigned long)[self.stickerPickerStickerSets count],
                                               [errorMessage length] > 0 ? [NSString stringWithFormat:@" error=%@", errorMessage] : @""]];
                 NSString *lastSetID = [[NSUserDefaults standardUserDefaults] stringForKey:@"TelegraphicaStickerPickerLastSetID"];
-                if ([lastSetID length] > 0 && [self.stickerPickerItems count] == 0) {
+                if ([lastSetID length] > 0 && [self.stickerPickerItems count] == 0 && self.stickerPickerMode==0 && [[self.stickerPickerSearchField stringValue] length]==0) {
                     NSUInteger index = 0;
                     for (index = 0; index < [self.stickerPickerStickerSets count]; index++) {
                         NSDictionary *set = [self.stickerPickerStickerSets objectAtIndex:index];
                         NSNumber *setID = [set objectForKey:@"id"];
                         if ([setID respondsToSelector:@selector(longLongValue)] && [[setID stringValue] isEqualToString:lastSetID]) {
                             self.stickerPickerSelectedSetID = setID;
+                            self.stickerPickerMode=3;
+                            [self updateStickerPickerSelectionState];
                             [self reloadStickerPickerItemsForSet:set];
                             break;
                         }
                     }
                 }
+                [self finishAquaStickerSetLoad];
             }
             [sets release];
             [errorMessage release];
@@ -1666,7 +1679,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     if (!self.stickerPickerPlaybackCoordinator) {
         return;
     }
-    if (![self.stickerPickerWindow isVisible] || !self.stickerPickerContentView) {
+    if (![self isStickerPickerPresentationVisible] || !self.stickerPickerContentView) {
         [self.stickerPickerPlaybackCoordinator removeAllPlayback];
         return;
     }
@@ -1724,13 +1737,13 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     }
     [oldSubviews release];
 
-    CGFloat buttonSide = 58.0;
-    CGFloat gap = 10.0;
+    CGFloat buttonSide = TGInterfaceDesignIsAqua() ? 72.0 : 58.0;
+    CGFloat gap = TGInterfaceDesignIsAqua() ? 8.0 : 10.0;
     CGFloat contentWidth = 500.0;
     if (self.stickerPickerScrollView) {
-        contentWidth = MAX(380.0, NSWidth([[self.stickerPickerScrollView contentView] bounds]));
+        contentWidth = MAX(TGInterfaceDesignIsAqua() ? 1.0 : 380.0, NSWidth([[self.stickerPickerScrollView contentView] bounds]));
     }
-    NSUInteger columns = MAX(4, (NSUInteger)floor((contentWidth - gap) / (buttonSide + gap)));
+    NSUInteger columns = MAX(TGInterfaceDesignIsAqua() ? 1 : 4, (NSUInteger)MAX(0,floor((contentWidth - gap) / (buttonSide + gap))));
     NSUInteger count = [self.stickerPickerItems count];
     NSUInteger rows = (count == 0) ? 1 : ((count + columns - 1) / columns);
     CGFloat contentHeight = rows * (buttonSide + gap) + gap;
@@ -1800,6 +1813,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
 - (void)reloadStickerPickerItems {
     [self.stickerPickerStatusField setStringValue:@"Loading stickers..."];
     self.stickerPickerSelectedSetID = nil;
+    NSDictionary *loadContext=[self stickerPickerLoadContext];
     TGTDLibClient *client = [self.client retain];
     NSUInteger generation = self.stickerPickerLoadGeneration + 1;
     self.stickerPickerLoadGeneration = generation;
@@ -1809,7 +1823,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         NSArray *items = [[client recentStickerItemsWithLimit:40 timeout:8.0 error:&stickerError] copy];
         NSString *errorMessage = [[stickerError localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
-            BOOL resultIsCurrent = (generation == self.stickerPickerLoadGeneration && client == self.client);
+            BOOL resultIsCurrent = (generation == self.stickerPickerLoadGeneration && client == self.client && [self stickerPickerLoadContextIsCurrent:loadContext]);
             if (!resultIsCurrent) {
                 [[TGLogger sharedLogger] log:@"Stickers: ignored stale recent stickers response."];
                 [items release];
@@ -1839,6 +1853,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
 - (void)reloadFavoriteStickerPickerItems {
     [self.stickerPickerStatusField setStringValue:@"Loading favorite stickers..."];
     self.stickerPickerSelectedSetID = nil;
+    NSDictionary *loadContext=[self stickerPickerLoadContext];
     TGTDLibClient *client = [self.client retain];
     NSUInteger generation = self.stickerPickerLoadGeneration + 1;
     self.stickerPickerLoadGeneration = generation;
@@ -1848,7 +1863,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         NSArray *items = [[client favoriteStickerItemsWithLimit:40 timeout:8.0 error:&stickerError] copy];
         NSString *errorMessage = [[stickerError localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
-            BOOL resultIsCurrent = (generation == self.stickerPickerLoadGeneration && client == self.client);
+            BOOL resultIsCurrent = (generation == self.stickerPickerLoadGeneration && client == self.client && [self stickerPickerLoadContextIsCurrent:loadContext]);
             if (resultIsCurrent) {
                 self.stickerPickerItems = ([items count] > 0 ? items : [NSArray array]);
                 [self.stickerPickerStatusField setStringValue:([items count] > 0 ? @"Favorite stickers" : ([errorMessage length] > 0 ? errorMessage : @"No favorite stickers yet"))];
@@ -1870,6 +1885,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     self.stickerPickerItems = [NSArray array];
     [self rebuildStickerPickerGrid];
     [self scrollStickerPickerGridToTop];
+    NSDictionary *loadContext=[self stickerPickerLoadContext];
     TGTDLibClient *client = [self.client retain];
     NSUInteger generation = self.stickerPickerLoadGeneration + 1;
     self.stickerPickerLoadGeneration = generation;
@@ -1879,7 +1895,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         NSArray *items = [[client stickerItemsForEmoji:query limit:60 timeout:8.0 error:&stickerError] copy];
         NSString *errorMessage = [[stickerError localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
-            BOOL resultIsCurrent = (generation == self.stickerPickerLoadGeneration && client == self.client);
+            BOOL resultIsCurrent = (generation == self.stickerPickerLoadGeneration && client == self.client && [self stickerPickerLoadContextIsCurrent:loadContext]);
             if (resultIsCurrent) {
                 self.stickerPickerItems = ([items count] > 0 ? items : [NSArray array]);
                 [self.stickerPickerStatusField setStringValue:([items count] > 0 ? [NSString stringWithFormat:@"Stickers for %@", query] : ([errorMessage length] > 0 ? errorMessage : @"No stickers found"))];
@@ -1912,6 +1928,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         title = @"Sticker set";
     }
     if ([cachedItems count] > 0) {
+        self.stickerPickerLoadGeneration++;
         self.stickerPickerItems = cachedItems;
         [self.stickerPickerStatusField setStringValue:title];
         [self updateStickerPickerRailThumbnailForSetID:setID withItem:[cachedItems objectAtIndex:0]];
@@ -1925,6 +1942,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [self rebuildStickerPickerGrid];
     [self scrollStickerPickerGridToTop];
 
+    NSDictionary *loadContext=[self stickerPickerLoadContext];
     TGTDLibClient *client = [self.client retain];
     NSNumber *selectedSetID = [setID retain];
     NSString *titleCopy = [title copy];
@@ -1937,7 +1955,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         NSString *errorMessage = [[setError localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
             BOOL resultIsCurrent = (generation == self.stickerPickerLoadGeneration &&
-                                    client == self.client &&
+                                    client == self.client && [self stickerPickerLoadContextIsCurrent:loadContext] &&
                                     [self.stickerPickerSelectedSetID respondsToSelector:@selector(longLongValue)] &&
                                     [self.stickerPickerSelectedSetID longLongValue] == [selectedSetID longLongValue]);
             if (resultIsCurrent) {
@@ -1972,10 +1990,14 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         return;
     }
     [self ensureStickerPickerWindow];
+    if (TGInterfaceDesignIsAqua()) {
+        if (![self showAquaStickerPicker]) return;
+    } else {
+        [self.stickerPickerWindow setTitle:TGLoc(@"stickers")];
+        [self.stickerPickerWindow center];
+        [self.stickerPickerWindow makeKeyAndOrderFront:nil];
+    }
     [self.inlineMediaPlaybackCoordinator removeAllPlayback];
-    [self.stickerPickerWindow setTitle:TGLoc(@"stickers")];
-    [self.stickerPickerWindow center];
-    [self.stickerPickerWindow makeKeyAndOrderFront:nil];
     [self reloadStickerPickerSetsIfNeeded];
     if (self.stickerPickerSelectedSetID && [self.stickerPickerItems count] == 0) {
         NSString *selectedID = [self.stickerPickerSelectedSetID stringValue];
@@ -1997,6 +2019,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
 }
 
 - (void)sendStickerFromPickerButton:(id)sender {
+    if (TGInterfaceDesignIsAqua() && (![self aquaStickerPickerCanSend] || ![sender isKindOfClass:[NSView class]] || ![(NSView *)sender isDescendantOf:self.stickerPickerContentView])) return;
     NSInteger stickerIndex = [sender respondsToSelector:@selector(tag)] ? [sender tag] : -1;
     id represented = (stickerIndex >= 0 && (NSUInteger)stickerIndex < [self.stickerPickerItems count]) ? [self.stickerPickerItems objectAtIndex:(NSUInteger)stickerIndex] : nil;
     if (![represented isKindOfClass:[NSDictionary class]]) {
@@ -2018,7 +2041,8 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     NSString *emoji = [[sticker objectForKey:@"emoji"] copy];
     NSNumber *width = [[sticker objectForKey:@"width"] retain];
     NSNumber *height = [[sticker objectForKey:@"height"] retain];
-    [self.stickerPickerWindow orderOut:nil];
+    if (TGInterfaceDesignIsAqua()) [self closeAquaStickerPicker];
+    else [self.stickerPickerWindow orderOut:nil];
     [self.stickerPickerPlaybackCoordinator removeAllPlayback];
     [self.stickerPickerGridThumbnailPrefetcher cancelAll];
     [self.stickerPickerRailThumbnailPrefetcher cancelAll];
@@ -2026,6 +2050,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [self setControlsBusy:YES];
     [self.statusField setStringValue:@"Sending sticker..."];
 
+    NSDictionary *accountContext=[self stickerPickerAccountContext];
     TGTDLibClient *client = [self.client retain];
     [[TGLogger sharedLogger] log:[NSString stringWithFormat:@"Stickers: send requested format=%@ file=%@", TGMediaItemStickerFormat(sticker), fileID]];
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
@@ -2042,6 +2067,9 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
                                                           error:&sendError] copy];
         NSString *errorMessage = [[sendError localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
+            if (client!=self.client || ![accountContext isEqual:[self stickerPickerAccountContext]]) {
+                [summary release];[errorMessage release];[chatID release];[messageThreadID release];[messageTopicKind release];[emoji release];[width release];[height release];[client release];return;
+            }
             if ([summary length] > 0) {
                 [self.statusField setStringValue:@"Sticker sent"];
                 [[TGLogger sharedLogger] log:@"Stickers: send accepted."];
@@ -3267,6 +3295,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
 }
 
 - (void)showScheduledMessages:(id)sender {
+    if([self toggleAquaScheduledMessages]) return;
     (void)sender;
     if (![self.selectedChatID respondsToSelector:@selector(longLongValue)]) {
         NSBeep();

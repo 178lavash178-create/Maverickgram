@@ -1,7 +1,7 @@
 #import "TGAquaShellViews.h"
 #include <math.h>
 
-CGFloat TGAquaToolbarHeight(void) { return 48.0; }
+CGFloat TGAquaToolbarHeight(void) { return 64.0; }
 
 CGFloat TGAquaFooterBaseHeight(void) { return 58.0; }
 
@@ -37,10 +37,27 @@ TGAquaSourceListGeometry TGAquaSourceListFrames(NSRect sidebar, CGFloat footerTo
     return result;
 }
 
-// Icons keep one consistent hit target across languages and available window widths.
+// Keep every action reachable at the supported 760pt minimum; the search and
+// account text yield space before the icon/caption navigation targets do.
+TGAquaToolbarGeometry TGAquaToolbarFrames(CGFloat width, CGFloat height) {
+    TGAquaToolbarGeometry g;memset(&g,0,sizeof(g));
+    width=isfinite(width) ? MAX(0,width) : 0; height=isfinite(height) ? MAX(0,height) : 0;
+    CGFloat y=height-TGAquaToolbarHeight(), gap=12.0;
+    CGFloat accountEnd=MIN(198,MAX(160,floor(width*0.20)));
+    CGFloat itemWidth=MIN(78,MAX(64,70+floor((width-760)*0.04)));
+    CGFloat searchWidth=MIN(184,MAX(106,120+floor((width-760)*0.29)));
+    g.avatar=NSMakeRect(10,y+10,44,44);
+    g.account=NSMakeRect(60,y+19,MAX(0,accountEnd-60),26);
+    g.downloads=NSMakeRect(MAX(0,width-76),y+6,64,52);
+    g.search=NSMakeRect(MAX(0,NSMinX(g.downloads)-gap-searchWidth),y+20,searchWidth,26);
+    CGFloat total=itemWidth*5;
+    CGFloat left=MAX(accountEnd+gap,MIN(floor((width-total)/2),NSMinX(g.search)-gap-total));
+    for(NSUInteger i=0;i<5;i++) g.sections[i]=NSMakeRect(left+i*itemWidth,y+6,itemWidth,52);
+    return g;
+}
 NSRect TGAquaToolbarSectionFrame(CGFloat width, CGFloat height, NSUInteger index) {
-    CGFloat searchWidth = MIN(200.0, floor(width * 0.18));
-    return NSMakeRect(66.0 + searchWidth + index * 54.0, height - 40.0, 48.0, 32.0);
+    TGAquaToolbarGeometry g=TGAquaToolbarFrames(width,height);
+    return index<5 ? g.sections[index] : NSZeroRect;
 }
 
 TGAquaChatHeaderGeometry TGAquaChatHeaderFrames(NSRect header, BOOL forum) {

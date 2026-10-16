@@ -1,0 +1,41 @@
+Oxygen icons copyright KDE and licensed under the GNU LGPL version 3 or later.
+https://develop.kde.org/frameworks/oxygen-icons/
+
+The Oxygen Icon Theme
+Copyright (C) 2007 Nuno Pinheiro, David Vignoni, David Miller,
+Johann Ollivier Lapeyre, Kenneth Wimer, Riccardo Iaconelli, and others.
+Original copyright/license clarification: upstream/COPYING
+Original contributor list: upstream/AUTHORS
+
+Pinned source: KDE/oxygen-icons v5.116.0
+https://github.com/KDE/oxygen-icons/tree/v5.116.0
+Commit: 44040e666e0677bcd4cb1f666cbb1d05cbbc477f
+Annotated tag object: d7eb7275c83bdc9584bca9567b820c4d5b82ff0e
+
+Six runtime assets, unmodified upstream 64x64 PNG files:
+chats.png      actions/view-conversation-balloon
+contacts.png   apps/system-users
+calls.png      apps/internet-telephony
+workshop.png   categories/preferences-system
+settings.png   categories/applications-system
+downloads.png  actions/go-down
+
+These images are drawn at a logical 32-point size. Original 64-pixel detail
+is retained for high-resolution displays. The original 32x32 PNGs are in
+original-32/ for provenance; the runtime uses the 64x64 originals consistently.
+In particular, Oxygen's 32px contacts design is a blue badge while its 64px
+source is the two-person artwork selected for this toolbar.
+
+Original editable sources are supplied, unchanged and gzip-compressed, in
+source/*.svgz. No icons were redrawn, generated, recolored or rasterized for
+this asset import. AppKit may scale/tint the supplied artwork at runtime.
+
+The upstream COPYING includes the LGPLv3 text and artwork-library clarification.
+GPL-3.0.txt supplies the GPLv3 terms incorporated by LGPLv3, from the official
+SPDX license-list-data v3.22 text mirror (canonical GNU license below).
+https://www.gnu.org/licenses/gpl-3.0.html
+https://www.gnu.org/licenses/lgpl-3.0.html
+
+SOURCE_MANIFEST.json records every original file's SHA-256, upstream path and
+URL; Oxygen files also record their verified upstream Git blob SHA-1. The
+artwork files can be replaced independently in the application's Resources.

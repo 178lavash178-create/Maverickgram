@@ -208,6 +208,8 @@
 		E66B337F29CA1FF3A3969F4A /* TGAquaMediaViewerView.m in Sources */ = {isa = PBXBuildFile; fileRef = 28A48B05E1BBD2E38AFC9F2A /* TGAquaMediaViewerView.m */; };
 		A1761855EEE573665E403942 /* TGWindowFramePersistence.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C503A4A6F9386CE130B5128 /* TGWindowFramePersistence.m */; };
 		B183A01EF74E4FA3B3DB569D /* TGNavigationPositionStore.m in Sources */ = {isa = PBXBuildFile; fileRef = CED3ACEFB6ED86ABDFD0DF49 /* TGNavigationPositionStore.m */; };
+		A71616000000000000000001 /* TGDownloadCompactPopover.m in Sources */ = {isa = PBXBuildFile; fileRef = A71616000000000000000003 /* TGDownloadCompactPopover.m */; };
+		A71616000000000000000004 /* TGScheduledMessagesShelfView.m in Sources */ = {isa = PBXBuildFile; fileRef = A71616000000000000000006 /* TGScheduledMessagesShelfView.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -585,6 +587,10 @@
 		477EB9597D3E7B1B8717C1A0 /* TGMediaPlaybackTimeline.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TGMediaPlaybackTimeline.h"; sourceTree = "<group>"; };
 		67EDF10081A812FF22C10CA4 /* TGStatusWindowController+AquaPhotoGallery.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TGStatusWindowController+AquaPhotoGallery.inc"; sourceTree = "<group>"; };
 		42888D0EDF897F3F73016F7D /* TGStatusWindowController+NavigationContinuity.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TGStatusWindowController+NavigationContinuity.inc"; sourceTree = "<group>"; };
+		A71616000000000000000002 /* TGDownloadCompactPopover.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGDownloadCompactPopover.h; sourceTree = "<group>"; };
+		A71616000000000000000003 /* TGDownloadCompactPopover.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGDownloadCompactPopover.m; sourceTree = "<group>"; };
+		A71616000000000000000005 /* TGScheduledMessagesShelfView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGScheduledMessagesShelfView.h; sourceTree = "<group>"; };
+		A71616000000000000000006 /* TGScheduledMessagesShelfView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGScheduledMessagesShelfView.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -880,6 +886,10 @@
 				111111111111111111111345 /* TGChatInfoWindowController.h */,
 				111111111111111111111346 /* TGChatInfoWindowController.m */,
 				111111111111111111111349 /* TGScheduledMessagesWindowController.h */,
+				A71616000000000000000005 /* TGScheduledMessagesShelfView.h */,
+				A71616000000000000000006 /* TGScheduledMessagesShelfView.m */,
+				A71616000000000000000002 /* TGDownloadCompactPopover.h */,
+				A71616000000000000000003 /* TGDownloadCompactPopover.m */,
 				111111111111111111111350 /* TGScheduledMessagesWindowController.m */,
 				D05900000000000000000012 /* TGDownloadProgressWindowController.h */,
 				D05900000000000000000013 /* TGDownloadProgressWindowController.m */,
@@ -1254,6 +1264,8 @@
 				111111111111111111111171 /* TGChatInfoWindowController.m in Sources */,
 				111111111111111111111172 /* TGTDLibClient+ScheduledMessages.m in Sources */,
 				111111111111111111111173 /* TGScheduledMessagesWindowController.m in Sources */,
+				A71616000000000000000004 /* TGScheduledMessagesShelfView.m in Sources */,
+				A71616000000000000000001 /* TGDownloadCompactPopover.m in Sources */,
 				111111111111111111111174 /* TGDownloadManager.m in Sources */,
 				B8DB0BB00000000000000001 /* TGDownloadQueueStore.m in Sources */,
 				D05900000000000000000011 /* TGDownloadProgressWindowController.m in Sources */,
