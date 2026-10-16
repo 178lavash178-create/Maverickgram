@@ -27,7 +27,7 @@
 @synthesize iconAssetName = _iconAssetName;
 - (void)dealloc { [_iconAssetName release]; [super dealloc]; }
 - (void)drawWithFrame:(NSRect)frame inView:(NSView *)view {
-    BOOL selected = [self state] == NSOnState;
+    BOOL selected = [self isHighlighted] || ([self showsStateBy] != 0 && [self state] == NSOnState);
     NSRect inset = NSInsetRect(frame,1,1);
     NSBezierPath *path = [NSBezierPath bezierPathWithRoundedRect:inset xRadius:5 yRadius:5];
     TGAquaDrawButtonInPath(path,inset,[self isHighlighted],selected,[self isEnabled],[view isFlipped]);
@@ -72,7 +72,9 @@
 - (void)drawWithFrame:(NSRect)frame inView:(NSView *)view {
     NSRect rect = NSInsetRect(frame, 1.0, 1.0);
     NSBezierPath *path = [NSBezierPath bezierPathWithRoundedRect:rect xRadius:6.0 yRadius:6.0];
-    BOOL blue = self.accented || [self state] == NSOnState;
+    // Momentary AppKit cells may keep On internally after sending their action.
+    // Only cells configured to show persistent state are selected when idle.
+    BOOL blue = self.accented || [self isHighlighted] || ([self showsStateBy] != 0 && [self state] == NSOnState);
     TGAquaDrawButtonInPath(path, rect, [self isHighlighted], blue, [self isEnabled], [view isFlipped]);
     NSMutableParagraphStyle *paragraph = [[[NSMutableParagraphStyle alloc] init] autorelease];
     [paragraph setAlignment:NSCenterTextAlignment];

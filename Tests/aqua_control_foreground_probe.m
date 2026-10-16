@@ -6,6 +6,7 @@
 #import "TGThemeContrast.h"
 #import "TGIconAssets.h"
 #include <math.h>
+#include <string.h>
 // Capture real approved-asset rendering while suppressing it in a reference
 // render. Text-cell images are independently compared with the same bare cell.
 #define TGDrawTemplateIconAsset TGProductionDrawTemplateIconAsset
@@ -32,6 +33,23 @@ static NSBitmapImageRep *Render(NSButtonCell *cell,ForegroundView *view,BOOL sup
     if(suppress) [cell setImage:image];[image release];SuppressIcons=NO;
     [NSGraphicsContext restoreGraphicsState];return bitmap;
 }
+@interface AquaActionTarget : NSObject { NSWindow *_window; NSUInteger _calls; }
+@property(nonatomic,readonly) NSUInteger calls;
+- (void)open:(id)sender;
+@end
+@implementation AquaActionTarget
+- (NSUInteger)calls {return _calls;}
+- (void)open:(id)sender {
+    (void)sender; _calls++;
+    if(!_window) _window=[[NSWindow alloc] initWithContentRect:NSMakeRect(0,0,160,90) styleMask:NSTitledWindowMask backing:NSBackingStoreBuffered defer:NO];
+    [_window makeKeyAndOrderFront:self];
+}
+- (void)dealloc {[_window orderOut:self];[_window release];[super dealloc];}
+@end
+static BOOL SamePixels(NSBitmapImageRep *a,NSBitmapImageRep *b) {
+    return [a pixelsWide]==[b pixelsWide] && [a pixelsHigh]==[b pixelsHigh] && [a bytesPerRow]==[b bytesPerRow] &&
+        memcmp([a bitmapData],[b bitmapData],[a bytesPerRow]*[a pixelsHigh])==0;
+}
 int main(void) {
     NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];[NSApplication sharedApplication];
     [[NSUserDefaults standardUserDefaults] setVolatileDomain:[NSDictionary dictionaryWithObject:@"aqua" forKey:TGInterfaceDesignDefaultsKey] forName:NSArgumentDomain];
@@ -45,6 +63,7 @@ int main(void) {
             NSImage *template=[[TGIconAssetImageNamed(kind==1 ? @"attach" : @"history") copy] autorelease];
             [template setTemplate:YES];[cell setImage:template];
         }
+        [cell setButtonType:NSToggleButton];
         [cell setEnabled:enabled];[cell setState:selected ? NSOnState : NSOffState];[cell setHighlighted:pressed];
         NSBitmapImageRep *background=Render(cell,view,YES),*actual=Render(cell,view,NO);
         CGFloat maximum=1;NSUInteger visible=0;
@@ -61,7 +80,7 @@ int main(void) {
     NSString *photoPath=[[[NSFileManager defaultManager] currentDirectoryPath] stringByAppendingPathComponent:@"Sources/Resources/Wallpapers/wallpaper-botanical.png"];
     NSImage *photo=[[[NSImage alloc] initWithContentsOfFile:photoPath] autorelease];
     if(!photo || [photo isTemplate]) { fprintf(stderr,"Existing full-color wallpaper fixture required\n");return 2; }
-    TGAquaTextButtonCell *colorCell=[[[TGAquaTextButtonCell alloc] initTextCell:@""] autorelease];[colorCell setImage:photo];
+    TGAquaTextButtonCell *colorCell=[[[TGAquaTextButtonCell alloc] initTextCell:@""] autorelease];[colorCell setButtonType:NSToggleButton];[colorCell setImage:photo];
     ForegroundView *view=[[[ForegroundView alloc] initWithFrame:NSMakeRect(0,0,160,36)] autorelease];
     NSBitmapImageRep *silver=Render(colorCell,view,NO);[colorCell setState:NSOnState];NSBitmapImageRep *blue=Render(colorCell,view,NO);
     CGFloat maximumColorChange=0;
@@ -71,6 +90,29 @@ int main(void) {
     }
     checks++;
     if(maximumColorChange>2.0/255.0) { fprintf(stderr,"FAIL non-template full-color image was recolored by selection: %.4f\n",maximumColorChange);failures++; }
+    // Exercise AppKit's actual performClick -> action -> secondary-window path.
+    // A momentary cell can retain On internally; its idle bitmap must still be silver.
+    NSUInteger actions=0;
+    for(NSUInteger kind=0;kind<2;kind++) for(NSUInteger flip=0;flip<2;flip++) {
+        ForegroundView *host=[[[ForegroundView alloc] initWithFrame:NSMakeRect(0,0,160,36)] autorelease];host.flipped=flip;
+        NSButton *button=[[[NSButton alloc] initWithFrame:[host bounds]] autorelease];
+        NSButtonCell *cell=kind ? (NSButtonCell *)[[[TGAquaUtilityButtonCell alloc] initTextCell:@""] autorelease] : (NSButtonCell *)[[[TGAquaTextButtonCell alloc] initTextCell:@"Search chats"] autorelease];
+        if(kind) {[(TGAquaUtilityButtonCell *)cell setIconOnly:YES];[(TGAquaUtilityButtonCell *)cell setIconAssetName:@"next"];}
+        [cell setButtonType:NSMomentaryPushInButton];[button setCell:cell];[button setBordered:NO];[host addSubview:button];
+        AquaActionTarget *target=[[[AquaActionTarget alloc] init] autorelease];[button setTarget:target];[button setAction:@selector(open:)];
+        NSBitmapImageRep *idle=Render(cell,host,NO);
+        for(NSUInteger click=0;click<2;click++) {
+            [button performClick:nil];actions++;
+            if([cell isHighlighted] || !SamePixels(idle,Render(cell,host,NO))) {fprintf(stderr,"FAIL momentary action retained selected appearance kind%lu flip%lu\n",(unsigned long)kind,(unsigned long)flip);failures++;}
+        }
+        if([target calls]!=2) {fprintf(stderr,"FAIL action target/selector lost\n");failures++;}
+        // The same cell used as a section/tab must retain its selected blue state.
+        [cell setButtonType:NSToggleButton];[cell setState:NSOnState];
+        if(SamePixels(idle,Render(cell,host,NO))) {fprintf(stderr,"FAIL persistent selection lost\n");failures++;}
+        [cell setState:NSOffState];
+        if(!SamePixels(idle,Render(cell,host,NO))) {fprintf(stderr,"FAIL deselected appearance differs\n");failures++;}
+    }
+    printf("Aqua action states: %lu native clicks with secondary-window activation; momentary idle restored and toggle selection preserved\n",(unsigned long)actions);
     printf("Aqua control foreground: %lu actual icon-state rasters, enabled min%.2f disabled min%.2f, %lu failures\n",(unsigned long)checks,(double)minimumEnabled,(double)minimumDisabled,(unsigned long)failures);
     [pool drain];return failures ? 1 : 0;
 }

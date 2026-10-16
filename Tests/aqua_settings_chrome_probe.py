@@ -91,6 +91,7 @@ int main(void) {
     for(NSUInteger flipped=0;flipped<2;flipped++) for(NSUInteger badge=0;badge<2;badge++) for(NSUInteger title=0;title<2;title++) for(NSUInteger enabled=0;enabled<2;enabled++) for(NSUInteger selected=0;selected<2;selected++) for(NSUInteger pressed=0;pressed<2;pressed++) {
         NSView *view=flipped ? [[[FlippedSettingsProbe alloc] initWithFrame:NSMakeRect(0,0,228,64)] autorelease] : [[[NSView alloc] initWithFrame:NSMakeRect(0,0,228,64)] autorelease];
         TGAquaUtilityButtonCell *cell=[[[TGAquaUtilityButtonCell alloc] initTextCell:title ? @"Настройки" : @"Settings"] autorelease];
+        [cell setButtonType:NSToggleButton];
         [cell setState:selected ? NSOnState : NSOffState]; [cell setHighlighted:pressed]; [cell setEnabled:enabled];
         cell.badgeText=badge ? @"1" : nil;
         NSBitmapImageRep *bitmap=Bitmap(228,64);
@@ -101,7 +102,7 @@ int main(void) {
         assert(NSMinX(IconFrame)>20 && NSMaxX(IconFrame)<208);
         CGFloat r,g,b,a; [[IconInk colorUsingColorSpaceName:NSCalibratedRGBColorSpace] getRed:&r green:&g blue:&b alpha:&a];
         if(!enabled) assert(fabs(r-0.4)<0.005 && fabs(g-0.4)<0.005 && fabs(b-0.4)<0.005);
-        else if(selected) assert(r>0.99 && g>0.99 && b>0.99);
+        else if(selected || pressed) assert(r>0.99 && g>0.99 && b>0.99);
         else assert(r<0.3 && b<0.4);
         [NSGraphicsContext restoreGraphicsState];
         NSMutableData *mask=[NSMutableData dataWithLength:228*64];
@@ -123,6 +124,7 @@ int main(void) {
     for(NSString *asset in assets) for(NSUInteger selected=0;selected<2;selected++) for(NSUInteger pressed=0;pressed<2;pressed++) for(NSUInteger badge=0;badge<3;badge++) {
         TGAquaUtilityButtonCell *cell=[[[TGAquaUtilityButtonCell alloc] initTextCell:@"Title remains accessible"] autorelease];
         cell.iconOnly=YES; cell.iconAssetName=asset; cell.badgeText=badge==2 ? @"12345" : (badge ? @"7" : nil);
+        [cell setButtonType:NSToggleButton];
         [cell setState:selected ? NSOnState : NSOffState]; [cell setHighlighted:pressed];
         NSView *view=[[[NSView alloc] initWithFrame:NSMakeRect(0,0,64,48)] autorelease];
         NSBitmapImageRep *bitmap=Bitmap(64,48);
