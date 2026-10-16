@@ -312,7 +312,7 @@ static NSString *TGSearchFilterIdentifierForIndex(NSInteger index) {
         [result setMessageTopicKind:[chatItem messageTopicKind]];
         [result setChatTitle:(isSavedMessages ? TGLoc(@"savedMessages") : title)];
         [result setAvatarLocalPath:[chatItem avatarLocalPath]];
-        [result setSnippet:[chatItem typeSummary]];
+        [result setSnippet:TGLocalizedChatTypeSummary([chatItem typeSummary])];
         [result setChatTitleOnly:YES];
         [results addObject:result];
         if ([results count] >= 12) {

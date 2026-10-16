@@ -22,6 +22,7 @@ NSInteger TGRunAlert(NSAlert *alert,NSWindow *parent){
         NSDatePicker *calendar=[view valueForKey:@"calendarPicker"],*time=[view valueForKey:@"timePicker"];
         Check([calendar datePickerStyle]==NSClockAndCalendarDatePickerStyle,"real AppKit calendar, no hand-drawn calendar");
         Check([time datePickerElements]==NSHourMinuteDatePickerElementFlag,"time has its own native editor");
+        Check([[[calendar locale] localeIdentifier] hasPrefix:TGLanguageCode()] && [[[time locale] localeIdentifier] hasPrefix:TGLanguageCode()],"calendar and time follow the application language rather than the host language");
         Check(!NSIntersectsRect([calendar frame],[time frame]),"day and time controls do not overlap");
         for(NSView *child in [view subviews])Check(NSContainsRect([view bounds],[child frame]),"all labels and pickers fit accessory");
         Check([[[alert buttons] objectAtIndex:0] isEnabled],"valid initial future date enables confirmation");

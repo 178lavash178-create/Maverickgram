@@ -1,6 +1,7 @@
 #import <Cocoa/Cocoa.h>
 #import <objc/runtime.h>
 #import "TGTheme.h"
+#import "TGLocalization.h"
 #import "TGThemeContrast.h"
 #import "TGThemeTextField.h"
 #import "TGIconAssets.h"
@@ -13,8 +14,6 @@
 #import "../Sources/Workshop/UI/TGWorkshopButtonCell.h"
 
 NSString * const TGDownloadManagerDidChangeNotification = @"TGDownloadManagerDidChangeNotification";
-NSString *TGLoc(NSString *key) { return key; }
-NSString *TGLanguageCode(void) { return @"en"; }
 BOOL TGVersionStringIsNewer(NSString *a, NSString *b) { (void)a; (void)b; return NO; }
 void TGDrawAvatarInRect(NSString *path, NSString *title, NSRect rect, BOOL selected, BOOL flipped) {
     (void)path; (void)title; (void)rect; (void)selected; (void)flipped;

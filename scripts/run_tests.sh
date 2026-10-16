@@ -92,7 +92,7 @@ echo "== Actual theme surface readability =="
 HOME="$TEST_HOME" "$BUILD_DIR/theme-readability-probe"
 
 echo "== Themed controls and utility surfaces =="
-"$CLANG" "${COMPILE_FLAGS[@]}" Tests/utility_surface_contrast_probe.m Sources/UI/TGDownloadProgressWindowController.m Sources/UI/TGThemeTextField.m Sources/Core/TGChatItem.m Sources/Workshop/UI/TGWorkshopModuleCardView.m Sources/Workshop/UI/TGWorkshopButtonCell.m Sources/Workshop/UI/TGWorkshopSurfaceView.m Sources/UI/TGIconAssets.m Sources/UI/TGTheme.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGAquaAppearance.m Sources/UI/TGVisualWorldThemeSpec.m -framework Cocoa -o "$BUILD_DIR/utility-surface-contrast-probe"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/utility_surface_contrast_probe.m Sources/UI/TGLocalization.m Sources/UI/TGDownloadProgressWindowController.m Sources/UI/TGThemeTextField.m Sources/Core/TGChatItem.m Sources/Workshop/UI/TGWorkshopModuleCardView.m Sources/Workshop/UI/TGWorkshopButtonCell.m Sources/Workshop/UI/TGWorkshopSurfaceView.m Sources/UI/TGIconAssets.m Sources/UI/TGTheme.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGAquaAppearance.m Sources/UI/TGVisualWorldThemeSpec.m -framework Cocoa -o "$BUILD_DIR/utility-surface-contrast-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/utility-surface-contrast-probe"
 BUTTON_APP="$BUILD_DIR/ButtonProbe.app"
 mkdir -p "$BUTTON_APP/Contents/MacOS" "$BUTTON_APP/Contents/Resources"
@@ -561,6 +561,7 @@ echo "== Local window state, gallery and playback updates =="
 "$PYTHON_BIN" Tests/aqua_sticker_popover_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/scheduled_date_picker_probe.m Sources/UI/TGDatePickerDialog.m Sources/UI/TGLocalization.m -framework Cocoa -o "$BUILD_DIR/scheduled-date-picker"
 HOME="$TEST_HOME" "$BUILD_DIR/scheduled-date-picker"
+HOME="$TEST_HOME" "$PYTHON_BIN" Tests/scheduled_send_context_probe.py
 TELEGRAPHICA_TEST_ARCH="$ARCH" TELEGRAPHICA_TEST_DEPLOYMENT_TARGET="$DEPLOYMENT_TARGET" scripts/run_aqua_queue_surfaces_probe.sh
 "$PYTHON_BIN" Tests/aqua_queue_integration_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 "$PYTHON_BIN" Tests/aqua_search_filter_backend_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"

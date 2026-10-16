@@ -72,7 +72,7 @@ NSString *TGAccessibilityDescriptionForChatItem(TGChatItem *item) {
     NSMutableArray *parts = [NSMutableArray array];
     NSString *title = [item isSavedMessages] ? TGLoc(@"savedMessages") : [item title];
     TGAccessibilityAppendPart(parts, title);
-    TGAccessibilityAppendPart(parts, [item typeSummary]);
+    TGAccessibilityAppendPart(parts, TGLocalizedChatTypeSummary([item typeSummary]));
     NSInteger unreadCount = [[item unreadCount] respondsToSelector:@selector(integerValue)]
         ? [[item unreadCount] integerValue] : 0;
     if (unreadCount > 0) {

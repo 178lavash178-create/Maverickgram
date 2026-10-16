@@ -55,6 +55,8 @@ static char TGAquaSearchFiltersKey;
     [[state objectForKey:@"fromLabel"] setStringValue:TGLoc(@"search.messages.from")];
     [[state objectForKey:@"toLabel"] setStringValue:TGLoc(@"search.messages.to")];
     [[state objectForKey:@"reset"] setTitle:TGLoc(@"search.messages.reset")];
+    NSLocale *locale=[[[NSLocale alloc] initWithLocaleIdentifier:TGLanguageCode()] autorelease];
+    [[state objectForKey:@"from"] setLocale:locale]; [[state objectForKey:@"to"] setLocale:locale];
     NSComboBox *sender=[state objectForKey:@"sender"];
     if(![sender currentEditor]) [sender setStringValue:self.searchSenderQuery ? self.searchSenderQuery : @""];
     [sender setToolTip:TGLoc(@"search.messages.senderPlaceholder")];

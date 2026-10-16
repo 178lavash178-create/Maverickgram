@@ -89,7 +89,7 @@
             [result setMessageTopicKind:[chatItem messageTopicKind]];
             [result setChatTitle:[[chatItem title] length] > 0 ? [chatItem title] : TGLoc(@"search.chats.fallbackChat")];
             [result setAvatarLocalPath:[chatItem avatarLocalPath]];
-            [result setSnippet:[chatItem typeSummary]];
+            [result setSnippet:TGLocalizedChatTypeSummary([chatItem typeSummary])];
             [result setChatTitleOnly:YES];
             [self.chatSearchWindowResults addObject:result];
         }
@@ -132,7 +132,7 @@
                             [result setMessageTopicKind:[chatItem messageTopicKind]];
                             [result setChatTitle:[[chatItem title] length] > 0 ? [chatItem title] : TGLoc(@"search.chats.fallbackChat")];
                             [result setAvatarLocalPath:[chatItem avatarLocalPath]];
-                            [result setSnippet:[chatItem typeSummary]];
+                            [result setSnippet:TGLocalizedChatTypeSummary([chatItem typeSummary])];
                             [result setChatTitleOnly:YES];
                             [self.chatSearchWindowResults addObject:result];
                         }
@@ -223,7 +223,7 @@
                 [result setMessageTopicKind:[chatItem messageTopicKind]];
                 [result setChatTitle:[[chatItem title] length] > 0 ? [chatItem title] : TGLoc(@"search.chats.fallbackChat")];
                 [result setAvatarLocalPath:[chatItem avatarLocalPath]];
-                [result setSnippet:[chatItem typeSummary]];
+                [result setSnippet:TGLocalizedChatTypeSummary([chatItem typeSummary])];
                 [result setChatTitleOnly:YES];
                 [self.chatSearchWindowResults addObject:result];
             }

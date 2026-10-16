@@ -1,3 +1,4 @@
+#import "TGLocalization.h"
 #import "TGChatListSelectionAppearance.h"
 @interface TGChatFolderListCell : TGRepresentedObjectCell
 @end
@@ -90,7 +91,7 @@
                                       nil];
     [[item title] drawInRect:NSMakeRect(textX, NSMinY(cellFrame) + 4.0, width, 16.0)
               withAttributes:titleAttributes];
-    [[item typeSummary] drawInRect:NSMakeRect(textX, NSMinY(cellFrame) + 20.0, width, 14.0)
+    [TGLocalizedChatTypeSummary([item typeSummary]) drawInRect:NSMakeRect(textX, NSMinY(cellFrame) + 20.0, width, 14.0)
                     withAttributes:detailAttributes];
 }
 

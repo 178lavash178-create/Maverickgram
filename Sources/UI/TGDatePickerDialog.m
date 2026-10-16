@@ -30,12 +30,14 @@
     self=[super initWithFrame:NSMakeRect(0,0,420,244)];
     if(self) {
         _minimumDate=[minimum retain]; _confirmationButton=button;
+        NSLocale *locale=[[[NSLocale alloc] initWithLocaleIdentifier:TGLanguageCode()] autorelease];
         if(minimum && [date compare:minimum]==NSOrderedAscending) date=minimum;
         [self label:TGLoc(@"composer.schedule.date") frame:NSMakeRect(12,222,230,18)];
         [self label:TGLoc(@"composer.schedule.time") frame:NSMakeRect(266,222,142,18)];
         _calendarPicker=[[NSDatePicker alloc] initWithFrame:NSMakeRect(12,54,232,164)];
         [_calendarPicker setDatePickerStyle:NSClockAndCalendarDatePickerStyle];
         [_calendarPicker setDatePickerElements:NSYearMonthDayDatePickerElementFlag];
+        [_calendarPicker setLocale:locale];
         [_calendarPicker setDateValue:date];
         if(minimum) {
             NSCalendar *calendar=[NSCalendar currentCalendar];
@@ -47,6 +49,7 @@
         _timePicker=[[NSDatePicker alloc] initWithFrame:NSMakeRect(266,184,142,28)];
         [_timePicker setDatePickerStyle:NSTextFieldAndStepperDatePickerStyle];
         [_timePicker setDatePickerElements:NSHourMinuteDatePickerElementFlag];
+        [_timePicker setLocale:locale];
         [_timePicker setFont:[NSFont systemFontOfSize:16]]; [_timePicker setDateValue:date];
         [_timePicker setTarget:self]; [_timePicker setAction:@selector(selectionChanged:)];
         [self addSubview:_timePicker];
@@ -69,6 +72,7 @@
     BOOL valid=date && (!_minimumDate || [date compare:_minimumDate]!=NSOrderedAscending);
     [_confirmationButton setEnabled:valid];
     NSDateFormatter *format=[[[NSDateFormatter alloc] init] autorelease];
+    [format setLocale:[[[NSLocale alloc] initWithLocaleIdentifier:TGLanguageCode()] autorelease]];
     [format setDateStyle:NSDateFormatterLongStyle]; [format setTimeStyle:NSDateFormatterShortStyle];
     [_summary setStringValue:valid ? [format stringFromDate:date] : TGLoc(@"composer.schedule.invalid")];
     [_summary setTextColor:valid ? TGClassicMutedInkColor() : TGClassicCardInkColor()];

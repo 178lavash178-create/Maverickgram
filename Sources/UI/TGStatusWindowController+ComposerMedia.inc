@@ -1833,7 +1833,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
             }
             if ([items count] > 0) {
                 self.stickerPickerItems = items;
-                [self.stickerPickerStatusField setStringValue:@"Recent stickers"];
+                [self.stickerPickerStatusField setStringValue:TGLoc(@"stickers.recent")];
                 [[TGLogger sharedLogger] log:[NSString stringWithFormat:@"Stickers: loaded recent stickers count=%lu", (unsigned long)[items count]]];
             } else {
                 self.stickerPickerItems = [NSArray array];
@@ -1866,7 +1866,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
             BOOL resultIsCurrent = (generation == self.stickerPickerLoadGeneration && client == self.client && [self stickerPickerLoadContextIsCurrent:loadContext]);
             if (resultIsCurrent) {
                 self.stickerPickerItems = ([items count] > 0 ? items : [NSArray array]);
-                [self.stickerPickerStatusField setStringValue:([items count] > 0 ? @"Favorite stickers" : ([errorMessage length] > 0 ? errorMessage : @"No favorite stickers yet"))];
+                [self.stickerPickerStatusField setStringValue:([items count] > 0 ? TGLoc(@"stickers.favorites.tab") : ([errorMessage length] > 0 ? errorMessage : @"No favorite stickers yet"))];
                 [[TGLogger sharedLogger] log:[NSString stringWithFormat:@"Stickers: loaded favorite stickers count=%lu%@", (unsigned long)[items count], [errorMessage length] > 0 ? [NSString stringWithFormat:@" error=%@", errorMessage] : @""]];
                 [self rebuildStickerPickerGrid];
                 [self scrollStickerPickerGridToTop];
@@ -3316,12 +3316,22 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
 
 - (void)scheduleMessage:(id)sender {
     (void)sender;
+    if (![self.sendMessageButton isEnabled]) return;
+    // A modal sheet still processes account/chat updates. Confirmation must
+    // never apply a date to a different recipient, reply or replacement draft.
+    NSArray *contextKeys = [NSArray arrayWithObjects:@"client", @"selectedChatID",
+        @"selectedMessageThreadID", @"selectedMessageTopicKind", @"activeSection",
+        @"replyTargetMessageItem", @"replyTargetChatID", @"currentAuthState", nil];
+    NSDictionary *context = [self dictionaryWithValuesForKeys:contextKeys];
+    NSString *draft = [[[self.sendTextField stringValue] copy] autorelease];
     NSDate *date = [TGDatePickerDialog dateWithTitle:TGLoc(@"composer.schedule.title")
                                                help:TGLoc(@"composer.schedule.help")
                                         actionTitle:TGLoc(@"composer.schedule.confirm")
                                         initialDate:[NSDate dateWithTimeIntervalSinceNow:60.0 * 60.0]
                                             minDate:[NSDate dateWithTimeIntervalSinceNow:60.0]];
-    if (!date) {
+    if (!date || ![self.sendMessageButton isEnabled] ||
+        ![context isEqual:[self dictionaryWithValuesForKeys:contextKeys]] ||
+        ![draft isEqualToString:[self.sendTextField stringValue]]) {
         return;
     }
     NSInteger timestamp = (NSInteger)[date timeIntervalSince1970];

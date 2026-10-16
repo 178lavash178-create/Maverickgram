@@ -1190,6 +1190,17 @@ NSString *TGLoc(NSString *key) {
                         @"Применение простого правила заменит исключения для этого параметра.", @"privacy.rules.help",
                         @"Сейчас действуют исключения. Выберите простое правило, чтобы заменить их.", @"privacy.rules.custom",
                         @"Хранение данных", @"privacy.retention",
+                        @"Личный чат", @"chat.type.Private",
+                        @"Группа", @"chat.type.Group",
+                        @"Супергруппа", @"chat.type.Supergroup",
+                        @"Канал", @"chat.type.Channel",
+                        @"Секретный чат", @"chat.type.Secret",
+                        @"Чат", @"chat.type.Chat",
+                        @"Форум", @"chat.type.Forum",
+                        @"Тема форума", @"chat.type.Forum topic",
+                        @"Обсуждение", @"chat.type.Message thread",
+                        @"Заблокировать", @"privacy.block.action",
+                        @"Разблокировать", @"privacy.unblock.action",
                         @"Удалить неактивный аккаунт", @"privacy.accountTTL",
                         @"Автоудаление в новых чатах", @"privacy.defaultAutoDelete",
                         @"Автоудаление", @"privacy.chatAutoDelete",
@@ -2532,6 +2543,17 @@ NSString *TGLoc(NSString *key) {
                         @"Прымяненне простага правіла заменіць выключэнні для гэтага параметра.", @"privacy.rules.help",
                         @"Зараз дзейнічаюць выключэнні. Выберыце простае правіла, каб замяніць іх.", @"privacy.rules.custom",
                         @"Захоўванне даных", @"privacy.retention",
+                        @"Асабісты чат", @"chat.type.Private",
+                        @"Група", @"chat.type.Group",
+                        @"Супергрупа", @"chat.type.Supergroup",
+                        @"Канал", @"chat.type.Channel",
+                        @"Сакрэтны чат", @"chat.type.Secret",
+                        @"Чат", @"chat.type.Chat",
+                        @"Форум", @"chat.type.Forum",
+                        @"Тэма форуму", @"chat.type.Forum topic",
+                        @"Абмеркаванне", @"chat.type.Message thread",
+                        @"Заблакаваць", @"privacy.block.action",
+                        @"Разблакаваць", @"privacy.unblock.action",
                         @"Выдаліць неактыўны акаўнт", @"privacy.accountTTL",
                         @"Аўтавыдаленне ў новых чатах", @"privacy.defaultAutoDelete",
                         @"Аўтавыдаленне", @"privacy.chatAutoDelete",
@@ -3874,6 +3896,17 @@ NSString *TGLoc(NSString *key) {
                         @"Applying a simple rule replaces existing exceptions for this setting.", @"privacy.rules.help",
                         @"This setting has custom exceptions. Choose a simple rule to replace them.", @"privacy.rules.custom",
                         @"Data retention", @"privacy.retention",
+                        @"Private chat", @"chat.type.Private",
+                        @"Group", @"chat.type.Group",
+                        @"Supergroup", @"chat.type.Supergroup",
+                        @"Channel", @"chat.type.Channel",
+                        @"Secret chat", @"chat.type.Secret",
+                        @"Chat", @"chat.type.Chat",
+                        @"Forum", @"chat.type.Forum",
+                        @"Forum topic", @"chat.type.Forum topic",
+                        @"Discussion", @"chat.type.Message thread",
+                        @"Block", @"privacy.block.action",
+                        @"Unblock", @"privacy.unblock.action",
                         @"Delete inactive account", @"privacy.accountTTL",
                         @"New-chat auto-delete", @"privacy.defaultAutoDelete",
                         @"Auto-delete", @"privacy.chatAutoDelete",
@@ -4050,4 +4083,11 @@ NSString *TGLoc(NSString *key) {
     NSDictionary *dictionary = [language isEqualToString:@"be"] ? be : ([language isEqualToString:@"en"] ? en : ru);
     NSString *value = [dictionary objectForKey:key];
     return value ? value : key;
+}
+
+NSString *TGLocalizedChatTypeSummary(NSString *summary) {
+    if (![summary isKindOfClass:[NSString class]]) return @"";
+    NSString *key = [@"chat.type." stringByAppendingString:summary];
+    NSString *localized = TGLoc(key);
+    return [localized isEqualToString:key] ? summary : localized;
 }

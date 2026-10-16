@@ -636,7 +636,7 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
 
     NSMutableString *subtitle = [NSMutableString string];
     if ([self.selectedChatTypeSummary length] > 0) {
-        [subtitle appendString:self.selectedChatTypeSummary];
+        [subtitle appendString:TGLocalizedChatTypeSummary(self.selectedChatTypeSummary)];
     }
     if ([self.selectedChatID respondsToSelector:@selector(longLongValue)]) {
         if ([subtitle length] > 0) {
@@ -967,7 +967,7 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
         if (TGInterfaceDesignIsAqua()) [title setAutoresizingMask:NSViewWidthSizable];
         [row addSubview:title];
 
-        NSString *details = ([chatItem.typeSummary length] > 0 ? chatItem.typeSummary : TGLoc(@"media.center.tab.groups"));
+        NSString *details = ([chatItem.typeSummary length] > 0 ? TGLocalizedChatTypeSummary(chatItem.typeSummary) : TGLoc(@"media.center.tab.groups"));
         NSTextField *subtitle = [self labelWithFrame:NSMakeRect(68.0, 36.0, NSWidth([row bounds]) - 86.0, 18.0)
                                                 text:details
                                                 font:[NSFont systemFontOfSize:12.0]];
@@ -1337,7 +1337,7 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
         [self.mediaCenterTitleField setStringValue:([self.selectedChatTitle length] > 0 ? self.selectedChatTitle : @"Selected chat")];
         NSMutableString *subtitle = [NSMutableString string];
         if ([self.selectedChatTypeSummary length] > 0) {
-            [subtitle appendString:self.selectedChatTypeSummary];
+            [subtitle appendString:TGLocalizedChatTypeSummary(self.selectedChatTypeSummary)];
         }
         if ([self.selectedChatID respondsToSelector:@selector(longLongValue)]) {
             if ([subtitle length] > 0) {
