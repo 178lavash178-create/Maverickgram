@@ -377,6 +377,7 @@
         return;
     }
 
+    [self captureNavigationContinuity];
     NSNumber *previousChatID = [self.selectedChatID retain];
     NSNumber *previousThreadID = [self.selectedMessageThreadID retain];
     NSString *previousTopicKind = [self.selectedMessageTopicKind copy];
@@ -460,6 +461,7 @@
                           (previousTopicKind && newTopicKind && [previousTopicKind isEqualToString:newTopicKind]));
     BOOL selectionChanged = !(sameChat && sameThread && sameTopicKind);
     if (selectionChanged) {
+        [self armNavigationTranscriptRestore];
         [NSObject cancelPreviousPerformRequestsWithTarget:self
                                                  selector:@selector(dismissCurrentUnreadSeparator)
                                                    object:nil];
@@ -797,6 +799,7 @@
         return;
     }
 
+    [self captureNavigationContinuity];
     NSNumber *preferredThreadID = [self.selectedMessageThreadID retain];
 
     self.chatItemsBeforeTopicList = [NSArray arrayWithArray:[self chatItemsByRemovingForumTopicRowsFromItems:self.chatItems]];
@@ -881,6 +884,8 @@
     } else if (!useTopBar) {
         [self.chatTableView deselectAll:nil];
     }
+    [self armNavigationChatListRestore];
+    [self armNavigationTranscriptRestore];
     [self refreshSelectedChatHeaderDisplay];
     [self refreshForumTopicTabSelection];
     [self.messageItems removeAllObjects];
@@ -898,6 +903,7 @@
     [self updateAuthControlsForState:self.currentAuthState];
     [self layoutContentView];
     [self updateVisibleSection];
+    [self restoreNavigationChatListIfPending];
     if (selectedTopicItem && self.selectedChatID && self.selectedMessageThreadID) {
         [self reloadMessagesForChatID:self.selectedChatID interactive:NO];
     }
@@ -956,6 +962,7 @@
         return;
     }
 
+    [self captureNavigationContinuity];
     NSNumber *parentChatID = [self.topicParentChatID retain];
     NSString *parentTitle = [self.topicParentTitle copy];
     NSString *parentAvatarPath = [self.topicParentAvatarLocalPath copy];
@@ -985,6 +992,7 @@
 
     NSArray *restoreItems = self.chatItemsBeforeTopicList ? self.chatItemsBeforeTopicList : [NSArray array];
     NSUInteger selectedIndex = [self indexOfChatID:parentChatID inChatItems:restoreItems];
+    TGChatItem *restoredParentItem=selectedIndex!=NSNotFound ? [[restoreItems objectAtIndex:selectedIndex] retain] : nil;
     self.suppressChatSelectionHandling = YES;
     if (!wasTopBar) {
         [self.chatItems removeAllObjects];
@@ -999,11 +1007,30 @@
     }
     self.suppressChatSelectionHandling = NO;
     self.chatItemsBeforeTopicList = nil;
+    [self armNavigationChatListRestore];
+    [self armNavigationTranscriptRestore];
     [self refreshChatListTitle];
     [self refreshSelectedChatHeaderDisplay];
     [self updateAuthControlsForState:self.currentAuthState];
     [self layoutContentView];
     [self updateVisibleSection];
+    [self restoreNavigationChatListIfPending];
+    if(TGInterfaceDesignIsAqua() && self.selectedChatID) {
+        self.searchGeneration++;
+        self.messageItemsRepresentFocusedContext=NO;
+        TGChatItem *parentItem=restoredParentItem;
+        self.selectedChatLastReadInboxMessageID=[parentItem lastReadInboxMessageID];
+        self.selectedChatLastReadOutboxMessageID=[parentItem lastReadOutboxMessageID];
+        self.selectedChatUnreadCount=[[parentItem unreadCount] unsignedIntegerValue];
+        self.initialUnreadPositionPending=(self.selectedChatUnreadCount>0);
+        self.unreadSeparatorDismissedForCurrentSelection=NO;
+        [self.visibleReadReceiptMessageIDs removeAllObjects];
+        [self.messageItems removeAllObjects]; [self.inlineMediaPlaybackCoordinator removeAllPlayback];
+        [self.messageTableView reloadData];
+        [self restoreComposerDraftForChatID:self.selectedChatID messageThreadID:nil messageTopicKind:nil];
+        [self reloadMessagesForChatID:self.selectedChatID interactive:NO];
+    }
+    [restoredParentItem release];
     [parentChatID release];
     [parentTitle release];
     [parentAvatarPath release];
@@ -1200,6 +1227,7 @@
     if (![item isKindOfClass:[TGChatItem class]] || ![item isForumTopic]) {
         return;
     }
+    [self captureNavigationContinuity];
     self.searchGeneration++;
     [self saveComposerDraftForChatID:self.selectedChatID
                      messageThreadID:self.selectedMessageThreadID
@@ -1219,6 +1247,7 @@
     self.selectedChatUnreadCount = [[item unreadCount] respondsToSelector:@selector(unsignedIntegerValue)] ? [[item unreadCount] unsignedIntegerValue] : 0;
     self.initialUnreadPositionPending = (self.selectedChatUnreadCount > 0);
     [self.visibleReadReceiptMessageIDs removeAllObjects];
+    [self armNavigationTranscriptRestore];
     [self refreshSelectedChatHeaderDisplay];
     [self refreshForumTopicTabSelection];
     [self restoreComposerDraftForChatID:self.selectedChatID

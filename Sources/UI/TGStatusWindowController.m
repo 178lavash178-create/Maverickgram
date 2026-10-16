@@ -1,3 +1,6 @@
+#import "TGMediaPlaybackTimeline.h"
+#import "TGWindowFramePersistence.h"
+#import "TGNavigationPositionStore.h"
 #import "TGStatusWindowController.h"
 #import "TGActiveSessionsPresentation.h"
 #import "TGAccessibilitySupport.h"
@@ -897,11 +900,43 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 - (void)updateSavedMessagesPresentationForChatItems;
 - (void)setMarkAllChatsReadBusy:(BOOL)busy;
 - (void)openWorkshopFromDrawer:(id)sender;
+@property(nonatomic,retain) TGWindowFramePersistence *mainWindowFramePersistence;
+@property(nonatomic,retain) TGNavigationPositionStore *navigationPositionStore;
+- (void)clearNavigationContinuity;
+- (void)captureNavigationContinuity;
+- (void)armNavigationChatListRestore;
+- (NSUInteger)navigationChatListRestoreLimit;
+- (void)refreshNavigationBreadcrumb;
+- (NSNumber *)navigationPendingTranscriptAnchor;
+- (BOOL)restoreNavigationTranscriptIfPending;
+- (TGNavigationPositionStore *)preparedNavigationPositionStore;
+- (NSString *)navigationChatListKey;
+- (NSString *)navigationTranscriptKey;
+- (NSString *)navigationChatAnchor:(TGChatItem *)item;
+- (void)captureNavigationChatList;
+- (void)captureNavigationTranscript;
+- (void)armNavigationTranscriptRestore;
+- (void)restoreNavigationClip:(NSClipView *)clip table:(NSTableView *)table row:(NSUInteger)row offset:(CGFloat)offset fallback:(CGFloat)fallback;
+- (void)restoreNavigationChatListIfPending;
+- (void)forgetNavigationTranscriptPosition;
+- (NSString *)navigationFolderTitle;
+- (NSMutableDictionary *)aquaPhotoGallery;
+- (void)prepareAquaPhotoGalleryForMessage:(TGMessageItem *)item mediaItem:(NSDictionary *)media gridSender:(id)sender;
+- (void)clearAquaPhotoGallery;
+- (void)updateAquaPhotoGalleryControls;
+- (BOOL)aquaPhotoGalleryIsCurrent;
+- (void)moveAquaPhotoGalleryBy:(NSInteger)delta;
+- (void)previousAquaPhoto:(id)sender;
+- (void)nextAquaPhoto:(id)sender;
+- (void)toggleAquaPhotoFullscreen:(id)sender;
+
 @end
 
 #include "TGChatSearchPanelView.inc"
 
 @implementation TGStatusWindowController
+@synthesize mainWindowFramePersistence=_mainWindowFramePersistence;
+@synthesize navigationPositionStore=_navigationPositionStore;
 
 @synthesize topPanelView = _topPanelView;
 @synthesize sidebarPanelView = _sidebarPanelView;
@@ -1483,6 +1518,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 - (void)setProfileUserID:(NSNumber *)userID {
     if (_profileUserID != userID) {
       if (![_profileUserID isEqual:userID]) {
+        [self clearNavigationContinuity];
         [self invalidateAquaPhotoPreview]; [self.mediaPreviewWindow close];
         [self invalidateAquaChatInfoPanel];
         [self cancelMediaPlaybackPreparation];
@@ -1508,6 +1544,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
         [self.sectionTransitionController reset];
     }
     if ([_currentAuthState isEqualToString:@"ready"] && ![state isEqualToString:@"ready"]) {
+        [self clearNavigationContinuity];
         [self invalidateAquaPhotoPreview]; [self.mediaPreviewWindow close];
         [self invalidateAquaChatInfoPanel];
         [self cancelMediaPlaybackPreparation];
@@ -1571,6 +1608,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
 - (void)setClient:(TGTDLibClient *)client {
     if (_client != client) {
+        [self clearNavigationContinuity];
         [self clearClosedChatSuggestionsForSessionChange];
         [self invalidateAutomaticReadRequests];
         [self.sectionTransitionController reset];
@@ -1609,6 +1647,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
         TGResourcePolicyApplyDefaultsIfNeeded();
         self.client = [[[TGTDLibClient alloc] init] autorelease];
         TGSetActiveThemeIdentifier([[NSUserDefaults standardUserDefaults] stringForKey:TGThemeDefaultsKey]);
+        self.mainWindowFramePersistence=[[[TGWindowFramePersistence alloc] initWithWindow:[self window] designIdentifier:TGInterfaceDesignIsAqua() ? @"aqua" : @"classic"] autorelease];
         self.chatItems = [NSMutableArray array];
         self.messageItems = [NSMutableArray array];
         self.pendingArrivalMessageIDs = [NSMutableSet set];
@@ -2479,6 +2518,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
                                                   ? TGLoc(@"calls.video.start")
                                                   : TGLoc(@"calls.transportUnavailable"))];
     [self.selectedChatAvatarView setNeedsDisplay:YES];
+    [self refreshNavigationBreadcrumb];
 }
 
 - (void)startSelectedChatVideoCall:(id)sender {
@@ -4445,9 +4485,11 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
 - (void)refreshChatListTitle {
     if (self.showingForumTopicList) {
+        [self refreshNavigationBreadcrumb];
         return;
     }
     [self.chatsLabel setStringValue:(self.showingArchivedChats ? TGLoc(@"drawer.archive") : TGLoc(@"chats"))];
+    [self refreshNavigationBreadcrumb];
 }
 
 - (void)updateDrawerFolderButtonStates {
@@ -4798,6 +4840,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
         }
     }
 
+    [self captureNavigationContinuity];
     self.showingArchivedChats = targetArchive;
     self.selectedChatFilterID = filterID;
     [self refreshChatListTitle];
@@ -4807,14 +4850,15 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     }
 
     [self clearForumTopicListState];
+    [self armNavigationChatListRestore];
     self.chatsExhausted = NO;
-    self.chatPreviewLimit = TGStatusChatPreviewInitialLimit;
+    self.chatPreviewLimit = [self navigationChatListRestoreLimit];
     self.autoChatListLoadArmed = YES;
     self.autoChatListRefreshArmed = YES;
     if (!self.selectedChatFilterID && !self.showingArchivedChats) {
         [self.client invalidateMainChatListExhaustion];
     }
-    [self reloadChatsInteractive:YES preserveSelection:NO requestedLimit:TGStatusChatPreviewInitialLimit];
+    [self reloadChatsInteractive:YES preserveSelection:NO requestedLimit:self.chatPreviewLimit];
 }
 
 - (void)toggleDrawer:(id)sender {
@@ -4873,6 +4917,8 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
 #include "TGStatusWindowController+Notifications.inc"
 
+#include "TGStatusWindowController+NavigationContinuity.inc"
+
 #include "TGStatusWindowController+ClosedChatNavigation.inc"
 
 #include "TGStatusWindowController+AquaFolderDrawer.inc"
@@ -4926,6 +4972,10 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 }
 
 - (void)dealloc {
+    [_mainWindowFramePersistence release];
+    _mainWindowFramePersistence = nil;
+    [_navigationPositionStore release];
+    _navigationPositionStore = nil;
     [self invalidateAutomaticReadRequests];
     [_sectionTransitionController reset];
     [_sectionTransitionController release];

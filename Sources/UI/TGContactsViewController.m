@@ -285,7 +285,12 @@ static NSString *TGContactsSubtitle(NSDictionary *contact) {
     CGFloat tableTop = searchY - 8.0;
     BOOL showsProfile = (width >= 720.0);
     CGFloat footerHeight = showsProfile ? 48.0 : 78.0;
-    CGFloat profileWidth = showsProfile ? MIN(320.0, MAX(250.0, floor(width * 0.34))) : 0.0;
+    CGFloat openWidth = ceil([[self.openButton title] sizeWithAttributes:[NSDictionary dictionaryWithObject:
+        [NSFont boldSystemFontOfSize:13.0] forKey:NSFontAttributeName]].width) + 32.0;
+    CGFloat actionsWidth = ceil([[self.actionButton title] sizeWithAttributes:[NSDictionary dictionaryWithObject:
+        [NSFont boldSystemFontOfSize:12.0] forKey:NSFontAttributeName]].width) + 28.0;
+    CGFloat profileWidth = showsProfile ? MIN(width - margin * 3.0 - 280.0,
+        MAX(MIN(320.0, MAX(250.0, floor(width * 0.34))), openWidth + actionsWidth + 8.0)) : 0.0;
     CGFloat listWidth = showsProfile ? (width - (margin * 3.0) - profileWidth) : (width - (margin * 2.0));
     [self.searchField setFrame:NSMakeRect(margin, searchY, MAX(120.0, listWidth), 28.0)];
     [self.profileView setHidden:!showsProfile];
@@ -311,7 +316,7 @@ static NSString *TGContactsSubtitle(NSDictionary *contact) {
         [self.statusField setFrame:NSMakeRect(margin, 15.0, MAX(80.0, listWidth - 24.0), 22.0)];
         [self.spinner setFrame:NSMakeRect(margin + listWidth - 18.0, 18.0, 16.0, 16.0)];
         CGFloat actionGap = 8.0;
-        CGFloat actionWidth = floor((profileWidth - actionGap) / 2.0);
+        CGFloat actionWidth = MAX(openWidth, floor((profileWidth - actionGap) / 2.0));
         [self.openButton setFrame:NSMakeRect(profileX, 9.0, actionWidth, 32.0)];
         [self.actionButton setFrame:NSMakeRect(profileX + actionWidth + actionGap,
                                                9.0,
@@ -384,6 +389,7 @@ static NSString *TGContactsSubtitle(NSDictionary *contact) {
         [self.statusField setStringValue:TGLoc(@"contacts.section.hint")];
     }
     [self.tableView reloadData];
+    [self layoutContent];
 }
 
 - (void)refreshThemeAppearance {

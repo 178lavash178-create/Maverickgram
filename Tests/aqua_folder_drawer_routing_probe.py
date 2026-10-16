@@ -111,6 +111,8 @@ enum { NSWindowAbove=1 };
 - (void)removeFromSuperview;
 - (void)setBoundsOrigin:(NSPoint)origin;
 - (void)reflectScrolledClipView:(ProbeView *)clip;
+- (void)beginProgrammaticChanges;
+- (void)endProgrammaticChanges;
 @end
 @implementation ProbeView
 @synthesize hidden=_hidden, frame=_frame, bounds=_bounds, superview=_superview, contentView=_contentView, target=_target, action=_action, tag=_tag;
@@ -121,6 +123,9 @@ enum { NSWindowAbove=1 };
 - (void)removeFromSuperview { if(_superview) [_superview->_children removeObjectIdenticalTo:self]; _superview=nil; }
 - (void)setBoundsOrigin:(NSPoint)origin { _bounds.origin=origin; }
 - (void)reflectScrolledClipView:(ProbeView *)clip { (void)clip; }
+// Frame persistence has its own production lifecycle probe.
+- (void)beginProgrammaticChanges {}
+- (void)endProgrammaticChanges {}
 @end
 @interface ProbeDrawer : NSObject {
     BOOL _canShowExternally, _visible;

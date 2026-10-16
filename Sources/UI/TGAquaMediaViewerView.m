@@ -37,7 +37,7 @@ TGAquaMediaViewerGeometry TGAquaMediaViewerFrames(NSRect bounds, TGAquaMediaView
 }
 
 @implementation TGAquaMediaControlCell
-@synthesize iconAssetName=_iconAssetName,hovered=_hovered;
+@synthesize iconAssetName=_iconAssetName,hovered=_hovered,mirrored=_mirrored;
 - (void)dealloc { [_iconAssetName release];[super dealloc]; }
 - (void)drawWithFrame:(NSRect)frame inView:(NSView *)view {
     BOOL enabled=[self isEnabled],pressed=[self isHighlighted];
@@ -47,7 +47,13 @@ TGAquaMediaViewerGeometry TGAquaMediaViewerFrames(NSRect bounds, TGAquaMediaView
     }
     NSColor *ink=[NSColor colorWithCalibratedWhite:enabled ? (pressed ? 1.0 : 0.90) : 0.48 alpha:1];
     if ([_iconAssetName length]) {
+        [NSGraphicsContext saveGraphicsState];
+        if (_mirrored) {
+            NSAffineTransform *mirror=[NSAffineTransform transform];
+            [mirror translateXBy:2*NSMidX(frame) yBy:0]; [mirror scaleXBy:-1 yBy:1]; [mirror concat];
+        }
         TGDrawTemplateIconAsset(_iconAssetName,NSMakeRect(floor(NSMidX(frame)-9),floor(NSMidY(frame)-9),18,18),ink,1,[view isFlipped]);
+        [NSGraphicsContext restoreGraphicsState];
     } else {
         NSDictionary *attrs=[NSDictionary dictionaryWithObjectsAndKeys:[NSFont systemFontOfSize:12],NSFontAttributeName,ink,NSForegroundColorAttributeName,nil];
         NSString *text=[self title] ? [self title] : @"";NSSize size=[text sizeWithAttributes:attrs];
@@ -65,6 +71,23 @@ TGAquaMediaViewerGeometry TGAquaMediaViewerFrames(NSRect bounds, TGAquaMediaView
 - (void)mouseEntered:(NSEvent *)event { (void)event;if([[self cell] isKindOfClass:[TGAquaMediaControlCell class]])[(TGAquaMediaControlCell *)[self cell] setHovered:YES];[self setNeedsDisplay:YES]; }
 - (void)mouseExited:(NSEvent *)event { (void)event;if([[self cell] isKindOfClass:[TGAquaMediaControlCell class]])[(TGAquaMediaControlCell *)[self cell] setHovered:NO];[self setNeedsDisplay:YES]; }
 - (void)dealloc {if(_mediaTrackingArea)[self removeTrackingArea:_mediaTrackingArea];[_mediaTrackingArea release];[super dealloc];}
+@end
+
+@implementation TGAquaPhotoGalleryWindow
+@synthesize galleryTarget=_galleryTarget;
+- (BOOL)performKeyEquivalent:(NSEvent *)event {
+    NSUInteger modifiers=NSCommandKeyMask|NSControlKeyMask|NSAlternateKeyMask|NSShiftKeyMask;
+    if ([event type]==NSKeyDown && ([event modifierFlags]&modifiers)==0) {
+        NSString *characters=[event charactersIgnoringModifiers];
+        unichar key=[characters length]==1 ? [characters characterAtIndex:0] : 0;
+        SEL action=key==NSLeftArrowFunctionKey ? @selector(previousAquaPhoto:) :
+                   (key==NSRightArrowFunctionKey ? @selector(nextAquaPhoto:) : NULL);
+        if (action && [_galleryTarget respondsToSelector:action]) {
+            [_galleryTarget performSelector:action withObject:self]; return YES;
+        }
+    }
+    return [super performKeyEquivalent:event];
+}
 @end
 
 @interface TGAquaMediaChromeView : TGAquaMetalView { BOOL _dark; }
@@ -126,11 +149,28 @@ static NSTextField *TGMediaViewerLabel(NSFont *font) {
         _closeButton=[[TGAquaMediaControlButton alloc] initWithFrame:NSZeroRect];
         TGAquaUtilityButtonCell *cell=[[[TGAquaUtilityButtonCell alloc] initTextCell:@""] autorelease];
         [cell setIconOnly:YES]; [cell setIconAssetName:@"cross"]; [_closeButton setCell:cell]; [_closeButton setBordered:NO]; [_closeButton setToolTip:TGLoc(@"close")]; [_headerView addSubview:_closeButton];
+        _counterField=[TGMediaViewerLabel([NSFont systemFontOfSize:12]) retain];
+        [_counterField setTextColor:[NSColor colorWithCalibratedWhite:0.9 alpha:1]]; [_headerView addSubview:_counterField];
+        _previousButton=[[TGAquaMediaControlButton alloc] initWithFrame:NSZeroRect];
+        _nextButton=[[TGAquaMediaControlButton alloc] initWithFrame:NSZeroRect];
+        _fullscreenButton=[[TGAquaMediaControlButton alloc] initWithFrame:NSZeroRect];
+        NSArray *buttons=[NSArray arrayWithObjects:_previousButton,_nextButton,_fullscreenButton,nil];
+        for (NSButton *button in buttons) {
+            TGAquaMediaControlCell *galleryCell=[[[TGAquaMediaControlCell alloc] initTextCell:@""] autorelease];
+            [button setCell:galleryCell]; [button setBordered:NO]; [button setFocusRingType:NSFocusRingTypeNone]; [_headerView addSubview:button];
+        }
+        [(TGAquaMediaControlCell *)[_previousButton cell] setIconAssetName:@"next"];
+        [(TGAquaMediaControlCell *)[_previousButton cell] setMirrored:YES];
+        [(TGAquaMediaControlCell *)[_nextButton cell] setIconAssetName:@"next"];
+        [_previousButton setToolTip:TGLoc(@"media.viewer.previous")]; [_nextButton setToolTip:TGLoc(@"media.viewer.next")];
+        [_fullscreenButton setTitle:TGLoc(@"media.viewer.fullScreen")]; [_fullscreenButton setToolTip:TGLoc(@"media.viewer.fullScreen")];
+        [self setGalleryIndex:NSNotFound count:0];
         [self setKind:TGAquaMediaViewerPhoto];
     }
     return self;
 }
 - (void)dealloc {
+    [self setGalleryTarget:nil]; [_previousButton release]; [_nextButton release]; [_fullscreenButton release]; [_counterField release];
     [_closeButton setTarget:nil]; [_headerView release]; [_footerView release]; [_stageView release];
     [_typeImageView release]; [_titleField release]; [_detailField release]; [_closeButton release]; [super dealloc];
 }
@@ -141,6 +181,7 @@ static NSTextField *TGMediaViewerLabel(NSFont *font) {
     BOOL photo=kind==TGAquaMediaViewerPhoto;
     [(TGAquaMediaChromeView *)_headerView setDark:photo];[(TGAquaMediaChromeView *)_footerView setDark:photo];
     [(TGAquaMediaGalleryStage *)_stageView setDark:photo];
+    [_previousButton setHidden:!photo]; [_nextButton setHidden:!photo]; [_counterField setHidden:!photo]; [_fullscreenButton setHidden:!photo];
     [_typeImageView setHidden:photo];[_titleField setHidden:photo];[_detailField setHidden:photo];
     id closeTarget=[_closeButton target]; SEL closeAction=[_closeButton action];
     if (photo && ![[_closeButton cell] isKindOfClass:[TGAquaMediaControlCell class]]) {
@@ -157,6 +198,16 @@ static NSTextField *TGMediaViewerLabel(NSFont *font) {
     [_detailField setStringValue:detail ? detail : @""]; [_detailField setToolTip:detail];
 }
 - (void)setCloseTarget:(id)target action:(SEL)action { [_closeButton setTarget:target]; [_closeButton setAction:action]; }
+- (void)setGalleryTarget:(id)target {
+    [_previousButton setTarget:target]; [_previousButton setAction:@selector(previousAquaPhoto:)];
+    [_nextButton setTarget:target]; [_nextButton setAction:@selector(nextAquaPhoto:)];
+    [_fullscreenButton setTarget:target]; [_fullscreenButton setAction:@selector(toggleAquaPhotoFullscreen:)];
+}
+- (void)setGalleryIndex:(NSUInteger)index count:(NSUInteger)count {
+    BOOL valid=index!=NSNotFound && index<count;
+    [_counterField setStringValue:valid ? [NSString stringWithFormat:@"%lu / %lu",(unsigned long)index+1,(unsigned long)count] : @""];
+    [_previousButton setEnabled:valid && index>0]; [_nextButton setEnabled:valid && index+1<count];
+}
 - (void)resizeSubviewsWithOldSize:(NSSize)oldSize {
     (void)oldSize; TGAquaMediaViewerGeometry g=TGAquaMediaViewerFrames([self bounds],_kind);
     [_headerView setFrame:g.header]; [_footerView setFrame:g.footer]; [_stageView setFrame:g.stage];
@@ -164,6 +215,10 @@ static NSTextField *TGMediaViewerLabel(NSFont *font) {
     [_typeImageView setFrame:NSMakeRect(16,13,28,28)];
     [_titleField setFrame:NSMakeRect(56,29,MAX(0,w-110),18)];
     [_detailField setFrame:NSMakeRect(56,10,MAX(0,w-110),16)];
+    [_previousButton setFrame:NSMakeRect(10,5,30,30)]; [_nextButton setFrame:NSMakeRect(46,5,30,30)];
+    [_counterField setFrame:NSMakeRect(88,11,MAX(0,MIN(110,w-272)),18)];
+    CGFloat fullscreenWidth=MAX(84,MIN(152,ceil([[_fullscreenButton title] sizeWithAttributes:[NSDictionary dictionaryWithObject:[NSFont systemFontOfSize:12] forKey:NSFontAttributeName]].width)+18));
+    [_fullscreenButton setFrame:NSMakeRect(MAX(180,w-fullscreenWidth-54),5,fullscreenWidth,30)];
     [_closeButton setFrame:NSMakeRect(MAX(0,w-42),_kind==TGAquaMediaViewerPhoto ? 5 : 12,30,30)];
 }
 @end

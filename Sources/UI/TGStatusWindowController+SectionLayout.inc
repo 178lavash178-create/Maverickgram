@@ -1676,6 +1676,7 @@
     if (closingWindow != self.mediaPreviewWindow) {
         return;
     }
+    if ([closingWindow isKindOfClass:[TGAquaPhotoGalleryWindow class]]) [(TGAquaPhotoGalleryWindow *)closingWindow setGalleryTarget:nil];
     self.mediaPreviewPath = nil;
     self.mediaPreviewZoomScale = 1.0;
     [self.mediaPreviewImageView setImage:nil];
@@ -1700,6 +1701,7 @@
         [self.client setUserOpenedChatID:nil];
     }
     if ([notification object] == self.mediaPreviewWindow) {
+        [self clearAquaPhotoGallery];
         NSWindow *closingWindow = [(NSWindow *)[notification object] retain];
         TGAquaPhotoTransitionClear(closingWindow);
         self.mediaPreviewRequestGeneration = self.mediaPreviewRequestGeneration + 1;

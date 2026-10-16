@@ -1626,14 +1626,10 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
         currentTime = duration;
     }
 
-    CGFloat sliderMaximum = (duration > 0.0) ? duration : 1.0;
-    [self.mediaPlaybackProgressSlider setMinValue:0.0];
-    [self.mediaPlaybackProgressSlider setMaxValue:sliderMaximum];
-    [self.mediaPlaybackProgressSlider setDoubleValue:currentTime];
-    [self.mediaPlaybackProgressSlider setEnabled:(duration > 0.0 && self.mediaPlaybackPlayer != nil)];
-    [self.mediaPlaybackTimeField setStringValue:[NSString stringWithFormat:@"%@ / %@",
-                                                  TGVoicePreviewTimeString(currentTime),
-                                                  TGVoicePreviewTimeString(duration)]];
+    TGUpdatePlaybackTimelineControls(self.mediaPlaybackProgressSlider,self.mediaPlaybackTimeField,
+        duration > 0.0 ? duration : 1.0,currentTime,
+        duration > 0.0 && self.mediaPlaybackPlayer != nil,
+        [NSString stringWithFormat:@"%@ / %@",TGVoicePreviewTimeString(currentTime),TGVoicePreviewTimeString(duration)]);
 }
 
 - (void)invalidateMediaPlaybackTimer {
@@ -2423,6 +2419,8 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
     });
 }
 
+#include "TGStatusWindowController+AquaPhotoGallery.inc"
+
 - (void)layoutMediaPreviewWindowControls {
     if (!self.mediaPreviewWindow || !self.mediaPreviewScrollView) {
         return;
@@ -2539,7 +2537,8 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
     }
 
     NSRect frame = NSMakeRect(0, 0, 520, 420);
-    NSWindow *window = [[[TGEscapeCloseWindow alloc] initWithContentRect:frame
+    Class previewWindowClass=TGInterfaceDesignIsAqua() ? [TGAquaPhotoGalleryWindow class] : [TGEscapeCloseWindow class];
+    NSWindow *window = [[[previewWindowClass alloc] initWithContentRect:frame
                                                     styleMask:(NSTitledWindowMask | NSClosableWindowMask | NSMiniaturizableWindowMask | NSResizableWindowMask)
                                                       backing:NSBackingStoreBuffered
                                                         defer:NO] autorelease];
@@ -2551,7 +2550,12 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
     NSView *contentView = TGInterfaceDesignIsAqua() ? (NSView *)[[[TGAquaMediaViewerView alloc] initWithFrame:frame] autorelease] : (NSView *)[[[TGUtilityWindowView alloc] initWithFrame:frame] autorelease];
     [contentView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [window setContentView:contentView];
-    if (TGInterfaceDesignIsAqua()) [(TGAquaMediaViewerView *)contentView setCloseTarget:self action:@selector(closeAquaMediaViewer:)];
+    if (TGInterfaceDesignIsAqua()) {
+        [(TGAquaMediaViewerView *)contentView setCloseTarget:self action:@selector(closeAquaMediaViewer:)];
+        [(TGAquaMediaViewerView *)contentView setGalleryTarget:self];
+        [(TGAquaPhotoGalleryWindow *)window setGalleryTarget:self];
+        [window setCollectionBehavior:[window collectionBehavior]|NSWindowCollectionBehaviorFullScreenPrimary];
+    }
 
     TGUtilityPanelView *panelView = [[[TGUtilityPanelView alloc] initWithFrame:NSMakeRect(12, 12, 496, 396)] autorelease];
     [panelView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
@@ -2683,9 +2687,13 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
     }
     [self.mediaPreviewWindow setTitle:previewTitle];
     if (TGInterfaceDesignIsAqua()) [(TGAquaMediaViewerView *)[self.mediaPreviewWindow contentView] setMediaTitle:fileName detail:[NSString stringWithFormat:@"%.0f × %.0f",[image size].width,[image size].height]];
-    [self resizeMediaPreviewWindowForImage:image];
+    BOOL replacingVisiblePhoto=TGInterfaceDesignIsAqua() && [self.mediaPreviewWindow isVisible];
+    if (!replacingVisiblePhoto && !([self.mediaPreviewWindow styleMask]&NSFullScreenWindowMask)) {
+        [self resizeMediaPreviewWindowForImage:image];
+        [self.mediaPreviewWindow center];
+    }
     [self fitMediaPreview:nil];
-    [self.mediaPreviewWindow center];
+    [self updateAquaPhotoGalleryControls];
     BOOL showPhotoMotion = !likelyAnimated && TGInterfaceDesignIsAqua() &&
                            [self aquaPhotoPreviewSourceContext] != nil;
     if (showPhotoMotion && TGInterfaceAnimationsEnabledForView(self.messageTableView))
@@ -2711,6 +2719,8 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
     if (!TGMediaItemSupportsPreview(mediaItem)) {
         return;
     }
+    if (!TGAquaPhotoTransitionIsStaticPhoto(mediaItem)) [self clearAquaPhotoGallery];
+    NSDictionary *galleryContext=[self aquaPhotoGallery];
     NSUInteger requestGeneration = self.mediaPreviewRequestGeneration + 1;
     self.mediaPreviewRequestGeneration = requestGeneration;
     if (TGMediaItemIsPlayable(mediaItem)) {
@@ -2755,7 +2765,8 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
         NSString *fallback = [fallbackPathCopy copy];
         dispatch_async(dispatch_get_main_queue(), ^{
             if (requestGeneration != self.mediaPreviewRequestGeneration ||
-                client != self.client || ![self mediaPreviewSelectionContextIsCurrent:selectionContext]) {
+                client != self.client || ![self mediaPreviewSelectionContextIsCurrent:selectionContext] ||
+                (galleryContext && (galleryContext!=[self aquaPhotoGallery] || ![self aquaPhotoGalleryIsCurrent]))) {
                 [downloadedPath release];
                 [fallback release];
                 [fileIDCopy release];

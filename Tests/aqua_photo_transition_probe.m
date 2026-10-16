@@ -67,6 +67,10 @@ BOOL TGInterfaceDesignIsAqua(void) { return YES; }
 @synthesize activeSection=_activeSection,chatNavigationClosed=_chatNavigationClosed;
 - (NSRect)messageBubbleCellFrameForRow:(NSInteger)row { (void)row; return NSMakeRect(0,0,200,200); }
 - (NSArray *)mediaLayoutEntriesForItem:(TGMessageItem *)item inCellFrame:(NSRect)frame { (void)frame; return [item entries]; }
+/* Gallery navigation is exercised by aqua_photo_gallery_probe; this probe
+ * isolates the transition resolver and zoom path. */
+- (void)prepareAquaPhotoGalleryForMessage:(TGMessageItem *)item mediaItem:(NSDictionary *)media gridSender:(id)sender { (void)item;(void)media;(void)sender; }
+- (void)clearAquaPhotoGallery {}
 #include "TGStatusWindowController+AquaPhotoPreview.inc"
 #include "TGStatusWindowController+MediaPreviewZoom.inc"
 - (void)dealloc {

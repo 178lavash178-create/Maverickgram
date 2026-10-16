@@ -565,6 +565,9 @@ static NSString *TGSearchFilterIdentifierForIndex(NSInteger index) {
         }
         return;
     }
+    [self captureNavigationContinuity];
+    [self.navigationPositionStore armKey:nil transcript:YES];
+    self.searchGeneration++;
     NSNumber *chatID = [result.chatID retain];
     NSNumber *messageID = [result.messageID retain];
     NSNumber *threadID = [result.messageThreadID retain];

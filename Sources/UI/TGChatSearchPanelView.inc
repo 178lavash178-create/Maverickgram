@@ -1,4 +1,5 @@
 #import "TGChatListSelectionAppearance.h"
+#import "TGAquaAppearance.h"
 
 @interface TGChatSearchResultsTableView : NSTableView
 @end
@@ -156,6 +157,7 @@
         [_titleField setBordered:NO];
         [_titleField setDrawsBackground:NO];
         [_titleField setSelectable:NO];
+        [[_titleField cell] setLineBreakMode:NSLineBreakByTruncatingTail];
         [_titleField setFont:[NSFont boldSystemFontOfSize:16.0]];
         [_titleField setTextColor:TGClassicInkColor()];
         [_titleField setStringValue:TGLoc(@"search.chats.title")];
@@ -164,14 +166,15 @@
         _searchField = [[NSSearchField alloc] initWithFrame:NSZeroRect];
         [_searchField setDelegate:self];
         [_searchField setTarget:self];
-        [_searchField setBezeled:NO];
-        [_searchField setBordered:NO];
-        [_searchField setDrawsBackground:NO];
-        [_searchField setFocusRingType:NSFocusRingTypeNone];
-        if ([[_searchField cell] respondsToSelector:@selector(setSearchButtonCell:)]) {
+        if (TGInterfaceDesignIsAqua()) [_searchField setAction:@selector(searchFieldAction:)];
+        [_searchField setBezeled:TGInterfaceDesignIsAqua()];
+        if (!TGInterfaceDesignIsAqua()) [_searchField setBordered:NO];
+        [_searchField setDrawsBackground:TGInterfaceDesignIsAqua()];
+        [_searchField setFocusRingType:(TGInterfaceDesignIsAqua() ? NSFocusRingTypeDefault : NSFocusRingTypeNone)];
+        if (!TGInterfaceDesignIsAqua() && [[_searchField cell] respondsToSelector:@selector(setSearchButtonCell:)]) {
             [[_searchField cell] setSearchButtonCell:nil];
         }
-        if ([[_searchField cell] respondsToSelector:@selector(setCancelButtonCell:)]) {
+        if (!TGInterfaceDesignIsAqua() && [[_searchField cell] respondsToSelector:@selector(setCancelButtonCell:)]) {
             [[_searchField cell] setCancelButtonCell:nil];
         }
         [[_searchField cell] setPlaceholderString:TGLoc(@"search.chats.placeholder")];
@@ -182,6 +185,7 @@
         [_statusField setBordered:NO];
         [_statusField setDrawsBackground:NO];
         [_statusField setSelectable:NO];
+        [[_statusField cell] setLineBreakMode:NSLineBreakByTruncatingTail];
         [_statusField setFont:[NSFont systemFontOfSize:11.0]];
         [_statusField setTextColor:TGClassicMutedInkColor()];
         [_statusField setStringValue:_statusText ? _statusText : @""];
@@ -258,11 +262,18 @@
 - (void)layoutPanelSubviews {
     NSRect bounds = [self bounds];
     CGFloat inset = 18.0;
-    [_titleField setFrame:NSMakeRect(inset + 6.0, 18.0, MAX(80.0, NSWidth(bounds) - (inset * 2.0) - 12.0), 22.0)];
-    [_searchField setFrame:NSMakeRect(inset + 48.0, 67.0, MAX(92.0, NSWidth(bounds) - (inset * 2.0) - 62.0), 21.0)];
-    [_statusField setFrame:NSMakeRect(inset + 16.0, 101.0, MAX(120.0, NSWidth(bounds) - (inset * 2.0) - 32.0), 18.0)];
-    [_scrollView setFrame:NSMakeRect(inset + 12.0, 138.0, MAX(120.0, NSWidth(bounds) - (inset * 2.0) - 24.0), MAX(80.0, NSHeight(bounds) - 162.0))];
-
+    if (TGInterfaceDesignIsAqua()) {
+        CGFloat available = MAX(0.0, NSWidth(bounds) - inset * 2.0);
+        [_titleField setFrame:NSMakeRect(inset, 15.0, available, 22.0)];
+        [_searchField setFrame:NSMakeRect(inset, 48.0, available, 26.0)];
+        [_statusField setFrame:NSMakeRect(inset, 84.0, available, 18.0)];
+        [_scrollView setFrame:NSMakeRect(inset, 112.0, available, MAX(0.0, NSHeight(bounds) - 130.0))];
+    } else {
+        [_titleField setFrame:NSMakeRect(inset + 6.0, 18.0, MAX(80.0, NSWidth(bounds) - (inset * 2.0) - 12.0), 22.0)];
+        [_searchField setFrame:NSMakeRect(inset + 48.0, 67.0, MAX(92.0, NSWidth(bounds) - (inset * 2.0) - 62.0), 21.0)];
+        [_statusField setFrame:NSMakeRect(inset + 16.0, 101.0, MAX(120.0, NSWidth(bounds) - (inset * 2.0) - 32.0), 18.0)];
+        [_scrollView setFrame:NSMakeRect(inset + 12.0, 138.0, MAX(120.0, NSWidth(bounds) - (inset * 2.0) - 24.0), MAX(80.0, NSHeight(bounds) - 162.0))];
+    }
     [self updateResultsDocumentGeometry];
     CGFloat tableWidth = NSWidth([[_scrollView contentView] bounds]);
     NSArray *columns = [_tableView tableColumns];
@@ -274,6 +285,7 @@
 
 - (void)updateResultsDocumentGeometry {
     NSClipView *clipView = [_scrollView contentView];
+    NSPoint origin = [clipView bounds].origin;
     CGFloat visibleHeight = NSHeight([clipView bounds]);
     NSSize intercellSpacing = [_tableView intercellSpacing];
     CGFloat rowExtent = [_tableView rowHeight] + intercellSpacing.height;
@@ -287,7 +299,10 @@
 
     CGFloat documentWidth = NSWidth([clipView bounds]);
     [_tableView setFrame:NSMakeRect(0.0, 0.0, MAX(1.0, documentWidth), documentHeight)];
-    [clipView scrollToPoint:NSZeroPoint];
+    // A window resize must not jump a user back to the first search result.
+    origin.x = 0;
+    origin.y = MAX(0.0, MIN(origin.y, documentHeight - visibleHeight));
+    [clipView scrollToPoint:origin];
     [_scrollView reflectScrolledClipView:clipView];
     [clipView setNeedsDisplay:YES];
     [_tableView setNeedsDisplay:YES];
@@ -296,6 +311,15 @@
 - (void)drawRect:(NSRect)dirtyRect {
     (void)dirtyRect;
     NSRect bounds = [self bounds];
+    if (TGInterfaceDesignIsAqua()) {
+        TGAquaDrawSurfaceInPath([NSBezierPath bezierPathWithRect:bounds], bounds, TGThemeSurfaceRail, [self isFlipped]);
+        NSRect header = NSMakeRect(0, 0, NSWidth(bounds), 108.0);
+        TGAquaDrawSurfaceInPath([NSBezierPath bezierPathWithRect:header], header, TGThemeSurfaceHeader, [self isFlipped]);
+        NSRect results = NSInsetRect([_scrollView frame], -1.0, -1.0);
+        [TGClassicTablePaperColor() set]; NSRectFill(results);
+        [TGClassicPanelStrokeColor() set]; NSFrameRect(results);
+        return;
+    }
     TGThemeDrawWindowBackgroundInRect(bounds, [self isFlipped]);
 
     NSRect shellRect = NSInsetRect(bounds, 10.0, 10.0);
@@ -366,6 +390,7 @@
     _results = snapshot;
     [_tableView reloadData];
     [_tableView deselectAll:self];
+    [[_scrollView contentView] scrollToPoint:NSZeroPoint];
     [self updateResultsDocumentGeometry];
 }
 
@@ -394,6 +419,12 @@
     if (_target && selector && [_target respondsToSelector:selector]) {
         [_target performSelector:selector withObject:self];
     }
+}
+
+- (void)searchFieldAction:(id)sender {
+    (void)sender;
+    // Native cancel sends an action; it need not post a text-change notification.
+    if ([[self query] length] == 0) [self sendAction:_queryChangedAction];
 }
 
 - (void)controlTextDidChange:(NSNotification *)notification {

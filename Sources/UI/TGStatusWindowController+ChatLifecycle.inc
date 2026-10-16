@@ -31,6 +31,7 @@
     if (![chatID respondsToSelector:@selector(longLongValue)]) {
         return;
     }
+    [self captureNavigationContinuity];
     [[controller window] orderOut:self];
     self.activeSection = TGSectionChats;
     self.showingArchivedChats = NO;
@@ -53,6 +54,7 @@
     self.olderMessagesExhausted = NO;
     self.autoOlderMessagesLoadArmed = YES;
     self.forceMessageScrollToNewest = YES;
+    [self armNavigationTranscriptRestore];
     [self refreshSelectedChatHeaderDisplay];
     if (TGInterfaceDesignIsAqua()) [self layoutContentView];
     [self updateVisibleSection];

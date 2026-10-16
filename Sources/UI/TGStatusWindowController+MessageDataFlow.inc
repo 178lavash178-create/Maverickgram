@@ -278,6 +278,7 @@
 
 - (void)jumpToNewestMessages:(id)sender {
     (void)sender;
+    [self forgetNavigationTranscriptPosition];
     self.forceMessageScrollToNewest = YES;
     if (self.messageItemsRepresentFocusedContext && self.selectedChatID) {
         NSNumber *chatID = [self.selectedChatID retain];
@@ -545,7 +546,11 @@
         [self.messageTableView reloadData];
         [self refreshMediaLoadingSpinnerOverlays];
         [self refreshBotReplyMarkupFromMessages];
-        if (self.initialUnreadPositionPending) {
+        if (forceScrollToNewest) {
+            [self scrollMessagesToNewestIfAvailable];
+        } else if ([self restoreNavigationTranscriptIfPending]) {
+            // The original message remains at its saved viewport pixel offset.
+        } else if (self.initialUnreadPositionPending) {
             [self scrollMessagesToInitialUnreadIfAvailable];
         } else {
             [self scrollMessagesToNewestIfAvailable];
@@ -1338,6 +1343,7 @@
                         [self.chatScrollView reflectScrolledClipView:chatClipView];
                     }
                 }
+                [self restoreNavigationChatListIfPending];
                 [self setOfflineModeActive:NO reason:nil];
                 if (interactive) {
                     [self.statusField setStringValue:@"Connected"];
@@ -1404,6 +1410,9 @@
         return;
     }
 
+    NSNumber *navigationAnchorCopy = [[self navigationPendingTranscriptAnchor] retain];
+    NSString *navigationKeyCopy = [[self navigationTranscriptKey] copy];
+    NSUInteger navigationGeneration = self.searchGeneration;
     NSNumber *chatIDCopy = [chatID retain];
     NSNumber *messageThreadIDCopy = [self.selectedMessageThreadID retain];
     NSString *messageTopicKindCopy = [self.selectedMessageTopicKind copy];
@@ -1435,7 +1444,11 @@
         NSError *messageError = nil;
         NSUInteger requestedLimit = MIN((NSUInteger)50, MAX(TGMessagePreviewInitialLimit, unreadCount + 8));
         NSArray *items = nil;
-        if (shouldLoadUnreadBoundary) {
+        if (navigationAnchorCopy) {
+            items = [client messagePreviewItemsForChatID:chatIDCopy messageThreadID:messageThreadIDCopy
+                messageTopicKind:messageTopicKindCopy aroundMessageID:navigationAnchorCopy
+                newerMessageCount:25 limit:50 timeout:8.0 error:&messageError];
+        } else if (shouldLoadUnreadBoundary) {
             NSMutableArray *unreadBoundaryItems = [NSMutableArray array];
             NSMutableSet *loadedMessageIDs = [NSMutableSet set];
             NSNumber *pageAnchorMessageID = lastReadInboxMessageIDCopy;
@@ -1499,15 +1512,23 @@
                                (self.selectedMessageThreadID && messageThreadIDCopy && [self.selectedMessageThreadID longLongValue] == [messageThreadIDCopy longLongValue]));
             BOOL sameTopicKind = ((!self.selectedMessageTopicKind && !messageTopicKindCopy) ||
                                   (self.selectedMessageTopicKind && messageTopicKindCopy && [self.selectedMessageTopicKind isEqualToString:messageTopicKindCopy]));
-            BOOL selectionStillCurrent = (self.selectedChatID && [self.selectedChatID longLongValue] == [chatIDCopy longLongValue] && sameThread && sameTopicKind);
+            BOOL selectionStillCurrent = (self.client == client && [self.currentAuthState isEqualToString:@"ready"] && navigationGeneration == self.searchGeneration && self.selectedChatID && [self.selectedChatID longLongValue] == [chatIDCopy longLongValue] && sameThread && sameTopicKind);
+            BOOL cancelledRestore = (navigationAnchorCopy && ![self.navigationPositionStore.pendingTranscriptKey isEqual:navigationKeyCopy]);
             if (!selectionStillCurrent) {
                 if (interactive) {
                     [self appendDetail:@"TDLib messages: ignored stale result for previous chat selection."];
                 }
+            } else if (cancelledRestore) {
+                // An explicit latest/search action superseded this around-anchor request.
+                self.pendingLiveMessageRefresh = YES;
             } else if (itemsCopy) {
                 BOOL preserveOlder = (!interactive && [self.messageItems count] > 0);
                 self.messageItemsRepresentFocusedContext = NO;
                 [self applyRecentMessageItems:itemsCopy preservingOlderItems:preserveOlder];
+                if(navigationAnchorCopy) {
+                    self.messageItemsRepresentFocusedContext = YES;
+                    [self.navigationPositionStore markRestoredTranscriptKey:navigationKeyCopy generation:navigationGeneration];
+                }
                 [self performSelector:@selector(scheduleVisibleMessageItemsRead) withObject:nil afterDelay:0.15];
                 [self setOfflineModeActive:NO reason:nil];
                 if (interactive) {
@@ -1536,6 +1557,8 @@
             }
             BOOL shouldPrefillOlderMessages = (selectionStillCurrent &&
                                                 itemsCopy &&
+                                                !navigationAnchorCopy &&
+                                                !cancelledRestore &&
                                                 !shouldLoadUnreadBoundary &&
                                                 [self messageHistoryNeedsPrefill]);
             if (interactive) {
@@ -1563,6 +1586,8 @@
             [itemsCopy release];
               [messageErrorMessage release];
               [authorizationState release];
+              [navigationAnchorCopy release];
+              [navigationKeyCopy release];
               [lastReadInboxMessageIDCopy release];
               [messageTopicKindCopy release];
               [messageThreadIDCopy release];

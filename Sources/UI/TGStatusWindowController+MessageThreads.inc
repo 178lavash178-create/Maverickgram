@@ -48,6 +48,7 @@
 }
 
 - (void)resetMessagePresentationForCommentNavigation {
+    [self armNavigationTranscriptRestore];
     self.pinnedMessageItems = [NSArray array];
     self.pinnedMessageItem = nil;
     self.pinnedMessageCarouselIndex = 0;
@@ -106,6 +107,7 @@
                 BOOL alreadyOpen = ([self.selectedMessageTopicKind isEqualToString:@"thread"] &&
                     [self.selectedChatID isEqual:chatID] && [self.selectedMessageThreadID isEqual:threadID]);
                 if (!alreadyOpen) {
+                    [self captureNavigationContinuity];
                     [self saveComposerDraftForChatID:self.selectedChatID
                                      messageThreadID:self.selectedMessageThreadID
                                     messageTopicKind:self.selectedMessageTopicKind];
@@ -154,6 +156,7 @@
         [self.commentThreadNavigationStack count] == 0) {
         return;
     }
+    [self captureNavigationContinuity];
     [self saveComposerDraftForChatID:self.selectedChatID
                      messageThreadID:self.selectedMessageThreadID
                     messageTopicKind:self.selectedMessageTopicKind];

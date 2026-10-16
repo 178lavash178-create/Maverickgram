@@ -9,6 +9,7 @@
         [self closeSearchPanel:sender];
         return;
     }
+    [self captureNavigationContinuity];
     NSNumber *previousChatID = [self.selectedChatID retain];
     NSNumber *previousThreadID = [self.selectedMessageThreadID retain];
     NSString *previousTopicKind = [self.selectedMessageTopicKind copy];

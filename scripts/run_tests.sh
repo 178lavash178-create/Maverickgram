@@ -555,6 +555,16 @@ HOME="$TEST_HOME" "$BUILD_DIR/aqua-folder-drawer-probe"
 "$PYTHON_BIN" Tests/aqua_folder_drawer_routing_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 
 
+echo "== Local window state, gallery and playback updates =="
+"$PYTHON_BIN" Tests/navigation_continuity_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/window_frame_persistence_probe.m Sources/UI/TGWindowFramePersistence.m -framework Cocoa -o "$BUILD_DIR/window-frame-persistence-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/window-frame-persistence-probe"
+"$CLANG" "${COMPILE_FLAGS[@]}" -Wno-incomplete-implementation Tests/aqua_photo_gallery_probe.m -framework Cocoa -o "$BUILD_DIR/aqua-photo-gallery-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/aqua-photo-gallery-probe"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/playback_timeline_updates_probe.m -framework Cocoa -o "$BUILD_DIR/playback-timeline-updates-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/playback-timeline-updates-probe"
+"$PYTHON_BIN" Tests/aqua_auxiliary_layout_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+
 echo "== Aqua native presentation lifecycles =="
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/dialog_sheet_probe.m Sources/UI/TGDialogPresentation.m -framework Cocoa -o "$BUILD_DIR/dialog-sheet-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/dialog-sheet-probe"

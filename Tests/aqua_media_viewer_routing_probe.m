@@ -8,6 +8,7 @@
 #import "TGKeyboardInputSupport.h"
 #include <assert.h>
 static BOOL Aqua;
+static NSUInteger PreviousCount,NextCount;
 BOOL TGInterfaceDesignIsAqua(void) { return Aqua; }
 NSString *TGLoc(NSString *key) { return [key isEqual:@"media.viewer.fit"] ? @"Сброс" : key; }
 NSColor *TGClassicCardInkColor(void) { return [NSColor blackColor]; }
@@ -61,6 +62,8 @@ __SYNTHESIS__
 - (void)applyUtilityButtonStyle:(id)view { (void)view; }
 - (NSButton *)modalCloseButtonWithFrame:(NSRect)frame { return [[[NSButton alloc] initWithFrame:frame] autorelease]; }
 - (void)selectMediaPlaybackRate:(double)rate { (void)rate; }
+- (void)previousAquaPhoto:(id)sender { (void)sender; PreviousCount++; }
+- (void)nextAquaPhoto:(id)sender { (void)sender; NextCount++; }
 - (void)mediaPreviewView:(id)sender didMagnifyBy:(NSNumber *)value { (void)sender; (void)value; }
 - (void)tearDownClosedMediaPreviewWindow:(NSWindow *)window { if(window==self.mediaPreviewWindow) self.mediaPreviewWindow=nil; }
 __PRODUCTION_METHODS__
@@ -88,10 +91,11 @@ static NSUInteger CheckDarkPhoto(ViewerRouting *owner) {
  NSUInteger checks=0;
  NSMutableArray *controls=[NSMutableArray arrayWithObjects:owner.mediaPreviewZoomOutButton,owner.mediaPreviewFitButton,owner.mediaPreviewZoomInButton,nil];
  for(NSView *header in [[owner.mediaPreviewWindow contentView] subviews])for(NSView *child in [header subviews])if([child isKindOfClass:[TGAquaMediaControlButton class]])[controls addObject:child];
- assert([controls count]==4);checks++;
+ assert([controls count]==7);checks++;
  NSEvent *entered=[NSEvent enterExitEventWithType:NSMouseEntered location:NSZeroPoint modifierFlags:0 timestamp:0 windowNumber:0 context:nil eventNumber:0 trackingNumber:0 userData:NULL];
  NSEvent *exited=[NSEvent enterExitEventWithType:NSMouseExited location:NSZeroPoint modifierFlags:0 timestamp:0 windowNumber:0 context:nil eventNumber:0 trackingNumber:0 userData:NULL];
  for(NSButton *button in controls) {
+  [button setEnabled:YES];
   TGAquaMediaControlCell *cell=(id)[button cell];assert([cell isKindOfClass:[TGAquaMediaControlCell class]]);checks++;
   if([[cell iconAssetName] length]) {assert(TGIconAssetImageNamed([cell iconAssetName])!=nil);checks++;}
   [button updateTrackingAreas];[button mouseEntered:entered];assert([cell hovered]);[button mouseExited:exited];assert(![cell hovered]);checks+=2;
@@ -143,7 +147,7 @@ int main(void) {
    assert(fabs(NSMidX(centered)-50)<=0.5 && fabs(NSMidY(centered)-40)<=0.5);checks++;
    NSUInteger closes=0;
    for(NSView *header in [[[owner mediaPreviewWindow] contentView] subviews]) for(NSView *child in [header subviews]) {
-    if([child isKindOfClass:[NSButton class]] && [[(NSButton *)child cell] isKindOfClass:[TGAquaMediaControlCell class]]) {
+    if([child isKindOfClass:[NSButton class]] && [[(NSButton *)child cell] isKindOfClass:[TGAquaMediaControlCell class]] && [[(TGAquaMediaControlCell *)[(NSButton *)child cell] iconAssetName] isEqual:@"cross"]) {
      TGAquaMediaControlCell *cell=[(NSButton *)child cell];
      assert([[cell iconAssetName] isEqual:@"cross"] && ![(NSButton *)child isBordered]);checks++;
      assert([(NSButton *)child target]==owner && [(NSButton *)child action]==@selector(closeAquaMediaViewer:));checks++;
@@ -151,6 +155,30 @@ int main(void) {
     }
    }
    assert(closes==1);checks++;
+   assert([owner.mediaPreviewWindow isKindOfClass:[TGAquaPhotoGalleryWindow class]]);checks++;
+   assert(([owner.mediaPreviewWindow collectionBehavior]&NSWindowCollectionBehaviorFullScreenPrimary)!=0);checks++;
+   TGAquaMediaViewerView *viewer=(TGAquaMediaViewerView *)[owner.mediaPreviewWindow contentView];
+   NSButton *previous=nil,*next=nil,*fullscreen=nil;NSTextField *counter=nil;
+   for(NSView *header in [viewer subviews]) for(NSView *child in [header subviews]) {
+    if([child isKindOfClass:[NSButton class]]) {
+     NSButton *button=(NSButton *)child;
+     if([button action]==@selector(previousAquaPhoto:))previous=button;
+     if([button action]==@selector(nextAquaPhoto:))next=button;
+     if([button action]==@selector(toggleAquaPhotoFullscreen:))fullscreen=button;
+    } else if([child isKindOfClass:[NSTextField class]] && ![child isHidden]) counter=(NSTextField *)child;
+   }
+   assert(previous && next && fullscreen && counter);checks++;
+   assert([(TGAquaMediaControlCell *)[previous cell] mirrored] && ![(TGAquaMediaControlCell *)[next cell] mirrored]);checks++;
+   [viewer setGalleryIndex:2 count:12];assert([[counter stringValue] isEqual:@"3 / 12"] && [previous isEnabled] && [next isEnabled]);checks++;
+   [viewer setGalleryIndex:0 count:12];assert(![previous isEnabled] && [next isEnabled]);checks++;
+   [viewer setGalleryIndex:11 count:12];assert([previous isEnabled] && ![next isEnabled]);checks++;
+   [viewer setGalleryIndex:NSNotFound count:0];assert(![previous isEnabled] && ![next isEnabled] && [[counter stringValue] length]==0);checks++;
+   for(NSUInteger arrow=0;arrow<2;arrow++) {
+    unichar key=arrow ? NSRightArrowFunctionKey : NSLeftArrowFunctionKey;NSString *chars=[NSString stringWithCharacters:&key length:1];
+    NSEvent *event=[NSEvent keyEventWithType:NSKeyDown location:NSZeroPoint modifierFlags:0 timestamp:0 windowNumber:[owner.mediaPreviewWindow windowNumber] context:nil characters:chars charactersIgnoringModifiers:chars isARepeat:NO keyCode:arrow ? 124 : 123];
+    assert([owner.mediaPreviewWindow performKeyEquivalent:event]);checks++;
+   }
+   assert(PreviousCount==1 && NextCount==1);checks++;
    checks+=CheckDarkPhoto(owner);
   }
   CGFloat widths[]={420,640,900},heights[]={340,500,700};
@@ -171,7 +199,7 @@ int main(void) {
      assert(NSEqualRects([owner.mediaPlaybackPlayPauseButton frame],g.playPause));checks++;
      assert(NSEqualRects([owner.mediaPlaybackProgressSlider frame],g.progress));checks++;
      assert([owner.mediaPlaybackCloseButton isHidden]&&[owner.mediaPlaybackTitleField isHidden]);checks++;
-     NSUInteger closeCount=0;for(NSView *header in [[owner.mediaPlaybackWindow contentView] subviews])for(NSView *child in [header subviews])if([child isKindOfClass:[TGAquaMediaControlButton class]]){assert([(NSButton *)child target]==owner && [(NSButton *)child action]==@selector(closeAquaMediaViewer:));closeCount++;}assert(closeCount==1);checks++;
+     NSUInteger closeCount=0;for(NSView *header in [[owner.mediaPlaybackWindow contentView] subviews])for(NSView *child in [header subviews])if([child isKindOfClass:[TGAquaMediaControlButton class]] && ![child isHidden]){assert([(NSButton *)child target]==owner && [(NSButton *)child action]==@selector(closeAquaMediaViewer:));closeCount++;}assert(closeCount==1);checks++;
      assert(!NSIntersectsRect(g.header,g.viewport)&&!NSIntersectsRect(g.footer,g.viewport));checks++;
      assert([[owner.mediaPlaybackContainerView layer] masksToBounds]);checks++;
      if(circle) { assert(NSWidth(g.viewport)==NSHeight(g.viewport));assert([[owner.mediaPlaybackContainerView layer] cornerRadius]==NSWidth(g.viewport)/2);checks+=2; }

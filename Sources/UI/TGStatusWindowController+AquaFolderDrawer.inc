@@ -23,7 +23,11 @@
     if (!TGInterfaceDesignIsAqua()) return;
     if (TGAquaFoldersUseDrawer()) {
         // Accommodate only an explicit open, never a background refresh or close.
-        if (!self.aquaFolderDrawerRequestedOpen) [self.aquaFolderDrawer prepareToOpen];
+        if (!self.aquaFolderDrawerRequestedOpen) {
+            [self.mainWindowFramePersistence beginProgrammaticChanges];
+            @try {[self.aquaFolderDrawer prepareToOpen];}
+            @finally {[self.mainWindowFramePersistence endProgrammaticChanges];}
+        }
         self.aquaFolderDrawerRequestedOpen = !self.aquaFolderDrawerRequestedOpen;
         [[NSUserDefaults standardUserDefaults] setBool:self.aquaFolderDrawerRequestedOpen forKey:@"TGAquaFolderDrawerOpen"];
     } else {

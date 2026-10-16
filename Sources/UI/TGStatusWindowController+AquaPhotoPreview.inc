@@ -26,6 +26,7 @@
 }
 
 - (void)prepareAquaPhotoPreviewForMessage:(TGMessageItem *)item mediaItem:(NSDictionary *)mediaItem gridSender:(id)sender {
+    [self prepareAquaPhotoGalleryForMessage:item mediaItem:mediaItem gridSender:sender];
     [self setAquaPhotoPreviewSourceContext:nil];
     if (!TGInterfaceDesignIsAqua() || !TGAquaMediaTransitionSupportsThumbnail(mediaItem) || ![item messageID]) return;
     NSMutableDictionary *context = [NSMutableDictionary dictionaryWithObjectsAndKeys:
@@ -120,6 +121,7 @@
 - (void)closeAquaMediaViewer:(id)sender { [[sender window] performClose:sender]; }
 
 - (void)invalidateAquaPhotoPreview {
+    [self clearAquaPhotoGallery];
     self.mediaPreviewRequestGeneration = self.mediaPreviewRequestGeneration + 1;
     [self setAquaPhotoPreviewSourceContext:nil];
     [self setAquaPlaybackTransitionSourceContext:nil];
