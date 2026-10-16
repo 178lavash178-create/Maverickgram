@@ -27,6 +27,7 @@ harness = r'''
 #import "TGStatusViewCells.h"
 #include <assert.h>
 #include <math.h>
+#include <string.h>
 static TGAquaChatBackgroundStore *Store;
 static id SharedStore(id object, SEL selector) { (void)object;(void)selector;return Store; }
 NSColor *TGClassicTableGridColor(void) { return [NSColor colorWithCalibratedWhite:0.6 alpha:1]; }
@@ -59,7 +60,16 @@ static NSBitmapImageRep *PaintHost(CornerHost *host,NSUInteger scale) {
 }
 static NSBitmapImageRep *PaintClip(TGAquaChatBackgroundClipView *clip,NSUInteger scale) {
     NSRect bounds=[clip bounds];NSBitmapImageRep *bitmap=Bitmap(bounds.size,scale);
-    [bitmap setSize:bounds.size];[clip cacheDisplayInRect:bounds toBitmapImageRep:bitmap];return bitmap;
+    // Mavericks cacheDisplayInRect on a clip view with a non-zero bounds origin
+    // can return a completely transparent bitmap. Draw the actual view method
+    // directly; the flipped context flag also orients NSImage cover correctly.
+    NSGraphicsContext *base=[NSGraphicsContext graphicsContextWithBitmapImageRep:bitmap];
+    NSGraphicsContext *context=[NSGraphicsContext graphicsContextWithGraphicsPort:[base graphicsPort] flipped:[clip isFlipped]];
+    [NSGraphicsContext saveGraphicsState];[NSGraphicsContext setCurrentContext:context];
+    NSAffineTransform *transform=[NSAffineTransform transform];[transform scaleBy:scale];
+    if([clip isFlipped]) { [transform translateXBy:0 yBy:NSHeight(bounds)];[transform scaleXBy:1 yBy:-1]; }
+    [transform translateXBy:-NSMinX(bounds) yBy:-NSMinY(bounds)];[transform concat];
+    [clip drawRect:bounds];[NSGraphicsContext restoreGraphicsState];return bitmap;
 }
 static BOOL Near(NSColor *a,NSColor *b) {
     a=[a colorUsingColorSpaceName:NSDeviceRGBColorSpace];b=[b colorUsingColorSpaceName:NSDeviceRGBColorSpace];
@@ -82,20 +92,43 @@ int main(void) {
     assert([surface squareEdges] && ![surface drawsInterior]);
     assert([scroll scrollerStyle]==NSScrollerStyleOverlay && [scroll autohidesScrollers]);
     assert(NSWidth([clip frame])==NSWidth([scroll bounds]) && NSHeight([clip frame])==NSHeight([scroll bounds]));
-    NSUInteger rasters=0,samples=0;
+    NSUInteger rasters=0,samples=0,stationarySamples=0;
     NSArray *identifiers=[NSArray arrayWithObjects:@"color-sky",@"wallpaper-sea",@"wallpaper-botanical",nil];
     for(NSString *identifier in identifiers) {
         NSDictionary *config=[TGAquaChatBackgroundStore configurationForPresetIdentifier:identifier];
         if(!config && [identifier hasPrefix:@"color"]) config=[NSDictionary dictionaryWithObjectsAndKeys:@"color",@"kind",@"BDD9F7",@"color",nil];
         assert(config && [Store setConfiguration:config forAccountID:nil chatID:nil error:NULL]);
         for(NSUInteger scale=1;scale<=2;scale++) {
-          NSData *stationary=nil;
+          NSData *stationary=nil,*stationaryComposite=nil;
           for(NSUInteger position=0;position<2;position++) {
             [clip setBoundsOrigin:NSMakePoint(0,position?370:0)];
             [host setNeedsDisplay:YES];[clip setNeedsDisplay:YES];
             NSBitmapImageRep *actual=PaintHost(host,scale),*reference=PaintClip(clip,scale);
             NSData *pixels=[NSData dataWithBytes:[reference bitmapData] length:[reference bytesPerRow]*[reference pixelsHigh]];
-            if(!position) stationary=pixels; else assert([stationary isEqual:pixels]);
+            NSData *composite=[NSData dataWithBytes:[actual bitmapData] length:[actual bytesPerRow]*[actual pixelsHigh]];
+            if(!position) stationaryComposite=composite;
+            else {
+                // Native overlay knobs legitimately move with scroll position.
+                // Every other composed viewport pixel must stay stationary.
+                NSRect viewport=[scroll frame],scroller=[[scroll verticalScroller] frame];
+                const unsigned char *before=[stationaryComposite bytes],*after=[composite bytes];
+                for(NSUInteger y=0;y<(NSUInteger)NSHeight(viewport)*scale;y++) for(NSUInteger x=0;x<(NSUInteger)NSWidth(viewport)*scale;x++) {
+                    if(NSPointInRect(NSMakePoint((x+0.5)/scale,(y+0.5)/scale),scroller)) continue;
+                    NSUInteger offset=((NSUInteger)(NSHeight([host bounds])-NSMaxY(viewport))*scale+y)*[actual bytesPerRow]+((NSUInteger)NSMinX(viewport)*scale+x)*4;
+                    assert(memcmp(before+offset,after+offset,4)==0);stationarySamples++;
+                }
+            }
+            if(!position) stationary=pixels; else if(![stationary isEqual:pixels]) {
+                const unsigned char *before=[stationary bytes],*after=[pixels bytes];
+                NSUInteger minX=100000,minY=100000,maxX=0,maxY=0,count=0;
+                NSUInteger pixelsWide=[reference pixelsWide],pixelsHigh=[reference pixelsHigh];
+                for(NSUInteger y=0;y<pixelsHigh;y++) for(NSUInteger x=0;x<pixelsWide;x++) {
+                    NSUInteger offset=y*[reference bytesPerRow]+x*4;
+                    if(memcmp(before+offset,after+offset,4)!=0) { minX=MIN(minX,x);minY=MIN(minY,y);maxX=MAX(maxX,x);maxY=MAX(maxY,y);count++; }
+                }
+                fprintf(stderr,"Stationary mismatch %s scale%lu: count%lu bbox%lu,%lu..%lu,%lu clip%s scroller%s parent%s\n",[identifier UTF8String],(unsigned long)scale,(unsigned long)count,(unsigned long)minX,(unsigned long)minY,(unsigned long)maxX,(unsigned long)maxY,[NSStringFromRect([clip bounds]) UTF8String],[NSStringFromRect([[scroll verticalScroller] frame]) UTF8String],[[[scroll verticalScroller] superview] description].UTF8String);
+                assert(NO);
+            }
             if([[config objectForKey:@"kind"] isEqualToString:@"wallpaper"]) {
                 BOOL varied=NO;const unsigned char *bytes=[reference bitmapData];
                 for(NSUInteger pixel=1;pixel<(NSUInteger)[reference pixelsWide]*(NSUInteger)[reference pixelsHigh];pixel++) {
@@ -124,7 +157,7 @@ int main(void) {
     TGScrollSurfaceView *classic=[[[TGScrollSurfaceView alloc] initWithFrame:NSMakeRect(0,0,100,80)] autorelease];
     assert(![classic squareEdges] && [classic drawsInterior]);
     method_setImplementation(shared,original);[window close];
-    printf("Aqua composed transcript corners: %lu rasters/%lu actual-vs-wallpaper pixels, color+2bundled images, 1x/2x, scrolling; no reserved gutter, square Aqua rim, Classic defaults preserved PASS.\n",(unsigned long)rasters,(unsigned long)samples);
+    printf("Aqua composed transcript corners: %lu rasters/%lu actual-vs-wallpaper corner pixels/%lu stationary composed pixels outside native scroller; color+2bundled images,1x/2x,scrolling,no reserved gutter,square Aqua rim,Classic defaults preserved PASS.\n",(unsigned long)rasters,(unsigned long)samples,(unsigned long)stationarySamples);
     [pool drain];return 0;
 }
 '''.replace('__SURFACE__', surface)
