@@ -225,11 +225,14 @@
     [retentionTitle setStringValue:TGLoc(@"privacy.retention")];
     [retentionTitle setAutoresizingMask:(NSViewMinXMargin | NSViewMinYMargin)];
     [root addSubview:retentionTitle];
-    NSTextField *ttlLabel = [self labelWithFrame:NSMakeRect(400, 566, 148, 18)
+    NSTextField *ttlLabel = [self labelWithFrame:NSMakeRect(400, 556, 148, 32)
                                             font:[NSFont systemFontOfSize:11.0]
                                            surface:TGThemeSurfaceCard detail:NO];
     [ttlLabel setStringValue:TGLoc(@"privacy.accountTTL")];
     [ttlLabel setAutoresizingMask:(NSViewMinXMargin | NSViewMinYMargin)];
+    [[ttlLabel cell] setWraps:YES];
+    [[ttlLabel cell] setUsesSingleLineMode:NO];
+    [[ttlLabel cell] setLineBreakMode:NSLineBreakByWordWrapping];
     [root addSubview:ttlLabel];
     self.accountTTLPopUpButton = [[[NSPopUpButton alloc] initWithFrame:NSMakeRect(552, 560, 166, 28) pullsDown:NO] autorelease];
     NSArray *ttlDays = [NSArray arrayWithObjects:@30, @90, @180, @365, @548, @730, nil];
@@ -241,11 +244,14 @@
     }
     [self.accountTTLPopUpButton setAutoresizingMask:(NSViewMinXMargin | NSViewMinYMargin)];
     [root addSubview:self.accountTTLPopUpButton];
-    NSTextField *autoLabel = [self labelWithFrame:NSMakeRect(400, 534, 148, 18)
+    NSTextField *autoLabel = [self labelWithFrame:NSMakeRect(400, 522, 148, 32)
                                              font:[NSFont systemFontOfSize:11.0]
                                             surface:TGThemeSurfaceCard detail:NO];
     [autoLabel setStringValue:TGLoc(@"privacy.defaultAutoDelete")];
     [autoLabel setAutoresizingMask:(NSViewMinXMargin | NSViewMinYMargin)];
+    [[autoLabel cell] setWraps:YES];
+    [[autoLabel cell] setUsesSingleLineMode:NO];
+    [[autoLabel cell] setLineBreakMode:NSLineBreakByWordWrapping];
     [root addSubview:autoLabel];
     self.autoDeletePopUpButton = [[[NSPopUpButton alloc] initWithFrame:NSMakeRect(552, 528, 166, 28) pullsDown:NO] autorelease];
     NSArray *seconds = [NSArray arrayWithObjects:@0, @86400, @604800, @2678400, @7776000, @31536000, nil];
@@ -337,15 +343,17 @@
     [self.contactPopUpButton setAutoresizingMask:(NSViewWidthSizable | NSViewMaxYMargin)];
     [root addSubview:self.contactPopUpButton];
     self.blockButton = [[[NSButton alloc] initWithFrame:NSMakeRect(394, 76, 146, 28)] autorelease];
-    [self.blockButton setCell:[[[TGSecondaryTextButtonCell alloc] initTextCell:TGLoc(@"privacy.block")] autorelease]];
-    [self.blockButton setTitle:TGLoc(@"privacy.block")];
+    [self.blockButton setCell:[[[TGSecondaryTextButtonCell alloc] initTextCell:TGLoc(@"privacy.block.action")] autorelease]];
+    [self.blockButton setTitle:TGLoc(@"privacy.block.action")];
+    [self.blockButton setToolTip:TGLoc(@"privacy.block")];
     [self.blockButton setTarget:self];
     [self.blockButton setAction:@selector(blockPressed:)];
     [self.blockButton setAutoresizingMask:(NSViewMinXMargin | NSViewMaxYMargin)];
     [root addSubview:self.blockButton];
     self.unblockButton = [[[NSButton alloc] initWithFrame:NSMakeRect(550, 76, 176, 28)] autorelease];
-    [self.unblockButton setCell:[[[TGSecondaryTextButtonCell alloc] initTextCell:TGLoc(@"privacy.unblock")] autorelease]];
-    [self.unblockButton setTitle:TGLoc(@"privacy.unblock")];
+    [self.unblockButton setCell:[[[TGSecondaryTextButtonCell alloc] initTextCell:TGLoc(@"privacy.unblock.action")] autorelease]];
+    [self.unblockButton setTitle:TGLoc(@"privacy.unblock.action")];
+    [self.unblockButton setToolTip:TGLoc(@"privacy.unblock")];
     [self.unblockButton setTarget:self];
     [self.unblockButton setAction:@selector(unblockPressed:)];
     [self.unblockButton setAutoresizingMask:(NSViewMinXMargin | NSViewMaxYMargin)];

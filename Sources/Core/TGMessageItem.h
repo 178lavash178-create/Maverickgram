@@ -46,6 +46,7 @@
 @property (nonatomic, retain) NSNumber *editDate;
 @property (nonatomic, copy) NSString *editableText;
 @property (nonatomic, copy) NSArray *formattedEntities;
+@property (nonatomic, assign, getter=isChannelPost) BOOL channelPost;
 @property (nonatomic, assign) BOOL canGetMessageThread;
 @property (nonatomic, retain) NSNumber *messageThreadReplyCount;
 // Original post that owns a grouped album's comments.

@@ -31,6 +31,7 @@
     if (![chatID respondsToSelector:@selector(longLongValue)]) {
         return;
     }
+    [self captureNavigationContinuity];
     [[controller window] orderOut:self];
     self.activeSection = TGSectionChats;
     self.showingArchivedChats = NO;
@@ -53,7 +54,9 @@
     self.olderMessagesExhausted = NO;
     self.autoOlderMessagesLoadArmed = YES;
     self.forceMessageScrollToNewest = YES;
+    [self armNavigationTranscriptRestore];
     [self refreshSelectedChatHeaderDisplay];
+    if (TGInterfaceDesignIsAqua()) [self layoutContentView];
     [self updateVisibleSection];
     [self appendDetail:[NSString stringWithFormat:@"Opening chat %@.", self.selectedChatID]];
     [self reloadMessagesForChatID:self.selectedChatID interactive:NO];
@@ -179,7 +182,7 @@
     [alert setInformativeText:TGLoc(@"chat.leaveConfirm")];
     [alert addButtonWithTitle:TGLoc(@"chat.leave")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, self.window) != NSAlertFirstButtonReturn) {
         return;
     }
 
@@ -234,7 +237,7 @@
     [alert setInformativeText:TGLoc(@"chat.clearHistoryConfirm")];
     [alert addButtonWithTitle:TGLoc(@"chat.clearHistory")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, self.window) != NSAlertFirstButtonReturn) {
         return;
     }
 
@@ -302,7 +305,7 @@
     [alert setInformativeText:TGLoc(@"chat.deleteConfirm")];
     [alert addButtonWithTitle:TGLoc(@"chat.delete")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, self.window) != NSAlertFirstButtonReturn) {
         return;
     }
 

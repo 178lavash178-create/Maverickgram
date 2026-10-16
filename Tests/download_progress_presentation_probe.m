@@ -1,6 +1,8 @@
 #import <Cocoa/Cocoa.h>
 #import "../Sources/UI/TGDownloadProgressWindowController.h"
 #import "../Sources/Services/TGDownloadManager.h"
+#import "../Sources/UI/TGStatusButtonCells.h"
+#import "../Sources/UI/TGThemeContrast.h"
 
 // Presentation/geometry tests do not initialize NSApplication or contact TDLib.
 NSString * const TGDownloadManagerDidChangeNotification = @"TGDownloadManagerDidChangeNotification";
@@ -9,6 +11,14 @@ NSColor *TGClassicPanelBottomColor(void) { return [NSColor whiteColor]; }
 NSColor *TGClassicInkColor(void) { return [NSColor blackColor]; }
 NSColor *TGClassicMutedInkColor(void) { return [NSColor grayColor]; }
 NSColor *TGThemeReadableInk(NSColor *preferred, NSColor *surface, CGFloat minimum) { (void)surface; (void)minimum; return preferred; }
+// This Foundation-only probe covers placement/state; the separate Aqua view
+// probe links the real cells, materials and pixel contrast checks.
+BOOL TGInterfaceDesignIsAqua(void) { return NO; }
+NSColor *TGThemeSurfaceInkColor(NSColor *preferred,TGThemeSurfaceRole role,CGFloat minimum) { (void)role;(void)minimum;return preferred; }
+void TGAquaDrawSurfaceInPath(NSBezierPath *path,NSRect rect,TGThemeSurfaceRole role,BOOL flipped) { (void)path;(void)rect;(void)role;(void)flipped; }
+void TGThemeDrawHeaderBackgroundInRect(NSRect rect,BOOL flipped) { (void)rect;(void)flipped; }
+@implementation TGSecondaryTextButtonCell
+@end
 static void TGAssert(BOOL condition, const char *message) {
     if (!condition) { fprintf(stderr, "Download progress probe failed: %s\n", message); exit(1); }
 }

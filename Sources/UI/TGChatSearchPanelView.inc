@@ -1,7 +1,27 @@
+#import "TGChatListSelectionAppearance.h"
+#import "TGAquaAppearance.h"
+
 @interface TGChatSearchResultsTableView : NSTableView
 @end
 
 @implementation TGChatSearchResultsTableView
+
+- (void)keyDown:(NSEvent *)event {
+    NSUInteger modifiers=[event modifierFlags] & (NSCommandKeyMask|NSControlKeyMask|NSAlternateKeyMask|NSShiftKeyMask);
+    NSString *characters=[event charactersIgnoringModifiers];
+    unichar key=[characters length]==1 ? [characters characterAtIndex:0] : 0;
+    SEL action=NULL;
+    if(modifiers==0 && (key=='\r' || key=='\n' || key==3)) action=@selector(commitSearch:);
+    else if(modifiers==0 && key==27) action=@selector(closeSearch:);
+    else if((modifiers==0 || modifiers==NSShiftKeyMask) && (key=='\t' || key==NSBackTabCharacter)) action=@selector(focusSearchField:);
+    if(action && [[self target] respondsToSelector:action]) {
+        [self retain];
+        [[self target] performSelector:action withObject:self];
+        [self release];
+        return;
+    }
+    [super keyDown:event];
+}
 
 - (BOOL)isOpaque {
     return YES;
@@ -22,7 +42,12 @@
     NSRect rowRect = NSInsetRect([self rectOfRow:row], 4.0, 3.0);
     if (NSIntersectsRect(rowRect, clipRect)) {
         NSBezierPath *rowPath = [NSBezierPath bezierPathWithRoundedRect:rowRect xRadius:7.0 yRadius:7.0];
-        TGThemeDrawGroupedCardInPath(rowPath, rowRect, [self isFlipped]);
+        if (TGInterfaceDesignIsAqua() && [[self selectedRowIndexes] containsIndex:(NSUInteger)row]) {
+            [TGListSelectionBackground() set];
+            [rowPath fill];
+        } else {
+            TGThemeDrawGroupedCardInPath(rowPath, rowRect, [self isFlipped]);
+        }
         [TGClassicTableGridColor() set];
         [rowPath setLineWidth:1.0];
         [rowPath stroke];
@@ -40,7 +65,7 @@
         return;
     }
     NSBezierPath *selectedPath = [NSBezierPath bezierPathWithRoundedRect:rowRect xRadius:7.0 yRadius:7.0];
-    [TGClassicSelectedRowColor() set];
+    [TGListSelectionBackground() set];
     [selectedPath fill];
     [TGClassicNavigationSelectedStrokeColor(0.62) set];
     [selectedPath setLineWidth:1.0];
@@ -63,6 +88,13 @@
     }
 
     BOOL selected = [self isHighlighted];
+    if (TGInterfaceDesignIsAqua() && [controlView isKindOfClass:[NSTableView class]]) {
+        // This table owns its rounded highlight and disables native selection
+        // drawing, so AppKit does not reliably highlight its data cell.
+        NSTableView *table = (NSTableView *)controlView;
+        NSInteger row = [table rowAtPoint:NSMakePoint(NSMidX(cellFrame), NSMidY(cellFrame))];
+        selected = row >= 0 && [[table selectedRowIndexes] containsIndex:(NSUInteger)row];
+    }
     BOOL flipped = [controlView isFlipped];
     NSRect avatarRect = NSMakeRect(NSMinX(cellFrame) + 9.0,
                                    NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 34.0) / 2.0),
@@ -73,8 +105,8 @@
 
     CGFloat textX = NSMaxX(avatarRect) + 11.0;
     CGFloat textWidth = MAX(40.0, NSMaxX(cellFrame) - textX - 12.0);
-    NSColor *titleColor = selected ? TGClassicHeaderTextColor(1.0) : TGClassicCardInkColor();
-    NSColor *detailColor = selected ? TGClassicHeaderDetailTextColor(0.95) : TGClassicCardMutedInkColor();
+    NSColor *titleColor = selected ? (TGInterfaceDesignIsAqua() ? TGListSelectionForeground() : TGClassicHeaderTextColor(1.0)) : TGClassicCardInkColor();
+    NSColor *detailColor = selected ? (TGInterfaceDesignIsAqua() ? TGListSelectionForeground() : TGClassicHeaderDetailTextColor(0.95)) : TGClassicCardMutedInkColor();
     NSDictionary *titleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                      [NSFont boldSystemFontOfSize:12.5], NSFontAttributeName,
                                      titleColor, NSForegroundColorAttributeName,
@@ -101,6 +133,7 @@
     SEL _commitAction;
     SEL _closeAction;
     NSString *_statusText;
+    NSString *_resultsQuery;
     NSArray *_results;
     NSSearchField *_searchField;
     NSTextField *_titleField;
@@ -142,6 +175,7 @@
         [_titleField setBordered:NO];
         [_titleField setDrawsBackground:NO];
         [_titleField setSelectable:NO];
+        [[_titleField cell] setLineBreakMode:NSLineBreakByTruncatingTail];
         [_titleField setFont:[NSFont boldSystemFontOfSize:16.0]];
         [_titleField setTextColor:TGClassicInkColor()];
         [_titleField setStringValue:TGLoc(@"search.chats.title")];
@@ -150,14 +184,15 @@
         _searchField = [[NSSearchField alloc] initWithFrame:NSZeroRect];
         [_searchField setDelegate:self];
         [_searchField setTarget:self];
-        [_searchField setBezeled:NO];
-        [_searchField setBordered:NO];
-        [_searchField setDrawsBackground:NO];
-        [_searchField setFocusRingType:NSFocusRingTypeNone];
-        if ([[_searchField cell] respondsToSelector:@selector(setSearchButtonCell:)]) {
+        if (TGInterfaceDesignIsAqua()) [_searchField setAction:@selector(searchFieldAction:)];
+        [_searchField setBezeled:TGInterfaceDesignIsAqua()];
+        if (!TGInterfaceDesignIsAqua()) [_searchField setBordered:NO];
+        [_searchField setDrawsBackground:TGInterfaceDesignIsAqua()];
+        [_searchField setFocusRingType:(TGInterfaceDesignIsAqua() ? NSFocusRingTypeDefault : NSFocusRingTypeNone)];
+        if (!TGInterfaceDesignIsAqua() && [[_searchField cell] respondsToSelector:@selector(setSearchButtonCell:)]) {
             [[_searchField cell] setSearchButtonCell:nil];
         }
-        if ([[_searchField cell] respondsToSelector:@selector(setCancelButtonCell:)]) {
+        if (!TGInterfaceDesignIsAqua() && [[_searchField cell] respondsToSelector:@selector(setCancelButtonCell:)]) {
             [[_searchField cell] setCancelButtonCell:nil];
         }
         [[_searchField cell] setPlaceholderString:TGLoc(@"search.chats.placeholder")];
@@ -168,6 +203,7 @@
         [_statusField setBordered:NO];
         [_statusField setDrawsBackground:NO];
         [_statusField setSelectable:NO];
+        [[_statusField cell] setLineBreakMode:NSLineBreakByTruncatingTail];
         [_statusField setFont:[NSFont systemFontOfSize:11.0]];
         [_statusField setTextColor:TGClassicMutedInkColor()];
         [_statusField setStringValue:_statusText ? _statusText : @""];
@@ -205,6 +241,8 @@
         [_scrollView setAutohidesScrollers:YES];
         [_scrollView setDocumentView:_tableView];
         [self addSubview:_scrollView];
+        [_searchField setNextKeyView:_tableView];
+        [_tableView setNextKeyView:_searchField];
 
         [self layoutPanelSubviews];
     }
@@ -213,6 +251,7 @@
 
 - (void)dealloc {
     [_statusText release];
+    [_resultsQuery release];
     [_results release];
     [_searchField release];
     [_titleField release];
@@ -244,11 +283,18 @@
 - (void)layoutPanelSubviews {
     NSRect bounds = [self bounds];
     CGFloat inset = 18.0;
-    [_titleField setFrame:NSMakeRect(inset + 6.0, 18.0, MAX(80.0, NSWidth(bounds) - (inset * 2.0) - 12.0), 22.0)];
-    [_searchField setFrame:NSMakeRect(inset + 48.0, 67.0, MAX(92.0, NSWidth(bounds) - (inset * 2.0) - 62.0), 21.0)];
-    [_statusField setFrame:NSMakeRect(inset + 16.0, 101.0, MAX(120.0, NSWidth(bounds) - (inset * 2.0) - 32.0), 18.0)];
-    [_scrollView setFrame:NSMakeRect(inset + 12.0, 138.0, MAX(120.0, NSWidth(bounds) - (inset * 2.0) - 24.0), MAX(80.0, NSHeight(bounds) - 162.0))];
-
+    if (TGInterfaceDesignIsAqua()) {
+        CGFloat available = MAX(0.0, NSWidth(bounds) - inset * 2.0);
+        [_titleField setFrame:NSMakeRect(inset, 15.0, available, 22.0)];
+        [_searchField setFrame:NSMakeRect(inset, 48.0, available, 26.0)];
+        [_statusField setFrame:NSMakeRect(inset, 84.0, available, 18.0)];
+        [_scrollView setFrame:NSMakeRect(inset, 112.0, available, MAX(0.0, NSHeight(bounds) - 130.0))];
+    } else {
+        [_titleField setFrame:NSMakeRect(inset + 6.0, 18.0, MAX(80.0, NSWidth(bounds) - (inset * 2.0) - 12.0), 22.0)];
+        [_searchField setFrame:NSMakeRect(inset + 48.0, 67.0, MAX(92.0, NSWidth(bounds) - (inset * 2.0) - 62.0), 21.0)];
+        [_statusField setFrame:NSMakeRect(inset + 16.0, 101.0, MAX(120.0, NSWidth(bounds) - (inset * 2.0) - 32.0), 18.0)];
+        [_scrollView setFrame:NSMakeRect(inset + 12.0, 138.0, MAX(120.0, NSWidth(bounds) - (inset * 2.0) - 24.0), MAX(80.0, NSHeight(bounds) - 162.0))];
+    }
     [self updateResultsDocumentGeometry];
     CGFloat tableWidth = NSWidth([[_scrollView contentView] bounds]);
     NSArray *columns = [_tableView tableColumns];
@@ -260,6 +306,7 @@
 
 - (void)updateResultsDocumentGeometry {
     NSClipView *clipView = [_scrollView contentView];
+    NSPoint origin = [clipView bounds].origin;
     CGFloat visibleHeight = NSHeight([clipView bounds]);
     NSSize intercellSpacing = [_tableView intercellSpacing];
     CGFloat rowExtent = [_tableView rowHeight] + intercellSpacing.height;
@@ -273,7 +320,10 @@
 
     CGFloat documentWidth = NSWidth([clipView bounds]);
     [_tableView setFrame:NSMakeRect(0.0, 0.0, MAX(1.0, documentWidth), documentHeight)];
-    [clipView scrollToPoint:NSZeroPoint];
+    // A window resize must not jump a user back to the first search result.
+    origin.x = 0;
+    origin.y = MAX(0.0, MIN(origin.y, documentHeight - visibleHeight));
+    [clipView scrollToPoint:origin];
     [_scrollView reflectScrolledClipView:clipView];
     [clipView setNeedsDisplay:YES];
     [_tableView setNeedsDisplay:YES];
@@ -282,6 +332,15 @@
 - (void)drawRect:(NSRect)dirtyRect {
     (void)dirtyRect;
     NSRect bounds = [self bounds];
+    if (TGInterfaceDesignIsAqua()) {
+        TGAquaDrawSurfaceInPath([NSBezierPath bezierPathWithRect:bounds], bounds, TGThemeSurfaceRail, [self isFlipped]);
+        NSRect header = NSMakeRect(0, 0, NSWidth(bounds), 108.0);
+        TGAquaDrawSurfaceInPath([NSBezierPath bezierPathWithRect:header], header, TGThemeSurfaceHeader, [self isFlipped]);
+        NSRect results = NSInsetRect([_scrollView frame], -1.0, -1.0);
+        [TGClassicTablePaperColor() set]; NSRectFill(results);
+        [TGClassicPanelStrokeColor() set]; NSFrameRect(results);
+        return;
+    }
     TGThemeDrawWindowBackgroundInRect(bounds, [self isFlipped]);
 
     NSRect shellRect = NSInsetRect(bounds, 10.0, 10.0);
@@ -342,17 +401,35 @@
 }
 
 - (void)setResults:(NSArray *)results {
-    /*
-     * The controller deliberately reuses one mutable result buffer. Keep a
-     * snapshot here and always reload: pointer equality does not mean that its
-     * contents (or row count) stayed unchanged between searches.
-     */
+    // Server additions for the same query must not replace a keyboard choice.
+    NSString *query=[self query];
+    BOOL sameQuery=(_resultsQuery && [_resultsQuery isEqualToString:query]);
+    TGSearchResultItem *selected=sameQuery ? [[self selectedResult] retain] : nil;
+    NSPoint origin=sameQuery ? [[_scrollView contentView] bounds].origin : NSZeroPoint;
     NSArray *snapshot = results ? [[NSArray alloc] initWithArray:results] : [[NSArray alloc] init];
-    [_results release];
-    _results = snapshot;
+    [_results release];_results=snapshot;
+    [_resultsQuery release];_resultsQuery=[query copy];
+    NSInteger selectedIndex=-1;
+    if(selected) {
+        NSUInteger index=0;
+        for(TGSearchResultItem *candidate in _results) {
+            if([candidate isKindOfClass:[TGSearchResultItem class]]) {
+                BOOL sameIdentity=([candidate chatID] && [[candidate chatID] isEqual:[selected chatID]] &&
+                    ((! [candidate messageThreadID] && ![selected messageThreadID]) || [[candidate messageThreadID] isEqual:[selected messageThreadID]]) &&
+                    ((! [candidate messageTopicKind] && ![selected messageTopicKind]) || [[candidate messageTopicKind] isEqual:[selected messageTopicKind]]));
+                if(candidate==selected || sameIdentity) { selectedIndex=(NSInteger)index;break; }
+            }
+            index++;
+        }
+    }
     [_tableView reloadData];
-    [_tableView deselectAll:self];
+    [self setSelectedIndex:selectedIndex];
     [self updateResultsDocumentGeometry];
+    NSClipView *clip=[_scrollView contentView];
+    origin.y=MAX(0,MIN(origin.y,NSHeight([_tableView bounds])-NSHeight([clip bounds])));
+    [clip scrollToPoint:origin];[_scrollView reflectScrolledClipView:clip];
+    if(selectedIndex>=0) [_tableView scrollRowToVisible:selectedIndex];
+    [selected release];
 }
 
 - (TGSearchResultItem *)selectedResult {
@@ -382,14 +459,26 @@
     }
 }
 
+- (void)searchFieldAction:(id)sender {
+    (void)sender;
+    // Native cancel sends an action; it need not post a text-change notification.
+    if ([[self query] length] == 0) [self sendAction:_queryChangedAction];
+}
+
 - (void)controlTextDidChange:(NSNotification *)notification {
     (void)notification;
     [self sendAction:_queryChangedAction];
 }
 
 - (BOOL)control:(NSControl *)control textView:(NSTextView *)textView doCommandBySelector:(SEL)commandSelector {
-    (void)control;
-    (void)textView;
+    if(control!=_searchField || [textView hasMarkedText]) return NO;
+    if(commandSelector==@selector(insertTab:) || commandSelector==@selector(insertBacktab:)) {
+        if([_results count]==0) return NO;
+        if([_tableView selectedRow]<0) [self setSelectedIndex:0];
+        [[self window] makeFirstResponder:_tableView];
+        [_tableView scrollRowToVisible:[_tableView selectedRow]];
+        return YES;
+    }
     if (commandSelector == @selector(cancelOperation:)) {
         [self closeSearch:self];
         return YES;
@@ -426,6 +515,13 @@
         [self sendAction:_commitAction];
     }
 }
+
+- (void)focusSearchField:(id)sender {
+    (void)sender;
+    [[self window] makeFirstResponder:_searchField];
+}
+
+- (void)cancelOperation:(id)sender { [self closeSearch:sender]; }
 
 - (void)closeSearch:(id)sender {
     (void)sender;

@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C78AD8F279F019EA81D41ADF /* TGAquaFolderPresentation.m in Sources */ = {isa = PBXBuildFile; fileRef = 183E0433C619FD7BE94522A8 /* TGAquaFolderPresentation.m */; };
+		FB83D1592957DF5B25685648 /* TGAquaFolderDrawer.m in Sources */ = {isa = PBXBuildFile; fileRef = 65CC418B4633C65085A3606D /* TGAquaFolderDrawer.m */; };
+		A68400000000000000000001 /* Textures in Resources */ = {isa = PBXBuildFile; fileRef = A68400000000000000000002 /* Textures */; };
 		A65300000000000000000001 /* TGChatOpenState.m in Sources */ = {isa = PBXBuildFile; fileRef = A65300000000000000000003 /* TGChatOpenState.m */; };
 		A65200000000000000000001 /* TGMessageReactionParser.m in Sources */ = {isa = PBXBuildFile; fileRef = A65200000000000000000003 /* TGMessageReactionParser.m */; };
 		A65100000000000000000001 /* TGReactionChipLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = A65100000000000000000003 /* TGReactionChipLayout.m */; };
@@ -189,9 +192,32 @@
 		D05900000000000000000011 /* TGDownloadProgressWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = D05900000000000000000013 /* TGDownloadProgressWindowController.m */; };
 		D5A1F7EB66B80A6920D83B65 /* TGButtonAppearance.m in Sources */ = {isa = PBXBuildFile; fileRef = 25291A9227E8164A9969858D /* TGButtonAppearance.m */; };
 		A592EDE76D20CA743BE03C60 /* TGThemeTextField.m in Sources */ = {isa = PBXBuildFile; fileRef = 956C0AF75C3C69DD2E59870D /* TGThemeTextField.m */; };
+		BCB9731CA1F92CB589042240 /* TGInterfaceDesign.m in Sources */ = {isa = PBXBuildFile; fileRef = 9EF86605CC06D4909FA00B64 /* TGInterfaceDesign.m */; };
+		445D07712254DF6E817BCFB0 /* TGAquaAppearance.m in Sources */ = {isa = PBXBuildFile; fileRef = 39627EC992664F3FAA647D1D /* TGAquaAppearance.m */; };
+		D4D3FDD1F3E4B741A464A8B5 /* TGAquaShellViews.m in Sources */ = {isa = PBXBuildFile; fileRef = E0F5F237E1202104898AEF06 /* TGAquaShellViews.m */; };
+		0BEA07CB7C959ACFFAE4845E /* TGAquaShellLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = EC9BF591F67C12654C8220CC /* TGAquaShellLayout.m */; };
+		60B69172298CC76A46E1E4B1 /* TGAquaChatBackground.m in Sources */ = {isa = PBXBuildFile; fileRef = BA7D4175214D2B266819047D /* TGAquaChatBackground.m */; };
+		CCDF667465CFF6304F3CE80E /* TGAquaChatBackgroundClipView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4683EBD3B85C09F86986AAFC /* TGAquaChatBackgroundClipView.m */; };
+		08584D0BC4919A5F3A0BE135 /* TGAquaChatBackgroundWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = AD9375684AC0B5E76F7AD0D4 /* TGAquaChatBackgroundWindowController.m */; };
+		A68400000000000000000003 /* Wallpapers in Resources */ = {isa = PBXBuildFile; fileRef = A68400000000000000000004 /* Wallpapers */; };
+		D32646698E9B9C21BAF2578A /* TGAquaAudioPlayerView.m in Sources */ = {isa = PBXBuildFile; fileRef = 731E18F49D159E166B5473D0 /* TGAquaAudioPlayerView.m */; };
+		28117BAB407C17C6565B2F30 /* TGAquaChatInfoPanel.m in Sources */ = {isa = PBXBuildFile; fileRef = 0124CDD2D4E796AC23D0B577 /* TGAquaChatInfoPanel.m */; };
+		07E1A7B07EFE0940AA44ACB1 /* TGAquaPhotoTransition.m in Sources */ = {isa = PBXBuildFile; fileRef = A721309BEE54FA97251F168E /* TGAquaPhotoTransition.m */; };
+		9BAF56C8869F02158B392755 /* TGDialogPresentation.m in Sources */ = {isa = PBXBuildFile; fileRef = 0B9042D740C71E8244D0C8CB /* TGDialogPresentation.m */; };
+		3C1EA48B6CCF0DAFC077001C /* TGAquaRecordingViews.m in Sources */ = {isa = PBXBuildFile; fileRef = 0FBF84A00F8300298432AC9D /* TGAquaRecordingViews.m */; };
+		E66B337F29CA1FF3A3969F4A /* TGAquaMediaViewerView.m in Sources */ = {isa = PBXBuildFile; fileRef = 28A48B05E1BBD2E38AFC9F2A /* TGAquaMediaViewerView.m */; };
+		A1761855EEE573665E403942 /* TGWindowFramePersistence.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C503A4A6F9386CE130B5128 /* TGWindowFramePersistence.m */; };
+		B183A01EF74E4FA3B3DB569D /* TGNavigationPositionStore.m in Sources */ = {isa = PBXBuildFile; fileRef = CED3ACEFB6ED86ABDFD0DF49 /* TGNavigationPositionStore.m */; };
+		A71616000000000000000001 /* TGDownloadCompactPopover.m in Sources */ = {isa = PBXBuildFile; fileRef = A71616000000000000000003 /* TGDownloadCompactPopover.m */; };
+		A71616000000000000000004 /* TGScheduledMessagesShelfView.m in Sources */ = {isa = PBXBuildFile; fileRef = A71616000000000000000006 /* TGScheduledMessagesShelfView.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		405B726C0FF413570C056CA6 /* TGAquaFolderPresentation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGAquaFolderPresentation.h; sourceTree = "<group>"; };
+		183E0433C619FD7BE94522A8 /* TGAquaFolderPresentation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGAquaFolderPresentation.m; sourceTree = "<group>"; };
+		DCC7233205FD74EAC4862ADC /* TGAquaFolderDrawer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGAquaFolderDrawer.h; sourceTree = "<group>"; };
+		65CC418B4633C65085A3606D /* TGAquaFolderDrawer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGAquaFolderDrawer.m; sourceTree = "<group>"; };
+		A68400000000000000000002 /* Textures */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Textures; sourceTree = "<group>"; };
 		A65300000000000000000002 /* TGChatOpenState.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGChatOpenState.h; sourceTree = "<group>"; };
 		A65300000000000000000003 /* TGChatOpenState.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGChatOpenState.m; sourceTree = "<group>"; };
 		A65200000000000000000002 /* TGMessageReactionParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGMessageReactionParser.h; sourceTree = "<group>"; };
@@ -523,6 +549,48 @@
 		8EFFD97EBA2E8E6B163D1AA2 /* TGThemeContrast.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGThemeContrast.h; sourceTree = "<group>"; };
 		B56EC779FD8C4F687A80B57F /* TGThemeContrast.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGThemeContrast.inc; sourceTree = "<group>"; };
 		3DB2198457D4B107E5B820B2 /* TGThemeSurfaceAppearance.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGThemeSurfaceAppearance.inc; sourceTree = "<group>"; };
+		9EF86605CC06D4909FA00B64 /* TGInterfaceDesign.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGInterfaceDesign.m; sourceTree = "<group>"; };
+		D7184387EDA82CC02745D96B /* TGInterfaceDesign.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGInterfaceDesign.h; sourceTree = "<group>"; };
+		39627EC992664F3FAA647D1D /* TGAquaAppearance.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGAquaAppearance.m; sourceTree = "<group>"; };
+		03223C5DFBA2A394E05C1A1F /* TGAquaAppearance.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGAquaAppearance.h; sourceTree = "<group>"; };
+		E0F5F237E1202104898AEF06 /* TGAquaShellViews.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGAquaShellViews.m; sourceTree = "<group>"; };
+		9A0E35DB410D13BAC7CAC849 /* TGAquaShellViews.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGAquaShellViews.h; sourceTree = "<group>"; };
+		EC9BF591F67C12654C8220CC /* TGAquaShellLayout.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGAquaShellLayout.m; sourceTree = "<group>"; };
+		50581A2C0E440F9A5CDA1789 /* TGAquaChatBackground.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGAquaChatBackground.h; sourceTree = "<group>"; };
+		BA7D4175214D2B266819047D /* TGAquaChatBackground.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGAquaChatBackground.m; sourceTree = "<group>"; };
+		CE2C3950F20FBC5947A28148 /* TGAquaChatBackgroundClipView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGAquaChatBackgroundClipView.h; sourceTree = "<group>"; };
+		4683EBD3B85C09F86986AAFC /* TGAquaChatBackgroundClipView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGAquaChatBackgroundClipView.m; sourceTree = "<group>"; };
+		3402628F7E2E97AD2009294A /* TGAquaChatBackgroundWindowController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGAquaChatBackgroundWindowController.h; sourceTree = "<group>"; };
+		AD9375684AC0B5E76F7AD0D4 /* TGAquaChatBackgroundWindowController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGAquaChatBackgroundWindowController.m; sourceTree = "<group>"; };
+		A68400000000000000000004 /* Wallpapers */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Wallpapers; sourceTree = "<group>"; };
+		E022862536F2E9F8EECC69C7 /* TGAquaAudioPlayerView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGAquaAudioPlayerView.h; sourceTree = "<group>"; };
+		731E18F49D159E166B5473D0 /* TGAquaAudioPlayerView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGAquaAudioPlayerView.m; sourceTree = "<group>"; };
+		D7FE4C6E68339660E7DF0CBA /* TGAquaChatInfoPanel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGAquaChatInfoPanel.h; sourceTree = "<group>"; };
+		0124CDD2D4E796AC23D0B577 /* TGAquaChatInfoPanel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGAquaChatInfoPanel.m; sourceTree = "<group>"; };
+		32515BAC87FEC43553C30E33 /* TGAquaPhotoTransition.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGAquaPhotoTransition.h; sourceTree = "<group>"; };
+		A721309BEE54FA97251F168E /* TGAquaPhotoTransition.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGAquaPhotoTransition.m; sourceTree = "<group>"; };
+		A92C7A9F4D527DFCB1A81CDE /* TGDialogPresentation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGDialogPresentation.h; sourceTree = "<group>"; };
+		0B9042D740C71E8244D0C8CB /* TGDialogPresentation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGDialogPresentation.m; sourceTree = "<group>"; };
+		AEC5D2219017FE7C463097E3 /* TGAquaRecordingViews.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGAquaRecordingViews.h; sourceTree = "<group>"; };
+		0FBF84A00F8300298432AC9D /* TGAquaRecordingViews.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGAquaRecordingViews.m; sourceTree = "<group>"; };
+		2C3C5873B12A9EBA7C5C4BD5 /* TGAquaMediaViewerView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGAquaMediaViewerView.h; sourceTree = "<group>"; };
+		28A48B05E1BBD2E38AFC9F2A /* TGAquaMediaViewerView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGAquaMediaViewerView.m; sourceTree = "<group>"; };
+		70716C4212269D3F2B2D9388 /* TGStatusWindowController+AquaProfileMedia.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TGStatusWindowController+AquaProfileMedia.inc"; sourceTree = "<group>"; };
+		9511413F30C945976D58079E /* TGStatusWindowController+MediaPreviewZoom.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TGStatusWindowController+MediaPreviewZoom.inc"; sourceTree = "<group>"; };
+		306D4D29C756C6CDF8CB22BA /* TGStatusWindowController+VoicePreview.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TGStatusWindowController+VoicePreview.inc"; sourceTree = "<group>"; };
+		0A72E7AFBFB107C8C0B0E96B /* TGVideoNoteRecorderWindowController+AquaRecording.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TGVideoNoteRecorderWindowController+AquaRecording.inc"; sourceTree = "<group>"; };
+		FCF530A4B5934C43206D3B98 /* TGChatListSelectionAppearance.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGChatListSelectionAppearance.h; sourceTree = "<group>"; };
+		51534C94D4A8E20EEECB60E1 /* TGWindowFramePersistence.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TGWindowFramePersistence.h"; sourceTree = "<group>"; };
+		4C503A4A6F9386CE130B5128 /* TGWindowFramePersistence.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "TGWindowFramePersistence.m"; sourceTree = "<group>"; };
+		74ABBD6466C08F5390F8299A /* TGNavigationPositionStore.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TGNavigationPositionStore.h"; sourceTree = "<group>"; };
+		CED3ACEFB6ED86ABDFD0DF49 /* TGNavigationPositionStore.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "TGNavigationPositionStore.m"; sourceTree = "<group>"; };
+		477EB9597D3E7B1B8717C1A0 /* TGMediaPlaybackTimeline.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TGMediaPlaybackTimeline.h"; sourceTree = "<group>"; };
+		67EDF10081A812FF22C10CA4 /* TGStatusWindowController+AquaPhotoGallery.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TGStatusWindowController+AquaPhotoGallery.inc"; sourceTree = "<group>"; };
+		42888D0EDF897F3F73016F7D /* TGStatusWindowController+NavigationContinuity.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TGStatusWindowController+NavigationContinuity.inc"; sourceTree = "<group>"; };
+		A71616000000000000000002 /* TGDownloadCompactPopover.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGDownloadCompactPopover.h; sourceTree = "<group>"; };
+		A71616000000000000000003 /* TGDownloadCompactPopover.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGDownloadCompactPopover.m; sourceTree = "<group>"; };
+		A71616000000000000000005 /* TGScheduledMessagesShelfView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGScheduledMessagesShelfView.h; sourceTree = "<group>"; };
+		A71616000000000000000006 /* TGScheduledMessagesShelfView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGScheduledMessagesShelfView.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -735,6 +803,47 @@
 				B56EC779FD8C4F687A80B57F /* TGThemeContrast.inc */,
 				3DB2198457D4B107E5B820B2 /* TGThemeSurfaceAppearance.inc */,
 				111111111111111111111235 /* TGTheme.h */,
+				9EF86605CC06D4909FA00B64 /* TGInterfaceDesign.m */,
+				D7184387EDA82CC02745D96B /* TGInterfaceDesign.h */,
+				39627EC992664F3FAA647D1D /* TGAquaAppearance.m */,
+				03223C5DFBA2A394E05C1A1F /* TGAquaAppearance.h */,
+				3402628F7E2E97AD2009294A /* TGAquaChatBackgroundWindowController.h */,
+				405B726C0FF413570C056CA6 /* TGAquaFolderPresentation.h */,
+				183E0433C619FD7BE94522A8 /* TGAquaFolderPresentation.m */,
+				DCC7233205FD74EAC4862ADC /* TGAquaFolderDrawer.h */,
+				65CC418B4633C65085A3606D /* TGAquaFolderDrawer.m */,
+				0B9042D740C71E8244D0C8CB /* TGDialogPresentation.m */,
+				A92C7A9F4D527DFCB1A81CDE /* TGDialogPresentation.h */,
+				A721309BEE54FA97251F168E /* TGAquaPhotoTransition.m */,
+				32515BAC87FEC43553C30E33 /* TGAquaPhotoTransition.h */,
+				42888D0EDF897F3F73016F7D /* TGStatusWindowController+NavigationContinuity.inc */,
+				67EDF10081A812FF22C10CA4 /* TGStatusWindowController+AquaPhotoGallery.inc */,
+				477EB9597D3E7B1B8717C1A0 /* TGMediaPlaybackTimeline.h */,
+				CED3ACEFB6ED86ABDFD0DF49 /* TGNavigationPositionStore.m */,
+				74ABBD6466C08F5390F8299A /* TGNavigationPositionStore.h */,
+				4C503A4A6F9386CE130B5128 /* TGWindowFramePersistence.m */,
+				51534C94D4A8E20EEECB60E1 /* TGWindowFramePersistence.h */,
+				0124CDD2D4E796AC23D0B577 /* TGAquaChatInfoPanel.m */,
+				D7FE4C6E68339660E7DF0CBA /* TGAquaChatInfoPanel.h */,
+				FCF530A4B5934C43206D3B98 /* TGChatListSelectionAppearance.h */,
+				0A72E7AFBFB107C8C0B0E96B /* TGVideoNoteRecorderWindowController+AquaRecording.inc */,
+				306D4D29C756C6CDF8CB22BA /* TGStatusWindowController+VoicePreview.inc */,
+				9511413F30C945976D58079E /* TGStatusWindowController+MediaPreviewZoom.inc */,
+				70716C4212269D3F2B2D9388 /* TGStatusWindowController+AquaProfileMedia.inc */,
+				2C3C5873B12A9EBA7C5C4BD5 /* TGAquaMediaViewerView.h */,
+				28A48B05E1BBD2E38AFC9F2A /* TGAquaMediaViewerView.m */,
+				AEC5D2219017FE7C463097E3 /* TGAquaRecordingViews.h */,
+				0FBF84A00F8300298432AC9D /* TGAquaRecordingViews.m */,
+				731E18F49D159E166B5473D0 /* TGAquaAudioPlayerView.m */,
+				E022862536F2E9F8EECC69C7 /* TGAquaAudioPlayerView.h */,
+				AD9375684AC0B5E76F7AD0D4 /* TGAquaChatBackgroundWindowController.m */,
+				CE2C3950F20FBC5947A28148 /* TGAquaChatBackgroundClipView.h */,
+				4683EBD3B85C09F86986AAFC /* TGAquaChatBackgroundClipView.m */,
+				50581A2C0E440F9A5CDA1789 /* TGAquaChatBackground.h */,
+				BA7D4175214D2B266819047D /* TGAquaChatBackground.m */,
+				E0F5F237E1202104898AEF06 /* TGAquaShellViews.m */,
+				9A0E35DB410D13BAC7CAC849 /* TGAquaShellViews.h */,
+				EC9BF591F67C12654C8220CC /* TGAquaShellLayout.m */,
 				111111111111111111111236 /* TGTheme.m */,
 				111111111111111111111314 /* TGVisualWorldThemeSpec.h */,
 				111111111111111111111315 /* TGVisualWorldThemeSpec.m */,
@@ -777,6 +886,10 @@
 				111111111111111111111345 /* TGChatInfoWindowController.h */,
 				111111111111111111111346 /* TGChatInfoWindowController.m */,
 				111111111111111111111349 /* TGScheduledMessagesWindowController.h */,
+				A71616000000000000000005 /* TGScheduledMessagesShelfView.h */,
+				A71616000000000000000006 /* TGScheduledMessagesShelfView.m */,
+				A71616000000000000000002 /* TGDownloadCompactPopover.h */,
+				A71616000000000000000003 /* TGDownloadCompactPopover.m */,
 				111111111111111111111350 /* TGScheduledMessagesWindowController.m */,
 				D05900000000000000000012 /* TGDownloadProgressWindowController.h */,
 				D05900000000000000000013 /* TGDownloadProgressWindowController.m */,
@@ -920,6 +1033,8 @@
 				111111111111111111111223 /* TelegraphicaAppIcon.icns */,
 				111111111111111111111224 /* TelegraphicaNotificationIcon.png */,
 				111111111111111111111277 /* Icons */,
+				A68400000000000000000002 /* Textures */,
+				A68400000000000000000004 /* Wallpapers */,
 				111111111111111111111229 /* ThirdPartyNotices.txt */,
 				221000000000000000000016 /* WorkshopCatalog.json */,
 				221000000000000000000017 /* WorkshopCatalogPublicKey.der */,
@@ -1023,6 +1138,8 @@
 				111111111111111111111110 /* TelegraphicaAppIcon.icns in Resources */,
 				111111111111111111111114 /* TelegraphicaNotificationIcon.png in Resources */,
 				111111111111111111111141 /* Icons in Resources */,
+				A68400000000000000000001 /* Textures in Resources */,
+				A68400000000000000000003 /* Wallpapers in Resources */,
 				111111111111111111111119 /* ThirdPartyNotices.txt in Resources */,
 				220000000000000000000016 /* WorkshopCatalog.json in Resources */,
 				220000000000000000000017 /* WorkshopCatalogPublicKey.der in Resources */,
@@ -1077,6 +1194,23 @@
 				A5C000000000000000000001 /* TGStorageCleanupPolicy.m in Sources */,
 				A5D000000000000000000001 /* TGAnimatedImageLoader.m in Sources */,
 				111111111111111111111120 /* TGInlineMediaPlaybackCoordinator.m in Sources */,
+				BCB9731CA1F92CB589042240 /* TGInterfaceDesign.m in Sources */,
+				445D07712254DF6E817BCFB0 /* TGAquaAppearance.m in Sources */,
+				08584D0BC4919A5F3A0BE135 /* TGAquaChatBackgroundWindowController.m in Sources */,
+				C78AD8F279F019EA81D41ADF /* TGAquaFolderPresentation.m in Sources */,
+				FB83D1592957DF5B25685648 /* TGAquaFolderDrawer.m in Sources */,
+				9BAF56C8869F02158B392755 /* TGDialogPresentation.m in Sources */,
+				07E1A7B07EFE0940AA44ACB1 /* TGAquaPhotoTransition.m in Sources */,
+				B183A01EF74E4FA3B3DB569D /* TGNavigationPositionStore.m in Sources */,
+				A1761855EEE573665E403942 /* TGWindowFramePersistence.m in Sources */,
+				28117BAB407C17C6565B2F30 /* TGAquaChatInfoPanel.m in Sources */,
+				E66B337F29CA1FF3A3969F4A /* TGAquaMediaViewerView.m in Sources */,
+				3C1EA48B6CCF0DAFC077001C /* TGAquaRecordingViews.m in Sources */,
+				D32646698E9B9C21BAF2578A /* TGAquaAudioPlayerView.m in Sources */,
+				CCDF667465CFF6304F3CE80E /* TGAquaChatBackgroundClipView.m in Sources */,
+				60B69172298CC76A46E1E4B1 /* TGAquaChatBackground.m in Sources */,
+				D4D3FDD1F3E4B741A464A8B5 /* TGAquaShellViews.m in Sources */,
+				0BEA07CB7C959ACFFAE4845E /* TGAquaShellLayout.m in Sources */,
 				111111111111111111111121 /* TGTheme.m in Sources */,
 				111111111111111111111156 /* TGVisualWorldThemeSpec.m in Sources */,
 				111111111111111111111122 /* TGTGSAnimationView.m in Sources */,
@@ -1130,6 +1264,8 @@
 				111111111111111111111171 /* TGChatInfoWindowController.m in Sources */,
 				111111111111111111111172 /* TGTDLibClient+ScheduledMessages.m in Sources */,
 				111111111111111111111173 /* TGScheduledMessagesWindowController.m in Sources */,
+				A71616000000000000000004 /* TGScheduledMessagesShelfView.m in Sources */,
+				A71616000000000000000001 /* TGDownloadCompactPopover.m in Sources */,
 				111111111111111111111174 /* TGDownloadManager.m in Sources */,
 				B8DB0BB00000000000000001 /* TGDownloadQueueStore.m in Sources */,
 				D05900000000000000000011 /* TGDownloadProgressWindowController.m in Sources */,

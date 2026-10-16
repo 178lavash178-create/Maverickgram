@@ -117,7 +117,7 @@
         ? (TGDrawerButtonCell *)[self.drawerButton cell] : nil;
     [drawerCell setBackStyle:showProfile];
     [self.drawerButton setAction:(showProfile ? @selector(returnFromProfileToSettings:) : @selector(toggleDrawer:))];
-    [self.drawerButton setToolTip:(showProfile ? TGLoc(@"back") : @"Chat folders")];
+    [self.drawerButton setToolTip:(showProfile ? TGLoc(@"back") : TGLoc(@"folders.manage.title"))];
     [self.drawerButton setNeedsDisplay:YES];
     [self showView:self.drawerButton visible:(ready && !workshopModuleActive && (showProfile || !drawerHidden || (showChats && compactChatSidebar)))];
     [self showView:self.workshopDrawerButton visible:(ready && !drawerHidden && self.drawerOpen)];
@@ -135,7 +135,7 @@
     [self showView:self.messagesLabel visible:NO];
     BOOL showClosedChatPlaceholder = (showChats && self.chatNavigationClosed);
     BOOL showMediaCenter = (showChats && !showClosedChatPlaceholder && self.mediaCenterVisible);
-    BOOL showConversationContent = (showChats && !showClosedChatPlaceholder && !showMediaCenter);
+    BOOL showConversationContent = (showChats && !showClosedChatPlaceholder && (!showMediaCenter || [self isAquaChatInfoPanelActive]) && ![self aquaChatInfoReplacesConversation]);
     [self showView:self.mediaCenterPanelView visible:showMediaCenter];
     [self showView:self.loadMessagesButton visible:showConversationContent];
     [self showView:self.loadOlderMessagesButton visible:NO];
@@ -146,7 +146,7 @@
     [self showView:self.selectedChatVideoCallButton visible:showSelectedChatCall];
     [self showView:self.mediaCenterButton visible:NO];
     [self.mediaCenterButton setEnabled:NO];
-    BOOL showCommentThreadBack = (showChats &&
+    BOOL showCommentThreadBack = (showChats && ![self aquaChatInfoReplacesConversation] &&
                                   !showClosedChatPlaceholder &&
                                   [self.selectedMessageTopicKind isEqualToString:@"thread"] &&
                                   [self.selectedMessageThreadID respondsToSelector:@selector(longLongValue)]);
@@ -185,16 +185,18 @@
     [self showView:self.searchStatusField visible:showSearchPanel];
     [self showView:self.searchResultsScrollView visible:showSearchPanel];
     [self showView:self.searchResultsTableView visible:showSearchPanel];
+    [[self inlineSearchNavigationView] setHidden:!showSearchPanel || !TGInterfaceDesignIsAqua()];
     BOOL showForumTabs = (showConversationContent &&
                           self.forumTopicsPresentedInTopBar &&
                           [self.forumTopicTabButtons count] > 0);
     [self showView:self.forumTopicTabsScrollView visible:showForumTabs];
     BOOL showPinnedPanel = (showConversationContent && !self.searchPanelVisible && self.pinnedMessageItem != nil);
     [self showView:self.pinnedMessagePanelView visible:showPinnedPanel];
-    [self showView:self.pinnedMessageStripeField visible:showPinnedPanel];
+    [self showView:self.pinnedMessageStripeField visible:showPinnedPanel && !TGInterfaceDesignIsAqua()];
     [self showView:self.pinnedMessageLabelField visible:showPinnedPanel];
     [self showView:self.pinnedMessageTextField visible:showPinnedPanel];
     [self showView:self.pinnedMessageButton visible:showPinnedPanel];
+    if(!showSearchPanel) [[[self aquaSearchFilterState] objectForKey:@"view"] setHidden:YES];
     BOOL showReplyPanel = (showConversationContent && self.replyTargetMessageItem != nil);
     [self showView:self.replyPanelView visible:showReplyPanel];
     [self showView:self.replyPanelTitleField visible:showReplyPanel];
@@ -277,7 +279,7 @@
     [self showView:self.settingsFilesCardView visible:showSettings];
     [self showView:self.settingsHelpCardView visible:showSettings];
     [self showView:self.settingsSessionCardView visible:showSettings];
-    [self showView:self.settingsTitleField visible:showSettings];
+    [self showView:self.settingsTitleField visible:(showSettings && !TGInterfaceDesignIsAqua())];
     [self showView:self.settingsStateField visible:showSettings];
     [self showView:self.settingsFoldersSectionField visible:showSettings];
     [self showView:self.settingsSavedSectionField visible:showSettings];
@@ -291,6 +293,9 @@
     [self showView:self.settingsThemeCategoryLabel visible:showSettings];
     [self showView:self.themeCategoryPopUpButton visible:showSettings];
     [self showView:self.settingsThemeLabel visible:showSettings];
+    [self showView:self.interfaceDesignLabel visible:showSettings];
+    [self showView:self.interfaceDesignHint visible:showSettings];
+    [self showView:self.interfaceDesignPopUpButton visible:showSettings];
     [self showView:self.themePopUpButton visible:showSettings];
     [self showView:self.settingsNotificationsEnabledButton visible:showSettings];
     [self showView:self.settingsNotificationSoundButton visible:showSettings];
@@ -335,7 +340,8 @@
     [self showView:self.settingsDeleteLocalDataButton visible:showSettings];
     [self showView:self.settingsCheckUpdatesButton visible:showSettings];
     [self showView:self.settingsUpdateDotView visible:(showSettings && self.updateAvailable)];
-    [self showView:self.settingsAppearanceButton visible:NO];
+    [self showView:self.settingsAppearanceButton visible:(showSettings && TGInterfaceDesignIsAqua())];
+    [self showView:self.aquaFolderPresentationSettingsView visible:(showSettings && TGInterfaceDesignIsAqua())];
     [self showView:self.settingsLogsButton visible:showSettings];
     [self showView:self.settingsAboutButton visible:showSettings];
 
@@ -356,6 +362,8 @@
     [self showView:self.detailsScrollView visible:NO];
     [self showView:self.checkButton visible:NO];
     [self refreshUpdateAvailabilityBadge];
+    [self updateAquaShellVisibility];
+    [self updateAquaChatInfoPanelVisibility];
     [self updateSectionTransitionPresentation];
     [self synchronizeUserOpenedChat];
     if ([self conversationAllowsAutomaticRead]) {
@@ -372,6 +380,8 @@
         body = NSUnionRect([self.sidebarPanelView frame], [self.conversationPanelView frame]);
     } else if ([section isEqualToString:TGSectionContacts]) {
         panel = [self.contactsViewController view];
+    } else if (TGInterfaceDesignIsAqua() && [section isEqualToString:TGSectionCalls]) {
+        panel = self.callsPlaceholderView;
     } else if ([section isEqualToString:TGSectionSettings]) {
         panel = self.settingsPanelView;
     } else if ([section isEqualToString:TGSectionProfile]) {
@@ -381,9 +391,14 @@
     }
     if (panel) body = [panel frame];
     // Keep navigation/header chrome fully visible and usable during the reveal.
-    body.size.height = MAX(0.0, body.size.height - TGPanelHeaderHeight);
+    body.size.height = MAX(0.0, body.size.height - ((TGInterfaceDesignIsAqua() && [section isEqualToString:TGSectionSettings]) ? 0.0 : TGPanelHeaderHeight));
     if (![self.bottomNavigationView isHidden] && !NSIsEmptyRect(body)) {
         CGFloat bottom = MAX(NSMinY(body), NSMaxY([self.bottomNavigationView frame]));
+        body.size.height = MAX(0.0, NSMaxY(body) - bottom);
+        body.origin.y = bottom;
+    }
+    if (TGInterfaceDesignIsAqua() && !NSIsEmptyRect(body)) {
+        CGFloat bottom = MAX(NSMinY(body), NSMaxY([self.aquaFooterView frame]));
         body.size.height = MAX(0.0, NSMaxY(body) - bottom);
         body.origin.y = bottom;
     }
@@ -395,8 +410,9 @@
 }
 
 - (CGFloat)composerInputHeightForWidth:(CGFloat)width {
-    if (width < 80.0) {
-        width = 80.0;
+    CGFloat minimumMeasureWidth = TGInterfaceDesignIsAqua() ? 1.0 : 80.0;
+    if (width < minimumMeasureWidth) {
+        width = minimumMeasureWidth;
     }
 
     NSString *text = [self.sendTextField stringValue];
@@ -439,7 +455,7 @@
 }
 
 - (CGFloat)minimumChatSidebarWidth {
-    return 78.0;
+    return TGInterfaceDesignIsAqua() ? 270.0 : 78.0;
 }
 
 - (CGFloat)standardChatSidebarWidth {
@@ -447,11 +463,12 @@
 }
 
 - (CGFloat)maximumChatSidebarWidthForWindowWidth:(CGFloat)windowWidth mainX:(CGFloat)mainX margin:(CGFloat)margin {
-    CGFloat available = windowWidth - mainX - margin - 320.0 - 10.0;
+    CGFloat available = windowWidth - mainX - margin - (TGInterfaceDesignIsAqua() ? 420.0 : 320.0) - 10.0;
     return MAX([self minimumChatSidebarWidth], MIN(420.0, available));
 }
 
 - (BOOL)isChatSidebarCompactForWidth:(CGFloat)width {
+    if (TGInterfaceDesignIsAqua()) return NO;
     return (width < 248.0);
 }
 
@@ -462,9 +479,9 @@
 
 - (void)sidebarResizeHandle:(TGSidebarResizeHandleView *)handle requestedWidth:(CGFloat)width {
     NSView *contentView = [[self window] contentView];
-    CGFloat margin = 10.0;
+    CGFloat margin = TGInterfaceDesignIsAqua() ? 0.0 : 10.0;
     BOOL drawerHidden = TGUserDefaultBoolWithDefault(TGDrawerHiddenDefaultsKey, NO);
-    CGFloat mainX = (!drawerHidden && self.drawerOpen) ? 128.0 : margin;
+    CGFloat mainX = (!TGInterfaceDesignIsAqua() && !drawerHidden && self.drawerOpen) ? 128.0 : margin;
     CGFloat minimumWidth = [self minimumChatSidebarWidth];
     CGFloat maximumWidth = [self maximumChatSidebarWidthForWindowWidth:NSWidth([contentView bounds])
                                                                   mainX:mainX
@@ -499,21 +516,31 @@
 }
 
 - (void)layoutContentView {
+    CGFloat previousTranscriptWidth=NSWidth([self.messageScrollView frame]);
+    NSClipView *transcriptClip=[self.messageScrollView contentView];
+    NSPoint transcriptOrigin=[transcriptClip bounds].origin;
+    NSInteger transcriptAnchor=[self.messageTableView rowAtPoint:transcriptOrigin];
+    CGFloat transcriptOffset=transcriptAnchor>=0 ? transcriptOrigin.y-NSMinY([self.messageTableView rectOfRow:transcriptAnchor]) : 0;
+    CGFloat previousTranscriptEnd=MAX(0,NSHeight([self.messageTableView frame])-NSHeight([transcriptClip bounds]));
+    BOOL transcriptAtEnd=transcriptOrigin.y>=previousTranscriptEnd-2.0;
     NSView *contentView = [[self window] contentView];
     NSRect bounds = [contentView bounds];
     CGFloat width = NSWidth(bounds);
     CGFloat height = NSHeight(bounds);
-    CGFloat margin = 10.0;
+    CGFloat margin = TGInterfaceDesignIsAqua() ? 0.0 : 10.0;
     BOOL drawerHidden = TGUserDefaultBoolWithDefault(TGDrawerHiddenDefaultsKey, NO);
     BOOL profileActive = [(self.activeSection ? self.activeSection : TGSectionChats) isEqualToString:TGSectionProfile];
-    BOOL drawerVisible = (!drawerHidden && self.drawerOpen);
+    BOOL aqua = TGInterfaceDesignIsAqua();
+    BOOL drawerVisible = (!aqua && !drawerHidden && self.drawerOpen);
     BOOL drawerConsumesLayout = drawerVisible;
-    CGFloat railGutter = (!drawerHidden && self.drawerOpen) ? 10.0 : 0.0;
-    CGFloat panelGutter = 10.0;
-    CGFloat railWidth = (!drawerHidden && self.drawerOpen) ? 108.0 : 0.0;
+    CGFloat railGutter = drawerVisible ? 10.0 : 0.0;
+    CGFloat panelGutter = aqua ? 6.0 : 10.0;
+    CGFloat railWidth = drawerVisible ? 108.0 : 0.0;
     CGFloat railX = margin;
     CGFloat railY = margin;
-    CGFloat railHeight = height - (margin * 2.0);
+    CGFloat railHeight = height - (margin * 2.0) - (aqua ? TGAquaToolbarHeight() : 0.0);
+    [self layoutAquaAudioPlayerForContentBounds:bounds];
+    if (aqua && [self isAquaAudioPlayerVisible]) railHeight=MAX(0,railHeight-48.0);
     CGFloat railTop = railY + railHeight;
     CGFloat mainX = drawerConsumesLayout ? (railX + railWidth + railGutter) : margin;
     CGFloat mainY = margin;
@@ -522,7 +549,7 @@
     CGFloat mainTop = mainY + mainHeight;
     CGFloat sidebarWidth = self.chatSidebarPreferredWidth > 0.0 ? self.chatSidebarPreferredWidth : 292.0;
 
-    if (railHeight < 520.0) {
+    if (!aqua && railHeight < 520.0) {
         railHeight = 520.0;
         railTop = railY + railHeight;
         mainHeight = railHeight;
@@ -532,6 +559,7 @@
                        MIN([self maximumChatSidebarWidthForWindowWidth:width mainX:mainX margin:margin],
                            sidebarWidth));
 
+    if (aqua && width < 1000.0) sidebarWidth=MIN(sidebarWidth,MAX([self minimumChatSidebarWidth],floor(width*0.29)));
     CGFloat conversationX = mainX + sidebarWidth + panelGutter;
     CGFloat conversationWidth = width - conversationX - margin;
     if (conversationWidth < 320.0) {
@@ -546,6 +574,8 @@
     if (mainWidth < 420.0) {
         mainWidth = 420.0;
     }
+    TGAquaChatInfoGeometry chatInfoGeometry = TGAquaChatInfoFrames(NSMakeRect(conversationX,mainY,conversationWidth,mainHeight), [self isAquaChatInfoPanelActive]);
+    conversationWidth = NSWidth(chatInfoGeometry.conversation);
 
     [self.topPanelView setFrame:NSMakeRect(railX, railY, railWidth, railHeight)];
     [self.sidebarPanelView setFrame:NSMakeRect(mainX, mainY, sidebarWidth, mainHeight)];
@@ -555,18 +585,20 @@
     [self.profilePanelView setFrame:NSMakeRect(mainX, mainY, mainWidth, mainHeight)];
     [self.settingsPanelView setFrame:NSMakeRect(mainX, mainY, mainWidth, mainHeight)];
     [self.aboutPanelView setFrame:NSMakeRect(mainX, mainY, mainWidth, mainHeight)];
+    CGFloat auxiliaryBottom = aqua ? 0.0 : 80.0;
     [[self.contactsViewController view] setFrame:NSMakeRect(mainX,
-                                                            mainY + 80.0,
+                                                            mainY + auxiliaryBottom,
                                                             mainWidth,
-                                                            MAX(220.0, mainHeight - 80.0))];
+                                                            MAX(220.0, mainHeight - auxiliaryBottom))];
     [self.callsPlaceholderView setFrame:NSMakeRect(mainX,
-                                                   mainY + 80.0,
+                                                   mainY + auxiliaryBottom,
                                                    mainWidth,
-                                                   MAX(220.0, mainHeight - 80.0))];
+                                                   MAX(220.0, mainHeight - auxiliaryBottom))];
+    CGFloat workshopBottom = aqua ? 0.0 : 72.0;
     [[self.workshopViewController view] setFrame:NSMakeRect(mainX,
-                                                            mainY + 72.0,
+                                                            mainY + workshopBottom,
                                                             mainWidth,
-                                                            MAX(220.0, mainHeight - 72.0))];
+                                                            MAX(220.0, mainHeight - workshopBottom))];
     if (drawerVisible) {
         [contentView addSubview:self.topPanelView positioned:NSWindowAbove relativeTo:nil];
     }
@@ -596,6 +628,8 @@
     [[self.statusField cell] setLineBreakMode:NSLineBreakByTruncatingTail];
     [self.statusField setFrame:NSMakeRect(railX + 9.0, railTop - 66.0, railWidth - 18.0, 14.0)];
 
+    NSUInteger navigationIndex = 0;
+    if (!aqua) {
     CGFloat drawerFolderButtonHeight = 46.0;
     CGFloat drawerFolderButtonGap = 8.0;
     CGFloat drawerFolderInset = 4.0;
@@ -617,7 +651,6 @@
                                                       0.0,
                                                       drawerFolderContentWidth,
                                                       drawerFolderContentHeight)];
-    NSUInteger navigationIndex = 0;
     for (navigationIndex = 0; navigationIndex < [self.drawerFolderButtons count]; navigationIndex++) {
         NSButton *folderButton = [self.drawerFolderButtons objectAtIndex:navigationIndex];
         CGFloat folderButtonY = drawerFolderInset +
@@ -633,6 +666,8 @@
         [contentView addSubview:self.drawerButton positioned:NSWindowAbove relativeTo:nil];
         [contentView addSubview:self.workshopDrawerButton positioned:NSWindowAbove relativeTo:nil];
         [contentView addSubview:self.drawerFolderScrollView positioned:NSWindowAbove relativeTo:nil];
+    }
+
     }
 
     BOOL compactChatSidebar = [self isChatSidebarCompactForWidth:sidebarWidth];
@@ -817,6 +852,9 @@
         [chatColumn setWidth:chatWidth];
     }
 
+    BOOL hasTypingText = ([[self.typingIndicatorField stringValue] length] > 0);
+    TGAquaConversationHeaderVerticalGeometry aquaHeader = TGAquaConversationHeaderVerticalFrames(NSMakeRect(conversationX, mainTop-TGPanelHeaderHeight, conversationWidth, TGPanelHeaderHeight), hasTypingText);
+    CGFloat conversationButtonY = aqua ? aquaHeader.buttonY : headerButtonY;
     CGFloat conversationRefreshX = conversationX + conversationWidth - 12.0 - headerButtonSize;
     CGFloat conversationJumpX = conversationRefreshX - 6.0 - headerButtonSize;
     CGFloat conversationSearchX = conversationJumpX - 6.0 - headerButtonSize;
@@ -824,27 +862,27 @@
     CGFloat conversationVideoCallX = conversationCallX - 6.0 - headerButtonSize;
     BOOL layoutSelectedChatCall = ([self.selectedChatTypeSummary isEqualToString:@"Private"] &&
                                    [self.activeSection isEqualToString:TGSectionChats] &&
-                                   !self.mediaCenterVisible);
-    [self.loadOlderMessagesButton setFrame:NSMakeRect(conversationRefreshX, headerButtonY, headerButtonSize, headerButtonSize)];
-    [self.loadMessagesButton setFrame:NSMakeRect(conversationRefreshX, headerButtonY, headerButtonSize, headerButtonSize)];
-    [self.messageJumpToNewestButton setFrame:NSMakeRect(conversationJumpX, headerButtonY, headerButtonSize, headerButtonSize)];
-    [self.mediaCenterButton setFrame:NSMakeRect(conversationRefreshX, headerButtonY, 0.0, 0.0)];
-    [self.conversationSearchButton setFrame:NSMakeRect(conversationSearchX, headerButtonY, headerButtonSize, headerButtonSize)];
-    [self.selectedChatCallButton setFrame:NSMakeRect(conversationCallX, headerButtonY, headerButtonSize, headerButtonSize)];
-    [self.selectedChatVideoCallButton setFrame:NSMakeRect(conversationVideoCallX, headerButtonY, headerButtonSize, headerButtonSize)];
+                                   (!self.mediaCenterVisible || [self isAquaChatInfoPanelActive]));
+    [self.loadOlderMessagesButton setFrame:NSMakeRect(conversationRefreshX, conversationButtonY, headerButtonSize, headerButtonSize)];
+    [self.loadMessagesButton setFrame:NSMakeRect(conversationRefreshX, conversationButtonY, headerButtonSize, headerButtonSize)];
+    [self.messageJumpToNewestButton setFrame:NSMakeRect(conversationJumpX, conversationButtonY, headerButtonSize, headerButtonSize)];
+    [self.mediaCenterButton setFrame:NSMakeRect(conversationRefreshX, conversationButtonY, 0.0, 0.0)];
+    [self.conversationSearchButton setFrame:NSMakeRect(conversationSearchX, conversationButtonY, headerButtonSize, headerButtonSize)];
+    [self.selectedChatCallButton setFrame:NSMakeRect(conversationCallX, conversationButtonY, headerButtonSize, headerButtonSize)];
+    [self.selectedChatVideoCallButton setFrame:NSMakeRect(conversationVideoCallX, conversationButtonY, headerButtonSize, headerButtonSize)];
     BOOL layoutCommentThreadBack = ([self.selectedMessageTopicKind isEqualToString:@"thread"] &&
                                     [self.selectedMessageThreadID respondsToSelector:@selector(longLongValue)]);
     CGFloat conversationHeaderLeftX = conversationX + 16.0;
     if (layoutCommentThreadBack) {
-        [self.commentThreadBackButton setFrame:NSMakeRect(conversationX + 12.0, headerButtonY, headerButtonSize, headerButtonSize)];
+        [self.commentThreadBackButton setFrame:NSMakeRect(conversationX + 12.0, conversationButtonY, headerButtonSize, headerButtonSize)];
         conversationHeaderLeftX = NSMaxX([self.commentThreadBackButton frame]) + 8.0;
     } else {
-        [self.commentThreadBackButton setFrame:NSMakeRect(conversationX + 12.0, headerButtonY, headerButtonSize, headerButtonSize)];
+        [self.commentThreadBackButton setFrame:NSMakeRect(conversationX + 12.0, conversationButtonY, headerButtonSize, headerButtonSize)];
     }
     [self.messagesLabel setFrame:NSMakeRect(conversationX + 16.0, headerLabelY, 0.0, 20.0)];
     CGFloat selectedAvatarSize = 24.0;
     CGFloat selectedAvatarX = conversationHeaderLeftX;
-    CGFloat selectedAvatarY = mainTop - TGPanelHeaderHeight + floor((TGPanelHeaderHeight - selectedAvatarSize) / 2.0) + sectionHeaderVisualOffset;
+    CGFloat selectedAvatarY = aqua ? aquaHeader.avatarY : mainTop - TGPanelHeaderHeight + floor((TGPanelHeaderHeight - selectedAvatarSize) / 2.0) + sectionHeaderVisualOffset;
     [self.selectedChatAvatarView setFrame:NSMakeRect(selectedAvatarX, selectedAvatarY, selectedAvatarSize, selectedAvatarSize)];
     CGFloat selectedTitleX = NSMaxX([self.selectedChatAvatarView frame]) + 8.0;
     CGFloat selectedTitleRightX = layoutSelectedChatCall
@@ -854,14 +892,13 @@
     if (selectedTitleWidth < 40.0) {
         selectedTitleWidth = 40.0;
     }
-    BOOL hasTypingText = ([[self.typingIndicatorField stringValue] length] > 0);
-    CGFloat selectedTitleY = hasTypingText ? (headerLabelY + 4.0) : headerLabelY;
+    CGFloat selectedTitleY = aqua ? aquaHeader.titleY : (hasTypingText ? (headerLabelY + 4.0) : headerLabelY);
     [self.selectedChatField setFrame:NSMakeRect(selectedTitleX,
                                                 selectedTitleY,
                                                 selectedTitleWidth,
                                                 17.0)];
     [self.typingIndicatorField setFrame:NSMakeRect(selectedTitleX,
-                                                   headerLabelY - 8.0,
+                                                   aqua ? aquaHeader.subtitleY : headerLabelY - 8.0,
                                                    selectedTitleWidth,
                                                    14.0)];
     CGFloat profileHitMaxX = selectedTitleRightX - 10.0;
@@ -891,8 +928,8 @@
         }
     }
 
-    CGFloat estimatedSendFieldWidth = conversationWidth - 198.0;
-    if (estimatedSendFieldWidth < 160.0) {
+    CGFloat estimatedSendFieldWidth = conversationWidth - (aqua ? (self.botComposerVisible ? 366.0 : 288.0) : 198.0);
+    if (!aqua && estimatedSendFieldWidth < 160.0) {
         estimatedSendFieldWidth = 160.0;
     }
     CGFloat composerInputHeight = [self composerInputHeightForWidth:(estimatedSendFieldWidth - 16.0)];
@@ -909,8 +946,9 @@
     CGFloat botCommandPanelGap = self.botCommandPanelVisible ? 6.0 : 0.0;
     messageBottom += botCommandPanelHeight + botCommandPanelGap;
     if (self.chatNavigationClosed) {
-        messageBottom = mainY + 18.0;
+        messageBottom = mainY + (aqua ? 0.0 : 18.0);
     }
+    if (aqua && !self.chatNavigationClosed) messageBottom = MAX(messageBottom, TGAquaFooterBaseHeight());
     CGFloat messageTop = mainTop - TGPanelHeaderHeight - 7.0;
     CGFloat panelInsetX = conversationX + 8.0;
     CGFloat panelWidth = conversationWidth - 16.0;
@@ -919,7 +957,10 @@
     }
     BOOL showForumTabs = (self.forumTopicsPresentedInTopBar &&
                           [self.forumTopicTabButtons count] > 0);
-    if (self.searchPanelVisible) {
+    if (self.searchPanelVisible && ![self.searchPanelView isHidden]) {
+        if (aqua) {
+            messageTop = [self layoutAquaInlineSearchInRect:NSMakeRect(panelInsetX, messageBottom, panelWidth, MAX(0,messageTop-messageBottom))];
+        } else {
         BOOL hasSearchText = ([[self.searchTextField stringValue] length] > 0);
         BOOL hasSearchResults = ([self.searchResultItems count] > 0);
         BOOL stackedSearchControls = (panelWidth < 650.0);
@@ -978,6 +1019,7 @@
             [searchColumn setWidth:NSWidth([[self.searchResultsScrollView contentView] bounds])];
         }
         messageTop = searchY - 6.0;
+        }
     }
     if (showForumTabs && !self.searchPanelVisible) {
         CGFloat tabsHeight = 40.0;
@@ -1008,11 +1050,12 @@
         CGFloat pinnedY = messageTop - pinnedHeight;
         [self.pinnedMessagePanelView setFrame:NSMakeRect(panelInsetX, pinnedY, panelWidth, pinnedHeight)];
         [self.pinnedMessageStripeField setFrame:NSMakeRect(panelInsetX + 12.0, pinnedY + 9.0, 10.0, pinnedHeight - 16.0)];
-        [self.pinnedMessageLabelField setFrame:NSMakeRect(panelInsetX + 28.0, pinnedY + 27.0, 180.0, 15.0)];
-        [self.pinnedMessageTextField setFrame:NSMakeRect(panelInsetX + 28.0, pinnedY + 9.0, panelWidth - 78.0, 18.0)];
+        [self.pinnedMessageLabelField setFrame:NSMakeRect(panelInsetX + (aqua ? 36.0 : 28.0), pinnedY + 27.0, MAX(0,panelWidth-48.0), 15.0)];
+        [self.pinnedMessageTextField setFrame:NSMakeRect(panelInsetX + (aqua ? 36.0 : 28.0), pinnedY + 9.0, panelWidth - (aqua ? 48.0 : 78.0), 18.0)];
         [self.pinnedMessageButton setFrame:NSMakeRect(panelInsetX, pinnedY, panelWidth, pinnedHeight)];
         messageTop = pinnedY - 6.0;
     }
+    messageBottom=[self layoutAquaScheduledShelfAtX:panelInsetX bottom:messageBottom width:panelWidth top:messageTop];
     CGFloat messageHeight = messageTop - messageBottom;
     if (messageHeight < 160.0) {
         messageHeight = 160.0;
@@ -1024,7 +1067,7 @@
     }
     NSRect messageSurfaceFrame = NSMakeRect(messageScrollX, messageBottom, messageScrollWidth, messageHeight);
     [self.messageScrollSurfaceView setFrame:messageSurfaceFrame];
-    [self.messageScrollView setFrame:NSInsetRect(messageSurfaceFrame, 5.0, 5.0)];
+    [self.messageScrollView setFrame:NSInsetRect(messageSurfaceFrame, aqua ? 1.0 : 5.0, aqua ? 1.0 : 5.0)];
     [self.messageLoadingSpinner setFrame:NSMakeRect(NSMidX(messageSurfaceFrame) - 12.0,
                                                     NSMidY(messageSurfaceFrame) - 12.0,
                                                     24.0,
@@ -1042,8 +1085,8 @@
         [bubbleColumn setWidth:bubbleWidth];
     }
 
-    CGFloat sendButtonWidth = 38.0;
-    CGFloat attachButtonWidth = 38.0;
+    CGFloat sendButtonWidth = aqua ? 94.0 : 38.0;
+    CGFloat attachButtonWidth = aqua ? 72.0 : 38.0;
     CGFloat smallComposerButtonWidth = 34.0;
     CGFloat composerButtonGap = 6.0;
     CGFloat attachButtonX = conversationX + 12.0;
@@ -1055,7 +1098,7 @@
         ? (botButtonX + attachButtonWidth + 8.0)
         : (attachButtonX + attachButtonWidth + 8.0);
     CGFloat sendFieldWidth = stickerButtonX - sendFieldX - 10.0;
-    if (sendFieldWidth < 160.0) {
+    if (!aqua && sendFieldWidth < 160.0) {
         sendFieldWidth = 160.0;
     }
     CGFloat composerInnerHeight = composerInputHeight + 10.0;
@@ -1106,7 +1149,7 @@
                                                 panelTitleY,
                                                 MAX(120.0, mainWidth - 176.0),
                                                 20.0)];
-    CGFloat profileScrollBottom = bottomNavigationY + bottomNavigationHeight + 10.0;
+    CGFloat profileScrollBottom = aqua ? 8.0 : bottomNavigationY + bottomNavigationHeight + 10.0;
     CGFloat profileScrollTop = mainTop - TGPanelHeaderHeight - 8.0;
     CGFloat profileScrollHeight = profileScrollTop - profileScrollBottom;
     if (profileScrollHeight < 180.0) {
@@ -1300,8 +1343,8 @@
                                                  MAX(120.0, mainWidth - 116.0),
                                                  20.0)];
 
-    CGFloat settingsScrollBottom = bottomNavigationY + bottomNavigationHeight + 10.0;
-    CGFloat settingsScrollTop = mainTop - TGPanelHeaderHeight - 8.0;
+    CGFloat settingsScrollBottom = aqua ? 8.0 : bottomNavigationY + bottomNavigationHeight + 10.0;
+    CGFloat settingsScrollTop = mainTop - (aqua ? 0.0 : TGPanelHeaderHeight) - 8.0;
     CGFloat settingsScrollHeight = settingsScrollTop - settingsScrollBottom;
     if (settingsScrollHeight < 180.0) {
         settingsScrollHeight = 180.0;
@@ -1331,7 +1374,7 @@
     CGFloat privacyCardHeight = 54.0;
     CGFloat drawerCardHeight = 104.0;
     CGFloat resourceCardHeight = 366.0;
-    CGFloat interfaceCardHeight = 184.0;
+    CGFloat interfaceCardHeight = TGInterfaceDesignIsAqua() ? 346.0 : 258.0;
     CGFloat sessionsCardHeight = 72.0;
     CGFloat filesCardHeight = 172.0;
     CGFloat helpCardHeight = 112.0;
@@ -1487,7 +1530,9 @@
     [self.settingsLibraryField setFrame:NSMakeRect(settingsGroupedX + 20.0, settingsNextY, settingsGroupedWidth - 40.0, settingsLabelHeight)];
     CGFloat interfaceCardY = settingsNextY + settingsLabelHeight + settingsLabelGap;
     [self.settingsThemeCardView setFrame:NSMakeRect(settingsGroupedX, interfaceCardY, settingsGroupedWidth, interfaceCardHeight)];
-    [self.settingsAppearanceButton setFrame:NSMakeRect(rowLeft, interfaceCardY, 0.0, 0.0)];
+    [self.settingsAppearanceButton setFrame:(TGInterfaceDesignIsAqua()
+        ? NSMakeRect(rowLeft, interfaceCardY + 258.0, rowWidth, 30.0)
+        : NSMakeRect(rowLeft, interfaceCardY, 0.0, 0.0))];
 
     CGFloat popupWidth = 210.0;
     if (popupWidth > settingsGroupedWidth - 150.0) {
@@ -1513,6 +1558,10 @@
                                                              interfaceCardY + 146.0,
                                                              textSizeValueWidth,
                                                              22.0)];
+    [self.interfaceDesignLabel setFrame:NSMakeRect(rowLeft, interfaceCardY + 182, labelWidth, 22)];
+    [self.interfaceDesignPopUpButton setFrame:NSMakeRect(popupX, interfaceCardY + 178, popupWidth, 28)];
+    [self.interfaceDesignHint setFrame:NSMakeRect(rowLeft, interfaceCardY + 214, rowWidth, 32)];
+    [self.aquaFolderPresentationSettingsView setFrame:NSMakeRect(rowLeft, interfaceCardY + 302, rowWidth, 28)];
     settingsNextY = interfaceCardY + interfaceCardHeight + settingsGroupGap;
 
     [self.settingsStorageField setFrame:NSMakeRect(settingsGroupedX + 20.0, settingsNextY, settingsGroupedWidth - 40.0, settingsLabelHeight)];
@@ -1565,6 +1614,18 @@
     [self.detailsScrollView setFrame:NSMakeRect(logsCardX + 12.0, logsCardY + 12.0, logsCardWidth - 24.0, logsCardHeight - 24.0)];
     [self applyPointingHandCursorToButtonsInView:contentView];
     [self layoutMediaCenterWindowSubviews];
+    [self layoutAquaShell];
+    [self updateAquaChatInfoPanelVisibility];
+    // A profile sidebar changes actual text wrapping without a window resize.
+    // Recompute row heights while keeping the same message at the same offset.
+    if (aqua && previousTranscriptWidth>0 && fabs(previousTranscriptWidth-NSWidth([self.messageScrollView frame]))>0.5 && [self.messageTableView numberOfRows]>0) {
+        [self.messageTableView reloadData];
+        CGFloat end=MAX(0,NSHeight([self.messageTableView frame])-NSHeight([transcriptClip bounds]));
+        CGFloat y=transcriptAtEnd ? end : transcriptOrigin.y;
+        if (!transcriptAtEnd && transcriptAnchor>=0 && transcriptAnchor<[self.messageTableView numberOfRows]) y=NSMinY([self.messageTableView rectOfRow:transcriptAnchor])+transcriptOffset;
+        [transcriptClip scrollToPoint:NSMakePoint(0,MAX(0,MIN(end,y)))];
+        [self.messageScrollView reflectScrolledClipView:transcriptClip];
+    }
 }
 
 - (void)windowDidResize:(NSNotification *)notification {
@@ -1580,14 +1641,14 @@
     }
     if ([notification object] == self.mediaCenterWindow) {
         [self layoutMediaCenterWindowSubviews];
-        [self rebuildMediaCenterRows];
+        if (!TGInterfaceDesignIsAqua()) [self rebuildMediaCenterRows];
         return;
     }
     if ([notification object] != [self window]) {
         return;
     }
     [self layoutContentView];
-    if (self.mediaCenterVisible) {
+    if (self.mediaCenterVisible && !TGInterfaceDesignIsAqua()) {
         [self rebuildMediaCenterRowsPreservingScroll:YES];
     }
     [self.messageTableView reloadData];
@@ -1596,6 +1657,7 @@
 }
 
 - (void)windowDidBecomeKey:(NSNotification *)notification {
+    if ([notification object] == [self window] && TGInterfaceDesignIsAqua()) [self updateAquaShellVisibility];
     if ([notification object] == [self window]) [self conversationVisibilityDidChange:notification];
     if ([notification object] == [self window] && ![self.currentAuthState isEqualToString:@"ready"]) {
         [self scheduleLoginInputFocus];
@@ -1622,6 +1684,7 @@
     if (closingWindow != self.mediaPreviewWindow) {
         return;
     }
+    if ([closingWindow isKindOfClass:[TGAquaPhotoGalleryWindow class]]) [(TGAquaPhotoGalleryWindow *)closingWindow setGalleryTarget:nil];
     self.mediaPreviewPath = nil;
     self.mediaPreviewZoomScale = 1.0;
     [self.mediaPreviewImageView setImage:nil];
@@ -1639,11 +1702,19 @@
 
 - (void)windowWillClose:(NSNotification *)notification {
     if ([notification object] == [self window]) {
+        [self closeAquaStickerPicker]; [self closeAquaScheduledMessages];
+        [self.downloadManagerWindowController closeCompactPopover];
+        [self invalidateAquaPhotoPreview]; [self.mediaPreviewWindow close];
+        [self invalidateAquaChatInfoPanel];
+        [self.aquaFolderDrawer setVisible:NO];
         [self invalidateAutomaticReadRequests];
         [self.client setUserOpenedChatID:nil];
     }
     if ([notification object] == self.mediaPreviewWindow) {
+        [self cancelMediaPreviewImageLoad];
+        [self clearAquaPhotoGallery];
         NSWindow *closingWindow = [(NSWindow *)[notification object] retain];
+        TGAquaPhotoTransitionClear(closingWindow);
         self.mediaPreviewRequestGeneration = self.mediaPreviewRequestGeneration + 1;
         self.mediaPreviewPath = nil;
         self.mediaPreviewZoomScale = 1.0;
@@ -1694,7 +1765,7 @@
         if ([self.voiceRecorder isRecording]) {
             [self.voiceRecorder stop];
             self.voiceRecorder = nil;
-            [self.voiceRecordButton setToolTip:@"Record voice message"];
+            [self.voiceRecordButton setToolTip:TGLoc(@"composer.mediaMode.voice")];
             [self.statusField setStringValue:@"Voice recording cancelled"];
         }
         [self invalidateVoicePreviewTimer];

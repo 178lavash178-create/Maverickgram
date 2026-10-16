@@ -1,0 +1,7 @@
+Font Awesome Free 6.7.2 icons by Fonticons, Inc.
+https://fontawesome.com/
+https://fontawesome.com/license/free
+Icons: Creative Commons Attribution 4.0 International.
+https://creativecommons.org/licenses/by/4.0/
+Original SVGs in source/, PNG conversion only. Existing runtime template tint.
+See LICENSE.txt and SOURCE_MANIFEST.json.

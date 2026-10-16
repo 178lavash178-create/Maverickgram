@@ -184,3 +184,19 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+Aqua textures
+-------------
+Brushed Alum by Tim Ward, Black Linen by Atle Mo, and White Brushed by
+Andre Schouten, Subtle Patterns.
+Licensed under Creative Commons Attribution-ShareAlike 3.0 Unported.
+Full attribution, source links, and license: Resources/Textures/ATTRIBUTION.txt
+and Resources/Textures/CC-BY-SA-3.0.txt. Original texture files are unmodified.
+
+Aqua toolbar silhouettes: Font Awesome Free 6.7.2 by Fonticons, Inc.
+https://fontawesome.com/
+https://fontawesome.com/license/free
+Icons: Creative Commons Attribution 4.0 International.
+https://creativecommons.org/licenses/by/4.0/
+Paths unchanged; PNG conversion and runtime tint only.
+Original SVGs, license and attribution bundled in Icons/AquaGlyphs.

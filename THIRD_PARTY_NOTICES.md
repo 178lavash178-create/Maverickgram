@@ -24,3 +24,11 @@ applies the narrow OS X 10.8 compatibility patch kept under `Vendor/patches`.
 libtgvoip is distributed under The Unlicense.
 
 Source: https://github.com/telegramdesktop/libtgvoip/tree/2.4.4
+
+Aqua toolbar silhouettes: Font Awesome Free 6.7.2 by Fonticons, Inc.
+https://fontawesome.com/
+https://fontawesome.com/license/free
+Icons: Creative Commons Attribution 4.0 International.
+https://creativecommons.org/licenses/by/4.0/
+Paths unchanged; PNG conversion and runtime tint only.
+Original SVGs, license and attribution bundled in Icons/AquaGlyphs.

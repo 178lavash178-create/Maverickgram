@@ -73,6 +73,31 @@ int main(void) {
     TGAssert(!TGMessageThreadReplyCountFromObject(TGMessageWithReplies(-1)), "negative count rejected");
     TGAssert(TGMessageCanGetThreadFromObject([NSDictionary dictionaryWithObject:[NSDictionary dictionaryWithObject:@YES forKey:@"can_get_message_thread"] forKey:@"message_properties"]), "nested modern properties capability");
     TGAssert(TGMessageCanGetThreadFromObject([NSDictionary dictionaryWithObject:@YES forKey:@"can_get_message_thread"]), "legacy direct capability");
+
+    TGMessageItem *groupRoot = TGItem(10, 0);
+    TGAssert(![groupRoot isChannelPost] && [groupRoot canGetMessageThread], "ordinary zero-reply group root retains thread capability without becoming a channel post");
+    TGAssert(![[[groupRoot copy] autorelease] isChannelPost], "ordinary message copy remains an ordinary message");
+    NSMutableDictionary *channelMessage = [NSMutableDictionary dictionaryWithDictionary:TGMessageWithReplies(0)];
+    [channelMessage setObject:@YES forKey:@"is_channel_post"];
+    TGMessageItem *channelRoot = TGItem(20, 0);
+    TGApplyMessageThreadMetadata(channelRoot, channelMessage);
+    TGAssert([channelRoot isChannelPost] && [channelRoot canGetMessageThread] && [[channelRoot messageThreadReplyCount] integerValue] == 0, "channel post with zero comments preserves post identity and discussion capability");
+    TGAssert([[[channelRoot copy] autorelease] isChannelPost], "channel post copy preserves its identity");
+    TGMessageItem *channelAlbum = TGItem(30, 0);
+    TGMergeMessageThreadMetadata(channelAlbum, channelRoot);
+    TGAssert([channelAlbum isChannelPost], "album retains channel post identity from its discussion owner");
+    TGMessageItem *postWithoutReplies = TGItem(40, 0);
+    TGApplyMessageThreadMetadata(postWithoutReplies, [NSDictionary dictionaryWithObject:@YES forKey:@"is_channel_post"]);
+    TGMessageItem *plainAlbum = TGItem(50, 0);
+    TGMergeMessageThreadMetadata(plainAlbum, postWithoutReplies);
+    TGAssert([plainAlbum isChannelPost], "album preserves a channel post even when the member has no reply metadata");
+    TGMergeMessageThreadMetadata(channelAlbum, groupRoot);
+    TGAssert([channelAlbum isChannelPost], "album merge cannot erase a previously established channel post identity");
+    TGMessageItem *groupAlbum = TGItem(60, 5);
+    TGMergeMessageThreadMetadata(groupAlbum, groupRoot);
+    TGAssert(![groupAlbum isChannelPost] && [[groupAlbum messageThreadReplyCount] integerValue] == 5, "group album reply counts do not turn its metadata into channel comments");
+    TGApplyMessageThreadMetadata(channelRoot, [NSDictionary dictionaryWithObject:[NSNull null] forKey:@"is_channel_post"]);
+    TGAssert(![channelRoot isChannelPost], "null channel-post metadata is safe and does not classify a post");
     TGAssert([TGMessageChatIDFromObject([NSDictionary dictionaryWithObject:@-999 forKey:@"chat_id"], @42) longLongValue] == -999, "discussion messages must retain their actual chat ID");
     TGAssert([TGMessageChatIDFromObject([NSDictionary dictionary], @42) longLongValue] == 42, "fixture without chat ID retains fallback");
 

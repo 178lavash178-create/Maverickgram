@@ -1,19 +1,19 @@
 #import <Cocoa/Cocoa.h>
 #import <objc/runtime.h>
 #import "TGTheme.h"
+#import "TGLocalization.h"
 #import "TGThemeContrast.h"
 #import "TGThemeTextField.h"
 #import "TGIconAssets.h"
 #import "../Sources/Core/TGChatItem.h"
 #include "../Sources/UI/TGProfileEditWindowController+Fields.inc"
 #import "TGDownloadProgressWindowController.h"
+#import "TGStatusButtonCells.h"
 #import "../Sources/Workshop/UI/TGWorkshopModuleCardView.h"
 #import "../Sources/Workshop/UI/TGWorkshopSurfaceView.h"
 #import "../Sources/Workshop/UI/TGWorkshopButtonCell.h"
 
 NSString * const TGDownloadManagerDidChangeNotification = @"TGDownloadManagerDidChangeNotification";
-NSString *TGLoc(NSString *key) { return key; }
-NSString *TGLanguageCode(void) { return @"en"; }
 BOOL TGVersionStringIsNewer(NSString *a, NSString *b) { (void)a; (void)b; return NO; }
 void TGDrawAvatarInRect(NSString *path, NSString *title, NSRect rect, BOOL selected, BOOL flipped) {
     (void)path; (void)title; (void)rect; (void)selected; (void)flipped;
@@ -24,6 +24,10 @@ void TGDrawAvatarInRect(NSString *path, NSString *title, NSRect rect, BOOL selec
 @implementation TGRepresentedObjectCell
 @synthesize representedObject=_representedObject;
 - (void)dealloc { [_representedObject release]; [super dealloc]; }
+@end
+// Native progress buttons are exercised with their real cells by the focused
+// Aqua auxiliary-view probe; this probe verifies the passive label surfaces.
+@implementation TGSecondaryTextButtonCell
 @end
 #include "../Sources/UI/TGPrivacyWindowController+BlockedSenderCell.inc"
 #include "../Sources/UI/TGChatFolderManagementWindowController+Cells.inc"

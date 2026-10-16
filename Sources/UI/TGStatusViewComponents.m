@@ -1,3 +1,5 @@
+#import "TGInterfaceDesign.h"
+#import "TGAquaAppearance.h"
 #import "TGStatusViewComponents.h"
 #import "TGAvatarImagePresentation.h"
 #import "TGIconAssets.h"
@@ -191,6 +193,10 @@ static CGFloat const TGPanelCornerRadius = 8.0;
 
 - (void)drawRect:(NSRect)dirtyRect {
     (void)dirtyRect;
+    if (TGInterfaceDesignIsAqua()) {
+        TGAquaDrawVerticalSeam([self bounds]);
+        return;
+    }
     NSRect lineRect = NSMakeRect(floor(NSMidX([self bounds])), 7.0, 1.0, MAX(0.0, NSHeight([self bounds]) - 14.0));
     [TGClassicPanelStrokeColor() set];
     NSRectFill(lineRect);
@@ -232,6 +238,14 @@ static CGFloat const TGPanelCornerRadius = 8.0;
 @end
 
 @implementation TGMessageTableView
+- (BOOL)isOpaque {
+    return TGInterfaceDesignIsAqua() ? NO : [super isOpaque];
+}
+- (void)drawBackgroundInClipRect:(NSRect)clipRect {
+    // Aqua wallpaper belongs to the stationary clip view behind this table.
+    if (!TGInterfaceDesignIsAqua()) [super drawBackgroundInClipRect:clipRect];
+}
+
 
 @synthesize dropOverlayTarget = _dropOverlayTarget;
 
@@ -541,18 +555,39 @@ static CGFloat const TGPanelCornerRadius = 8.0;
 - (void)drawRect:(NSRect)dirtyRect {
     (void)dirtyRect;
     NSRect bounds = [self bounds];
-    CGFloat avatarSide = 44.0;
+    BOOL aqua = TGInterfaceDesignIsAqua();
+    CGFloat avatarSide = aqua ? MIN(44.0, floor(MIN(NSWidth(bounds), NSHeight(bounds)) - 4.0)) : 44.0;
+    if (avatarSide <= 0.0) {
+        return;
+    }
     NSRect avatarRect = NSMakeRect(floor(NSMidX(bounds) - (avatarSide / 2.0)),
                                    floor(NSMidY(bounds) - (avatarSide / 2.0)),
                                    avatarSide,
                                    avatarSide);
+    if (aqua) {
+        // Leave room for the one-point rim as well as the shared avatar stroke.
+        // The toolbar badge is smaller than Classic's 44-point source-list one.
+        NSBezierPath *rim = [NSBezierPath bezierPathWithOvalInRect:NSInsetRect(avatarRect, -1.0, -1.0)];
+        NSGradient *metal = [[[NSGradient alloc] initWithStartingColor:TGColorFromHex(0xF8FAFC)
+                                                        endingColor:TGColorFromHex(0xA7B0BA)] autorelease];
+        [metal drawInBezierPath:rim angle:([self isFlipped] ? 90.0 : -90.0)];
+        [TGColorFromHex(0x77818D) set];
+        [rim setLineWidth:1.0];
+        [rim stroke];
+    }
     TGDrawAvatarImageInRect([_avatarPresentation imageForDrawing], self.displayName, avatarRect, NO, [self isFlipped]);
 
     NSRect statusRect = NSMakeRect(NSMaxX(avatarRect) - 11.0, NSMinY(avatarRect) + 2.0, 12.0, 12.0);
+    if (aqua) {
+        CGFloat dotSide = MIN(10.0, avatarSide * 0.36);
+        statusRect = NSMakeRect(NSMaxX(avatarRect) - dotSide + 0.5,
+                                NSMinY(avatarRect) - 0.5, dotSide, dotSide);
+    }
     NSBezierPath *outerDot = [NSBezierPath bezierPathWithOvalInRect:statusRect];
     [TGClassicWindowBottomColor() set];
     [outerDot fill];
-    NSRect innerRect = NSInsetRect(statusRect, 2.0, 2.0);
+    CGFloat dotInset = aqua ? MIN(2.0, NSWidth(statusRect) / 4.0) : 2.0;
+    NSRect innerRect = NSInsetRect(statusRect, dotInset, dotInset);
     NSBezierPath *innerDot = [NSBezierPath bezierPathWithOvalInRect:innerRect];
     NSColor *dotColor = self.connected ? [NSColor colorWithCalibratedRed:0.210 green:0.700 blue:0.315 alpha:1.0]
                                        : TGClassicMutedInkColor();

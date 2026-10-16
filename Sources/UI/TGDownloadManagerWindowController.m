@@ -3,13 +3,15 @@
 #import "../Media/TGMediaFileActions.h"
 #import "../Services/TGDownloadManager.h"
 #import "TGDownloadManagerPresentation.h"
+#import "TGDownloadCompactPopover.h"
 #import "TGLocalization.h"
 #import "TGStatusButtonCells.h"
 #import "TGStatusViewComponents.h"
 #import "TGStatusViewCells.h"
 #import "TGTheme.h"
 
-@interface TGDownloadManagerWindowController () <NSTableViewDataSource, NSTableViewDelegate, NSWindowDelegate>
+@interface TGDownloadManagerWindowController () <NSTableViewDataSource, NSTableViewDelegate, NSWindowDelegate, TGDownloadCompactPopoverTarget>
+@property(nonatomic,retain) TGDownloadCompactPopover *compactPopover;
 @property (nonatomic, retain) NSTableView *tableView;
 @property (nonatomic, retain) NSTextField *statusField;
 @property (nonatomic, retain) NSButton *cancelButton;
@@ -29,6 +31,7 @@
 
 @implementation TGDownloadManagerWindowController
 
+@synthesize compactPopover=_compactPopover;
 @synthesize tableView = _tableView;
 @synthesize statusField = _statusField;
 @synthesize cancelButton = _cancelButton;
@@ -64,6 +67,7 @@
 }
 
 - (void)dealloc {
+    [_compactPopover close];[_compactPopover release];
     [[self window] setDelegate:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     [_tableView release];
@@ -120,7 +124,7 @@
 }
 
 - (void)buildViews {
-    TGUtilityWindowView *root = [[[TGUtilityWindowView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease];
+    TGDownloadManagerBackgroundView *root = [[[TGDownloadManagerBackgroundView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease];
     [root setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [[self window] setContentView:root];
     self.headerView = [[[TGDownloadManagerSurfaceView alloc] initWithFrame:NSZeroRect] autorelease];
@@ -287,6 +291,7 @@
 }
 
 - (void)showWindow:(id)sender {
+    [self closeCompactPopover];
     [self refreshPresentation];
     [super showWindow:sender];
 }
@@ -312,6 +317,7 @@
         ? [NSString stringWithFormat:TGLoc(@"downloads.count"), (unsigned long)[self.downloads count]]
         : TGLoc(@"downloads.empty")];
     [self updateControls];
+    [self.compactPopover reloadWithItems:self.downloads];
 }
 
 - (void)downloadManagerChanged:(NSNotification *)notification {
@@ -364,6 +370,31 @@
 - (void)clearPressed:(id)sender {
     (void)sender;
     [[TGDownloadManager sharedManager] clearFinishedDownloads];
+}
+
+- (BOOL)toggleCompactPopoverRelativeToView:(NSView *)anchor {
+    if(!self.compactPopover) self.compactPopover=[[[TGDownloadCompactPopover alloc] initWithTarget:self] autorelease];
+    [self reloadDownloads];return [self.compactPopover toggleRelativeToView:anchor];
+}
+- (void)closeCompactPopover {[self.compactPopover close];}
+- (void)compactDownloadShowAll {
+    [[self window] center];[self showWindow:self];[[self window] makeKeyAndOrderFront:self];
+}
+- (void)compactDownloadPerformAction:(NSString *)action identifier:(NSString *)identifier {
+    if(![identifier isKindOfClass:[NSString class]] || ![identifier length])return;
+    NSDictionary *item=nil;
+    for(NSDictionary *candidate in [[TGDownloadManager sharedManager] itemsSnapshot])
+        if([[candidate objectForKey:@"identifier"] isEqual:identifier]){item=candidate;break;}
+    if(!item)return;
+    TGDownloadManager *manager=[TGDownloadManager sharedManager];NSString *state=[item objectForKey:@"state"];
+    if([action isEqual:@"pause"] && [[item objectForKey:@"can_pause"] boolValue]) [manager pauseDownloadWithIdentifier:identifier];
+    else if([action isEqual:@"resume"] && [[item objectForKey:@"can_resume"] boolValue]) [manager resumeDownloadWithIdentifier:identifier completion:nil];
+    else if([action isEqual:@"cancel"] && [[item objectForKey:@"can_cancel"] boolValue]) [manager cancelDownloadWithIdentifier:identifier];
+    else if([action isEqual:@"retry"] && ([state isEqual:@"failed"] || [state isEqual:@"cancelled"])) [manager enqueueRetryDownloadWithIdentifier:identifier completion:nil];
+    else if([action isEqual:@"reveal"] && [[item objectForKey:@"saved_path"] length]) {
+        if(![TGMediaFileActions revealFileAtPath:[item objectForKey:@"saved_path"]]) { [self.statusField setStringValue:TGLoc(@"downloads.revealFailed")];NSBeep(); }
+    }
+    [self reloadDownloads];
 }
 
 @end

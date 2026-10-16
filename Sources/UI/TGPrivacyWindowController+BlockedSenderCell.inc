@@ -1,3 +1,4 @@
+#import "TGChatListSelectionAppearance.h"
 @interface TGBlockedSenderCell : TGRepresentedObjectCell
 @end
 
@@ -25,11 +26,11 @@
     CGFloat textWidth = MAX(40.0, NSMaxX(cellFrame) - textX - 12.0);
     /* Own the row surface, rather than pairing theme header text with an
        unrelated native selection gradient or a transparent table background. */
-    NSColor *surface = selected ? TGClassicSelectedRowColor() : TGClassicTablePaperColor();
+    NSColor *surface = selected ? TGListSelectionBackground() : TGClassicTablePaperColor();
     [surface setFill];
     NSRectFill(cellFrame);
     TGDrawAvatarInRect([summary objectForKey:@"avatar_local_path"], title, avatarRect, selected, flipped);
-    NSColor *ink = TGThemeReadableInk(selected ? TGClassicSelectedRowTextColor() : TGClassicCardInkColor(), surface, 4.5);
+    NSColor *ink = TGThemeReadableInk(selected ? TGListSelectionForeground() : TGClassicCardInkColor(), surface, 4.5);
     NSColor *muted = TGThemeReadableInk(selected ? ink : TGClassicCardMutedInkColor(), surface, 4.5);
     NSDictionary *titleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                      [NSFont boldSystemFontOfSize:12.5], NSFontAttributeName,

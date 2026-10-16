@@ -1,3 +1,4 @@
+#import "TGDialogPresentation.h"
 #import "TGProfileEditWindowController.h"
 #import "TGStatusButtonCells.h"
 #import "TGStatusViewCells.h"
@@ -196,7 +197,7 @@ static NSString *TGPreparedProfilePhotoPath(NSString *sourcePath, NSError **erro
     [panel setCanChooseFiles:YES];
     [panel setAllowsMultipleSelection:NO];
     [panel setAllowedFileTypes:[NSArray arrayWithObjects:@"jpg", @"jpeg", @"png", nil]];
-    if ([panel runModal] != NSOKButton) {
+    if (TGRunFilePanel(panel, [self window]) != NSOKButton) {
         return;
     }
     NSURL *selectedURL = ([[panel URLs] count] > 0) ? [[panel URLs] objectAtIndex:0] : nil;

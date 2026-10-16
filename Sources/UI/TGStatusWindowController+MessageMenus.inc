@@ -818,7 +818,8 @@ static NSString *TGMessageViewerMenuTitle(NSDictionary *summary) {
     }
 
     if (TGMessageItemHasCommentThread(item)) {
-        NSMenuItem *commentsItem = [[[NSMenuItem alloc] initWithTitle:TGLoc(@"message.comments.open")
+        NSString *commentActionTitle = TGLoc([[item messageThreadReplyCount] integerValue] > 0 ? @"message.comments.open" : @"message.comments.add");
+        NSMenuItem *commentsItem = [[[NSMenuItem alloc] initWithTitle:commentActionTitle
                                                                action:@selector(openMessageCommentsFromMenu:)
                                                         keyEquivalent:@""] autorelease];
         [commentsItem setRepresentedObject:item];
@@ -1467,13 +1468,13 @@ static NSString *TGMessageViewerMenuTitle(NSDictionary *summary) {
         ![[item messageID] respondsToSelector:@selector(longLongValue)]) {
         return;
     }
-    NSInteger choice = NSRunAlertPanel(TGLoc(@"message.poll.stop"),
-                                       @"%@",
-                                       TGLoc(@"message.poll.stopAction"),
-                                       TGLoc(@"cancel"),
-                                       nil,
-                                       TGLoc(@"message.poll.stopConfirm"));
-    if (choice != NSAlertDefaultReturn) {
+    NSAlert *alert=[[[NSAlert alloc] init] autorelease];
+    [alert setMessageText:TGLoc(@"message.poll.stop")];
+    [alert setInformativeText:TGLoc(@"message.poll.stopConfirm")];
+    [alert addButtonWithTitle:TGLoc(@"message.poll.stopAction")];
+    [alert addButtonWithTitle:TGLoc(@"cancel")];
+    NSInteger choice=TGRunAlert(alert,[self window]);
+    if (choice != NSAlertFirstButtonReturn) {
         return;
     }
 

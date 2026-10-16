@@ -23,8 +23,10 @@ NSAttributedString *TGAttributedMessageStringForItem(TGMessageItem *item, NSStri
 CGFloat TGMessageExtraBlockVerticalPadding(void);
 CGFloat TGMessageTopAccessoryHeightForItem(TGMessageItem *item);
 BOOL TGMessageUsesSeparateMetadataFooter(void);
-// Short, unadorned text reserves one indivisible time/status unit beside the body.
+// Short text without reactions may reserve one time/status unit beside the body.
+// Every reaction is rendered in the separate footer below the body.
 BOOL TGMessageUsesInlineMetadataForItem(TGMessageItem *item, CGFloat maximumBubbleWidth, BOOL showSenderDetails);
+NSRect TGMessageInlineReactionRectForItem(TGMessageItem *item, NSRect bubbleRect, BOOL flipped);
 NSRect TGMessageInlineTextRectForItem(TGMessageItem *item, NSRect bubbleRect, BOOL flipped);
 NSRect TGMessageInlineTimeRectForItem(TGMessageItem *item, NSRect bubbleRect, BOOL flipped);
 NSString *TGDurationStringFromSecondsValue(id durationValue);
@@ -63,6 +65,7 @@ NSRect TGPollOptionRectForItem(TGMessageItem *item, NSRect bubbleRect, NSUIntege
 NSInteger TGPollOptionIndexForPoint(TGMessageItem *item, NSRect bubbleRect, NSPoint point, BOOL flipped);
 NSRect TGPollConfirmRectForItem(TGMessageItem *item, NSRect bubbleRect, BOOL flipped);
 BOOL TGPollPointIsInConfirmRect(TGMessageItem *item, NSRect bubbleRect, NSPoint point, BOOL flipped);
+CGFloat TGMessageReactionFooterHeight(TGMessageItem *item, CGFloat innerWidth);
 CGFloat TGMessageReactionContentWidth(TGMessageItem *item, CGFloat innerWidth);
 NSRect TGMessageReactionTimeRect(TGMessageItem *item, NSRect bandRect, BOOL flipped);
 CGFloat TGReactionBandHeightForMessageItem(TGMessageItem *item);
@@ -71,6 +74,10 @@ NSRect TGMessageContentRectByRemovingFooter(NSRect rect, CGFloat footerHeight, B
 CGFloat TGMessageSenderHeaderHeightForItem(TGMessageItem *item, BOOL showSenderDetails);
 CGFloat TGMessageContextHeaderHeightForItem(TGMessageItem *item);
 BOOL TGMessageItemHasCommentThread(TGMessageItem *item);
+BOOL TGMessageItemShowsCommentBar(TGMessageItem *item);
+CGFloat TGMessageReplyIndicatorWidthForItem(TGMessageItem *item);
+NSRect TGMessageReplyIndicatorRectForTimeRect(TGMessageItem *item, NSRect timeRect);
+void TGDrawMessageReplyIndicatorForTimeRect(TGMessageItem *item, NSRect timeRect, BOOL flipped);
 NSString *TGMessageCommentTitleForItem(TGMessageItem *item);
 CGFloat TGMessageCommentBarHeightForItem(TGMessageItem *item);
 NSRect TGMessageCommentBarRectForItem(TGMessageItem *item, NSRect bubbleRect, BOOL flipped);

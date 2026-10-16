@@ -1,0 +1,27 @@
+Telegraphica Aqua illustrated chat wallpapers
+Created 2026-10-15 using the built-in image_gen tool (no CLI/API fallback).
+Original generated 1536x1024 PNG assets, copied unmodified into this folder.
+No third-party reference images or official Telegram artwork were used.
+These are wallpaper illustrations, not UI icons or material textures.
+
+Final generation prompts:
+
+wallpaper-botanical.png
+SHA256: 0bb29dc9a48a02a9a62a7fecd2dace2d4d0e33d9c845ae99fb2652ef4a9fad4e
+Use case: illustration-story. Asset: a production messenger chat wallpaper for a legacy Aqua desktop app. Create one finished full-bleed landscape raster wallpaper, 1536x1024 if possible. Very light near-white background, extremely pale desaturated accent lines, delicate sparse small illustrations distributed across the entire surface, lots of breathing room so opaque chat bubbles remain the focal point. Hand-illustrated sophisticated decorative linework, consistent thin strokes, calm and friendly. No text, letters, logos, interface, borders, shadows, paper grain, photorealism, or recognizable branded symbols. This is an illustrated wallpaper, not a material texture. Theme: botanical garden, small fern fronds, rounded eucalyptus leaves, tiny sprigs and occasional abstract seed pods. Off-white background with pale sage-gray line drawings. Avoid large dominant subjects.
+
+wallpaper-stars.png
+SHA256: 426ed76970ee9e5c078819ca0922e33a4d5b6560fae5666fed855f4a9f7a3751
+Use case: illustration-story. Asset: finished messenger chat wallpaper for a legacy Aqua desktop app. One full-bleed landscape raster wallpaper, 1536x1024 if possible. Near-white background with very pale desaturated lines. Delicate sparse small decorative illustrations evenly distributed over the whole surface, ample empty space. Consistent fine hand-illustrated linework, calm neutral subjects, no dominant focal subject. Chat bubbles must remain the focus. No text, letters, logos, interface, borders, shadows, material grain or photorealism. This is an illustrated wallpaper, not a material texture. Theme: little astronomical stars, simple crescent moons, small abstract orbital circles and dotted constellations. White background, very pale blue-gray linework, no dark night sky.
+
+wallpaper-sea.png
+SHA256: ff653cbf44d6c334d701607f0ecd903d9481f80771e94f703444986a5d662a94
+Use case: illustration-story. Asset: finished messenger chat wallpaper for a legacy Aqua desktop app. One full-bleed landscape raster wallpaper, 1536x1024 if possible. Near-white background with very pale desaturated lines. Delicate sparse small decorative illustrations evenly distributed over the whole surface, ample empty space. Consistent fine hand-illustrated linework, calm neutral subjects, no dominant focal subject. Chat bubbles must remain the focus. No text, letters, logos, interface, borders, shadows, material grain or photorealism. This is an illustrated wallpaper, not a material texture. Theme: little sea waves, scallop shells, tiny sailboats, pebbles and small coral branches. Near-white background, very pale muted teal-blue linework. No tropical saturated colors.
+
+wallpaper-mountains.png
+SHA256: c61825e133900924bf382e9cb5c04cf66864d4451dd4a80995e8447ae3c3480c
+Use case: illustration-story. Asset: finished messenger chat wallpaper for a legacy Aqua desktop app. One full-bleed landscape raster wallpaper, 1536x1024 if possible. Near-white background with very pale desaturated lines. Delicate sparse small decorative illustrations evenly distributed over the whole surface, ample empty space. Consistent fine hand-illustrated linework, calm neutral subjects, no dominant focal subject. Chat bubbles must remain the focus. No text, letters, logos, interface, borders, shadows, material grain or photorealism. This is an illustrated wallpaper, not a material texture. Theme: tiny rolling mountain silhouettes, pine sprigs, topographic contour fragments and small sun discs. Near-white background, very pale warm stone-gray linework. No dense map or large landscape.
+
+wallpaper-clouds.png
+SHA256: 5f844d38ef16fc533b01d525f38ad1adaf5bf724cf2d3d7e99aedee1a2554957
+Use case: illustration-story. Asset: finished messenger chat wallpaper for a legacy Aqua desktop app. One full-bleed landscape raster wallpaper, 1536x1024 if possible. Near-white background with very pale desaturated lines. Delicate sparse small decorative illustrations evenly distributed over the whole surface, ample empty space. Consistent fine hand-illustrated linework, calm neutral subjects, no dominant focal subject. Chat bubbles must remain the focus. No text, letters, logos, interface, borders, shadows, material grain or photorealism. This is an illustrated wallpaper, not a material texture. Theme: tiny soft cumulus cloud outlines, delicate wind curves, scattered raindrops, a few small sun discs and minimal rainbow arcs. White background, very pale mist-blue and warm-gray linework. Calm spacious sky, no childish cartoons.

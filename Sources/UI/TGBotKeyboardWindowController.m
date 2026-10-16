@@ -1,3 +1,4 @@
+#import "TGDialogPresentation.h"
 #import "TGBotKeyboardWindowController.h"
 
 #import "../Core/TGTDLibClient+Bots.h"
@@ -223,7 +224,7 @@
     [alert setInformativeText:message ? message : @""];
     [alert addButtonWithTitle:allowTitle ? allowTitle : TGLoc(@"open")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    return ([alert runModal] == NSAlertFirstButtonReturn);
+    return (TGRunAlert(alert, [self window]) == NSAlertFirstButtonReturn);
 }
 
 - (void)openURLString:(NSString *)urlString requiringConfirmation:(BOOL)confirmation {
@@ -347,7 +348,7 @@
                     [alert setMessageText:TGLoc(@"bot.keyboard.title")];
                     [alert setInformativeText:text];
                     [alert addButtonWithTitle:TGLoc(@"ok")];
-                    [alert runModal];
+                    TGRunAlert(alert, [self window]);
                 }
             }
             [answer release];
@@ -393,7 +394,7 @@
                     [alert addButtonWithTitle:TGLoc(@"bot.login.allowMessages")];
                     [alert addButtonWithTitle:TGLoc(@"bot.login.signInOnly")];
                     [alert addButtonWithTitle:TGLoc(@"cancel")];
-                    NSInteger response = [alert runModal];
+                    NSInteger response = TGRunAlert(alert, [self window]);
                     if (response == NSAlertFirstButtonReturn) {
                         [self requestResolvedLoginURLForButtonID:buttonIDCopy allowWriteAccess:YES];
                     } else if (response == NSAlertSecondButtonReturn) {

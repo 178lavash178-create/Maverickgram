@@ -15,13 +15,20 @@
 @property (nonatomic, retain) TGChatItem *chatItem;
 @end
 
-@interface TGPanelView : NSView
+@interface TGPanelView : NSView {
+    BOOL _headerHidden;
+}
+// Default NO preserves the classic and existing utility-panel header.
+@property (nonatomic, assign) BOOL headerHidden;
 @end
 
 @interface TGScrollSurfaceView : NSView {
     BOOL _drawsInterior;
+    BOOL _squareEdges;
 }
 @property (nonatomic, assign) BOOL drawsInterior;
+@property (nonatomic, assign) BOOL squareTopCorners;
+@property (nonatomic, assign) BOOL squareEdges;
 @end
 
 @interface TGComposerInputBackgroundView : NSView
@@ -35,8 +42,10 @@
 
 @interface TGGroupedCardView : NSView {
     BOOL _drawsInterior;
+    BOOL _squareTopCorners;
 }
 @property (nonatomic, assign) BOOL drawsInterior;
+@property (nonatomic, assign) BOOL squareTopCorners;
 @end
 
 @interface TGFlippedDocumentView : NSView

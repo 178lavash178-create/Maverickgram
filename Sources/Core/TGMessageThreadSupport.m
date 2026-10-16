@@ -31,6 +31,8 @@ BOOL TGMessageCanGetThreadFromObject(NSDictionary *object) {
 }
 
 void TGApplyMessageThreadMetadata(TGMessageItem *item, NSDictionary *message) {
+    id channelPost = [message objectForKey:@"is_channel_post"];
+    [item setChannelPost:[channelPost respondsToSelector:@selector(boolValue)] && [channelPost boolValue]];
     NSNumber *count = TGMessageThreadReplyCountFromObject(message);
     [item setMessageThreadReplyCount:count];
     [item setCanGetMessageThread:TGMessageCanGetThreadFromObject(message)];
@@ -38,6 +40,9 @@ void TGApplyMessageThreadMetadata(TGMessageItem *item, NSDictionary *message) {
 }
 
 void TGMergeMessageThreadMetadata(TGMessageItem *albumItem, TGMessageItem *item) {
+    // Album members belong to the same chat. Preserve the post presentation
+    // even when this member has no reply metadata or owns no discussion.
+    [albumItem setChannelPost:[albumItem isChannelPost] || [item isChannelPost]];
     if (![item canGetMessageThread] && ![item messageThreadReplyCount]) { return; }
     NSNumber *itemCount = [item messageThreadReplyCount];
     NSNumber *albumCount = [albumItem messageThreadReplyCount];

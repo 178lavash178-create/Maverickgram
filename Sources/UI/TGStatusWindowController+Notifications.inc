@@ -431,7 +431,7 @@
     [panel setAllowsMultipleSelection:NO];
     [panel setCanCreateDirectories:YES];
     [panel setDirectoryURL:[NSURL fileURLWithPath:TGConfiguredDownloadFolderPath()]];
-    NSInteger result = [panel runModal];
+    NSInteger result = TGRunFilePanel(panel, self.window);
     if (result != NSOKButton) {
         return;
     }
@@ -562,7 +562,7 @@
                 [alert setInformativeText:[NSString stringWithFormat:TGLoc(@"update.download.failed.message"), errorMessage]];
                 [alert addButtonWithTitle:TGLoc(@"update.open")];
                 [alert addButtonWithTitle:@"OK"];
-                if ([alert runModal] == NSAlertFirstButtonReturn) {
+                if (TGRunAlert(alert, self.window) == NSAlertFirstButtonReturn) {
                     [self openProjectReleasesPage];
                 }
             } else {
@@ -572,7 +572,7 @@
                 [alert setInformativeText:[NSString stringWithFormat:TGLoc(@"update.downloaded.message"), targetPathCopy]];
                 [alert addButtonWithTitle:TGLoc(@"update.downloaded.open")];
                 [alert addButtonWithTitle:@"OK"];
-                if ([alert runModal] == NSAlertFirstButtonReturn) {
+                if (TGRunAlert(alert, self.window) == NSAlertFirstButtonReturn) {
                     BOOL openedInstaller = [[NSWorkspace sharedWorkspace] openFile:targetPathCopy];
                     [[TGLogger sharedLogger] log:[NSString stringWithFormat:@"Updater: open installer %@ for %@.", openedInstaller ? @"requested" : @"failed", targetPathCopy]];
                     if (openedInstaller) {
@@ -597,7 +597,7 @@
             [alert setInformativeText:[NSString stringWithFormat:TGLoc(@"update.failed"), errorMessage]];
             [alert addButtonWithTitle:TGLoc(@"update.open")];
             [alert addButtonWithTitle:@"OK"];
-            NSInteger result = [alert runModal];
+            NSInteger result = TGRunAlert(alert, self.window);
             if (result == NSAlertFirstButtonReturn) {
                 [self openProjectReleasesPage];
             }
@@ -616,7 +616,7 @@
             [alert setMessageText:TGLoc(@"update.none")];
             [alert setInformativeText:[NSString stringWithFormat:TGLoc(@"update.noneMessage"), currentVersion]];
             [alert addButtonWithTitle:@"OK"];
-            [alert runModal];
+            TGRunAlert(alert, self.window);
         }
         return;
     }
@@ -642,7 +642,7 @@
         [alert addButtonWithTitle:TGLoc(@"update.open")];
     }
     [alert addButtonWithTitle:TGLoc(@"update.later")];
-    NSInteger result = [alert runModal];
+    NSInteger result = TGRunAlert(alert, self.window);
     if (result == NSAlertFirstButtonReturn) {
         if ([downloadURLString length] > 0) {
             [self downloadUpdateFromInfo:releaseInfo];

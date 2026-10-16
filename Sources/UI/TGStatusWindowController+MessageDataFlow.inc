@@ -270,6 +270,7 @@
 - (void)updateMessageJumpToNewestButtonVisibility {
     BOOL ready = ([self.currentAuthState isEqualToString:@"ready"] &&
                   [(self.activeSection ? self.activeSection : TGSectionChats) isEqualToString:TGSectionChats] &&
+                  !self.chatNavigationClosed && !self.mediaCenterVisible &&
                   self.selectedChatID != nil);
     [self.messageJumpToNewestButton setHidden:!ready];
     [self.messageJumpToNewestButton setEnabled:ready];
@@ -277,6 +278,7 @@
 
 - (void)jumpToNewestMessages:(id)sender {
     (void)sender;
+    [self forgetNavigationTranscriptPosition];
     self.forceMessageScrollToNewest = YES;
     if (self.messageItemsRepresentFocusedContext && self.selectedChatID) {
         NSNumber *chatID = [self.selectedChatID retain];
@@ -544,7 +546,11 @@
         [self.messageTableView reloadData];
         [self refreshMediaLoadingSpinnerOverlays];
         [self refreshBotReplyMarkupFromMessages];
-        if (self.initialUnreadPositionPending) {
+        if (forceScrollToNewest) {
+            [self scrollMessagesToNewestIfAvailable];
+        } else if ([self restoreNavigationTranscriptIfPending]) {
+            // The original message remains at its saved viewport pixel offset.
+        } else if (self.initialUnreadPositionPending) {
             [self scrollMessagesToInitialUnreadIfAvailable];
         } else {
             [self scrollMessagesToNewestIfAvailable];
@@ -1337,6 +1343,7 @@
                         [self.chatScrollView reflectScrolledClipView:chatClipView];
                     }
                 }
+                [self restoreNavigationChatListIfPending];
                 [self setOfflineModeActive:NO reason:nil];
                 if (interactive) {
                     [self.statusField setStringValue:@"Connected"];
@@ -1403,11 +1410,19 @@
         return;
     }
 
+    BOOL navigationContinuingRestore = [self navigationRestoredHistoryIsActive] && !self.forceMessageScrollToNewest;
+    // Search results own their focused page until the user explicitly leaves it.
+    if(TGInterfaceDesignIsAqua() && !interactive && self.messageItemsRepresentFocusedContext &&
+       !navigationContinuingRestore && !self.forceMessageScrollToNewest) return;
+    NSNumber *navigationAnchorCopy = [(navigationContinuingRestore ? [self navigationVisibleTranscriptAnchor] : [self navigationPendingTranscriptAnchor]) retain];
+    BOOL navigationInitialRestore = navigationAnchorCopy && !navigationContinuingRestore;
+    NSString *navigationKeyCopy = [[self navigationTranscriptKey] copy];
+    BOOL navigationForceNewest = self.forceMessageScrollToNewest;
     NSNumber *chatIDCopy = [chatID retain];
     NSNumber *messageThreadIDCopy = [self.selectedMessageThreadID retain];
     NSString *messageTopicKindCopy = [self.selectedMessageTopicKind copy];
     NSNumber *lastReadInboxMessageIDCopy = [self.selectedChatLastReadInboxMessageID retain];
-    BOOL shouldLoadUnreadBoundary = (self.initialUnreadPositionPending &&
+    BOOL shouldLoadUnreadBoundary = (!navigationForceNewest && self.initialUnreadPositionPending &&
                                      [lastReadInboxMessageIDCopy respondsToSelector:@selector(longLongValue)] &&
                                      [lastReadInboxMessageIDCopy longLongValue] > 0);
     NSUInteger unreadCount = self.selectedChatUnreadCount;
@@ -1420,6 +1435,7 @@
         [self.messageLoadingSpinner startAnimation:self];
         [self updateVisibleSection];
     }
+    NSUInteger navigationPresentationGeneration = self.messageLoadingGeneration;
     if (interactive) {
         [self setControlsBusy:YES];
         [self.statusField setStringValue:@"Loading messages..."];
@@ -1434,60 +1450,79 @@
         NSError *messageError = nil;
         NSUInteger requestedLimit = MIN((NSUInteger)50, MAX(TGMessagePreviewInitialLimit, unreadCount + 8));
         NSArray *items = nil;
-        if (shouldLoadUnreadBoundary) {
-            NSMutableArray *unreadBoundaryItems = [NSMutableArray array];
-            NSMutableSet *loadedMessageIDs = [NSMutableSet set];
-            NSNumber *pageAnchorMessageID = lastReadInboxMessageIDCopy;
-            NSUInteger loadedNewerMessages = 0;
-            NSUInteger maximumBatchCount = MIN((NSUInteger)6, MAX((NSUInteger)1, ((unreadCount + 39) / 40)));
-            NSUInteger batchIndex = 0;
-            for (batchIndex = 0; batchIndex < maximumBatchCount; batchIndex++) {
-                NSArray *batchItems = [client messagePreviewItemsForChatID:chatIDCopy
-                                                           messageThreadID:messageThreadIDCopy
-                                                          messageTopicKind:messageTopicKindCopy
-                                                           aroundMessageID:pageAnchorMessageID
-                                                         newerMessageCount:40
-                                                                     limit:50
-                                                                   timeout:8.0
-                                                                     error:&messageError];
-                if (![batchItems count]) {
-                    break;
-                }
-
-                long long anchorValue = [pageAnchorMessageID longLongValue];
-                long long newestMessageID = anchorValue;
-                NSUInteger newMessagesInBatch = 0;
-                NSUInteger batchItemIndex = 0;
-                for (batchItemIndex = 0; batchItemIndex < [batchItems count]; batchItemIndex++) {
-                    TGMessageItem *batchItem = [batchItems objectAtIndex:batchItemIndex];
-                    NSNumber *batchMessageID = [batchItem messageID];
-                    if (![batchMessageID respondsToSelector:@selector(longLongValue)]) {
-                        continue;
-                    }
-                    long long batchMessageValue = [batchMessageID longLongValue];
-                    if (![loadedMessageIDs containsObject:batchMessageID]) {
-                        [loadedMessageIDs addObject:batchMessageID];
-                        [unreadBoundaryItems addObject:batchItem];
-                    }
-                    if (batchMessageValue > anchorValue) {
-                        newMessagesInBatch++;
-                        newestMessageID = MAX(newestMessageID, batchMessageValue);
-                    }
-                }
-                loadedNewerMessages += newMessagesInBatch;
-                if (newestMessageID <= anchorValue || newMessagesInBatch == 0 || loadedNewerMessages >= unreadCount) {
-                    break;
-                }
-                pageAnchorMessageID = [NSNumber numberWithLongLong:newestMessageID];
+        BOOL navigationAnchorFound = NO;
+        BOOL navigationFallback = NO;
+        if (navigationAnchorCopy) {
+            items = [client messagePreviewItemsForChatID:chatIDCopy messageThreadID:messageThreadIDCopy
+                messageTopicKind:messageTopicKindCopy aroundMessageID:navigationAnchorCopy
+                newerMessageCount:25 limit:50 timeout:8.0 error:&messageError];
+            for(TGMessageItem *item in items) {
+                if([[item messageID] isEqual:navigationAnchorCopy]) { navigationAnchorFound=YES;break; }
             }
-            items = unreadBoundaryItems;
-        } else {
-            items = [client recentMessagePreviewItemsForChatID:chatIDCopy
-                                               messageThreadID:messageThreadIDCopy
-                                              messageTopicKind:messageTopicKindCopy
-                                                         limit:requestedLimit
-                                                       timeout:8.0
-                                                         error:&messageError];
+            if(!navigationAnchorFound) {
+                // A deleted saved anchor must not trap the initial navigation.
+                // A refresh of an already visible history page keeps its cache.
+                navigationFallback=navigationInitialRestore;
+                items=nil;
+                if(navigationFallback) messageError=nil;
+            }
+        }
+        if (!navigationAnchorCopy || navigationFallback) {
+            if (shouldLoadUnreadBoundary) {
+                NSMutableArray *unreadBoundaryItems = [NSMutableArray array];
+                NSMutableSet *loadedMessageIDs = [NSMutableSet set];
+                NSNumber *pageAnchorMessageID = lastReadInboxMessageIDCopy;
+                NSUInteger loadedNewerMessages = 0;
+                NSUInteger maximumBatchCount = MIN((NSUInteger)6, MAX((NSUInteger)1, ((unreadCount + 39) / 40)));
+                NSUInteger batchIndex = 0;
+                for (batchIndex = 0; batchIndex < maximumBatchCount; batchIndex++) {
+                    NSArray *batchItems = [client messagePreviewItemsForChatID:chatIDCopy
+                                                               messageThreadID:messageThreadIDCopy
+                                                              messageTopicKind:messageTopicKindCopy
+                                                               aroundMessageID:pageAnchorMessageID
+                                                             newerMessageCount:40
+                                                                         limit:50
+                                                                       timeout:8.0
+                                                                         error:&messageError];
+                    if (![batchItems count]) {
+                        break;
+                    }
+
+                    long long anchorValue = [pageAnchorMessageID longLongValue];
+                    long long newestMessageID = anchorValue;
+                    NSUInteger newMessagesInBatch = 0;
+                    NSUInteger batchItemIndex = 0;
+                    for (batchItemIndex = 0; batchItemIndex < [batchItems count]; batchItemIndex++) {
+                        TGMessageItem *batchItem = [batchItems objectAtIndex:batchItemIndex];
+                        NSNumber *batchMessageID = [batchItem messageID];
+                        if (![batchMessageID respondsToSelector:@selector(longLongValue)]) {
+                            continue;
+                        }
+                        long long batchMessageValue = [batchMessageID longLongValue];
+                        if (![loadedMessageIDs containsObject:batchMessageID]) {
+                            [loadedMessageIDs addObject:batchMessageID];
+                            [unreadBoundaryItems addObject:batchItem];
+                        }
+                        if (batchMessageValue > anchorValue) {
+                            newMessagesInBatch++;
+                            newestMessageID = MAX(newestMessageID, batchMessageValue);
+                        }
+                    }
+                    loadedNewerMessages += newMessagesInBatch;
+                    if (newestMessageID <= anchorValue || newMessagesInBatch == 0 || loadedNewerMessages >= unreadCount) {
+                        break;
+                    }
+                    pageAnchorMessageID = [NSNumber numberWithLongLong:newestMessageID];
+                }
+                items = unreadBoundaryItems;
+            } else {
+                items = [client recentMessagePreviewItemsForChatID:chatIDCopy
+                                                   messageThreadID:messageThreadIDCopy
+                                                  messageTopicKind:messageTopicKindCopy
+                                                             limit:requestedLimit
+                                                           timeout:8.0
+                                                             error:&messageError];
+            }
         }
         NSString *authorizationState = [[client currentAuthorizationStatePreparingIfNeededWithTimeout:2.0 error:NULL] copy];
         NSString *messageErrorMessage = [[messageError localizedDescription] copy];
@@ -1498,15 +1533,34 @@
                                (self.selectedMessageThreadID && messageThreadIDCopy && [self.selectedMessageThreadID longLongValue] == [messageThreadIDCopy longLongValue]));
             BOOL sameTopicKind = ((!self.selectedMessageTopicKind && !messageTopicKindCopy) ||
                                   (self.selectedMessageTopicKind && messageTopicKindCopy && [self.selectedMessageTopicKind isEqualToString:messageTopicKindCopy]));
-            BOOL selectionStillCurrent = (self.selectedChatID && [self.selectedChatID longLongValue] == [chatIDCopy longLongValue] && sameThread && sameTopicKind);
+            NSString *currentNavigationKey=[self navigationTranscriptKey];
+            BOOL sameAccountContext=(!navigationKeyCopy && !currentNavigationKey) || [navigationKeyCopy isEqual:currentNavigationKey];
+            BOOL selectionStillCurrent = (self.client == client && sameAccountContext && [self.currentAuthState isEqualToString:@"ready"] && navigationPresentationGeneration == self.messageLoadingGeneration && self.selectedChatID && [self.selectedChatID longLongValue] == [chatIDCopy longLongValue] && sameThread && sameTopicKind);
+            BOOL cancelledRestore = (navigationInitialRestore && ![self.navigationPositionStore.pendingTranscriptKey isEqual:navigationKeyCopy]) ||
+                (navigationContinuingRestore && (self.forceMessageScrollToNewest || ![self navigationRestoredHistoryIsActive]));
             if (!selectionStillCurrent) {
                 if (interactive) {
                     [self appendDetail:@"TDLib messages: ignored stale result for previous chat selection."];
                 }
+            } else if (cancelledRestore) {
+                // An explicit latest/search action superseded this around-anchor request.
+                self.pendingLiveMessageRefresh = YES;
             } else if (itemsCopy) {
-                BOOL preserveOlder = (!interactive && [self.messageItems count] > 0);
+                if(navigationFallback) [self.navigationPositionStore removePositionForKey:navigationKeyCopy];
+                if(navigationContinuingRestore && navigationAnchorFound) {
+                    // The user may have scrolled while TDLib was fetching.
+                    [self captureNavigationTranscript];
+                    [self.navigationPositionStore armKey:navigationKeyCopy transcript:YES];
+                }
+                BOOL preserveOlder = (!navigationFallback && !navigationForceNewest && !interactive && [self.messageItems count] > 0);
                 self.messageItemsRepresentFocusedContext = NO;
                 [self applyRecentMessageItems:itemsCopy preservingOlderItems:preserveOlder];
+                if(navigationAnchorFound) {
+                    // The merge branch needs the same semantic offset restore.
+                    [self restoreNavigationTranscriptIfPending];
+                    self.messageItemsRepresentFocusedContext = YES;
+                    [self.navigationPositionStore markRestoredTranscriptKey:navigationKeyCopy generation:0];
+                }
                 [self performSelector:@selector(scheduleVisibleMessageItemsRead) withObject:nil afterDelay:0.15];
                 [self setOfflineModeActive:NO reason:nil];
                 if (interactive) {
@@ -1515,6 +1569,7 @@
                     [[TGLogger sharedLogger] log:[NSString stringWithFormat:@"TDLib message previews loaded: %lu", (unsigned long)[itemsCopy count]]];
                 }
             } else {
+                if(navigationFallback) [self.navigationPositionStore removePositionForKey:navigationKeyCopy];
                 BOOL looksOffline = TGStatusErrorLooksOffline(messageErrorMessage);
                 if (interactive) {
                     if (looksOffline) {
@@ -1535,6 +1590,8 @@
             }
             BOOL shouldPrefillOlderMessages = (selectionStillCurrent &&
                                                 itemsCopy &&
+                                                !navigationAnchorCopy &&
+                                                !cancelledRestore &&
                                                 !shouldLoadUnreadBoundary &&
                                                 [self messageHistoryNeedsPrefill]);
             if (interactive) {
@@ -1547,7 +1604,7 @@
                 [self.messageLoadingSpinner stopAnimation:self];
                 [self updateVisibleSection];
             }
-            if ([authorizationState length] > 0 &&
+            if (self.client == client && sameAccountContext && [authorizationState length] > 0 &&
                 ![authorizationState isEqualToString:self.currentAuthState]) {
                 [self updateAuthControlsForState:authorizationState];
             }
@@ -1562,6 +1619,8 @@
             [itemsCopy release];
               [messageErrorMessage release];
               [authorizationState release];
+              [navigationAnchorCopy release];
+              [navigationKeyCopy release];
               [lastReadInboxMessageIDCopy release];
               [messageTopicKindCopy release];
               [messageThreadIDCopy release];

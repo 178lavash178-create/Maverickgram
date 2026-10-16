@@ -1,6 +1,8 @@
+#import "TGInterfaceDesign.h"
 #import "TGStatusViewCells.h"
 #import "TGChatDisplayPreferences.h"
 #import "TGChatUnreadBadgeAppearance.h"
+#import "TGChatListSelectionAppearance.h"
 #import "TGIconAssets.h"
 #import "TGMessageLayoutSupport.h"
 #import "TGReactionChipLayout.h"
@@ -91,7 +93,7 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
         NSBezierPath *selectedPath = [NSBezierPath bezierPathWithRoundedRect:selectedRect
                                                                      xRadius:8.0
                                                                      yRadius:8.0];
-        [TGClassicSelectedRowColor() set];
+        [TGChatListSelectionBackground() set];
         [selectedPath fill];
     }
 
@@ -127,6 +129,10 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
 
     NSColor *unreadFillColor = TGChatUnreadBadgeFillColor(selected, [item notificationsMuted]);
     NSColor *unreadTextColor = TGChatUnreadBadgeTextColor(selected, [item notificationsMuted]);
+    if (selected && TGInterfaceDesignIsAqua() && ![item notificationsMuted]) {
+        unreadFillColor=TGChatListSelectionForeground();
+        unreadTextColor=TGChatListSelectionBackground();
+    }
     NSDictionary *unreadAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                       [NSFont boldSystemFontOfSize:10.0], NSFontAttributeName,
                                       unreadTextColor, NSForegroundColorAttributeName,
@@ -161,7 +167,7 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
                                                10.0);
             NSBezierPath *compactDotPath = [NSBezierPath bezierPathWithOvalInRect:compactDotRect];
             NSColor *manualUnreadColor = [item notificationsMuted] ? unreadFillColor :
-                (selected ? TGClassicSelectedRowTextColor() : TGColorFromHex(0x2D8BD4));
+                (selected ? TGChatListSelectionForeground() : TGColorFromHex(0x2D8BD4));
             [manualUnreadColor set];
             [compactDotPath fill];
         }
@@ -179,7 +185,7 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
     [paragraph setLineBreakMode:NSLineBreakByTruncatingTail];
     NSDictionary *titleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                      [NSFont boldSystemFontOfSize:12.0], NSFontAttributeName,
-                                     selected ? TGClassicSelectedRowTextColor() : TGThemeSurfaceInkColor(TGClassicInkColor(), TGThemeSurfaceRecessed, 4.5), NSForegroundColorAttributeName,
+                                     selected ? TGChatListSelectionForeground() : TGThemeSurfaceInkColor(TGClassicInkColor(), TGThemeSurfaceRecessed, 4.5), NSForegroundColorAttributeName,
                                      paragraph, NSParagraphStyleAttributeName,
                                      nil];
     CGFloat titleX = NSMaxX(avatarRect) + 9.0;
@@ -190,7 +196,7 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
     NSString *communityBadge = [item isCommunity] ? TGLoc(@"chat.community.badge") : @"";
     NSDictionary *communityAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                          [NSFont boldSystemFontOfSize:8.0], NSFontAttributeName,
-                                         selected ? TGClassicSelectedRowTextColor() : TGThemeSurfaceInkColor(TGClassicLinkColor(), TGThemeSurfaceRecessed, 4.5), NSForegroundColorAttributeName,
+                                         selected ? TGChatListSelectionForeground() : TGThemeSurfaceInkColor(TGClassicLinkColor(), TGThemeSurfaceRecessed, 4.5), NSForegroundColorAttributeName,
                                          nil];
     CGFloat communityBadgeWidth = [communityBadge length] > 0
         ? MIN(64.0, [communityBadge sizeWithAttributes:communityAttributes].width + 12.0) : 0.0;
@@ -230,7 +236,7 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
                                     NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 15.0) / 2.0),
                                     15.0,
                                     15.0);
-        NSColor *botColor = selected ? TGClassicSelectedRowTextColor() : [TGThemeSurfaceInkColor(TGClassicLinkColor(), TGThemeSurfaceRecessed, 4.5) colorWithAlphaComponent:0.9];
+        NSColor *botColor = selected ? TGChatListSelectionForeground() : [TGThemeSurfaceInkColor(TGClassicLinkColor(), TGThemeSurfaceRecessed, 4.5) colorWithAlphaComponent:0.9];
         TGDrawTemplateIconAsset(@"robot", botRect, botColor, 1.0, [controlView isFlipped]);
         iconX = NSMaxX(botRect) + 4.0;
     }
@@ -239,8 +245,8 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
                                     NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 12.0) / 2.0),
                                     12.0,
                                     12.0);
-        NSColor *pinColor = selected ? TGClassicSelectedRowTextColor() : [TGThemeSurfaceInkColor(TGClassicInkColor(), TGThemeSurfaceRecessed, 4.5) colorWithAlphaComponent:0.72];
-        TGDrawTemplateIconAsset(@"flag-triangle", pinRect, TGThemeReadableInk(pinColor, selected ? TGClassicSelectedRowColor() : TGClassicTablePaperColor(), 4.5), 1.0, [controlView isFlipped]);
+        NSColor *pinColor = selected ? TGChatListSelectionForeground() : [TGThemeSurfaceInkColor(TGClassicInkColor(), TGThemeSurfaceRecessed, 4.5) colorWithAlphaComponent:0.72];
+        TGDrawTemplateIconAsset(@"flag-triangle", pinRect, TGThemeReadableInk(pinColor, selected ? TGChatListSelectionBackground() : TGClassicTablePaperColor(), 4.5), 1.0, [controlView isFlipped]);
         iconX = NSMaxX(pinRect) + 4.0;
     }
     if ([item notificationsMuted]) {
@@ -248,8 +254,8 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
                                      NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 15.0) / 2.0),
                                      15.0,
                                      15.0);
-        NSColor *muteColor = selected ? TGClassicSelectedRowTextColor() : [TGThemeSurfaceInkColor(TGClassicInkColor(), TGThemeSurfaceRecessed, 4.5) colorWithAlphaComponent:0.78];
-        TGDrawTemplateIconAsset(@"sound-off", muteRect, TGThemeReadableInk(muteColor, selected ? TGClassicSelectedRowColor() : TGClassicTablePaperColor(), 4.5), 1.0, [controlView isFlipped]);
+        NSColor *muteColor = selected ? TGChatListSelectionForeground() : [TGThemeSurfaceInkColor(TGClassicInkColor(), TGThemeSurfaceRecessed, 4.5) colorWithAlphaComponent:0.78];
+        TGDrawTemplateIconAsset(@"sound-off", muteRect, TGThemeReadableInk(muteColor, selected ? TGChatListSelectionBackground() : TGClassicTablePaperColor(), 4.5), 1.0, [controlView isFlipped]);
     }
     if ([unreadString length] > 0) {
         NSBezierPath *unreadPath = [NSBezierPath bezierPathWithRoundedRect:unreadRect
@@ -270,7 +276,7 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
     } else if (drawsMarkedUnreadDot) {
         NSBezierPath *unreadDotPath = [NSBezierPath bezierPathWithOvalInRect:unreadRect];
         NSColor *manualUnreadColor = [item notificationsMuted] ? unreadFillColor :
-            (selected ? TGClassicSelectedRowTextColor() : TGColorFromHex(0x2D8BD4));
+            (selected ? TGChatListSelectionForeground() : TGColorFromHex(0x2D8BD4));
         [manualUnreadColor set];
         [unreadDotPath fill];
     }
@@ -284,10 +290,22 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
 @end
 
 @implementation TGPanelView
+@synthesize headerHidden = _headerHidden;
+- (void)setHeaderHidden:(BOOL)hidden {
+    if (_headerHidden == hidden) return;
+    _headerHidden = hidden;
+    [self setNeedsDisplay:YES];
+}
 
 - (void)drawRect:(NSRect)dirtyRect {
     (void)dirtyRect;
     NSRect bounds = [self bounds];
+    if (TGInterfaceDesignIsAqua()) {
+        TGThemeDrawPanelBackgroundInPath([NSBezierPath bezierPathWithRect:bounds], bounds, [self isFlipped]);
+        NSRect header = NSMakeRect(0, NSHeight(bounds)-TGPanelHeaderHeight, NSWidth(bounds), TGPanelHeaderHeight);
+        if (!self.headerHidden) TGThemeDrawHeaderBackgroundInRect(header, [self isFlipped]);
+        return;
+    }
     NSRect panelBounds = NSInsetRect(bounds, 1.0, 1.0);
     NSBezierPath *panelPath = [NSBezierPath bezierPathWithRoundedRect:panelBounds
                                                              xRadius:TGPanelCornerRadius
@@ -319,6 +337,7 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
 @implementation TGScrollSurfaceView
 
 @synthesize drawsInterior = _drawsInterior;
+@synthesize squareEdges = _squareEdges;
 
 - (id)initWithFrame:(NSRect)frameRect {
     self = [super initWithFrame:frameRect];
@@ -333,8 +352,8 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
     NSRect bounds = [self bounds];
     NSRect surfaceRect = NSInsetRect(bounds, 0.5, 0.5);
     NSBezierPath *surfacePath = [NSBezierPath bezierPathWithRoundedRect:surfaceRect
-                                                                xRadius:8.0
-                                                                yRadius:8.0];
+                                                                xRadius:self.squareEdges ? 0.0 : 8.0
+                                                                yRadius:self.squareEdges ? 0.0 : 8.0];
     if (self.drawsInterior) {
         TGThemeDrawRecessedBackgroundInPath(surfacePath, surfaceRect, [self isFlipped]);
     }
@@ -389,6 +408,11 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
 @implementation TGGroupedCardView
 
 @synthesize drawsInterior = _drawsInterior;
+@synthesize squareTopCorners = _squareTopCorners;
+- (void)setSquareTopCorners:(BOOL)value {
+    if(_squareTopCorners==value) return;
+    _squareTopCorners=value; [self setNeedsDisplay:YES];
+}
 
 - (id)initWithFrame:(NSRect)frameRect {
     self = [super initWithFrame:frameRect];
@@ -402,14 +426,26 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
     (void)dirtyRect;
     NSRect bounds = [self bounds];
     NSRect cardRect = NSInsetRect(bounds, 0.5, 0.5);
-    NSBezierPath *cardPath = [NSBezierPath bezierPathWithRoundedRect:cardRect
-                                                             xRadius:14.0
-                                                             yRadius:14.0];
+    // Extending only the top beyond the view clips its rounded corners; the
+    // bottom remains inside the view. Other grouped cards retain their shape.
+    NSRect pathRect=cardRect;
+    CGFloat radius=self.squareTopCorners ? 8.0 : 14.0;
+    if(self.squareTopCorners) {
+        if([self isFlipped]) pathRect.origin.y-=radius;
+        pathRect.size.height+=radius;
+    }
+    NSBezierPath *cardPath = [NSBezierPath bezierPathWithRoundedRect:pathRect xRadius:radius yRadius:radius];
     if (self.drawsInterior) {
         TGThemeDrawGroupedCardInPath(cardPath, cardRect, [self isFlipped]);
         [TGClassicTableGridColor() set];
         [cardPath setLineWidth:1.0];
         [cardPath stroke];
+        if(self.squareTopCorners) {
+            CGFloat top=[self isFlipped] ? NSMinY(cardRect) : NSMaxY(cardRect);
+            NSBezierPath *edge=[NSBezierPath bezierPath];
+            [edge moveToPoint:NSMakePoint(NSMinX(cardRect),top)];
+            [edge lineToPoint:NSMakePoint(NSMaxX(cardRect),top)]; [edge stroke];
+        }
     }
 }
 
@@ -470,7 +506,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
     if ([dateTitle length] > 0) {
         NSDictionary *dateAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                         [NSFont boldSystemFontOfSize:11.5], NSFontAttributeName,
-                                        TGClassicSelectedRowTextColor(), NSForegroundColorAttributeName,
+                                        TGListSelectionForeground(), NSForegroundColorAttributeName,
                                         nil];
         NSSize titleSize = [dateTitle sizeWithAttributes:dateAttributes];
         CGFloat pillWidth = MIN(NSWidth(cellFrame) - 28.0, MAX(82.0, ceil(titleSize.width) + 24.0));
@@ -481,7 +517,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
         NSBezierPath *pillPath = [NSBezierPath bezierPathWithRoundedRect:pillRect
                                                                  xRadius:11.5
                                                                  yRadius:11.5];
-        [TGClassicSelectedRowColor() set];
+        [TGListSelectionBackground() set];
         [pillPath fill];
         NSRect textRect = NSMakeRect(NSMinX(pillRect) + 10.0,
                                      NSMidY(pillRect) - floor(titleSize.height / 2.0) - 1.0,
@@ -565,6 +601,13 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
         return;
     }
 
+    // Draw behind the unchanged bubble and ink; the matching row remains visible
+    // against custom wallpaper without recoloring message text or media.
+    if ([self isHighlighted]) {
+        [TGClassicNavigationHighlightedColor(0.24) set];
+        NSRectFillUsingOperation(NSInsetRect(cellFrame,0,1),NSCompositeSourceOver);
+    }
+
     CGFloat topAccessoryHeight = TGMessageTopAccessoryHeightForItem(item);
     if (topAccessoryHeight > 0.0) {
         TGDrawMessageTopAccessories(item, cellFrame, [controlView isFlipped]);
@@ -635,7 +678,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
     CGFloat senderHeaderHeight = TGMessageSenderHeaderHeightForItem(item, showSenderDetails);
     CGFloat contextHeaderHeight = TGMessageContextHeaderHeightForItem(item);
     BOOL inlineMetadata = TGMessageUsesInlineMetadataForItem(item, maximumBubbleWidth, showSenderDetails);
-    CGFloat reactionBandHeight = TGReactionBandHeightForMessageItemWidth(item, NSWidth(bubbleRect));
+    CGFloat reactionBandHeight = inlineMetadata ? 0.0 : TGReactionBandHeightForMessageItemWidth(item, NSWidth(bubbleRect));
     CGFloat commentBarHeight = TGMessageCommentBarHeightForItem(item);
     if (TGChatMessagesAsBlocksEnabled()) {
         NSRect blockRect = NSInsetRect(bubbleRect, -5.0, -4.0);
@@ -905,10 +948,15 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
                                      timeSize.width,
                                      metaHeight);
         if (inlineMetadata) { timeRect = TGMessageInlineTimeRectForItem(item, bubbleRect, flipped); }
+        TGDrawMessageReplyIndicatorForTimeRect(item,timeRect,flipped);
         [timeString drawInRect:timeRect withAttributes:timeAttributes];
         TGDrawOutgoingStatusDotsForItem(item, timeRect, [controlView isFlipped]);
     }
 
+    if (inlineMetadata) {
+        NSRect inlineReaction = TGMessageInlineReactionRectForItem(item, bubbleRect, flipped);
+        if (!NSIsEmptyRect(inlineReaction)) { TGDrawReactionChipsForItem(item, inlineReaction, flipped); }
+    }
     if (reactionBandHeight > 0.0) {
         NSRect band = NSMakeRect(NSMinX(bubbleRect) + 10.0,
             [controlView isFlipped] ? NSMaxY(bubbleRect) - reactionBandHeight : NSMinY(bubbleRect),
@@ -918,6 +966,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
         TGDrawReactionChipsForItem(item, chipsBand, [controlView isFlipped]);
         NSRect reactionTime = TGMessageReactionTimeRect(item, band, [controlView isFlipped]);
         if (!NSIsEmptyRect(reactionTime)) {
+            TGDrawMessageReplyIndicatorForTimeRect(item,reactionTime,flipped);
             [timeString drawInRect:reactionTime withAttributes:timeAttributes];
             TGDrawOutgoingStatusDotsForItem(item, reactionTime, [controlView isFlipped]);
         }
@@ -985,12 +1034,13 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
                                  timeSize.width,
                                  metaHeight);
     if ([timeString length] > 0 && TGReactionChipsMinimumWidthForItem(item) <= 0.0) {
+        TGDrawMessageReplyIndicatorForTimeRect(item,timeRect,flipped);
         [timeString drawInRect:timeRect withAttributes:timeAttributes];
         TGDrawOutgoingStatusDotsForItem(item, timeRect, flipped);
     }
 
     CGFloat textX = NSMaxX(iconRect) + 10.0;
-    CGFloat textRight = NSMinX(timeRect) - 10.0;
+    CGFloat textRight = NSMinX(timeRect) - TGMessageReplyIndicatorWidthForItem(item) - 10.0;
     if ([timeString length] == 0) {
         textRight = NSMaxX(rowRect) - 12.0;
     }
@@ -1139,7 +1189,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
     }
 
     CGFloat reactionWidth = MAX(40.0, NSWidth(cellFrame) - 86.0);
-    CGFloat reactionHeight = TGReactionChipsHeightForItem(item, TGMessageReactionContentWidth(item, reactionWidth));
+    CGFloat reactionHeight = TGMessageReactionFooterHeight(item, reactionWidth);
     CGFloat reactionY = flipped ? NSMaxY(rowRect) - reactionHeight - 3.0 : NSMinY(rowRect) + 3.0;
     if (reactionHeight > 0.0) {
         NSRect band = NSMakeRect(textX, reactionY, reactionWidth, reactionHeight);
@@ -1148,11 +1198,12 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
         TGDrawReactionChipsForItem(item, chipsBand, flipped);
         NSRect reactionTime = TGMessageReactionTimeRect(item, band, flipped);
         if (!NSIsEmptyRect(reactionTime)) {
+            TGDrawMessageReplyIndicatorForTimeRect(item,reactionTime,flipped);
             [timeString drawInRect:reactionTime withAttributes:timeAttributes];
             TGDrawOutgoingStatusDotsForItem(item, reactionTime, flipped);
         }
     }
-    if (TGMessageItemHasCommentThread(item)) {
+    if (TGMessageItemShowsCommentBar(item)) {
         NSString *title = TGMessageCommentTitleForItem(item);
         NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys:
             TGChatMessageSecondaryFont(), NSFontAttributeName,

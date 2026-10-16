@@ -1,3 +1,4 @@
+#import "TGDialogPresentation.h"
 #import "TGScheduledMessagesWindowController.h"
 
 #import "../Core/TGTDLibClient+ScheduledMessages.h"
@@ -8,8 +9,17 @@
 #import "TGStatusViewCells.h"
 #import "TGTheme.h"
 #import "TGThemeTextField.h"
+#import "TGScheduledMessagesShelfView.h"
+#import "TGMessageActionDialogs.h"
 
-@interface TGScheduledMessagesWindowController () <NSTableViewDataSource, NSTableViewDelegate>
+@interface TGScheduledMessagesWindowController () <NSTableViewDataSource, NSTableViewDelegate, TGScheduledMessagesShelfTarget>
+@property(nonatomic,retain) TGScheduledMessagesShelfView *shelfView;
+@property(nonatomic,retain) NSWindow *embeddedParentWindow;
+@property(nonatomic,assign) id shelfCloseTarget;
+@property(nonatomic,assign) SEL shelfCloseAction;
+@property(nonatomic,assign) SEL shelfLayoutAction;
+@property(nonatomic,assign) NSUInteger requestGeneration;
+@property(nonatomic,assign) BOOL embeddedInvalidated;
 @property (nonatomic, retain) TGTDLibClient *client;
 @property (nonatomic, retain) NSNumber *chatID;
 @property (nonatomic, copy) NSString *chatTitle;
@@ -27,6 +37,8 @@
 
 @implementation TGScheduledMessagesWindowController
 
+@synthesize shelfView=_shelfView,embeddedParentWindow=_embeddedParentWindow,shelfCloseTarget=_shelfCloseTarget,shelfCloseAction=_shelfCloseAction;
+@synthesize requestGeneration=_requestGeneration,embeddedInvalidated=_embeddedInvalidated;
 @synthesize client = _client;
 @synthesize chatID = _chatID;
 @synthesize chatTitle = _chatTitle;
@@ -64,6 +76,7 @@
 }
 
 - (void)dealloc {
+    [_shelfView setTarget:nil];[_shelfView removeFromSuperview];[_shelfView release];[_embeddedParentWindow release];
     [_client release];
     [_chatID release];
     [_chatTitle release];
@@ -236,6 +249,9 @@
     [self.rescheduleButton setEnabled:selected];
     [self.whenOnlineButton setEnabled:selected];
     [self.deleteButton setEnabled:selected];
+    [self.shelfView updateWithMessages:self.messages status:[self.statusField stringValue] loading:self.loading];
+    if([self.shelfView superview] && !self.embeddedInvalidated && [self.shelfCloseTarget respondsToSelector:self.shelfLayoutAction])
+        [self.shelfCloseTarget performSelector:self.shelfLayoutAction];
 }
 
 - (void)setLoading:(BOOL)loading status:(NSString *)status {
@@ -250,9 +266,10 @@
 }
 
 - (void)reloadMessages {
-    if (self.loading) {
+    if (self.loading || self.embeddedInvalidated) {
         return;
     }
+    NSUInteger generation=++self.requestGeneration;
     [self setLoading:YES status:TGLoc(@"scheduled.loading")];
     TGTDLibClient *client = [self.client retain];
     NSNumber *chatID = [self.chatID retain];
@@ -262,6 +279,9 @@
         NSArray *messages = [[client scheduledMessageSummariesForChatID:chatID timeout:8.0 error:&error] retain];
         NSString *detail = [[error localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
+            if(generation!=self.requestGeneration || self.embeddedInvalidated) {
+                [messages release];[detail release];[chatID release];[client release];return;
+            }
             self.messages = messages ? messages : [NSArray array];
             [self.tableView reloadData];
             [self.tableView deselectAll:nil];
@@ -286,9 +306,10 @@
 - (void)runScheduleMutationWithDate:(NSNumber *)date whenOnline:(BOOL)whenOnline {
     NSDictionary *message = [self selectedMessage];
     NSNumber *messageID = [message objectForKey:@"message_id"];
-    if (!messageID || self.loading) {
+    if (!messageID || self.loading || self.embeddedInvalidated) {
         return;
     }
+    NSUInteger generation=++self.requestGeneration;
     [self setLoading:YES status:TGLoc(@"scheduled.saving")];
     TGTDLibClient *client = [self.client retain];
     NSNumber *chatID = [self.chatID retain];
@@ -305,6 +326,9 @@
                                                error:&error];
         NSString *detail = [[error localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
+            if(generation!=self.requestGeneration || self.embeddedInvalidated) {
+                [detail release];[safeDate release];[safeMessageID release];[chatID release];[client release];return;
+            }
             [self setLoading:NO status:ok ? TGLoc(@"scheduled.saved") : (detail ? detail : TGLoc(@"scheduled.failed"))];
             if (ok) {
                 [self reloadMessages];
@@ -320,12 +344,13 @@
 }
 
 - (void)sendNowPressed:(id)sender {
+    [[self retain] autorelease]; // Keep the action owner alive across an attached modal session.
     (void)sender;
     NSAlert *alert = [[[NSAlert alloc] init] autorelease];
     [alert setMessageText:TGLoc(@"scheduled.sendNowConfirm")];
     [alert addButtonWithTitle:TGLoc(@"scheduled.sendNow")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] == NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, [self dialogParentWindow]) == NSAlertFirstButtonReturn) {
         [self runScheduleMutationWithDate:nil whenOnline:NO];
     }
 }
@@ -336,6 +361,7 @@
 }
 
 - (void)reschedulePressed:(id)sender {
+    [[self retain] autorelease]; // Keep the action owner alive across an attached modal session.
     (void)sender;
     NSDate *date = [TGDatePickerDialog dateWithTitle:TGLoc(@"scheduled.reschedule")
                                                help:TGLoc(@"composer.schedule.help")
@@ -349,19 +375,21 @@
 }
 
 - (void)deletePressed:(id)sender {
+    [[self retain] autorelease]; // Keep the action owner alive across an attached modal session.
     (void)sender;
     NSDictionary *message = [self selectedMessage];
     NSNumber *messageID = [message objectForKey:@"message_id"];
-    if (!messageID || self.loading) {
+    if (!messageID || self.loading || self.embeddedInvalidated) {
         return;
     }
     NSAlert *alert = [[[NSAlert alloc] init] autorelease];
     [alert setMessageText:TGLoc(@"scheduled.deleteConfirm")];
     [alert addButtonWithTitle:TGLoc(@"delete")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, [self dialogParentWindow]) != NSAlertFirstButtonReturn || self.embeddedInvalidated) {
         return;
     }
+    NSUInteger generation=++self.requestGeneration;
     [self setLoading:YES status:TGLoc(@"scheduled.saving")];
     TGTDLibClient *client = [self.client retain];
     NSNumber *chatID = [self.chatID retain];
@@ -376,6 +404,9 @@
                                                     error:&error];
         NSString *detail = [[error localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
+            if(generation!=self.requestGeneration || self.embeddedInvalidated) {
+                [detail release];[safeMessageID release];[chatID release];[client release];return;
+            }
             [self setLoading:NO status:[result length] > 0 ? TGLoc(@"scheduled.saved") : (detail ? detail : TGLoc(@"scheduled.failed"))];
             if ([result length] > 0) {
                 [self reloadMessages];
@@ -386,6 +417,66 @@
             [client release];
         });
         [pool drain];
+    });
+}
+
+- (NSWindow *)dialogParentWindow {return self.embeddedParentWindow?self.embeddedParentWindow:[self window];}
+- (BOOL)matchesClient:(TGTDLibClient *)client chatID:(NSNumber *)chatID {return self.client==client && [self.chatID isEqual:chatID];}
+- (NSView *)embeddedShelfView {
+    if(!self.shelfView){self.shelfView=[[[TGScheduledMessagesShelfView alloc] initWithFrame:NSMakeRect(0,0,700,228)] autorelease];self.shelfView.target=self;[self updateControls];}
+    return self.shelfView;
+}
+- (CGFloat)preferredEmbeddedShelfHeight {return [self.messages count] ? 228 : 120;}
+- (void)setEmbeddedParentWindow:(NSWindow *)window {
+    if(_embeddedParentWindow!=window){[_embeddedParentWindow release];_embeddedParentWindow=[window retain];}
+    if(window)self.embeddedInvalidated=NO;
+}
+- (void)setShelfCloseTarget:(id)target action:(SEL)action {self.shelfCloseTarget=target;self.shelfCloseAction=action;}
+- (void)presentEmbeddedShelfAnimated:(BOOL)animated {if(!self.embeddedInvalidated && [self.shelfView superview] && ![self.shelfView isHidden])[self.shelfView presentAnimated:animated];}
+- (void)hideEmbeddedShelfImmediately {[self.shelfView hideImmediately];}
+- (void)invalidateEmbeddedShelf {
+    self.requestGeneration++;self.embeddedInvalidated=YES;self.loading=NO;
+    [self hideEmbeddedShelfImmediately];
+    [self.spinner stopAnimation:nil];[self.shelfView removeFromSuperview];self.embeddedParentWindow=nil;
+}
+- (void)scheduledShelfRequestClose {
+    if(self.shelfCloseTarget && self.shelfCloseAction && [self.shelfCloseTarget respondsToSelector:self.shelfCloseAction])
+        [self.shelfCloseTarget performSelector:self.shelfCloseAction withObject:self];
+    else [self invalidateEmbeddedShelf];
+}
+- (void)scheduledShelfPerformAction:(NSString *)action messageID:(NSNumber *)messageID {
+    if(self.loading || self.embeddedInvalidated)return;
+    NSUInteger index=0;for(NSDictionary *message in self.messages){if([[message objectForKey:@"message_id"] isEqual:messageID])break;index++;}
+    if(index>=[self.messages count])return;
+    [self.tableView selectRowIndexes:[NSIndexSet indexSetWithIndex:index] byExtendingSelection:NO];
+    if([action isEqual:@"send"]) [self sendNowPressed:self];
+    else if([action isEqual:@"reschedule"]) [self reschedulePressed:self];
+    else if([action isEqual:@"online"]) [self whenOnlinePressed:self];
+    else if([action isEqual:@"delete"]) [self deletePressed:self];
+    else if([action isEqual:@"edit"]) [self editPressed:self];
+}
+- (void)editPressed:(id)sender {
+    [[self retain] autorelease]; // Keep the action owner alive across an attached modal session.
+    (void)sender;NSDictionary *message=[[[self selectedMessage] retain] autorelease];NSString *original=[message objectForKey:@"editable_text"];
+    if(self.loading || self.embeddedInvalidated || ![original isKindOfClass:[NSString class]])return;
+    NSString *edited=[TGMessageActionDialogs editedTextForCurrentText:original];
+    if(![edited length] || [edited isEqual:original] || self.embeddedInvalidated)return;
+    NSNumber *messageID=[[message objectForKey:@"message_id"] retain],*chatID=[self.chatID retain];
+    NSString *text=[edited copy],*originalText=[original copy];NSArray *entities=[[message objectForKey:@"entities"] copy];
+    TGTDLibClient *client=[self.client retain];NSUInteger generation=++self.requestGeneration;
+    [self setLoading:YES status:TGLoc(@"scheduled.saving")];
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT,0),^{
+        NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];NSError *error=nil;
+        NSDictionary *capabilities=[client messageActionCapabilitiesForChatID:chatID messageID:messageID timeout:6 error:&error];
+        NSString *result=nil;
+        if([[capabilities objectForKey:@"can_be_edited"] boolValue]) result=[client editTextMessageInChatID:chatID messageID:messageID text:text originalText:originalText originalEntities:entities timeout:8 error:&error];
+        NSString *detail=[[error localizedDescription] copy];BOOL ok=[result length]>0;
+        dispatch_async(dispatch_get_main_queue(),^{
+            if(generation==self.requestGeneration && !self.embeddedInvalidated){
+                [self setLoading:NO status:ok?TGLoc(@"scheduled.saved"):([detail length]?detail:TGLoc(@"scheduled.failed"))];if(ok)[self reloadMessages];
+            }
+            [detail release];[messageID release];[chatID release];[text release];[originalText release];[entities release];[client release];
+        });[pool drain];
     });
 }
 

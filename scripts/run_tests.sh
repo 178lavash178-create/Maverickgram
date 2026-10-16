@@ -88,20 +88,23 @@ if [ -n "$SDK_PATH" ]; then
 fi
 
 echo "== Actual theme surface readability =="
-"$CLANG" "${COMPILE_FLAGS[@]}" Tests/theme_readability_probe.m Sources/UI/TGTheme.m Sources/UI/TGVisualWorldThemeSpec.m -framework Cocoa -o "$BUILD_DIR/theme-readability-probe"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/theme_readability_probe.m Sources/UI/TGLocalization.m Sources/UI/TGTheme.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGAquaAppearance.m Sources/UI/TGVisualWorldThemeSpec.m -framework Cocoa -o "$BUILD_DIR/theme-readability-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/theme-readability-probe"
 
 echo "== Themed controls and utility surfaces =="
-"$CLANG" "${COMPILE_FLAGS[@]}" Tests/utility_surface_contrast_probe.m Sources/UI/TGDownloadProgressWindowController.m Sources/UI/TGThemeTextField.m Sources/Core/TGChatItem.m Sources/Workshop/UI/TGWorkshopModuleCardView.m Sources/Workshop/UI/TGWorkshopButtonCell.m Sources/Workshop/UI/TGWorkshopSurfaceView.m Sources/UI/TGIconAssets.m Sources/UI/TGTheme.m Sources/UI/TGVisualWorldThemeSpec.m -framework Cocoa -o "$BUILD_DIR/utility-surface-contrast-probe"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/utility_surface_contrast_probe.m Sources/UI/TGLocalization.m Sources/UI/TGDownloadProgressWindowController.m Sources/UI/TGThemeTextField.m Sources/Core/TGChatItem.m Sources/Workshop/UI/TGWorkshopModuleCardView.m Sources/Workshop/UI/TGWorkshopButtonCell.m Sources/Workshop/UI/TGWorkshopSurfaceView.m Sources/UI/TGIconAssets.m Sources/UI/TGTheme.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGAquaAppearance.m Sources/UI/TGVisualWorldThemeSpec.m -framework Cocoa -o "$BUILD_DIR/utility-surface-contrast-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/utility-surface-contrast-probe"
 BUTTON_APP="$BUILD_DIR/ButtonProbe.app"
 mkdir -p "$BUTTON_APP/Contents/MacOS" "$BUTTON_APP/Contents/Resources"
 cp -R Sources/Resources/Icons "$BUTTON_APP/Contents/Resources/Icons"
+cp -R Sources/Resources/Textures "$BUTTON_APP/Contents/Resources/Textures"
 cat > "$BUTTON_APP/Contents/Info.plist" <<'BUTTON_PLIST'
 <?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict><key>CFBundleExecutable</key><string>button-probe</string><key>CFBundleIdentifier</key><string>local.telegraphica.button-probe</string><key>CFBundlePackageType</key><string>APPL</string></dict></plist>
 BUTTON_PLIST
-"$CLANG" "${COMPILE_FLAGS[@]}" Tests/button_appearance_probe.m Sources/UI/TGStatusButtonCells.m Sources/UI/TGTheme.m Sources/UI/TGVisualWorldThemeSpec.m -framework Cocoa -o "$BUTTON_APP/Contents/MacOS/button-probe"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/button_appearance_probe.m Sources/UI/TGStatusButtonCells.m Sources/UI/TGLocalization.m Sources/UI/TGTheme.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGAquaAppearance.m Sources/UI/TGVisualWorldThemeSpec.m -framework Cocoa -o "$BUTTON_APP/Contents/MacOS/button-probe"
 HOME="$TEST_HOME" "$BUTTON_APP/Contents/MacOS/button-probe"
+HOME="$TEST_HOME" "$BUTTON_APP/Contents/MacOS/button-probe" --aqua-secondary
+HOME="$TEST_HOME" "$BUTTON_APP/Contents/MacOS/button-probe" --aqua-controls
 
 echo "== Asynchronous animated image loader =="
 "$CLANG" "${COMPILE_FLAGS[@]}" \
@@ -154,7 +157,7 @@ echo "== Download identity after restart =="
 HOME="$TEST_HOME" "$BUILD_DIR/download-restart-identity-probe"
 
 echo "== Download manager layout and themes =="
-"$CLANG" "${COMPILE_FLAGS[@]}" -I"$ROOT_DIR/Sources/UI" -I"$ROOT_DIR/Sources/Services" -I"$ROOT_DIR/Sources/Media" Tests/download_manager_presentation_probe.m Sources/UI/TGDownloadManagerPresentation.m Sources/UI/TGDownloadManagerWindowController.m Sources/UI/TGLocalization.m Sources/UI/TGTheme.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGStatusButtonCells.m Sources/UI/TGButtonAppearance.m Sources/UI/TGIconAssets.m Sources/UI/TGIconDrawing.m -framework Cocoa -framework CoreGraphics -o "$BUILD_DIR/download-manager-presentation-probe"
+"$CLANG" "${COMPILE_FLAGS[@]}" -I"$ROOT_DIR/Sources/UI" -I"$ROOT_DIR/Sources/Services" -I"$ROOT_DIR/Sources/Media" Tests/download_manager_presentation_probe.m Sources/UI/TGDownloadManagerPresentation.m Sources/UI/TGDownloadManagerWindowController.m Sources/UI/TGDownloadCompactPopover.m Sources/UI/TGAnimationSupport.m Sources/Services/TGResourcePolicy.m Sources/UI/TGAquaShellViews.m Sources/UI/TGLocalization.m Sources/UI/TGTheme.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGAquaAppearance.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGStatusButtonCells.m Sources/UI/TGButtonAppearance.m Sources/UI/TGIconAssets.m Sources/UI/TGIconDrawing.m -framework Cocoa -framework CoreGraphics -o "$BUILD_DIR/download-manager-presentation-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/download-manager-presentation-probe"
 
 echo "== Nonblocking download progress presentation =="
@@ -432,7 +435,7 @@ echo "== Authoritative notification mute policy =="
 HOME="$TEST_HOME" "$BUILD_DIR/notification-mute-policy-probe"
 
 echo "== Chat unread badge contrast =="
-"$CLANG" "${COMPILE_FLAGS[@]}" Tests/chat_unread_badge_probe.m Sources/UI/TGChatUnreadBadgeAppearance.m Sources/UI/TGTheme.m Sources/UI/TGVisualWorldThemeSpec.m -framework Cocoa -o "$BUILD_DIR/chat-unread-badge-probe"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/chat_unread_badge_probe.m Sources/UI/TGChatUnreadBadgeAppearance.m Sources/UI/TGLocalization.m Sources/UI/TGTheme.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGAquaAppearance.m Sources/UI/TGVisualWorldThemeSpec.m -framework Cocoa -o "$BUILD_DIR/chat-unread-badge-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/chat-unread-badge-probe"
 
 echo "== Notification enrichment ownership =="
@@ -463,6 +466,8 @@ MESSAGE_PROBE_SOURCES=(
     Sources/UI/TGMessageFooterAppearance.m
     Sources/UI/TGReactionChipLayout.m
     Sources/UI/TGTheme.m
+    Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m
+    Sources/UI/TGAquaAppearance.m
     Sources/UI/TGVisualWorldThemeSpec.m
 )
 
@@ -490,3 +495,128 @@ HOME="$TEST_HOME" "$RECEIPT_PROBE_BUNDLE/Contents/MacOS/receipt-raster-probe"
 
 
 echo "Telegraphica tests passed."
+
+echo "== Interface design restart =="
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/interface_design_probe.m Sources/UI/TGDialogPresentation.m -framework Cocoa -o "$BUILD_DIR/interface-design-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/interface-design-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/interface-design-probe" aqua
+
+echo "== Aqua surfaces and footer =="
+AQUA_PROBE_BUNDLE="$BUILD_DIR/AquaMaterialProbe.app"
+mkdir -p "$AQUA_PROBE_BUNDLE/Contents/MacOS" "$AQUA_PROBE_BUNDLE/Contents/Resources"
+cp -R Sources/Resources/Textures "$AQUA_PROBE_BUNDLE/Contents/Resources/"
+cat > "$AQUA_PROBE_BUNDLE/Contents/Info.plist" <<'AQUA_PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleExecutable</key><string>aqua-material-probe</string>
+<key>CFBundleIdentifier</key><string>local.telegraphica.aqua-material-probe</string>
+<key>CFBundlePackageType</key><string>APPL</string>
+</dict></plist>
+AQUA_PLIST
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_material_probe.m Sources/UI/TGTheme.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGAquaAppearance.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGLocalization.m -framework Cocoa -o "$AQUA_PROBE_BUNDLE/Contents/MacOS/aqua-material-probe"
+HOME="$TEST_HOME" "$AQUA_PROBE_BUNDLE/Contents/MacOS/aqua-material-probe" -TelegraphicaInterfaceDesign aqua -TelegraphicaThemeIdentifier visual-space-terminal
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_footer_probe.m "${MESSAGE_PROBE_SOURCES[@]}" Sources/UI/TGIconAssets.m -framework Cocoa -o "$BUILD_DIR/aqua-footer-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/aqua-footer-probe" classic
+HOME="$TEST_HOME" "$BUILD_DIR/aqua-footer-probe" aqua
+
+echo "== Aqua source list geometry =="
+"$PYTHON_BIN" Tests/message_jump_visibility_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_media_center_layout_probe.m -framework Cocoa -o "$BUILD_DIR/aqua-media-center-layout-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/aqua-media-center-layout-probe"
+"$PYTHON_BIN" Tests/aqua_section_routing_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_shell_layout_probe.m Sources/UI/TGAquaShellLayout.m -framework Cocoa -o "$BUILD_DIR/aqua-shell-layout-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/aqua-shell-layout-probe"
+"$PYTHON_BIN" Tests/search_panel_corner_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$PYTHON_BIN" Tests/aqua_settings_chrome_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$PYTHON_BIN" Tests/aqua_folder_chrome_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+
+echo "== Closed-chat suggestions =="
+"$CLANG" "${COMPILE_FLAGS[@]}" -ISources/Core Tests/closed_chat_suggestions_probe.m Sources/Core/TGChatItem.m -framework Cocoa -o "$BUILD_DIR/closed_chat_suggestions_probe"
+HOME="$TEST_HOME" "$BUILD_DIR/closed_chat_suggestions_probe"
+
+echo "== Account badge bounds =="
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/account_badge_geometry_probe.m Sources/UI/TGStatusViewComponents.m -framework Cocoa -o "$BUILD_DIR/account_badge_geometry_probe"
+HOME="$TEST_HOME" "$BUILD_DIR/account_badge_geometry_probe"
+
+echo "== Aqua local chat backgrounds =="
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_chat_background_probe.m Sources/UI/TGAquaChatBackground.m -framework Cocoa -framework ImageIO -o "$BUILD_DIR/aqua-chat-background-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/aqua-chat-background-probe"
+"$PYTHON_BIN" Tests/aqua_background_clip_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_chat_background_window_probe.m Sources/UI/TGAquaChatBackgroundWindowController.m Sources/UI/TGAquaAppearance.m Sources/UI/TGTheme.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGLocalization.m -framework Cocoa -o "$BUILD_DIR/aqua-chat-background-window-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/aqua-chat-background-window-probe"
+"$PYTHON_BIN" Tests/aqua_background_texture_phase_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+
+
+echo "== Aqua attached folder drawer =="
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_folder_presentation_probe.m Sources/UI/TGAquaFolderPresentation.m Sources/UI/TGLocalization.m -framework Cocoa -o "$BUILD_DIR/aqua-folder-presentation-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/aqua-folder-presentation-probe"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_folder_drawer_probe.m Sources/UI/TGAquaFolderDrawer.m Sources/UI/TGAquaShellViews.m Sources/UI/TGAquaAppearance.m -framework Cocoa -o "$BUILD_DIR/aqua-folder-drawer-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/aqua-folder-drawer-probe"
+"$PYTHON_BIN" Tests/aqua_folder_drawer_routing_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+
+
+echo "== Local window state, gallery and playback updates =="
+"$PYTHON_BIN" Tests/aqua_toolbar_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$PYTHON_BIN" Tests/aqua_sticker_popover_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/scheduled_date_picker_probe.m Sources/UI/TGDatePickerDialog.m Sources/UI/TGLocalization.m -framework Cocoa -o "$BUILD_DIR/scheduled-date-picker"
+HOME="$TEST_HOME" "$BUILD_DIR/scheduled-date-picker"
+HOME="$TEST_HOME" "$PYTHON_BIN" Tests/scheduled_send_context_probe.py
+TELEGRAPHICA_TEST_ARCH="$ARCH" TELEGRAPHICA_TEST_DEPLOYMENT_TARGET="$DEPLOYMENT_TARGET" scripts/run_aqua_queue_surfaces_probe.sh
+"$PYTHON_BIN" Tests/aqua_queue_integration_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$PYTHON_BIN" Tests/aqua_search_filter_backend_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$PYTHON_BIN" Tests/inline_search_navigation_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$PYTHON_BIN" Tests/gallery_image_routing_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+TELEGRAPHICA_TEST_SDK="$SDK_NAME" scripts/run_gallery_image_benchmark.sh
+"$PYTHON_BIN" Tests/navigation_continuity_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/window_frame_persistence_probe.m Sources/UI/TGWindowFramePersistence.m -framework Cocoa -o "$BUILD_DIR/window-frame-persistence-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/window-frame-persistence-probe"
+"$CLANG" "${COMPILE_FLAGS[@]}" -Wno-incomplete-implementation Tests/aqua_photo_gallery_probe.m -framework Cocoa -o "$BUILD_DIR/aqua-photo-gallery-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/aqua-photo-gallery-probe"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/playback_timeline_updates_probe.m -framework Cocoa -o "$BUILD_DIR/playback-timeline-updates-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/playback-timeline-updates-probe"
+"$PYTHON_BIN" Tests/aqua_auxiliary_layout_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+
+echo "== Aqua native presentation lifecycles =="
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/dialog_sheet_probe.m Sources/UI/TGDialogPresentation.m -framework Cocoa -o "$BUILD_DIR/dialog-sheet-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/dialog-sheet-probe"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_audio_player_probe.m Sources/UI/TGAquaAudioPlayerView.m -framework Cocoa -o "$BUILD_DIR/aqua-audio-player-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/aqua-audio-player-probe"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_photo_transition_probe.m Sources/UI/TGAquaPhotoTransition.m -framework Cocoa -o "$BUILD_DIR/aqua-photo-transition-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/aqua-photo-transition-probe"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_chat_info_panel_probe.m Sources/UI/TGAquaChatInfoPanel.m Sources/UI/TGAquaShellViews.m Sources/UI/TGAquaAppearance.m Sources/UI/TGLocalization.m -framework Cocoa -o "$BUILD_DIR/aqua-chat-info-panel-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/aqua-chat-info-panel-probe"
+
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_chat_info_routing_probe.m Sources/UI/TGAquaChatInfoPanel.m Sources/UI/TGAquaShellViews.m Sources/UI/TGAquaAppearance.m Sources/UI/TGLocalization.m -framework Cocoa -o "$BUILD_DIR/aqua-chat-info-routing-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/aqua-chat-info-routing-probe"
+
+"$PYTHON_BIN" Tests/aqua_transcript_corner_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+
+"$PYTHON_BIN" Tests/aqua_audio_routing_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+
+# Recording construction/state checks deliberately use no camera or microphone.
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_recording_ui_probe.m Sources/UI/TGVideoNoteRecorderWindowController.m Sources/UI/TGAquaRecordingViews.m Sources/UI/TGAquaShellViews.m Sources/UI/TGAquaAppearance.m Sources/UI/TGLocalization.m -framework Cocoa -framework AVFoundation -framework QuartzCore -framework CoreMedia -o "$BUILD_DIR/aqua-recording-ui-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/aqua-recording-ui-probe"
+
+"$PYTHON_BIN" Tests/aqua_attachment_tracking_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+
+"$PYTHON_BIN" Tests/aqua_media_viewer_routing_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+
+AUXILIARY_APP="$BUILD_DIR/AuxiliaryProbe.app"
+mkdir -p "$AUXILIARY_APP/Contents/MacOS" "$AUXILIARY_APP/Contents/Resources"
+cp -R Sources/Resources/Icons "$AUXILIARY_APP/Contents/Resources/Icons"
+cp -R Sources/Resources/Textures "$AUXILIARY_APP/Contents/Resources/Textures"
+cat > "$AUXILIARY_APP/Contents/Info.plist" <<'AUX_PLIST'
+<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict><key>CFBundleExecutable</key><string>probe</string><key>CFBundleIdentifier</key><string>local.telegraphica.auxiliary-probe</string></dict></plist>
+AUX_PLIST
+"$CLANG" "${COMPILE_FLAGS[@]}" -I"$ROOT_DIR/Sources/UI" -I"$ROOT_DIR/Sources/Services" -I"$ROOT_DIR/Sources/Media" Tests/aqua_auxiliary_surfaces_probe.m Sources/UI/TGDownloadManagerPresentation.m Sources/UI/TGDownloadManagerWindowController.m Sources/UI/TGDownloadCompactPopover.m Sources/UI/TGAnimationSupport.m Sources/Services/TGResourcePolicy.m Sources/UI/TGAquaShellViews.m Sources/UI/TGLocalization.m Sources/UI/TGTheme.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGAquaAppearance.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGStatusButtonCells.m Sources/UI/TGButtonAppearance.m Sources/UI/TGIconAssets.m Sources/UI/TGIconDrawing.m Sources/UI/TGDownloadProgressWindowController.m Sources/UI/TGMessageViewersWindowController.m -framework Cocoa -framework CoreGraphics -framework QuartzCore -o "$AUXILIARY_APP/Contents/MacOS/probe"
+HOME="$TEST_HOME" "$AUXILIARY_APP/Contents/MacOS/probe" aqua
+HOME="$TEST_HOME" "$AUXILIARY_APP/Contents/MacOS/probe" classic
+
+"$PYTHON_BIN" Tests/aqua_chat_row_selection_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+
+# Paired foregrounds on actual Aqua selection/pressed/disabled backgrounds.
+"$PYTHON_BIN" Tests/aqua_avatar_contrast_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$PYTHON_BIN" Tests/aqua_list_selection_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_control_foreground_probe.m Sources/UI/TGAquaShellViews.m Sources/UI/TGStatusButtonCells.m Sources/UI/TGButtonAppearance.m Sources/UI/TGIconDrawing.m Sources/UI/TGTheme.m Sources/UI/TGAquaAppearance.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGLocalization.m -framework Cocoa -o "$AUXILIARY_APP/Contents/MacOS/probe"
+HOME="$TEST_HOME" "$AUXILIARY_APP/Contents/MacOS/probe"

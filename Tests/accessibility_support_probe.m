@@ -1,6 +1,7 @@
 #import <Cocoa/Cocoa.h>
 #import "TGAccessibilitySupport.h"
 #import "TGChatItem.h"
+#import "TGLocalization.h"
 #import "TGMessageItem.h"
 
 @interface TGAccessibilityProbeButton : NSButton {
@@ -75,6 +76,16 @@ int main(void) {
                                                unreadCount:[NSNumber numberWithInteger:3]] autorelease];
     [chat setNotificationsMuted:YES];
     [chat setPinned:YES];
+    for (NSString *language in [NSArray arrayWithObjects:@"ru", @"be", @"en", nil]) {
+        TGSetLanguageCode(language);
+        for (NSString *type in [NSArray arrayWithObjects:@"Private", @"Group", @"Supergroup", @"Channel", @"Secret", @"Chat", @"Forum", @"Forum topic", @"Message thread", nil]) {
+            TGAccessibilityAssert([TGLocalizedChatTypeSummary(type) length] > 0 &&
+                ![TGLocalizedChatTypeSummary(type) hasPrefix:@"chat.type."], @"known chat type has a presentation label");
+        }
+        TGAccessibilityAssert([TGAccessibilityDescriptionForChatItem(chat) rangeOfString:TGLocalizedChatTypeSummary(@"Private")].location != NSNotFound, @"accessibility uses the same localized label as visible lists");
+        TGAccessibilityAssert([[chat typeSummary] isEqualToString:@"Private"], @"presentation never mutates model routing type");
+    }
+    TGAccessibilityAssert([TGLocalizedChatTypeSummary(@"Future type") isEqualToString:@"Future type"] && [TGLocalizedChatTypeSummary(nil) isEqualToString:@""], @"unknown and absent types retain safe presentation fallbacks");
     NSString *chatDescription = TGAccessibilityDescriptionForChatItem(chat);
     TGAccessibilityAssert([chatDescription rangeOfString:@"Example"].location != NSNotFound,
                           @"chat title description");

@@ -13,7 +13,7 @@
     [alert setInformativeText:@"Telegraphica will close the current local TDLib session. You will need to sign in again on this Mac."];
     [alert addButtonWithTitle:@"Cancel"];
     [alert addButtonWithTitle:@"Logout"];
-    NSInteger result = [alert runModal];
+    NSInteger result = TGRunAlert(alert, self.window);
     if (result != NSAlertSecondButtonReturn) {
         return;
     }
@@ -51,7 +51,7 @@
     [alert setInformativeText:TGLoc(@"settings.localData.confirm.message")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
     [alert addButtonWithTitle:TGLoc(@"settings.localData.delete")];
-    NSInteger result = [alert runModal];
+    NSInteger result = TGRunAlert(alert, self.window);
     if (result != NSAlertSecondButtonReturn) {
         return;
     }
@@ -120,7 +120,7 @@
                 [doneAlert setInformativeText:message];
             }
             [doneAlert addButtonWithTitle:@"OK"];
-            [doneAlert runModal];
+            TGRunAlert(doneAlert, self.window);
 
             [offlineNote release];
             [errors release];

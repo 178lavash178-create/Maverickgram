@@ -1,3 +1,4 @@
+#import "TGDialogPresentation.h"
 #import "TGChatFolderManagementWindowController.h"
 
 #import "../Core/TGChatItem.h"
@@ -701,7 +702,7 @@ writeRowsWithIndexes:(NSIndexSet *)rowIndexes
     [[linkField cell] setPlaceholderString:@"https://t.me/addlist/..."];
     [linkAlert setAccessoryView:linkField];
     [[linkAlert window] makeFirstResponder:linkField];
-    if ([linkAlert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(linkAlert, [self window]) != NSAlertFirstButtonReturn) {
         return;
     }
 
@@ -758,7 +759,7 @@ writeRowsWithIndexes:(NSIndexSet *)rowIndexes
                                               (unsigned long)[missingChatIDs count]]];
             [confirmAlert addButtonWithTitle:TGLoc(@"folders.import")];
             [confirmAlert addButtonWithTitle:TGLoc(@"cancel")];
-            if ([confirmAlert runModal] != NSAlertFirstButtonReturn) {
+            if (TGRunAlert(confirmAlert, [self window]) != NSAlertFirstButtonReturn) {
                 [self.statusField setStringValue:@""];
                 [preview release];
                 [resultError release];
@@ -905,7 +906,7 @@ writeRowsWithIndexes:(NSIndexSet *)rowIndexes
     [alert setInformativeText:TGLoc(@"folders.delete.confirm.text")];
     [alert addButtonWithTitle:TGLoc(@"folders.delete")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, [self window]) != NSAlertFirstButtonReturn) {
         return;
     }
 

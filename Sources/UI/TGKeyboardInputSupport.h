@@ -4,6 +4,10 @@
 @interface TGEscapeCloseWindow : NSWindow
 @end
 
+/* Inline results keep Return/Escape local when keyboard focus leaves the query. */
+@interface TGInlineSearchResultsTableView : NSTableView
+@end
+
 typedef enum {
     TGComposerKeyboardCommandUnhandled = 0,
     TGComposerKeyboardCommandSend,

@@ -4,6 +4,9 @@
 #import <QuartzCore/QuartzCore.h>
 
 #import "TGLocalization.h"
+#import "TGInterfaceDesign.h"
+#import "TGAquaRecordingViews.h"
+#import "TGAquaShellViews.h"
 #import "TGIconAssets.h"
 #import "TGStatusButtonCells.h"
 #import "TGStatusViewComponents.h"
@@ -26,8 +29,12 @@ static NSTimeInterval const TGVideoNoteMaximumDuration = 60.0;
 - (void)drawRect:(NSRect)dirtyRect {
     (void)dirtyRect;
     NSRect bounds = [self bounds];
-    NSBezierPath *backgroundPath = [NSBezierPath bezierPathWithRect:bounds];
-    TGThemeDrawGroupedCardInPath(backgroundPath, bounds, [self isFlipped]);
+    if (TGInterfaceDesignIsAqua()) {
+        [[NSColor colorWithCalibratedWhite:0.13 alpha:1] set];NSRectFill(bounds);
+    } else {
+        NSBezierPath *backgroundPath = [NSBezierPath bezierPathWithRect:bounds];
+        TGThemeDrawGroupedCardInPath(backgroundPath, bounds, [self isFlipped]);
+    }
 }
 
 @end
@@ -152,7 +159,10 @@ static NSTimeInterval const TGVideoNoteMaximumDuration = 60.0;
     return button;
 }
 
+#include "TGVideoNoteRecorderWindowController+AquaRecording.inc"
+
 - (void)buildViews {
+    if (TGInterfaceDesignIsAqua()) { [self buildAquaRecordingViews]; return; }
     TGUtilityWindowView *root = [[[TGUtilityWindowView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease];
     [[self window] setContentView:root];
 
@@ -212,7 +222,7 @@ static NSTimeInterval const TGVideoNoteMaximumDuration = 60.0;
     [self.timerField setTextColor:[NSColor whiteColor]];
     [self.timerField setAlignment:NSCenterTextAlignment];
     [self.timerField setStringValue:@"0:00 / 1:00"];
-    [self.timerField setHidden:YES];
+    [self.timerField setHidden:!TGInterfaceDesignIsAqua()];
     [self.timerField setDrawsBackground:YES];
     [self.timerField setBackgroundColor:[NSColor colorWithCalibratedWhite:0.0 alpha:0.58]];
     [self.timerField setWantsLayer:YES];
@@ -273,12 +283,13 @@ static NSTimeInterval const TGVideoNoteMaximumDuration = 60.0;
 }
 
 - (void)showReadyToRecordControls {
+    if (TGInterfaceDesignIsAqua()) [self.timerField setStringValue:@"0:00 / 1:00"];
     [self.recordButton setHidden:NO];
     [self.stopButton setHidden:YES];
     [self.playButton setHidden:YES];
     [self.retryButton setHidden:YES];
     [self.sendButton setHidden:YES];
-    [self.timerField setHidden:YES];
+    [self.timerField setHidden:!TGInterfaceDesignIsAqua()];
     [self.statusField setStringValue:TGLoc(@"videoNote.ready")];
 }
 
@@ -304,7 +315,7 @@ static NSTimeInterval const TGVideoNoteMaximumDuration = 60.0;
     [self.playButton setHidden:YES];
     [self.retryButton setHidden:YES];
     [self.sendButton setHidden:YES];
-    [self.timerField setHidden:YES];
+    [self.timerField setHidden:!TGInterfaceDesignIsAqua()];
     [self.statusField setStringValue:TGLoc(@"videoNote.preparing")];
     [self.spinner startAnimation:nil];
 }
@@ -316,7 +327,7 @@ static NSTimeInterval const TGVideoNoteMaximumDuration = 60.0;
     [self.playButton setHidden:YES];
     [self.retryButton setHidden:YES];
     [self.sendButton setHidden:YES];
-    [self.timerField setHidden:YES];
+    [self.timerField setHidden:!TGInterfaceDesignIsAqua()];
     [self.statusField setStringValue:TGLoc(@"videoNote.preparing")];
     [self.spinner startAnimation:nil];
 }
@@ -329,7 +340,7 @@ static NSTimeInterval const TGVideoNoteMaximumDuration = 60.0;
     [self.playButton setHidden:NO];
     [self.retryButton setHidden:NO];
     [self.sendButton setHidden:NO];
-    [self.timerField setHidden:YES];
+    [self.timerField setHidden:!TGInterfaceDesignIsAqua()];
     [self.statusField setStringValue:TGLoc(@"videoNote.preview")];
 }
 

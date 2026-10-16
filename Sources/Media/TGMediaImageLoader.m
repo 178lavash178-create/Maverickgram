@@ -2,6 +2,7 @@
 #import "TGWebPDecoder.h"
 #import <ImageIO/ImageIO.h>
 #import <CommonCrypto/CommonDigest.h>
+#import <objc/runtime.h>
 
 NSString * const TGMediaImageLoaderCacheDidClearNotification = @"TGMediaImageLoaderCacheDidClearNotification";
 
@@ -377,4 +378,60 @@ NSImage *TGImageWithCorrectOrientationFromFile(NSString *path) {
     CGImageRelease(imageRef);
     CFRelease(source);
     return TGMediaCacheImage(image, cacheKey);
+}
+
+/* Keep expensive full-photo work serialized on legacy Macs. Cancelled queued
+ * requests cost only a token check, and repeated photos reuse the same cache. */
+static dispatch_queue_t TGOrientedPreviewQueue(void) {
+    static dispatch_queue_t queue;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{ queue = dispatch_queue_create("org.telegraphica.oriented-preview", DISPATCH_QUEUE_SERIAL); });
+    return queue;
+}
+static char TGPreparedPreviewImageKey;
+
+static NSImage *TGPrepareOrientedPreviewImage(NSImage *image) {
+    if (!image || objc_getAssociatedObject(image, &TGPreparedPreviewImageKey)) return image;
+    CGImageRef source = [image CGImageForProposedRect:NULL context:nil hints:nil];
+    if (!source) return image;
+    size_t width = CGImageGetWidth(source), height = CGImageGetHeight(source);
+    // ImageIO previews are already capped at2200. A larger WebP fallback is
+    // already a decoded bitmap; avoid duplicating that exceptional allocation.
+    if (!width || !height || width > 2200 || height > 2200) return image;
+    CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
+    CGContextRef context = CGBitmapContextCreate(NULL, width, height, 8, width * 4,
+        space, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
+    CGColorSpaceRelease(space);
+    if (!context) return image;
+    // Force lazy ImageIO decompression before the first main-thread draw.
+    CGContextSetBlendMode(context, kCGBlendModeCopy);
+    CGContextDrawImage(context, CGRectMake(0,0,width,height), source);
+    CGImageRef bitmap = CGBitmapContextCreateImage(context);
+    CGContextRelease(context);
+    if (!bitmap) return image;
+    NSImage *prepared = [[[NSImage alloc] initWithCGImage:bitmap size:[image size]] autorelease];
+    CGImageRelease(bitmap);
+    if (prepared) objc_setAssociatedObject(prepared, &TGPreparedPreviewImageKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    return prepared ? prepared : image;
+}
+
+TGMediaImageLoadToken *TGLoadOrientedImageFromFileAsync(NSString *path,
+                                                       TGMediaImageLoadCompletion completion) {
+    if (![path isKindOfClass:[NSString class]] || ![path length] || !completion) return nil;
+    TGMediaImageLoadToken *token = [[[TGMediaImageLoadToken alloc] initWithCompletion:completion] autorelease];
+    NSString *pathCopy = [path copy];
+    dispatch_async(TGOrientedPreviewQueue(), ^{
+        NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+        NSImage *image = nil;
+        if (![token isCancelled]) {
+            NSString *cacheKey = TGMediaFileCacheKey(pathCopy, @"file-oriented", 2200);
+            image = TGPrepareOrientedPreviewImage(TGImageWithCorrectOrientationFromFile(pathCopy));
+            TGMediaCacheImage(image, cacheKey);
+        }
+        // Dispatch copies/retains captured objects before this pool drains.
+        dispatch_async(dispatch_get_main_queue(), ^{ [token finishWithImage:image]; });
+        [pool drain];
+    });
+    [pathCopy release];
+    return token;
 }

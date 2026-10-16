@@ -4,5 +4,7 @@
 
 - (void)reloadDownloads;
 - (void)refreshPresentation;
+- (BOOL)toggleCompactPopoverRelativeToView:(NSView *)anchor;
+- (void)closeCompactPopover;
 
 @end

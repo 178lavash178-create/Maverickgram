@@ -124,6 +124,11 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
 }
 
 - (void)showDownloadManagerWindow:(id)sender {
+    if(TGInterfaceDesignIsAqua() && sender==self.aquaDownloadsButton) {
+        [self closeAquaStickerPicker];
+        if(!self.downloadManagerWindowController) self.downloadManagerWindowController=[[[TGDownloadManagerWindowController alloc] init] autorelease];
+        if([self.downloadManagerWindowController toggleCompactPopoverRelativeToView:self.aquaDownloadsButton]) return;
+    }
     [self.downloadProgressWindowController showProgress:sender];
     (void)sender;
     if (!self.downloadManagerWindowController) {
@@ -167,6 +172,10 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
 - (void)openSelectedChatProfile:(id)sender {
     if (![self.selectedChatID respondsToSelector:@selector(longLongValue)]) {
         NSBeep();
+        return;
+    }
+    if (TGInterfaceDesignIsAqua()) {
+        [self openAquaChatInfo:sender];
         return;
     }
     if ([self.selectedChatTypeSummary isEqualToString:@"Secret"]) {
@@ -313,7 +322,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
                                [selectedItem title] ? [selectedItem title] : TGLoc(@"settings.sessions.unknownDevice")]];
     [alert addButtonWithTitle:TGLoc(@"settings.sessions.terminate")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, self.window) != NSAlertFirstButtonReturn) {
         return;
     }
 
@@ -672,6 +681,14 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
 
 - (void)showAppearanceWindow:(id)sender {
     (void)sender;
+    if (TGInterfaceDesignIsAqua()) {
+        [[self.aquaChatBackgroundWindowController window] close];
+        self.aquaChatBackgroundWindowController = [[[TGAquaChatBackgroundWindowController alloc]
+            initWithAccountID:self.profileUserID chatID:self.selectedChatID chatTitle:self.selectedChatTitle] autorelease];
+        [self.aquaChatBackgroundWindowController showWindow:self];
+        [[self.aquaChatBackgroundWindowController window] makeKeyAndOrderFront:self];
+        return;
+    }
     if (!self.appearanceWindow) {
         NSRect frame = NSMakeRect(0, 0, 480, 260);
         NSWindow *window = [[[NSWindow alloc] initWithContentRect:frame
@@ -982,7 +999,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
     [alert addButtonWithTitle:TGLoc(@"about.channel.open.browser")];
     [alert addButtonWithTitle:TGLoc(@"common.cancel")];
 
-    NSInteger result = [alert runModal];
+    NSInteger result = TGRunAlert(alert, self.window);
     if (result == NSAlertSecondButtonReturn) {
         [self.aboutWindow orderOut:nil];
         [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:TGChannelURLString]];
@@ -1036,7 +1053,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
                 [fallback setInformativeText:TGLoc(@"about.channel.open.browserFallback")];
                 [fallback addButtonWithTitle:TGLoc(@"about.channel.open.browser")];
                 [fallback addButtonWithTitle:TGLoc(@"common.cancel")];
-                if ([fallback runModal] == NSAlertFirstButtonReturn) {
+                if (TGRunAlert(fallback, self.window) == NSAlertFirstButtonReturn) {
                     [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:TGChannelURLString]];
                 }
             }

@@ -446,7 +446,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         [alert setInformativeText:([safeDescriptors count] > 1 ? [NSString stringWithFormat:@"%@. Sending may take a while.", TGSummarizeAttachmentDescriptors(safeDescriptors)] : [NSString stringWithFormat:@"%@ is %@. Sending may take a while.", descriptor.fileName, [descriptor readableSize]])];
         [alert addButtonWithTitle:TGLoc(@"send")];
         [alert addButtonWithTitle:TGLoc(@"cancel")];
-        if ([alert runModal] != NSAlertFirstButtonReturn) {
+        if (TGRunAlert(alert, self.window) != NSAlertFirstButtonReturn) {
             return;
         }
     }
@@ -1062,6 +1062,8 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [queueItems release];
 }
 
+#include "TGStatusWindowController+StickerPresentation.inc"
+
 - (void)ensureStickerPickerWindow {
     if (self.stickerPickerWindow) {
         return;
@@ -1192,6 +1194,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     self.stickerPickerRailThumbnailPrefetcher = [[[TGMessageThumbnailPrefetcher alloc] init] autorelease];
     self.stickerPickerMode = 0;
     self.stickerPickerWindow = window;
+    [self configureAquaStickerPickerWithLegacyView:contentView panels:[NSArray arrayWithObjects:controlsPanel,railPanel,gridPanel,stickerSearchBackground,nil] removeSetButton:removeSetButton];
 }
 
 - (void)updateStickerPickerSelectionState {
@@ -1200,6 +1203,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [self.stickerPickerRecentButton setNeedsDisplay:YES];
     [self.stickerPickerFavoriteButton setNeedsDisplay:YES];
     [self rebuildStickerPickerSetRail];
+    [self updateAquaStickerPickerTabState];
 }
 
 - (void)updateStickerPickerRailThumbnailForSetID:(NSNumber *)setID withItem:(NSDictionary *)item {
@@ -1294,6 +1298,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     if ([self.stickerPickerStickerSets count] == 0 || !self.client) {
         return;
     }
+    NSDictionary *loadContext=[self stickerPickerLoadContext];
     TGTDLibClient *client = [self.client retain];
     NSArray *setsSnapshot = [self.stickerPickerStickerSets copy];
     NSMutableArray *setIDsToLoad = [NSMutableArray array];
@@ -1335,7 +1340,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
             NSString *errorMessage = [[setError localizedDescription] copy];
             dispatch_async(dispatch_get_main_queue(), ^{
                 NSString *key = [setID stringValue];
-                if (client == self.client) {
+                if (client == self.client && [self stickerPickerLoadContextIsCurrent:loadContext]) {
                     if (firstItem) {
                         [[TGLogger sharedLogger] log:[NSString stringWithFormat:@"Stickers: rail preview loaded for set %@", key]];
                         [self updateStickerPickerRailThumbnailForSetID:setID withItem:firstItem];
@@ -1441,12 +1446,13 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [alert setInformativeText:[NSString stringWithFormat:@"Remove %@ from your installed sticker sets?", setTitle]];
     [alert addButtonWithTitle:@"Remove"];
     [alert addButtonWithTitle:@"Cancel"];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, self.window) != NSAlertFirstButtonReturn) {
         [setID release];
         return;
     }
 
     [self.stickerPickerStatusField setStringValue:@"Removing sticker set..."];
+    NSDictionary *accountContext=[self stickerPickerAccountContext];
     TGTDLibClient *client = [self.client retain];
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -1454,6 +1460,9 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         BOOL ok = [client setStickerSetInstalledForStickerSetID:setID installed:NO timeout:8.0 error:&changeError];
         NSString *errorMessage = [[changeError localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
+            if (client!=self.client || ![accountContext isEqual:[self stickerPickerAccountContext]]) {
+                [errorMessage release];[setID release];[client release];return;
+            }
             if (ok) {
                 [self.stickerPickerSetCache removeObjectForKey:[setID stringValue]];
                 [self.stickerPickerRailPreviewState removeObjectForKey:[setID stringValue]];
@@ -1617,6 +1626,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         [self preloadStickerPickerRailPreviews];
         return;
     }
+    NSDictionary *loadContext=[self stickerPickerLoadContext];
     TGTDLibClient *client = [self.client retain];
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -1624,7 +1634,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         NSArray *sets = [[client installedStickerSetInfoItemsWithTimeout:8.0 error:&setError] copy];
         NSString *errorMessage = [[setError localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
-            BOOL resultIsCurrent = (client == self.client);
+            BOOL resultIsCurrent = (client == self.client && [self stickerPickerLoadContextIsCurrent:loadContext]);
             if (resultIsCurrent) {
                 self.stickerPickerStickerSets = ([sets count] > 0 ? sets : [NSArray array]);
                 [self rebuildStickerPickerSetRail];
@@ -1634,18 +1644,21 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
                                               (unsigned long)[self.stickerPickerStickerSets count],
                                               [errorMessage length] > 0 ? [NSString stringWithFormat:@" error=%@", errorMessage] : @""]];
                 NSString *lastSetID = [[NSUserDefaults standardUserDefaults] stringForKey:@"TelegraphicaStickerPickerLastSetID"];
-                if ([lastSetID length] > 0 && [self.stickerPickerItems count] == 0) {
+                if ([lastSetID length] > 0 && [self.stickerPickerItems count] == 0 && self.stickerPickerMode==0 && [[self.stickerPickerSearchField stringValue] length]==0) {
                     NSUInteger index = 0;
                     for (index = 0; index < [self.stickerPickerStickerSets count]; index++) {
                         NSDictionary *set = [self.stickerPickerStickerSets objectAtIndex:index];
                         NSNumber *setID = [set objectForKey:@"id"];
                         if ([setID respondsToSelector:@selector(longLongValue)] && [[setID stringValue] isEqualToString:lastSetID]) {
                             self.stickerPickerSelectedSetID = setID;
+                            self.stickerPickerMode=3;
+                            [self updateStickerPickerSelectionState];
                             [self reloadStickerPickerItemsForSet:set];
                             break;
                         }
                     }
                 }
+                [self finishAquaStickerSetLoad];
             }
             [sets release];
             [errorMessage release];
@@ -1666,7 +1679,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     if (!self.stickerPickerPlaybackCoordinator) {
         return;
     }
-    if (![self.stickerPickerWindow isVisible] || !self.stickerPickerContentView) {
+    if (![self isStickerPickerPresentationVisible] || !self.stickerPickerContentView) {
         [self.stickerPickerPlaybackCoordinator removeAllPlayback];
         return;
     }
@@ -1724,13 +1737,13 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     }
     [oldSubviews release];
 
-    CGFloat buttonSide = 58.0;
-    CGFloat gap = 10.0;
+    CGFloat buttonSide = TGInterfaceDesignIsAqua() ? 72.0 : 58.0;
+    CGFloat gap = TGInterfaceDesignIsAqua() ? 8.0 : 10.0;
     CGFloat contentWidth = 500.0;
     if (self.stickerPickerScrollView) {
-        contentWidth = MAX(380.0, NSWidth([[self.stickerPickerScrollView contentView] bounds]));
+        contentWidth = MAX(TGInterfaceDesignIsAqua() ? 1.0 : 380.0, NSWidth([[self.stickerPickerScrollView contentView] bounds]));
     }
-    NSUInteger columns = MAX(4, (NSUInteger)floor((contentWidth - gap) / (buttonSide + gap)));
+    NSUInteger columns = MAX(TGInterfaceDesignIsAqua() ? 1 : 4, (NSUInteger)MAX(0,floor((contentWidth - gap) / (buttonSide + gap))));
     NSUInteger count = [self.stickerPickerItems count];
     NSUInteger rows = (count == 0) ? 1 : ((count + columns - 1) / columns);
     CGFloat contentHeight = rows * (buttonSide + gap) + gap;
@@ -1800,6 +1813,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
 - (void)reloadStickerPickerItems {
     [self.stickerPickerStatusField setStringValue:@"Loading stickers..."];
     self.stickerPickerSelectedSetID = nil;
+    NSDictionary *loadContext=[self stickerPickerLoadContext];
     TGTDLibClient *client = [self.client retain];
     NSUInteger generation = self.stickerPickerLoadGeneration + 1;
     self.stickerPickerLoadGeneration = generation;
@@ -1809,7 +1823,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         NSArray *items = [[client recentStickerItemsWithLimit:40 timeout:8.0 error:&stickerError] copy];
         NSString *errorMessage = [[stickerError localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
-            BOOL resultIsCurrent = (generation == self.stickerPickerLoadGeneration && client == self.client);
+            BOOL resultIsCurrent = (generation == self.stickerPickerLoadGeneration && client == self.client && [self stickerPickerLoadContextIsCurrent:loadContext]);
             if (!resultIsCurrent) {
                 [[TGLogger sharedLogger] log:@"Stickers: ignored stale recent stickers response."];
                 [items release];
@@ -1819,7 +1833,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
             }
             if ([items count] > 0) {
                 self.stickerPickerItems = items;
-                [self.stickerPickerStatusField setStringValue:@"Recent stickers"];
+                [self.stickerPickerStatusField setStringValue:TGLoc(@"stickers.recent")];
                 [[TGLogger sharedLogger] log:[NSString stringWithFormat:@"Stickers: loaded recent stickers count=%lu", (unsigned long)[items count]]];
             } else {
                 self.stickerPickerItems = [NSArray array];
@@ -1839,6 +1853,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
 - (void)reloadFavoriteStickerPickerItems {
     [self.stickerPickerStatusField setStringValue:@"Loading favorite stickers..."];
     self.stickerPickerSelectedSetID = nil;
+    NSDictionary *loadContext=[self stickerPickerLoadContext];
     TGTDLibClient *client = [self.client retain];
     NSUInteger generation = self.stickerPickerLoadGeneration + 1;
     self.stickerPickerLoadGeneration = generation;
@@ -1848,10 +1863,10 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         NSArray *items = [[client favoriteStickerItemsWithLimit:40 timeout:8.0 error:&stickerError] copy];
         NSString *errorMessage = [[stickerError localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
-            BOOL resultIsCurrent = (generation == self.stickerPickerLoadGeneration && client == self.client);
+            BOOL resultIsCurrent = (generation == self.stickerPickerLoadGeneration && client == self.client && [self stickerPickerLoadContextIsCurrent:loadContext]);
             if (resultIsCurrent) {
                 self.stickerPickerItems = ([items count] > 0 ? items : [NSArray array]);
-                [self.stickerPickerStatusField setStringValue:([items count] > 0 ? @"Favorite stickers" : ([errorMessage length] > 0 ? errorMessage : @"No favorite stickers yet"))];
+                [self.stickerPickerStatusField setStringValue:([items count] > 0 ? TGLoc(@"stickers.favorites.tab") : ([errorMessage length] > 0 ? errorMessage : @"No favorite stickers yet"))];
                 [[TGLogger sharedLogger] log:[NSString stringWithFormat:@"Stickers: loaded favorite stickers count=%lu%@", (unsigned long)[items count], [errorMessage length] > 0 ? [NSString stringWithFormat:@" error=%@", errorMessage] : @""]];
                 [self rebuildStickerPickerGrid];
                 [self scrollStickerPickerGridToTop];
@@ -1870,6 +1885,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     self.stickerPickerItems = [NSArray array];
     [self rebuildStickerPickerGrid];
     [self scrollStickerPickerGridToTop];
+    NSDictionary *loadContext=[self stickerPickerLoadContext];
     TGTDLibClient *client = [self.client retain];
     NSUInteger generation = self.stickerPickerLoadGeneration + 1;
     self.stickerPickerLoadGeneration = generation;
@@ -1879,7 +1895,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         NSArray *items = [[client stickerItemsForEmoji:query limit:60 timeout:8.0 error:&stickerError] copy];
         NSString *errorMessage = [[stickerError localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
-            BOOL resultIsCurrent = (generation == self.stickerPickerLoadGeneration && client == self.client);
+            BOOL resultIsCurrent = (generation == self.stickerPickerLoadGeneration && client == self.client && [self stickerPickerLoadContextIsCurrent:loadContext]);
             if (resultIsCurrent) {
                 self.stickerPickerItems = ([items count] > 0 ? items : [NSArray array]);
                 [self.stickerPickerStatusField setStringValue:([items count] > 0 ? [NSString stringWithFormat:@"Stickers for %@", query] : ([errorMessage length] > 0 ? errorMessage : @"No stickers found"))];
@@ -1912,6 +1928,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         title = @"Sticker set";
     }
     if ([cachedItems count] > 0) {
+        self.stickerPickerLoadGeneration++;
         self.stickerPickerItems = cachedItems;
         [self.stickerPickerStatusField setStringValue:title];
         [self updateStickerPickerRailThumbnailForSetID:setID withItem:[cachedItems objectAtIndex:0]];
@@ -1925,6 +1942,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [self rebuildStickerPickerGrid];
     [self scrollStickerPickerGridToTop];
 
+    NSDictionary *loadContext=[self stickerPickerLoadContext];
     TGTDLibClient *client = [self.client retain];
     NSNumber *selectedSetID = [setID retain];
     NSString *titleCopy = [title copy];
@@ -1937,7 +1955,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         NSString *errorMessage = [[setError localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
             BOOL resultIsCurrent = (generation == self.stickerPickerLoadGeneration &&
-                                    client == self.client &&
+                                    client == self.client && [self stickerPickerLoadContextIsCurrent:loadContext] &&
                                     [self.stickerPickerSelectedSetID respondsToSelector:@selector(longLongValue)] &&
                                     [self.stickerPickerSelectedSetID longLongValue] == [selectedSetID longLongValue]);
             if (resultIsCurrent) {
@@ -1972,10 +1990,14 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         return;
     }
     [self ensureStickerPickerWindow];
+    if (TGInterfaceDesignIsAqua()) {
+        if (![self showAquaStickerPicker]) return;
+    } else {
+        [self.stickerPickerWindow setTitle:TGLoc(@"stickers")];
+        [self.stickerPickerWindow center];
+        [self.stickerPickerWindow makeKeyAndOrderFront:nil];
+    }
     [self.inlineMediaPlaybackCoordinator removeAllPlayback];
-    [self.stickerPickerWindow setTitle:TGLoc(@"stickers")];
-    [self.stickerPickerWindow center];
-    [self.stickerPickerWindow makeKeyAndOrderFront:nil];
     [self reloadStickerPickerSetsIfNeeded];
     if (self.stickerPickerSelectedSetID && [self.stickerPickerItems count] == 0) {
         NSString *selectedID = [self.stickerPickerSelectedSetID stringValue];
@@ -1997,6 +2019,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
 }
 
 - (void)sendStickerFromPickerButton:(id)sender {
+    if (TGInterfaceDesignIsAqua() && (![self aquaStickerPickerCanSend] || ![sender isKindOfClass:[NSView class]] || ![(NSView *)sender isDescendantOf:self.stickerPickerContentView])) return;
     NSInteger stickerIndex = [sender respondsToSelector:@selector(tag)] ? [sender tag] : -1;
     id represented = (stickerIndex >= 0 && (NSUInteger)stickerIndex < [self.stickerPickerItems count]) ? [self.stickerPickerItems objectAtIndex:(NSUInteger)stickerIndex] : nil;
     if (![represented isKindOfClass:[NSDictionary class]]) {
@@ -2018,7 +2041,8 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     NSString *emoji = [[sticker objectForKey:@"emoji"] copy];
     NSNumber *width = [[sticker objectForKey:@"width"] retain];
     NSNumber *height = [[sticker objectForKey:@"height"] retain];
-    [self.stickerPickerWindow orderOut:nil];
+    if (TGInterfaceDesignIsAqua()) [self closeAquaStickerPicker];
+    else [self.stickerPickerWindow orderOut:nil];
     [self.stickerPickerPlaybackCoordinator removeAllPlayback];
     [self.stickerPickerGridThumbnailPrefetcher cancelAll];
     [self.stickerPickerRailThumbnailPrefetcher cancelAll];
@@ -2026,6 +2050,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [self setControlsBusy:YES];
     [self.statusField setStringValue:@"Sending sticker..."];
 
+    NSDictionary *accountContext=[self stickerPickerAccountContext];
     TGTDLibClient *client = [self.client retain];
     [[TGLogger sharedLogger] log:[NSString stringWithFormat:@"Stickers: send requested format=%@ file=%@", TGMediaItemStickerFormat(sticker), fileID]];
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
@@ -2042,6 +2067,9 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
                                                           error:&sendError] copy];
         NSString *errorMessage = [[sendError localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
+            if (client!=self.client || ![accountContext isEqual:[self stickerPickerAccountContext]]) {
+                [summary release];[errorMessage release];[chatID release];[messageThreadID release];[messageTopicKind release];[emoji release];[width release];[height release];[client release];return;
+            }
             if ([summary length] > 0) {
                 [self.statusField setStringValue:@"Sticker sent"];
                 [[TGLogger sharedLogger] log:@"Stickers: send accepted."];
@@ -2131,6 +2159,10 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
 
 - (void)voicePreviewTimerDidFire:(NSTimer *)timer {
     (void)timer;
+    if (TGInterfaceDesignIsAqua() && [self.voiceRecorder isRecording]) {
+        NSTimeInterval elapsed=self.voiceRecordingStartDate ? [[NSDate date] timeIntervalSinceDate:self.voiceRecordingStartDate] : 0;
+        [self.voicePreviewTimeField setStringValue:TGVoicePreviewTimeString(MAX(0,elapsed))]; return;
+    }
     AVAudioPlayer *player = self.voicePreviewPlayer;
     if (!player) {
         [self invalidateVoicePreviewTimer];
@@ -2174,141 +2206,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [self updateVoicePreviewTimelineWithCurrentTime:value duration:duration];
 }
 
-- (void)ensureVoicePreviewWindow {
-    if (self.voicePreviewWindow) {
-        return;
-    }
-
-    NSRect frame = NSMakeRect(0, 0, 420, 190);
-    NSWindow *window = [[[NSWindow alloc] initWithContentRect:frame
-                                                    styleMask:(NSTitledWindowMask | NSClosableWindowMask)
-                                                      backing:NSBackingStoreBuffered
-                                                        defer:NO] autorelease];
-    [window setTitle:@"Voice message"];
-    [window setReleasedWhenClosed:NO];
-    [window setDelegate:self];
-    TGUtilityWindowView *contentView = [[[TGUtilityWindowView alloc] initWithFrame:frame] autorelease];
-    [window setContentView:contentView];
-
-    TGUtilityPanelView *panelView = [[[TGUtilityPanelView alloc] initWithFrame:NSMakeRect(10, 10, 400, 170)] autorelease];
-    [contentView addSubview:panelView];
-    TGGroupedCardView *cardView = [[[TGGroupedCardView alloc] initWithFrame:NSMakeRect(18, 18, 384, 154)] autorelease];
-    [contentView addSubview:cardView];
-
-    NSTextField *titleField = [self labelWithFrame:NSMakeRect(30, 146, 360, 22)
-                                              text:@"Voice message ready"
-                                              font:[NSFont boldSystemFontOfSize:15.0]];
-    [titleField setAlignment:NSCenterTextAlignment];
-    [titleField setTextColor:TGClassicCardInkColor()];
-    [contentView addSubview:titleField];
-    self.voicePreviewTitleField = titleField;
-
-    NSButton *playButton = [[[NSButton alloc] initWithFrame:NSMakeRect(30, 76, 48, 48)] autorelease];
-    [playButton setTitle:@"Play"];
-    [playButton setCell:[[[TGMediaPlaybackButtonCell alloc] initTextCell:@"Play"] autorelease]];
-    [playButton setBordered:NO];
-    [playButton setFocusRingType:NSFocusRingTypeNone];
-    [playButton setTarget:self];
-    [playButton setAction:@selector(toggleVoicePreviewPlayback:)];
-    [contentView addSubview:playButton];
-    self.voicePreviewPlayButton = playButton;
-
-    NSButton *stopButton = [[[NSButton alloc] initWithFrame:NSMakeRect(134, 78, 152, 34)] autorelease];
-    [stopButton setTitle:@"Stop"];
-    [stopButton setTarget:self];
-    [stopButton setAction:@selector(toggleVoiceRecording:)];
-    [self applySkeuomorphicButtonStyle:stopButton isPrimary:YES];
-    [stopButton setHidden:YES];
-    [contentView addSubview:stopButton];
-    self.voicePreviewStopButton = stopButton;
-
-    NSSlider *progressSlider = [[[NSSlider alloc] initWithFrame:NSMakeRect(92, 94, 208, 22)] autorelease];
-    [progressSlider setMinValue:0.0];
-    [progressSlider setMaxValue:1.0];
-    [progressSlider setDoubleValue:0.0];
-    [progressSlider setContinuous:YES];
-    [progressSlider setTarget:self];
-    [progressSlider setAction:@selector(voicePreviewSliderChanged:)];
-    [progressSlider setEnabled:NO];
-    [contentView addSubview:progressSlider];
-    self.voicePreviewProgressSlider = progressSlider;
-
-    NSTextField *timeField = [self labelWithFrame:NSMakeRect(308, 94, 82, 20)
-                                             text:@"0:00 / 0:00"
-                                             font:[NSFont systemFontOfSize:11.0]];
-    [timeField setAlignment:NSRightTextAlignment];
-    [self applyMutedLabelStyle:timeField];
-    [contentView addSubview:timeField];
-    self.voicePreviewTimeField = timeField;
-
-    NSButton *cancelButton = [self modalCloseButtonWithFrame:NSMakeRect(172, 34, 102, 30)];
-    [cancelButton setTitle:TGLoc(@"cancel")];
-    [cancelButton setTarget:self];
-    [cancelButton setAction:@selector(cancelVoicePreview:)];
-    [cancelButton setKeyEquivalent:[NSString stringWithFormat:@"%C", (unichar)27]];
-    [cancelButton setKeyEquivalentModifierMask:0];
-    [contentView addSubview:cancelButton];
-    self.voicePreviewCancelButton = cancelButton;
-
-    NSButton *sendButton = [[[NSButton alloc] initWithFrame:NSMakeRect(288, 34, 102, 30)] autorelease];
-    [sendButton setTitle:TGLoc(@"send")];
-    [sendButton setTarget:self];
-    [sendButton setAction:@selector(sendVoicePreview:)];
-    [sendButton setKeyEquivalent:@"\r"];
-    [sendButton setKeyEquivalentModifierMask:0];
-    [self applySkeuomorphicButtonStyle:sendButton isPrimary:YES];
-    [contentView addSubview:sendButton];
-    self.voicePreviewSendButton = sendButton;
-
-    NSTextField *errorField = [self labelWithFrame:NSMakeRect(30, 124, 360, 16)
-                                              text:@""
-                                              font:[NSFont systemFontOfSize:11.0]];
-    [errorField setTextColor:[NSColor colorWithCalibratedRed:0.760 green:0.160 blue:0.130 alpha:1.0]];
-    [errorField setAlignment:NSCenterTextAlignment];
-    [errorField setHidden:YES];
-    [[errorField cell] setLineBreakMode:NSLineBreakByTruncatingMiddle];
-    [contentView addSubview:errorField];
-    self.voicePreviewErrorField = errorField;
-
-    self.voicePreviewWindow = window;
-}
-
-- (void)configureVoicePreviewWindowForRecording {
-    [self ensureVoicePreviewWindow];
-    [self.voicePreviewTitleField setStringValue:TGLoc(@"voice.recording")];
-    [self.voicePreviewTitleField setTextColor:TGClassicCardInkColor()];
-    [self.voicePreviewErrorField setStringValue:@"Press Stop when you finish recording."];
-    [self.voicePreviewErrorField setHidden:NO];
-    [self.voicePreviewPlayButton setHidden:YES];
-    [self.voicePreviewProgressSlider setHidden:YES];
-    [self.voicePreviewTimeField setHidden:YES];
-    [self.voicePreviewCancelButton setHidden:YES];
-    [self.voicePreviewSendButton setHidden:YES];
-    [self.voicePreviewStopButton setHidden:NO];
-    [self.voicePreviewStopButton setEnabled:YES];
-    [self.voicePreviewWindow center];
-    [self.voicePreviewWindow makeKeyAndOrderFront:nil];
-}
-
-- (void)configureVoicePreviewWindowForReadyDuration:(NSTimeInterval)duration {
-    [self ensureVoicePreviewWindow];
-    [self.voicePreviewTitleField setStringValue:[NSString stringWithFormat:@"Voice message %.0fs", duration]];
-    [self.voicePreviewTitleField setTextColor:TGClassicCardInkColor()];
-    [self.voicePreviewPlayButton setTitle:@"Play"];
-    [self.voicePreviewPlayButton setHidden:NO];
-    [self.voicePreviewStopButton setHidden:YES];
-    [self.voicePreviewProgressSlider setHidden:NO];
-    [self.voicePreviewTimeField setHidden:NO];
-    [self.voicePreviewCancelButton setHidden:NO];
-    [self.voicePreviewSendButton setHidden:NO];
-    [self.voicePreviewSendButton setTitle:TGLoc(@"send")];
-    [self.voicePreviewSendButton setEnabled:YES];
-    [self.voicePreviewErrorField setStringValue:@""];
-    [self.voicePreviewErrorField setHidden:YES];
-    [self updateVoicePreviewTimelineWithCurrentTime:0.0 duration:duration];
-    [self.voicePreviewWindow center];
-    [self.voicePreviewWindow makeKeyAndOrderFront:nil];
-}
+#include "TGStatusWindowController+VoicePreview.inc"
 
 - (BOOL)ensureMicrophoneConsent {
     return [TGPrivacyPermissions requestMicrophonePermission];
@@ -2454,7 +2352,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     if ([self.voiceRecorder isRecording]) {
         [self.voiceRecorder stop];
         self.voiceRecorder = nil;
-        [self.voiceRecordButton setToolTip:@"Record voice message"];
+        [self.voiceRecordButton setToolTip:TGLoc(@"composer.mediaMode.voice")];
         [self.statusField setStringValue:@"Voice recorded"];
         [self.voiceRecordingIndicatorField setStringValue:@""];
         [self.voiceRecordingIndicatorField setHidden:YES];
@@ -2533,6 +2431,12 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
 
 - (void)cancelVoicePreview:(id)sender {
     (void)sender;
+    if (TGInterfaceDesignIsAqua() && self.voiceRecorder) {
+        [self.voiceRecorder stop]; self.voiceRecorder=nil;
+        [self.voiceRecordButton setToolTip:TGLoc(@"composer.mediaMode.voice")];
+        [self.voiceRecordingIndicatorField setStringValue:@""];[self.voiceRecordingIndicatorField setHidden:YES];
+        [self layoutContentView];[self updateVisibleSection];
+    }
     [self invalidateVoicePreviewTimer];
     [self.voicePreviewPlayer stop];
     self.voicePreviewPlayer = nil;
@@ -2640,6 +2544,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
 
 - (void)attachFileFromComposerMenu:(id)sender {
     (void)sender;
+    [self.attachPhotoButton highlight:NO]; [self.attachPhotoButton setState:NSOffState];
     BOOL hasMessageTarget = (self.selectedChatID != nil && (!self.showingForumTopicList || self.selectedMessageThreadID != nil));
     if (![self.currentAuthState isEqualToString:@"ready"] || !hasMessageTarget) {
         [self appendDetail:@"Select a chat after sign-in is ready before attaching a photo."];
@@ -2651,7 +2556,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [panel setCanChooseDirectories:NO];
     [panel setAllowsMultipleSelection:YES];
     [panel setAllowedFileTypes:[TGAttachmentDescriptor supportedOpenPanelTypes]];
-    NSInteger result = [panel runModal];
+    NSInteger result = TGRunFilePanel(panel, self.window);
     if (result != NSOKButton) {
         [self requestComposerRefocus];
         return;
@@ -2764,7 +2669,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [accessory addSubview:errorField];
     [alert setAccessoryView:accessory];
 
-    NSInteger result = [alert runModal];
+    NSInteger result = TGRunAlert(alert, self.window);
     if (result != NSAlertFirstButtonReturn) {
         [self requestComposerRefocus];
         return;
@@ -2774,7 +2679,11 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     NSArray *options = [self pollOptionsFromText:[optionsView string]];
     if ([question length] == 0 || [options count] < 2) {
         NSString *message = ([question length] == 0) ? TGLoc(@"poll.create.error.question") : TGLoc(@"poll.create.error.options");
-        NSRunAlertPanel(TGLoc(@"poll.create.failed"), message, TGLoc(@"ok"), nil, nil);
+        NSAlert *validationAlert=[[[NSAlert alloc] init] autorelease];
+        [validationAlert setMessageText:TGLoc(@"poll.create.failed")];
+        [validationAlert setInformativeText:message];
+        [validationAlert addButtonWithTitle:TGLoc(@"ok")];
+        TGRunAlert(validationAlert,[self window]);
         [self requestComposerRefocus];
         return;
     }
@@ -2790,8 +2699,11 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     NSInteger correctOptionIndex = [[correctField stringValue] integerValue] - 1;
     NSString *explanation = [[explanationField stringValue] copy];
     if (quiz && (correctOptionIndex < 0 || (NSUInteger)correctOptionIndex >= [optionsCopy count])) {
-        NSRunAlertPanel(TGLoc(@"poll.create.failed"), @"%@", TGLoc(@"ok"), nil, nil,
-                        TGLoc(@"poll.create.error.correct"));
+        NSAlert *validationAlert=[[[NSAlert alloc] init] autorelease];
+        [validationAlert setMessageText:TGLoc(@"poll.create.failed")];
+        [validationAlert setInformativeText:TGLoc(@"poll.create.error.correct")];
+        [validationAlert addButtonWithTitle:TGLoc(@"ok")];
+        TGRunAlert(validationAlert,[self window]);
         [explanation release];
         [optionsCopy release];
         [questionCopy release];
@@ -3032,7 +2944,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [panel setAllowsMultipleSelection:NO];
     [panel setAllowedFileTypes:[NSArray arrayWithObjects:@"mp4", @"m4v", @"mov", nil]];
     [panel setTitle:TGLoc(@"share.videoNote.title")];
-    if ([panel runModal] != NSFileHandlingPanelOKButton || [[panel URLs] count] == 0) {
+    if (TGRunFilePanel(panel, self.window) != NSFileHandlingPanelOKButton || [[panel URLs] count] == 0) {
         [self requestComposerRefocus];
         return;
     }
@@ -3086,9 +2998,17 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
                                                keyEquivalent:@""] autorelease];
     [pollItem setTarget:self];
     [menu addItem:pollItem];
-    [menu popUpMenuPositioningItem:nil
-                        atLocation:NSMakePoint(0.0, NSHeight([self.attachPhotoButton bounds]) + 2.0)
-                            inView:self.attachPhotoButton];
+    /* Menu actions can open a sheet before menu tracking unwinds. This is a
+       momentary command, so never carry its tracking state into that sheet. */
+    [self.attachPhotoButton highlight:NO]; [self.attachPhotoButton setState:NSOffState];
+    @try {
+        [menu popUpMenuPositioningItem:nil
+                            atLocation:NSMakePoint(0.0, NSHeight([self.attachPhotoButton bounds]) + 2.0)
+                                inView:self.attachPhotoButton];
+    } @finally {
+        [self.attachPhotoButton highlight:NO]; [self.attachPhotoButton setState:NSOffState];
+        [self.attachPhotoButton setNeedsDisplay:YES];
+    }
 }
 
 - (NSMenu *)composerTextContextMenu {
@@ -3375,6 +3295,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
 }
 
 - (void)showScheduledMessages:(id)sender {
+    if([self toggleAquaScheduledMessages]) return;
     (void)sender;
     if (![self.selectedChatID respondsToSelector:@selector(longLongValue)]) {
         NSBeep();
@@ -3395,12 +3316,22 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
 
 - (void)scheduleMessage:(id)sender {
     (void)sender;
+    if (![self.sendMessageButton isEnabled]) return;
+    // A modal sheet still processes account/chat updates. Confirmation must
+    // never apply a date to a different recipient, reply or replacement draft.
+    NSArray *contextKeys = [NSArray arrayWithObjects:@"client", @"selectedChatID",
+        @"selectedMessageThreadID", @"selectedMessageTopicKind", @"activeSection",
+        @"replyTargetMessageItem", @"replyTargetChatID", @"currentAuthState", nil];
+    NSDictionary *context = [self dictionaryWithValuesForKeys:contextKeys];
+    NSString *draft = [[[self.sendTextField stringValue] copy] autorelease];
     NSDate *date = [TGDatePickerDialog dateWithTitle:TGLoc(@"composer.schedule.title")
                                                help:TGLoc(@"composer.schedule.help")
-                                        actionTitle:TGLoc(@"composer.schedule.action")
+                                        actionTitle:TGLoc(@"composer.schedule.confirm")
                                         initialDate:[NSDate dateWithTimeIntervalSinceNow:60.0 * 60.0]
                                             minDate:[NSDate dateWithTimeIntervalSinceNow:60.0]];
-    if (!date) {
+    if (!date || ![self.sendMessageButton isEnabled] ||
+        ![context isEqual:[self dictionaryWithValuesForKeys:contextKeys]] ||
+        ![draft isEqualToString:[self.sendTextField stringValue]]) {
         return;
     }
     NSInteger timestamp = (NSInteger)[date timeIntervalSince1970];
@@ -3653,7 +3584,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [alert setInformativeText:warning];
     [alert addButtonWithTitle:TGLoc(@"message.retrySend")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, self.window) != NSAlertFirstButtonReturn) {
         return;
     }
 

@@ -1,3 +1,4 @@
+#import "TGDialogPresentation.h"
 #import "TGComposerLinkSupport.h"
 
 #import "TGLocalization.h"
@@ -187,7 +188,7 @@ NSString *TGComposerPromptForLinkURL(NSString *selectedText, NSString *currentUR
     [accessory addSubview:URLField];
     [alert setAccessoryView:accessory];
 
-    while ([alert runModal] == NSAlertFirstButtonReturn) {
+    while (TGRunAlert(alert, nil) == NSAlertFirstButtonReturn) {
         NSString *normalizedURL = TGComposerNormalizedLinkURL([URLField stringValue]);
         if ([normalizedURL length] > 0) {
             return [[normalizedURL copy] autorelease];
