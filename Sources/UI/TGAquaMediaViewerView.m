@@ -138,6 +138,27 @@ static NSTextField *TGMediaViewerLabel(NSFont *font) {
 @synthesize kind=_kind;
 - (NSView *)stageView { return _stageView; }
 - (NSView *)footerView { return _footerView; }
+- (void)updateFullscreenButtonForState:(BOOL)fullscreen {
+    NSString *title=TGLoc(fullscreen ? @"media.viewer.windowed" : @"media.viewer.fullScreen");
+    [_fullscreenButton setTitle:title]; [_fullscreenButton setToolTip:title];
+    [self resizeSubviewsWithOldSize:NSZeroSize];
+}
+- (void)galleryWindowFullscreenDidChange:(NSNotification *)notification {
+    if ([notification object]!=[self window]) return;
+    [self updateFullscreenButtonForState:[[notification name] isEqualToString:NSWindowDidEnterFullScreenNotification]];
+}
+- (void)viewDidMoveToWindow {
+    [super viewDidMoveToWindow];
+    NSNotificationCenter *center=[NSNotificationCenter defaultCenter];
+    [center removeObserver:self name:NSWindowDidEnterFullScreenNotification object:nil];
+    [center removeObserver:self name:NSWindowDidExitFullScreenNotification object:nil];
+    NSWindow *window=[self window];
+    if (window) {
+        [center addObserver:self selector:@selector(galleryWindowFullscreenDidChange:) name:NSWindowDidEnterFullScreenNotification object:window];
+        [center addObserver:self selector:@selector(galleryWindowFullscreenDidChange:) name:NSWindowDidExitFullScreenNotification object:window];
+    }
+    [self updateFullscreenButtonForState:window && ([window styleMask]&NSFullScreenWindowMask)!=0];
+}
 - (id)initWithFrame:(NSRect)frame {
     if ((self=[super initWithFrame:frame])) {
         _headerView=[[TGAquaMediaChromeView alloc] initWithFrame:NSZeroRect]; [self addSubview:_headerView];
@@ -170,6 +191,8 @@ static NSTextField *TGMediaViewerLabel(NSFont *font) {
     return self;
 }
 - (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:NSWindowDidEnterFullScreenNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:NSWindowDidExitFullScreenNotification object:nil];
     [self setGalleryTarget:nil]; [_previousButton release]; [_nextButton release]; [_fullscreenButton release]; [_counterField release];
     [_closeButton setTarget:nil]; [_headerView release]; [_footerView release]; [_stageView release];
     [_typeImageView release]; [_titleField release]; [_detailField release]; [_closeButton release]; [super dealloc];

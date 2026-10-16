@@ -10,7 +10,12 @@
 static BOOL Aqua;
 static NSUInteger PreviousCount,NextCount;
 BOOL TGInterfaceDesignIsAqua(void) { return Aqua; }
-NSString *TGLoc(NSString *key) { return [key isEqual:@"media.viewer.fit"] ? @"Сброс" : key; }
+NSString *TGLoc(NSString *key) {
+ if([key isEqual:@"media.viewer.fit"])return @"Сброс";
+ if([key isEqual:@"media.viewer.fullScreen"])return @"На весь экран";
+ if([key isEqual:@"media.viewer.windowed"])return @"В окне";
+ return key;
+}
 NSColor *TGClassicCardInkColor(void) { return [NSColor blackColor]; }
 NSArray *TGMediaPlaybackSupportedRates(void) { return [NSArray arrayWithObjects:@1.0,@1.5,@2.0,nil]; }
 double TGMediaPlaybackPreferredRate(BOOL audio) { (void)audio; return 1; }
@@ -128,8 +133,50 @@ static NSUInteger CheckDarkPhoto(ViewerRouting *owner) {
  return checks;
 }
 
+static NSUInteger CheckFullscreenLabels(void) {
+ NSUInteger checks=0;
+ NSNotificationCenter *center=[NSNotificationCenter defaultCenter];
+ NSWindow *first=[[NSWindow alloc] initWithContentRect:NSMakeRect(0,0,420,340) styleMask:NSTitledWindowMask backing:NSBackingStoreBuffered defer:NO];
+ NSWindow *second=[[NSWindow alloc] initWithContentRect:NSMakeRect(0,0,420,340) styleMask:NSTitledWindowMask backing:NSBackingStoreBuffered defer:NO];
+ [first setReleasedWhenClosed:NO];[second setReleasedWhenClosed:NO];
+ TGAquaMediaViewerView *viewer=[[TGAquaMediaViewerView alloc] initWithFrame:NSMakeRect(0,0,420,340)];
+ [viewer setGalleryTarget:nil];
+ NSButton *button=nil;
+ for(NSView *header in [viewer subviews])for(NSView *child in [header subviews])
+  if([child isKindOfClass:[NSButton class]] && [(NSButton *)child action]==@selector(toggleAquaPhotoFullscreen:))button=(NSButton *)child;
+ assert(button);checks++;
+ [[first contentView] addSubview:viewer];
+ assert([[button title] isEqual:TGLoc(@"media.viewer.fullScreen")] && [[button toolTip] isEqual:[button title]]);checks++;
+ CGFloat windowedWidth=NSWidth([button frame]);
+ [center postNotificationName:NSWindowDidEnterFullScreenNotification object:second];
+ assert([[button title] isEqual:TGLoc(@"media.viewer.fullScreen")]);checks++;
+ [center postNotificationName:NSWindowDidEnterFullScreenNotification object:first];
+ assert([[button title] isEqual:TGLoc(@"media.viewer.windowed")] && [[button toolTip] isEqual:[button title]]);checks++;
+ assert(NSWidth([button frame])<windowedWidth && [(NSButton *)button action]==@selector(toggleAquaPhotoFullscreen:));checks++;
+ [center postNotificationName:NSWindowDidExitFullScreenNotification object:first];
+ assert([[button title] isEqual:TGLoc(@"media.viewer.fullScreen")]);checks++;
+ [[second contentView] addSubview:viewer];
+ [center postNotificationName:NSWindowDidEnterFullScreenNotification object:first];
+ assert([[button title] isEqual:TGLoc(@"media.viewer.fullScreen")]);checks++;
+ [center postNotificationName:NSWindowDidEnterFullScreenNotification object:second];
+ assert([[button title] isEqual:TGLoc(@"media.viewer.windowed")]);checks++;
+ [center postNotificationName:NSWindowDidExitFullScreenNotification object:first];
+ assert([[button title] isEqual:TGLoc(@"media.viewer.windowed")]);checks++;
+ [viewer removeFromSuperview];
+ assert([[button title] isEqual:TGLoc(@"media.viewer.fullScreen")]);checks++;
+ [center postNotificationName:NSWindowDidEnterFullScreenNotification object:second];
+ assert([[button title] isEqual:TGLoc(@"media.viewer.fullScreen")]);checks++;
+ /* Old AppKit notification centers do not automatically unregister deallocated
+  * observers. Posting after release also covers the 10.8 MRC teardown path. */
+ [viewer release];
+ [center postNotificationName:NSWindowDidEnterFullScreenNotification object:first];
+ [center postNotificationName:NSWindowDidExitFullScreenNotification object:second];checks++;
+ [first close];[second close];[first release];[second release];
+ return checks;
+}
+
 int main(void) {
- NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];[NSApplication sharedApplication];NSUInteger checks=0;
+ NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];[NSApplication sharedApplication];NSUInteger checks=CheckFullscreenLabels();
  for(NSUInteger mode=0;mode<2;mode++) {
   Aqua=mode;ViewerRouting *owner=[[[ViewerRouting alloc] init] autorelease];[owner ensureMediaPreviewWindow];[owner ensureMediaPlaybackWindow];
   assert([[[owner mediaPreviewWindow] contentView] isKindOfClass:[TGAquaMediaViewerView class]]==Aqua);checks++;
