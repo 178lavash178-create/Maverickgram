@@ -38,7 +38,12 @@ static NSString *TGIconAssetPathForName(NSString *name) {
         return nil;
     }
     NSBundle *bundle = [NSBundle mainBundle];
-    NSString *path = [bundle pathForResource:name ofType:@"png" inDirectory:@"Icons"];
+    // Older NSBundle implementations do not resolve a slash-containing resource
+    // name. Supply the folder separately for the Aqua toolbar's nested assets.
+    NSString *resource=[name lastPathComponent];
+    NSString *directory=[name stringByDeletingLastPathComponent];
+    NSString *iconDirectory=[directory length] ? [@"Icons" stringByAppendingPathComponent:directory] : @"Icons";
+    NSString *path = [bundle pathForResource:resource ofType:@"png" inDirectory:iconDirectory];
     if ([path length] == 0) {
         path = [bundle pathForResource:name ofType:@"png"];
     }

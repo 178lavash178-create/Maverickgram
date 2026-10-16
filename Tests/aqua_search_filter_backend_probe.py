@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Real search callbacks: local filters, raw cursors and changed-criteria cancellation."""
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import os,re,shutil,subprocess,sys,tempfile
 ROOT=os.path.abspath(os.path.join(os.path.dirname(__file__),os.pardir))
 def read(path):

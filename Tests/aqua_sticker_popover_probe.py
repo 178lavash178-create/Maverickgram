@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Exercise the production sticker constructor, native presentation and send guards."""
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import os, shutil, subprocess, sys, tempfile
 ROOT=os.path.abspath(os.path.join(os.path.dirname(__file__),os.pardir))
 def read(name):
