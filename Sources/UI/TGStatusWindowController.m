@@ -1480,11 +1480,13 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
 - (void)setProfileUserID:(NSNumber *)userID {
     if (_profileUserID != userID) {
+      if (![_profileUserID isEqual:userID]) {
         [self invalidateAquaPhotoPreview]; [self.mediaPreviewWindow close];
         [self invalidateAquaChatInfoPanel];
         [self cancelMediaPlaybackPreparation];
         if (self.mediaPlaybackPlayer) [self resetMediaPlaybackState];
         self.mediaPlaybackSourceMessageItem=nil;
+      }
         [_profileUserID release];
         _profileUserID = [userID retain];
     }
