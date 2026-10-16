@@ -59,7 +59,17 @@ static NSSize TGAquaStickerPopoverSize(NSSize conversation, NSSize screen, CGFlo
     [removeCell setIconOnly:YES];[removeCell setIconAssetName:@"folder-remove"];[remove setCell:removeCell];
     [remove setTarget:removeTarget];[remove setAction:removeAction];[remove setBordered:NO];
     NSSearchFieldCell *searchCell=[[[NSSearchFieldCell alloc] initTextCell:[self.stickerPickerSearchField stringValue]] autorelease];
-    [searchCell setPlaceholderString:TGLoc(@"stickers.search.placeholder")];[self.stickerPickerSearchField setCell:searchCell];
+    [searchCell setPlaceholderString:TGLoc(@"stickers.search.emoji")];[self.stickerPickerSearchField setCell:searchCell];
+    /* Classic draws its input surround in a separate view. The popover hides
+     * that view, so restore a complete native search field here. */
+    [self.stickerPickerSearchField setBezeled:YES];
+    [self.stickerPickerSearchField setBezelStyle:NSTextFieldRoundedBezel];
+    [self.stickerPickerSearchField setDrawsBackground:YES];
+    [self.stickerPickerSearchField setBackgroundColor:[NSColor whiteColor]];
+    [self.stickerPickerSearchField setTextColor:[NSColor blackColor]];
+    [self.stickerPickerSearchField setEditable:YES];[self.stickerPickerSearchField setSelectable:YES];
+    [self.stickerPickerSearchField setFocusRingType:NSFocusRingTypeDefault];
+    [self.stickerPickerSearchField setToolTip:TGLoc(@"stickers.search.emoji")];
     [self.stickerPickerSearchField setTarget:self];[self.stickerPickerSearchField setAction:@selector(searchStickerPickerByEmoji:)];
     [self.stickerPickerSearchField setFont:[NSFont systemFontOfSize:11]];
     [self.stickerPickerSetScrollView setHasHorizontalScroller:YES];[self.stickerPickerSetScrollView setAutohidesScrollers:YES];
@@ -78,18 +88,20 @@ static NSSize TGAquaStickerPopoverSize(NSSize conversation, NSSize screen, CGFlo
     NSDictionary *state=[self aquaStickerPresentationState];NSView *host=[state objectForKey:@"view"];
     if (!host) return;
     [host setFrameSize:size];CGFloat width=size.width,height=size.height;
-    BOOL stacked=width<400;
-    CGFloat tabsY=height-34,searchY=stacked ? height-62 : tabsY;
+    CGFloat tabsY=height-34,searchY=height-64;
     [self.stickerPickerRecentButton setFrame:NSMakeRect(10,tabsY,82,24)];
     [self.stickerPickerFavoriteButton setFrame:NSMakeRect(94,tabsY,92,24)];
     [[state objectForKey:@"sets"] setFrame:NSMakeRect(188,tabsY,68,24)];
-    [self.stickerPickerSearchField setFrame:NSMakeRect(stacked ? 10 : 266,searchY,stacked ? width-20 : width-276,24)];
+    [self.stickerPickerSearchField setFrame:NSMakeRect(10,searchY,width-20,24)];
     CGFloat gridTop=searchY-8;
     NSRect grid=NSMakeRect(10,80,width-20,MAX(0,gridTop-80));
     [[state objectForKey:@"grid_background"] setFrame:grid];[self.stickerPickerScrollView setFrame:grid];[self.stickerPickerScrollView tile];
     [self.stickerPickerStatusField setFrame:NSMakeRect(12,60,width-24,16)];
-    [self.stickerPickerSetScrollView setFrame:NSMakeRect(8,8,MAX(0,width-52),48)];[self.stickerPickerSetScrollView tile];
-    [[state objectForKey:@"remove"] setFrame:NSMakeRect(width-40,16,30,30)];
+    BOOL canRemoveSet=self.stickerPickerMode==3 && self.stickerPickerSelectedSetID!=nil;
+    [self.stickerPickerSetScrollView setFrame:NSMakeRect(8,8,MAX(0,width-(canRemoveSet ? 52 : 16)),48)];[self.stickerPickerSetScrollView tile];
+    NSButton *remove=[state objectForKey:@"remove"];
+    [remove setHidden:!canRemoveSet];[remove setEnabled:canRemoveSet];
+    [remove setFrame:NSMakeRect(width-40,16,30,30)];
     [[[state objectForKey:@"popover"] contentViewController] setView:host];
     [[state objectForKey:@"popover"] setContentSize:size];
 }
@@ -98,7 +110,8 @@ static NSSize TGAquaStickerPopoverSize(NSSize conversation, NSSize screen, CGFlo
     if (self.stickerPickerMode!=3) [[self aquaStickerPresentationState] removeObjectForKey:@"wants_sets"];
     [sets setState:self.stickerPickerMode==3 ? NSOnState : NSOffState];
     [sets setNeedsDisplay:YES];
-    [[[self aquaStickerPresentationState] objectForKey:@"remove"] setEnabled:self.stickerPickerSelectedSetID!=nil];
+    NSView *host=[[self aquaStickerPresentationState] objectForKey:@"view"];
+    if (host) [self layoutAquaStickerPickerForSize:[host bounds].size];
 }
 - (void)selectInstalledStickerPickerTab:(id)sender {
     (void)sender;

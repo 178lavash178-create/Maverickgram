@@ -161,15 +161,29 @@ int main(void) {
  Aqua=NO;StickerOwner *classic=Owner([StickerOwner class]);[classic showStickerPicker:nil];assert([classic.stickerPickerWindow isVisible] && ![classic aquaStickerPresentationState]);checks++;[classic.stickerPickerWindow orderOut:nil];[classic.hostWindow orderOut:nil];
  Aqua=YES;StickerOwner *owner=Owner([StickerOwner class]);[owner showStickerPicker:nil];assert([Popover(owner) isShown] && ![owner.stickerPickerWindow isVisible]);checks++;
  assert([owner.stickerPickerRecentButton target]==owner && [owner.stickerPickerRecentButton action]==@selector(selectRecentStickerPickerTab:) && [owner.stickerPickerFavoriteButton action]==@selector(selectFavoriteStickerPickerTab:) && [owner.stickerPickerSearchField action]==@selector(searchStickerPickerByEmoji:));checks++;
+ assert([owner.stickerPickerSearchField isBezeled] && [owner.stickerPickerSearchField isEditable] && [owner.stickerPickerSearchField isSelectable]);checks++;
+ assert([[owner.stickerPickerSearchField cell] searchButtonCell] && [[owner.stickerPickerSearchField cell] cancelButtonCell]);checks++;
+ NSButton *remove=[[owner aquaStickerPresentationState] objectForKey:@"remove"];
+ assert([remove isHidden] && ![remove isEnabled] && NSWidth([owner.stickerPickerSetScrollView frame])==[Popover(owner) contentSize].width-16);checks++;
+ for(NSInteger mode=0;mode<=3;mode++) {
+  owner.stickerPickerMode=mode;owner.stickerPickerSelectedSetID=@99;[owner updateAquaStickerPickerTabState];
+  assert([remove isHidden]==(mode!=3) && [remove isEnabled]==(mode==3));checks++;
+  assert(NSWidth([owner.stickerPickerSetScrollView frame])==[Popover(owner) contentSize].width-(mode==3 ? 52 : 16));checks++;
+ }
+ owner.stickerPickerMode=3;owner.stickerPickerSelectedSetID=nil;[owner updateAquaStickerPickerTabState];assert([remove isHidden] && ![remove isEnabled]);checks++;
+ owner.stickerPickerMode=0;[owner updateAquaStickerPickerTabState];
  assert([Popover(owner) behavior]==NSPopoverBehaviorTransient && [Popover(owner) contentSize].width<=430);checks++;
  [owner popoverDidClose:[NSNotification notificationWithName:NSPopoverDidCloseNotification object:Popover(owner)]];assert([owner aquaStickerPickerCanSend]);checks++;
  NSDictionary *context=[[owner stickerPickerLoadContext] retain];assert([owner stickerPickerLoadContextIsCurrent:context]);checks++;
  [owner showStickerPicker:nil];assert(![Popover(owner) isShown] && ![owner stickerPickerLoadContextIsCurrent:context]);checks++;[context release];
  owner.stickerPickerItems=[NSArray arrayWithObjects:Sticker(),Sticker(),Sticker(),Sticker(),Sticker(),nil];[owner showStickerPicker:nil];
  assert([[owner.stickerPickerContentView subviews] count]==5);checks++;
- for(NSSize size={300,280};size.width<=430;size.width+=130) {
+ for(CGFloat height=240;height<=330;height+=30) for(NSSize size={280,height};size.width<=430;size.width+=10) {
   [owner layoutAquaStickerPickerForSize:size];[owner rebuildStickerPickerGrid];NSRect host=[[[owner aquaStickerPresentationState] objectForKey:@"view"] bounds];
   assert(NSContainsRect(host,[owner.stickerPickerSearchField frame]) && NSContainsRect(host,[owner.stickerPickerRecentButton frame]) && NSContainsRect(host,[owner.stickerPickerFavoriteButton frame]));checks++;
+  NSRect search=[owner.stickerPickerSearchField frame],grid=[owner.stickerPickerScrollView frame];
+  assert(NSWidth(search)==size.width-20 && NSMaxY(search)+6<=NSMinY([owner.stickerPickerRecentButton frame]) && NSMaxY(grid)+8<=NSMinY(search));checks++;
+  assert(NSHeight(grid)>=80 && !NSIntersectsRect(search,grid));checks++;
   NSRect viewport=[[owner.stickerPickerScrollView contentView] bounds];
   for(NSButton *button in [owner.stickerPickerContentView subviews]){assert(NSMinX([button frame])>=0 && NSMaxX([button frame])<=NSWidth(viewport));checks++;}
  }
