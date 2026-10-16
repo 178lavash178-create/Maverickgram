@@ -1,6 +1,7 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """Exercise real cell installation/menu tracking, including exceptional dismissal."""
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import os,sys,tempfile,subprocess,shutil
 root=os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
 def read(name):
