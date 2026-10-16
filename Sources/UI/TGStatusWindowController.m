@@ -26,6 +26,8 @@
 #import "TGAquaAudioPlayerView.h"
 #import "TGAquaChatInfoPanel.h"
 #import "TGAquaPhotoTransition.h"
+#import "TGAquaRecordingViews.h"
+#import "TGAquaMediaViewerView.h"
 #import "TGDialogPresentation.h"
 #import <objc/runtime.h>
 #import "TGSectionTransition.h"
@@ -5383,6 +5385,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [_mediaPlaybackPlayer pause];
     [_mediaPlaybackTimer invalidate];
     [_mediaPlaybackLayer removeFromSuperlayer];
+    TGAquaPhotoTransitionClear(_mediaPlaybackWindow);
     [_mediaPlaybackWindow close];
     [_photoSendPreviewWindow setDelegate:nil];
     [_photoSendCaptionField setDelegate:nil];

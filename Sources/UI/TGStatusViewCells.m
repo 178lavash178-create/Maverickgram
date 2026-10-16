@@ -2,6 +2,7 @@
 #import "TGStatusViewCells.h"
 #import "TGChatDisplayPreferences.h"
 #import "TGChatUnreadBadgeAppearance.h"
+#import "TGChatListSelectionAppearance.h"
 #import "TGIconAssets.h"
 #import "TGMessageLayoutSupport.h"
 #import "TGReactionChipLayout.h"
@@ -92,7 +93,7 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
         NSBezierPath *selectedPath = [NSBezierPath bezierPathWithRoundedRect:selectedRect
                                                                      xRadius:8.0
                                                                      yRadius:8.0];
-        [TGClassicSelectedRowColor() set];
+        [TGChatListSelectionBackground() set];
         [selectedPath fill];
     }
 
@@ -128,6 +129,10 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
 
     NSColor *unreadFillColor = TGChatUnreadBadgeFillColor(selected, [item notificationsMuted]);
     NSColor *unreadTextColor = TGChatUnreadBadgeTextColor(selected, [item notificationsMuted]);
+    if (selected && TGInterfaceDesignIsAqua() && ![item notificationsMuted]) {
+        unreadFillColor=TGChatListSelectionForeground();
+        unreadTextColor=TGChatListSelectionBackground();
+    }
     NSDictionary *unreadAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                       [NSFont boldSystemFontOfSize:10.0], NSFontAttributeName,
                                       unreadTextColor, NSForegroundColorAttributeName,
@@ -162,7 +167,7 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
                                                10.0);
             NSBezierPath *compactDotPath = [NSBezierPath bezierPathWithOvalInRect:compactDotRect];
             NSColor *manualUnreadColor = [item notificationsMuted] ? unreadFillColor :
-                (selected ? TGClassicSelectedRowTextColor() : TGColorFromHex(0x2D8BD4));
+                (selected ? TGChatListSelectionForeground() : TGColorFromHex(0x2D8BD4));
             [manualUnreadColor set];
             [compactDotPath fill];
         }
@@ -180,7 +185,7 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
     [paragraph setLineBreakMode:NSLineBreakByTruncatingTail];
     NSDictionary *titleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                      [NSFont boldSystemFontOfSize:12.0], NSFontAttributeName,
-                                     selected ? TGClassicSelectedRowTextColor() : TGThemeSurfaceInkColor(TGClassicInkColor(), TGThemeSurfaceRecessed, 4.5), NSForegroundColorAttributeName,
+                                     selected ? TGChatListSelectionForeground() : TGThemeSurfaceInkColor(TGClassicInkColor(), TGThemeSurfaceRecessed, 4.5), NSForegroundColorAttributeName,
                                      paragraph, NSParagraphStyleAttributeName,
                                      nil];
     CGFloat titleX = NSMaxX(avatarRect) + 9.0;
@@ -191,7 +196,7 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
     NSString *communityBadge = [item isCommunity] ? TGLoc(@"chat.community.badge") : @"";
     NSDictionary *communityAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                          [NSFont boldSystemFontOfSize:8.0], NSFontAttributeName,
-                                         selected ? TGClassicSelectedRowTextColor() : TGThemeSurfaceInkColor(TGClassicLinkColor(), TGThemeSurfaceRecessed, 4.5), NSForegroundColorAttributeName,
+                                         selected ? TGChatListSelectionForeground() : TGThemeSurfaceInkColor(TGClassicLinkColor(), TGThemeSurfaceRecessed, 4.5), NSForegroundColorAttributeName,
                                          nil];
     CGFloat communityBadgeWidth = [communityBadge length] > 0
         ? MIN(64.0, [communityBadge sizeWithAttributes:communityAttributes].width + 12.0) : 0.0;
@@ -231,7 +236,7 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
                                     NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 15.0) / 2.0),
                                     15.0,
                                     15.0);
-        NSColor *botColor = selected ? TGClassicSelectedRowTextColor() : [TGThemeSurfaceInkColor(TGClassicLinkColor(), TGThemeSurfaceRecessed, 4.5) colorWithAlphaComponent:0.9];
+        NSColor *botColor = selected ? TGChatListSelectionForeground() : [TGThemeSurfaceInkColor(TGClassicLinkColor(), TGThemeSurfaceRecessed, 4.5) colorWithAlphaComponent:0.9];
         TGDrawTemplateIconAsset(@"robot", botRect, botColor, 1.0, [controlView isFlipped]);
         iconX = NSMaxX(botRect) + 4.0;
     }
@@ -240,8 +245,8 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
                                     NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 12.0) / 2.0),
                                     12.0,
                                     12.0);
-        NSColor *pinColor = selected ? TGClassicSelectedRowTextColor() : [TGThemeSurfaceInkColor(TGClassicInkColor(), TGThemeSurfaceRecessed, 4.5) colorWithAlphaComponent:0.72];
-        TGDrawTemplateIconAsset(@"flag-triangle", pinRect, TGThemeReadableInk(pinColor, selected ? TGClassicSelectedRowColor() : TGClassicTablePaperColor(), 4.5), 1.0, [controlView isFlipped]);
+        NSColor *pinColor = selected ? TGChatListSelectionForeground() : [TGThemeSurfaceInkColor(TGClassicInkColor(), TGThemeSurfaceRecessed, 4.5) colorWithAlphaComponent:0.72];
+        TGDrawTemplateIconAsset(@"flag-triangle", pinRect, TGThemeReadableInk(pinColor, selected ? TGChatListSelectionBackground() : TGClassicTablePaperColor(), 4.5), 1.0, [controlView isFlipped]);
         iconX = NSMaxX(pinRect) + 4.0;
     }
     if ([item notificationsMuted]) {
@@ -249,8 +254,8 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
                                      NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 15.0) / 2.0),
                                      15.0,
                                      15.0);
-        NSColor *muteColor = selected ? TGClassicSelectedRowTextColor() : [TGThemeSurfaceInkColor(TGClassicInkColor(), TGThemeSurfaceRecessed, 4.5) colorWithAlphaComponent:0.78];
-        TGDrawTemplateIconAsset(@"sound-off", muteRect, TGThemeReadableInk(muteColor, selected ? TGClassicSelectedRowColor() : TGClassicTablePaperColor(), 4.5), 1.0, [controlView isFlipped]);
+        NSColor *muteColor = selected ? TGChatListSelectionForeground() : [TGThemeSurfaceInkColor(TGClassicInkColor(), TGThemeSurfaceRecessed, 4.5) colorWithAlphaComponent:0.78];
+        TGDrawTemplateIconAsset(@"sound-off", muteRect, TGThemeReadableInk(muteColor, selected ? TGChatListSelectionBackground() : TGClassicTablePaperColor(), 4.5), 1.0, [controlView isFlipped]);
     }
     if ([unreadString length] > 0) {
         NSBezierPath *unreadPath = [NSBezierPath bezierPathWithRoundedRect:unreadRect
@@ -271,7 +276,7 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
     } else if (drawsMarkedUnreadDot) {
         NSBezierPath *unreadDotPath = [NSBezierPath bezierPathWithOvalInRect:unreadRect];
         NSColor *manualUnreadColor = [item notificationsMuted] ? unreadFillColor :
-            (selected ? TGClassicSelectedRowTextColor() : TGColorFromHex(0x2D8BD4));
+            (selected ? TGChatListSelectionForeground() : TGColorFromHex(0x2D8BD4));
         [manualUnreadColor set];
         [unreadDotPath fill];
     }

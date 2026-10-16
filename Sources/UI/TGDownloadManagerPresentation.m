@@ -2,6 +2,8 @@
 #import "TGIconAssets.h"
 #import "TGLocalization.h"
 #import "TGTheme.h"
+#import "TGInterfaceDesign.h"
+#import "TGAquaAppearance.h"
 #include <math.h>
 
 NSString *TGDownloadManagerByteCount(long long bytes) {
@@ -58,6 +60,10 @@ static double TGDownloadLuminance(NSColor *color) {
 }
 
 NSColor *TGDownloadManagerReadableInk(NSColor *preferred, NSColor *background) {
+    if (TGInterfaceDesignIsAqua() && [background isEqual:TGClassicTablePaperColor()]) {
+        // The same detail ink appears on white rows and the silver toolbars.
+        return TGThemeReadableInk(TGThemeSurfaceInkColor(preferred,TGThemeSurfaceHeader,5.4),background,4.5);
+    }
     double a = TGDownloadLuminance(preferred), b = TGDownloadLuminance(background);
     if ((MAX(a, b) + 0.05) / (MIN(a, b) + 0.05) >= 4.5) { return preferred; }
     return b >= 0.179 ? [NSColor blackColor] : [NSColor whiteColor];
@@ -109,8 +115,21 @@ NSColor *TGDownloadManagerReadableInk(NSColor *preferred, NSColor *background) {
 - (void)drawRect:(NSRect)dirtyRect {
     (void)dirtyRect;
     NSBezierPath *surface = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect([self bounds], 0.5, 0.5) xRadius:8 yRadius:8];
+    if (TGInterfaceDesignIsAqua()) {
+        TGAquaDrawSurfaceInPath(surface,[self bounds],TGThemeSurfaceHeader,[self isFlipped]);
+        [TGClassicPanelStrokeColor() set];[surface setLineWidth:1];[surface stroke];
+        return;
+    }
     [TGClassicTablePaperColor() set]; [surface fill];
     [[TGDownloadManagerReadableInk(TGClassicCardInkColor(), TGClassicTablePaperColor()) colorWithAlphaComponent:0.15] set];
     [surface setLineWidth:1]; [surface stroke];
+}
+@end
+
+@implementation TGDownloadManagerBackgroundView
+- (void)drawRect:(NSRect)dirtyRect {
+    (void)dirtyRect;
+    if (TGInterfaceDesignIsAqua()) TGAquaDrawSurfaceInPath([NSBezierPath bezierPathWithRect:[self bounds]],[self bounds],TGThemeSurfaceRail,[self isFlipped]);
+    else TGThemeDrawWindowBackgroundInRect([self bounds],[self isFlipped]);
 }
 @end

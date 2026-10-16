@@ -3,6 +3,21 @@
 #import "TGLocalization.h"
 #import "TGTheme.h"
 #import "TGThemeContrast.h"
+#import "TGInterfaceDesign.h"
+#import "TGAquaAppearance.h"
+#import "TGStatusButtonCells.h"
+
+@interface TGAquaDownloadProgressBackgroundView : NSView
+@end
+@implementation TGAquaDownloadProgressBackgroundView
+- (void)drawRect:(NSRect)dirtyRect {
+    (void)dirtyRect;
+    NSRect bounds=[self bounds];
+    TGAquaDrawSurfaceInPath([NSBezierPath bezierPathWithRect:bounds],bounds,TGThemeSurfaceRail,[self isFlipped]);
+    TGThemeDrawHeaderBackgroundInRect(NSMakeRect(0,MAX(0,NSHeight(bounds)-50),NSWidth(bounds),MIN(50,NSHeight(bounds))),[self isFlipped]);
+    TGThemeDrawHeaderBackgroundInRect(NSMakeRect(0,0,NSWidth(bounds),NSHeight(bounds)<120 ? 30 : 60),[self isFlipped]);
+}
+@end
 
 NSRect TGDownloadProgressPanelFrame(NSRect mainFrame, NSRect visibleFrame, CGFloat panelHeight) {
     const CGFloat margin = 8.0;
@@ -174,6 +189,10 @@ BOOL TGDownloadProgressCanPerformAction(NSDictionary *record, NSString *action) 
     return field;
 }
 - (void)buildViews {
+    if (TGInterfaceDesignIsAqua()) {
+        NSView *body=[[[TGAquaDownloadProgressBackgroundView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease];
+        [body setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];[[self window] setContentView:body];
+    }
     _nameField = [self newLabelWithSize:11.0];
     [_nameField setFont:[NSFont boldSystemFontOfSize:11.0]];
     _statusField = [self newLabelWithSize:10.0];
@@ -199,6 +218,14 @@ BOOL TGDownloadProgressCanPerformAction(NSDictionary *record, NSString *action) 
     [_cancelButton setBezelStyle:NSRoundedBezelStyle]; [_cancelButton setFont:[NSFont systemFontOfSize:11.0]];
     [_cancelButton setTarget:self]; [_cancelButton setAction:@selector(cancelDownload:)];
     [[[self window] contentView] addSubview:_cancelButton];
+    if (TGInterfaceDesignIsAqua()) {
+        for (NSButton *button in [NSArray arrayWithObjects:_collapseButton,_downloadsButton,_pauseButton,_cancelButton,nil]) {
+            id target=[button target];SEL action=[button action];NSString *title=[[button title] copy];
+            TGSecondaryTextButtonCell *cell=[[[TGSecondaryTextButtonCell alloc] initTextCell:title] autorelease];
+            [cell setButtonType:NSMomentaryPushInButton];[button setCell:cell];[button setTitle:title];
+            [button setTarget:target];[button setAction:action];[button setBordered:NO];[title release];
+        }
+    }
 }
 - (void)setDownloadsTarget:(id)target action:(SEL)action { _downloadsTarget = target; _downloadsAction = action; }
 - (void)attachToWindow:(NSWindow *)window {
@@ -256,8 +283,12 @@ BOOL TGDownloadProgressCanPerformAction(NSDictionary *record, NSString *action) 
     [[self window] setBackgroundColor:surface];
     [_nameField setTextColor:TGThemeReadableInk(TGClassicInkColor(), surface, 4.5)];
     NSColor *detailInk = TGThemeReadableInk(TGClassicMutedInkColor(), surface, 4.5);
+    if (TGInterfaceDesignIsAqua()) {
+        [_nameField setTextColor:TGThemeSurfaceInkColor(TGClassicInkColor(),TGThemeSurfaceHeader,4.5)];
+        detailInk=TGThemeSurfaceInkColor(TGClassicMutedInkColor(),TGThemeSurfaceHeader,5.4);
+    }
     [_statusField setTextColor:detailInk];
-    [_bytesField setTextColor:detailInk];
+    [_bytesField setTextColor:TGInterfaceDesignIsAqua()?TGThemeSurfaceInkColor(TGClassicMutedInkColor(),TGThemeSurfaceRail,5.4):detailInk];
     [_downloadsButton setTitle:TGLoc(@"downloads.title")];
     NSDictionary *record = [_presentation displayedRecord];
     NSString *name = [record objectForKey:@"file_name"];
@@ -316,6 +347,11 @@ BOOL TGDownloadProgressCanPerformAction(NSDictionary *record, NSString *action) 
     _mayReserveSpace = NO;
     if (NSIsEmptyRect(frame)) { [[self window] orderOut:nil]; return; }
     if (!NSEqualRects([[self window] frame], frame)) { [[self window] setFrame:frame display:YES]; }
+    [self layoutProgressContent];
+    if ([NSApp isActive] && ![[self window] isVisible]) { [[self window] orderFront:nil]; }
+}
+- (void)layoutProgressContent {
+    CGFloat contentHeight=NSHeight([[[self window] contentView] bounds]);
     CGFloat width = NSWidth([[[self window] contentView] bounds]) - 16.0;
     [_nameField setFrame:NSMakeRect(8.0, contentHeight - 25.0, width, 16.0)];
     [_statusField setFrame:NSMakeRect(8.0, contentHeight - 44.0, width, 15.0)];
@@ -329,7 +365,29 @@ BOOL TGDownloadProgressCanPerformAction(NSDictionary *record, NSString *action) 
     [_collapseButton setFrame:NSMakeRect(_collapsed ? 9.0 + 2.0 * buttonWidth : 5.0, 4.0, buttonWidth, 24.0)];
     [_downloadsButton setHidden:_collapsed];
     [_downloadsButton setFrame:NSMakeRect(7.0 + buttonWidth, 4.0, buttonWidth, 24.0)];
-    if ([NSApp isActive] && ![[self window] isVisible]) { [[self window] orderFront:nil]; }
+    if (TGInterfaceDesignIsAqua()) {
+        NSFont *font=[NSFont boldSystemFontOfSize:12];
+        if (_collapsed) {
+            NSArray *buttons=[NSArray arrayWithObjects:_pauseButton,_cancelButton,_collapseButton,nil];
+            CGFloat required[3],total=0;
+            for(NSUInteger index=0;index<3;index++) {
+                required[index]=ceil([[[buttons objectAtIndex:index] title] sizeWithAttributes:[NSDictionary dictionaryWithObject:font forKey:NSFontAttributeName]].width)+20;
+                total+=required[index];
+            }
+            CGFloat extra=MAX(0,(width-2-total)/3),x=5;
+            for(NSUInteger index=0;index<3;index++) {
+                CGFloat w=required[index]+extra;
+                [[buttons objectAtIndex:index] setFrame:NSMakeRect(x,4,w,24)];x+=w+4;
+            }
+        } else {
+            CGFloat downloadsWidth=MAX(buttonWidth,ceil([[_downloadsButton title] sizeWithAttributes:[NSDictionary dictionaryWithObject:font forKey:NSFontAttributeName]].width)+20);
+            CGFloat downloadsX=NSWidth([[[self window] contentView] bounds])-5-downloadsWidth;
+            [_downloadsButton setFrame:NSMakeRect(downloadsX,4,downloadsWidth,24)];
+            [_collapseButton setFrame:NSMakeRect(5,4,downloadsX-9,24)];
+        }
+        for(NSButton *button in [NSArray arrayWithObjects:_pauseButton,_cancelButton,_collapseButton,_downloadsButton,nil]) [button setToolTip:[button title]];
+    }
+    [[[self window] contentView] setNeedsDisplay:YES];
 }
 - (void)showProgress:(id)sender { (void)sender; [_presentation show]; _mayReserveSpace = YES; [self placeAndShow]; }
 - (void)toggleCollapsed:(id)sender { (void)sender; _collapsed = !_collapsed; [self placeAndShow]; }

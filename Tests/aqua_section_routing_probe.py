@@ -89,6 +89,8 @@ static void Check(BOOL condition, const char *message) {
 - (void)invalidateAutomaticReadRequests { [_events addObject:@"invalidate"]; }
 - (void)invalidateAquaPhotoPreview { [_events addObject:@"invalidatePhoto"]; }
 - (void)invalidateAquaChatInfoPanel { [_events addObject:@"invalidateInfo"]; }
+- (BOOL)isAquaChatInfoPanelActive { return NO; }
+- (void)closeAquaChatInfo:(id)sender { (void)sender; }
 - (id)transcriptMotionController { return self; }
 - (void)cancelAllAnimations { [_events addObject:@"cancelTranscript"]; }
 - (void)updateAquaChatBackgroundScope { [_events addObject:@"background"]; }

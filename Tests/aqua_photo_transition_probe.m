@@ -32,6 +32,11 @@ BOOL TGInterfaceDesignIsAqua(void) { return YES; }
     NSArray *_messageItems;
     NSView *_messageTableView, *_mediaCenterResultsView;
     NSWindow *_mediaPreviewWindow;
+    NSWindow *_mediaPlaybackWindow;
+    NSScrollView *_mediaPreviewScrollView;
+    NSImageView *_mediaPreviewImageView;
+    NSButton *_mediaPreviewZoomOutButton;
+    CGFloat _mediaPreviewZoomScale,_mediaPreviewMinimumZoomScale;
     BOOL _mediaCenterVisible, _chatNavigationClosed;
     NSUInteger _mediaCenterGeneration, _mediaPreviewRequestGeneration;
 }
@@ -41,6 +46,11 @@ BOOL TGInterfaceDesignIsAqua(void) { return YES; }
 @property(nonatomic,retain) NSArray *messageItems;
 @property(nonatomic,retain) NSView *messageTableView, *mediaCenterResultsView;
 @property(nonatomic,retain) NSWindow *mediaPreviewWindow;
+@property(nonatomic,retain) NSWindow *mediaPlaybackWindow;
+@property(nonatomic,retain) NSScrollView *mediaPreviewScrollView;
+@property(nonatomic,retain) NSImageView *mediaPreviewImageView;
+@property(nonatomic,retain) NSButton *mediaPreviewZoomOutButton;
+@property(nonatomic,assign) CGFloat mediaPreviewZoomScale,mediaPreviewMinimumZoomScale;
 @property(nonatomic,assign) BOOL mediaCenterVisible, chatNavigationClosed;
 @property(nonatomic,assign) NSUInteger mediaCenterGeneration, mediaPreviewRequestGeneration;
 - (NSRect)messageBubbleCellFrameForRow:(NSInteger)row;
@@ -50,16 +60,21 @@ BOOL TGInterfaceDesignIsAqua(void) { return YES; }
 @synthesize client=_client,profileUserID=_profileUserID,selectedChatID=_selectedChatID,selectedMessageThreadID=_selectedMessageThreadID;
 @synthesize selectedMessageTopicKind=_selectedMessageTopicKind,currentAuthState=_currentAuthState,messageItems=_messageItems;
 @synthesize messageTableView=_messageTableView,mediaCenterResultsView=_mediaCenterResultsView,mediaPreviewWindow=_mediaPreviewWindow;
+@synthesize mediaPlaybackWindow=_mediaPlaybackWindow;
+@synthesize mediaPreviewScrollView=_mediaPreviewScrollView,mediaPreviewImageView=_mediaPreviewImageView,mediaPreviewZoomOutButton=_mediaPreviewZoomOutButton;
+@synthesize mediaPreviewZoomScale=_mediaPreviewZoomScale,mediaPreviewMinimumZoomScale=_mediaPreviewMinimumZoomScale;
 @synthesize mediaCenterVisible=_mediaCenterVisible,mediaCenterGeneration=_mediaCenterGeneration,mediaPreviewRequestGeneration=_mediaPreviewRequestGeneration;
 @synthesize activeSection=_activeSection,chatNavigationClosed=_chatNavigationClosed;
 - (NSRect)messageBubbleCellFrameForRow:(NSInteger)row { (void)row; return NSMakeRect(0,0,200,200); }
 - (NSArray *)mediaLayoutEntriesForItem:(TGMessageItem *)item inCellFrame:(NSRect)frame { (void)frame; return [item entries]; }
 #include "TGStatusWindowController+AquaPhotoPreview.inc"
+#include "TGStatusWindowController+MediaPreviewZoom.inc"
 - (void)dealloc {
     [self invalidateAquaPhotoPreview];
     [_client release]; [_profileUserID release]; [_selectedChatID release]; [_selectedMessageThreadID release];
     [_selectedMessageTopicKind release]; [_currentAuthState release]; [_messageItems release]; [_activeSection release];
-    [_messageTableView release]; [_mediaCenterResultsView release]; [_mediaPreviewWindow release];
+    [_messageTableView release]; [_mediaCenterResultsView release]; [_mediaPreviewWindow release]; [_mediaPlaybackWindow release];
+    [_mediaPreviewScrollView release]; [_mediaPreviewImageView release]; [_mediaPreviewZoomOutButton release];
     [super dealloc];
 }
 @end
@@ -77,7 +92,7 @@ BOOL TGInterfaceDesignIsAqua(void) { return YES; }
 @end
 
 static void Spin(void) {
-    NSDate *end = [NSDate dateWithTimeIntervalSinceNow:0.28];
+    NSDate *end = [NSDate dateWithTimeIntervalSinceNow:0.36];
     while ([end timeIntervalSinceNow] > 0.0)
         [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.005]];
 }
@@ -117,6 +132,8 @@ int main(void) {
     assert(!NSIsEmptyRect(sourceRect));
     [anchor setHidden:YES]; assert(NSIsEmptyRect(TGAquaPhotoVisibleScreenRect(anchor,thumb))); [anchor setHidden:NO];
     assert(NSIsEmptyRect(TGAquaPhotoVisibleScreenRect(anchor,NSMakeRect(-10,0,40,40))));
+    assert(!NSIsEmptyRect(TGAquaPhotoIntersectedVisibleScreenRect(anchor,NSMakeRect(-10,0,40,40))));
+    assert(NSIsEmptyRect(TGAquaPhotoIntersectedVisibleScreenRect(anchor,NSMakeRect(-39,0,40,40))));
     PhotoController *controller=[[[PhotoController alloc] init] autorelease];
     controller.client=[[[NSObject alloc] init] autorelease]; controller.profileUserID=@10; controller.selectedChatID=@20;
     controller.currentAuthState=@"ready"; controller.messageTableView=anchor;
@@ -155,6 +172,31 @@ int main(void) {
     controller.mediaCenterGeneration++; assert(NSIsEmptyRect([controller aquaPhotoPreviewSourceScreenRectForContext:gridContext])); controller.mediaCenterGeneration--;
     [gridImage removeFromSuperview]; assert(NSIsEmptyRect([controller aquaPhotoPreviewSourceScreenRectForContext:gridContext]));
     [gridContext release]; [grid removeFromSuperview]; controller.mediaCenterVisible=NO;
+    /* Pick a genuine floating-point ceil overshoot for the native viewport:
+     * scroller trim differs by SDK. Test the production fit, not a copied
+     * formula pretending to be the application. */
+    NSWindow *fitWindow=Window(NSMakeRect(NSMinX(screen)+30,NSMinY(screen)+40,420,340));
+    NSScrollView *fitScroll=[[[NSScrollView alloc] initWithFrame:NSMakeRect(10,10,400,300)] autorelease];
+    [fitScroll setBorderType:NSNoBorder]; [fitScroll setHasHorizontalScroller:YES]; [fitScroll setHasVerticalScroller:YES];
+    [fitScroll setScrollerStyle:NSScrollerStyleLegacy]; [[fitWindow contentView] addSubview:fitScroll];
+    NSImageView *fitImage=[[[NSImageView alloc] initWithFrame:NSMakeRect(0,0,100,100)] autorelease];
+    [fitScroll setDocumentView:fitImage]; [fitScroll tile];
+    CGFloat viewportHeight=NSHeight([[fitScroll contentView] bounds]),badHeight=0;
+    for(NSUInteger candidate=400;candidate<4000;candidate++) {
+        volatile CGFloat scale=viewportHeight/(CGFloat)candidate;
+        if(ceil((CGFloat)candidate*scale)>viewportHeight) { badHeight=candidate; break; }
+    }
+    assert(badHeight>0);
+    [fitImage setImage:[[[NSImage alloc] initWithSize:NSMakeSize(128,badHeight)] autorelease]];
+    controller.mediaPreviewScrollView=fitScroll; controller.mediaPreviewImageView=fitImage;
+    controller.mediaPreviewZoomOutButton=[[[NSButton alloc] initWithFrame:NSZeroRect] autorelease];
+    [controller fitMediaPreview:nil];
+    assert(NSHeight([fitImage frame])<=NSHeight([[fitScroll contentView] bounds]));
+    assert(!NSIsEmptyRect(TGAquaPhotoVisibleScreenRect(fitImage,[fitImage bounds])));
+    CGFloat fitted=controller.mediaPreviewZoomScale;
+    [controller zoomInMediaPreview:nil]; assert(controller.mediaPreviewZoomScale>fitted);
+    [controller fitMediaPreview:nil]; assert(controller.mediaPreviewZoomScale==fitted);
+    [fitWindow close];
     NSWindow *preview=Window(NSMakeRect(NSMinX(screen)+260,NSMinY(screen)+40,240,220));
     NSImageView *image=[[[NSImageView alloc] initWithFrame:NSMakeRect(10,10,200,150)] autorelease];
     NSImage *picture=[[[NSImage alloc] initWithSize:NSMakeSize(800,600)] autorelease];
@@ -163,6 +205,8 @@ int main(void) {
     NSDictionary *context=[NSDictionary dictionaryWithObject:@"photo" forKey:@"identity"];
     NSUInteger before=ImageWindows(source,preview);
     TGAquaPhotoTransitionOpen(preview,image,anchor,target,context);
+    [[NSNotificationCenter defaultCenter] postNotificationName:NSWindowDidResizeNotification object:preview];
+    assert([preview alphaValue]==0.0 && ImageWindows(source,preview)==before+1); /* unchanged first-show notification does not kill reveal */
     assert([preview alphaValue]==0.0 && ImageWindows(source,preview)==before+1);
     Spin(); assert([preview alphaValue]==1.0 && [preview isVisible] && ImageWindows(source,preview)==before);
     assert([image image]==picture && NSEqualSizes([picture size],NSMakeSize(800,600)));
@@ -182,7 +226,7 @@ int main(void) {
     assert(NSEqualRects([image frame],NSMakeRect(-50,-30,600,450)) && [image image]==picture);
     [image setFrame:NSMakeRect(10,10,200,150)];
     TGAquaPhotoTransitionOpen(preview,image,anchor,target,context);
-    [[NSNotificationCenter defaultCenter] postNotificationName:NSWindowDidResizeNotification object:preview];
+    NSRect moved=[preview frame]; moved.origin.x+=10; [preview setFrame:moved display:NO];
     assert([preview alphaValue]==1.0 && ImageWindows(source,preview)==before);
     target->sourceRect=sourceRect;
     TGAquaPhotoTransitionOpen(preview,image,anchor,target,context);
@@ -192,6 +236,12 @@ int main(void) {
     TGAquaPhotoTransitionOpen(preview,image,anchor,target,context);
     assert([preview alphaValue]==1.0 && TGAquaPhotoTransitionShouldClose(preview));
     Animations=YES;
+    TGAquaMediaTransitionOpen(preview,image,picture,anchor,target,context,YES);
+    assert(ImageWindows(source,preview)==before+1); Spin();
+    assert([preview isVisible] && [preview alphaValue]==1.0);
+    assert(!TGAquaPhotoTransitionShouldClose(preview));
+    assert(ImageWindows(source,preview)==before); /* video closes in place, without stale poster jump */
+    Spin(); assert(![preview isVisible]); [preview orderFront:nil];
     TGAquaPhotoTransitionOpen(preview,image,anchor,target,context);
     TGAquaPhotoTransitionOpen(preview,image,anchor,target,context);
     assert(ImageWindows(source,preview)==before+1); /* replacement owns one animation */

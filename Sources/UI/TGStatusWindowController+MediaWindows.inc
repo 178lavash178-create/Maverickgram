@@ -733,6 +733,7 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
 }
 
 - (void)layoutMediaCenterWindowSubviews {
+    if (TGInterfaceDesignIsAqua() && [self isAquaChatInfoPanelActive]) { [self layoutAquaChatInfoMedia]; return; }
     if (!self.mediaCenterPanelView) {
         return;
     }
@@ -1309,6 +1310,11 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
 }
 
 - (void)openMediaCenter:(id)sender {
+    if (TGInterfaceDesignIsAqua()) {
+        if (![self isAquaChatInfoPanelActive]) [self openAquaChatInfo:nil];
+        NSButton *tab=[[[NSButton alloc] initWithFrame:NSZeroRect] autorelease]; [tab setTag:self.mediaCenterSelectedTabIndex];
+        [self openAquaChatInfoMedia:tab]; return;
+    }
     (void)sender;
     if (!self.selectedChatID) {
         [[TGLogger sharedLogger] log:@"Media Center: open requested without a selected chat."];
@@ -1359,6 +1365,7 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
 }
 
 - (void)closeMediaCenter:(id)sender {
+    if (TGInterfaceDesignIsAqua() && [self isAquaChatInfoPanelActive]) { [self closeAquaChatInfo:sender]; return; }
     (void)sender;
     self.mediaCenterVisible = NO;
     [self.mediaCenterSaveRequests removeAllObjects];
@@ -1412,6 +1419,7 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
         return;
     }
     if ([item isPlayableMediaMessage]) {
+        [self prepareAquaPhotoPreviewForMessage:item mediaItem:TGMediaCenterFirstMediaDictionaryForItem(item) gridSender:sender];
         [self openPlayableMediaForMessageItem:item];
         [self closeMediaCenterInlinePreview:nil];
         return;
@@ -1492,7 +1500,8 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
     }
 
     NSRect frame = NSMakeRect(0, 0, 520, 360);
-    NSWindow *window = [[[NSWindow alloc] initWithContentRect:frame
+    Class playbackWindowClass=TGInterfaceDesignIsAqua() ? [TGEscapeCloseWindow class] : [NSWindow class];
+    NSWindow *window = [[[playbackWindowClass alloc] initWithContentRect:frame
                                                     styleMask:(NSTitledWindowMask | NSClosableWindowMask | NSMiniaturizableWindowMask | NSResizableWindowMask)
                                                       backing:NSBackingStoreBuffered
                                                         defer:NO] autorelease];
@@ -1501,16 +1510,17 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
     [window setReleasedWhenClosed:NO];
     [window setDelegate:self];
 
-    TGUtilityWindowView *contentView = [[[TGUtilityWindowView alloc] initWithFrame:frame] autorelease];
+    NSView *contentView = TGInterfaceDesignIsAqua() ? (NSView *)[[[TGAquaMediaViewerView alloc] initWithFrame:frame] autorelease] : (NSView *)[[[TGUtilityWindowView alloc] initWithFrame:frame] autorelease];
     [contentView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [window setContentView:contentView];
+    if (TGInterfaceDesignIsAqua()) [(TGAquaMediaViewerView *)contentView setCloseTarget:self action:@selector(closeAquaMediaViewer:)];
 
     TGUtilityPanelView *panelView = [[[TGUtilityPanelView alloc] initWithFrame:NSMakeRect(12, 10, 496, 338)] autorelease];
     [panelView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
-    [contentView addSubview:panelView];
+    if (!TGInterfaceDesignIsAqua()) [contentView addSubview:panelView];
     TGGroupedCardView *playbackCard = [[[TGGroupedCardView alloc] initWithFrame:NSMakeRect(20, 56, 480, 282)] autorelease];
     [playbackCard setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
-    [contentView addSubview:playbackCard];
+    if (!TGInterfaceDesignIsAqua()) [contentView addSubview:playbackCard];
 
     NSTextField *titleField = [self labelWithFrame:NSMakeRect(88, 88, 284, 18)
                                               text:@"Voice message"
@@ -1806,6 +1816,22 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
 
 - (void)layoutMediaPlaybackChromeForAudioOnly:(BOOL)audioOnly {
     NSView *contentView = [self.mediaPlaybackWindow contentView];
+    if (TGInterfaceDesignIsAqua() && !audioOnly && [contentView isKindOfClass:[TGAquaMediaViewerView class]]) {
+        TGAquaMediaViewerView *viewer=(TGAquaMediaViewerView *)contentView;
+        viewer.kind=self.mediaPlaybackVideoNote ? TGAquaMediaViewerVideoNote : TGAquaMediaViewerVideo;
+        TGAquaMediaViewerGeometry g=TGAquaMediaViewerFrames([contentView bounds],viewer.kind);
+        [self.mediaPlaybackContainerView setFrame:g.viewport];
+        [[self.mediaPlaybackContainerView layer] setBackgroundColor:[[NSColor blackColor] CGColor]];
+        [[self.mediaPlaybackContainerView layer] setCornerRadius:self.mediaPlaybackVideoNote ? NSWidth(g.viewport)/2 : 3.0];
+        [[self.mediaPlaybackContainerView layer] setMasksToBounds:YES];
+        [self.mediaPlaybackPlayPauseButton setFrame:g.playPause];
+        [self.mediaPlaybackProgressSlider setFrame:g.progress];
+        [self.mediaPlaybackTimeField setFrame:g.time];
+        [self.mediaPlaybackRatePopUpButton setFrame:g.rate];
+        [self.mediaPlaybackCloseButton setHidden:YES];
+        [self.mediaPlaybackTitleField setHidden:YES];
+        return;
+    }
     if (!contentView) {
         return;
     }
@@ -1883,10 +1909,15 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
         [self.mediaPlaybackTimeField setHidden:NO];
         [self layoutMediaPlaybackChromeForAudioOnly:YES];
     } else {
-        [self.mediaPlaybackWindow setMinSize:NSMakeSize(360.0, 260.0)];
+        [self.mediaPlaybackWindow setMinSize:TGInterfaceDesignIsAqua() ? NSMakeSize(420.0,340.0) : NSMakeSize(360.0, 260.0)];
         CGFloat contentWidth = 520.0;
         CGFloat contentHeight = 360.0;
-        if (self.mediaPlaybackVideoNote) {
+        if (TGInterfaceDesignIsAqua()) {
+            NSRect visible=[[NSScreen mainScreen] visibleFrame];
+            contentWidth=MIN(self.mediaPlaybackVideoNote ? 540.0 : 760.0,MAX(420.0,NSWidth(visible)*0.85));
+            contentHeight=MIN(self.mediaPlaybackVideoNote ? 600.0 : 540.0,MAX(340.0,NSHeight(visible)*0.82));
+        }
+        if (self.mediaPlaybackVideoNote && !TGInterfaceDesignIsAqua()) {
             NSScreen *screen = [self.mediaPlaybackWindow screen];
             if (!screen) {
                 screen = [NSScreen mainScreen];
@@ -1927,6 +1958,7 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
 }
 
 - (void)resetMediaPlaybackState {
+    TGAquaPhotoTransitionClear(self.mediaPlaybackWindow);
     NSTimeInterval outgoingDuration = [self currentMediaPlaybackDuration];
     NSTimeInterval outgoingTime = [self secondsFromMediaPlaybackTime:[self.mediaPlaybackPlayer currentTime]];
     [self persistMediaPlaybackPositionIfNeededAtTime:outgoingTime
@@ -2038,7 +2070,7 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
                                                object:[player currentItem]];
     if (!audioOnly) {
         AVPlayerLayer *layer = [AVPlayerLayer playerLayerWithPlayer:player];
-        [layer setVideoGravity:AVLayerVideoGravityResizeAspect];
+        [layer setVideoGravity:(TGInterfaceDesignIsAqua() && videoNote) ? AVLayerVideoGravityResizeAspectFill : AVLayerVideoGravityResizeAspect];
         [layer setFrame:[self.mediaPlaybackContainerView bounds]];
         [[self.mediaPlaybackContainerView layer] addSublayer:layer];
         self.mediaPlaybackLayer = layer;
@@ -2050,9 +2082,19 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
         [self presentAquaAudioPlayer];
     } else {
         [self.mediaPlaybackWindow center];
+        if (TGInterfaceDesignIsAqua() && !audioOnly && TGInterfaceAnimationsEnabledForView(self.messageTableView)) [self.mediaPlaybackWindow setAlphaValue:0.0];
         [self.mediaPlaybackWindow makeKeyAndOrderFront:nil];
     }
     [self layoutMediaPlaybackLayer];
+    if (TGInterfaceDesignIsAqua() && !audioOnly) {
+        TGAquaMediaViewerView *viewer=(TGAquaMediaViewerView *)[self.mediaPlaybackWindow contentView];
+        [viewer setMediaTitle:title detail:[playablePath lastPathComponent]];
+        NSDictionary *context=[self aquaPlaybackTransitionSourceContext];
+        NSString *posterPath=TGMediaItemLocalPath([context objectForKey:@"media"]);
+        NSImage *poster=[posterPath length] ? TGImageWithCorrectOrientationFromFile(posterPath) : nil;
+        if (!poster) poster=[self aquaMediaPosterForTransitionContext:context];
+        TGAquaMediaTransitionOpen(self.mediaPlaybackWindow,self.mediaPlaybackContainerView,poster,self.messageTableView,(id<TGAquaPhotoTransitionSource>)self,context,videoNote);
+    }
     [self updateMediaPlaybackTimelineWithCurrentTime:0.0 duration:[self currentMediaPlaybackDuration]];
     NSTimeInterval resumePosition = [self rememberedMediaPlaybackPosition];
     NSTimeInterval resumeDuration = [self currentMediaPlaybackDuration];
@@ -2210,7 +2252,9 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
 }
 
 - (void)openPlayableMediaForMediaItem:(NSDictionary *)mediaItem {
+    NSDictionary *transitionContext=[self takeAquaMediaTransitionContextForMediaItem:mediaItem];
     [self invalidateAquaPhotoPreview];
+    [self setAquaPlaybackTransitionSourceContext:transitionContext];
     [self cancelMediaPlaybackPreparation];
     if (![mediaItem isKindOfClass:[NSDictionary class]]) {
         return;
@@ -2282,7 +2326,10 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
     if (![item isKindOfClass:[TGMessageItem class]] || ![item isPlayableMediaMessage]) {
         return;
     }
+    NSDictionary *visualMedia=TGMediaCenterFirstMediaDictionaryForItem(item);
+    NSDictionary *transitionContext=[self takeAquaMediaTransitionContextForMediaItem:visualMedia];
     [self invalidateAquaPhotoPreview];
+    [self setAquaPlaybackTransitionSourceContext:transitionContext];
     [self cancelMediaPlaybackPreparation];
     self.mediaPlaybackSourceMessageItem = TGMessageItemIsAudioOnlyPlayableMedia(item) ? item : nil;
 
@@ -2383,6 +2430,12 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
 
     NSView *contentView = [self.mediaPreviewWindow contentView];
     NSRect bounds = [contentView bounds];
+    if (TGInterfaceDesignIsAqua() && [contentView isKindOfClass:[TGAquaMediaViewerView class]]) {
+        TGAquaMediaViewerGeometry g=TGAquaMediaViewerFrames(bounds,TGAquaMediaViewerPhoto);
+        [self.mediaPreviewScrollView setFrame:g.viewport]; [self.mediaPreviewScrollView tile];
+        [self.mediaPreviewZoomOutButton setFrame:g.zoomOut]; [self.mediaPreviewFitButton setFrame:g.fit]; [self.mediaPreviewZoomInButton setFrame:g.zoomIn];
+        return;
+    }
     NSView *panelView = self.mediaPreviewPanelView;
     NSView *surfaceView = self.mediaPreviewSurfaceView;
     NSView *toolbarView = self.mediaPreviewToolbarView;
@@ -2438,8 +2491,8 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
         maxWindowHeight = 260.0;
     }
 
-    CGFloat chromeWidth = 60.0;
-    CGFloat chromeHeight = 92.0;
+    CGFloat chromeWidth = TGInterfaceDesignIsAqua() ? 40.0 : 60.0;
+    CGFloat chromeHeight = TGInterfaceDesignIsAqua() ? 144.0 : 92.0;
     CGFloat availableImageWidth = MAX(160.0, maxWindowWidth - chromeWidth);
     CGFloat availableImageHeight = MAX(120.0, maxWindowHeight - chromeHeight);
     CGFloat scaleX = availableImageWidth / imageSize.width;
@@ -2467,7 +2520,8 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
         contentHeight = maxWindowHeight;
     }
 
-    [self.mediaPreviewWindow setMinSize:NSMakeSize(240.0, 220.0)];
+    if (TGInterfaceDesignIsAqua()) { contentWidth=MAX(420,contentWidth); contentHeight=MAX(340,contentHeight); }
+    [self.mediaPreviewWindow setMinSize:TGInterfaceDesignIsAqua() ? NSMakeSize(420,340) : NSMakeSize(240.0,220.0)];
     [self.mediaPreviewWindow setContentSize:NSMakeSize(contentWidth, contentHeight)];
     [self layoutMediaPreviewWindowControls];
 }
@@ -2494,27 +2548,29 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
     [window setReleasedWhenClosed:NO];
     [window setDelegate:self];
 
-    TGUtilityWindowView *contentView = [[[TGUtilityWindowView alloc] initWithFrame:frame] autorelease];
+    NSView *contentView = TGInterfaceDesignIsAqua() ? (NSView *)[[[TGAquaMediaViewerView alloc] initWithFrame:frame] autorelease] : (NSView *)[[[TGUtilityWindowView alloc] initWithFrame:frame] autorelease];
     [contentView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [window setContentView:contentView];
+    if (TGInterfaceDesignIsAqua()) [(TGAquaMediaViewerView *)contentView setCloseTarget:self action:@selector(closeAquaMediaViewer:)];
 
     TGUtilityPanelView *panelView = [[[TGUtilityPanelView alloc] initWithFrame:NSMakeRect(12, 12, 496, 396)] autorelease];
     [panelView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
-    [contentView addSubview:panelView];
+    if (!TGInterfaceDesignIsAqua()) [contentView addSubview:panelView];
     self.mediaPreviewPanelView = panelView;
 
     TGScrollSurfaceView *imageSurface = [[[TGScrollSurfaceView alloc] initWithFrame:NSMakeRect(24, 64, 472, 340)] autorelease];
     [imageSurface setDrawsInterior:NO];
     [imageSurface setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
-    [contentView addSubview:imageSurface];
+    if (!TGInterfaceDesignIsAqua()) [contentView addSubview:imageSurface];
     self.mediaPreviewSurfaceView = imageSurface;
 
     TGGroupedCardView *toolbarView = [[[TGGroupedCardView alloc] initWithFrame:NSMakeRect(24, 18, 472, 38)] autorelease];
     [toolbarView setAutoresizingMask:NSViewWidthSizable];
-    [contentView addSubview:toolbarView];
+    if (!TGInterfaceDesignIsAqua()) [contentView addSubview:toolbarView];
     self.mediaPreviewToolbarView = toolbarView;
 
     TGMediaPreviewScrollView *scrollView = [[[TGMediaPreviewScrollView alloc] initWithFrame:NSMakeRect(30, 70, 460, 328)] autorelease];
+    if (TGInterfaceDesignIsAqua()) [scrollView setContentView:[[[TGAquaMediaImageClipView alloc] initWithFrame:[[scrollView contentView] frame]] autorelease]];
     [scrollView setMagnificationTarget:self];
     [scrollView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [scrollView setBorderType:NSNoBorder];
@@ -2568,92 +2624,22 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
     [contentView addSubview:zoomInButton];
     self.mediaPreviewZoomInButton = zoomInButton;
 
+    if (TGInterfaceDesignIsAqua()) {
+        [window setMinSize:NSMakeSize(420,340)];
+        NSArray *buttons=[NSArray arrayWithObjects:zoomOutButton,zoomInButton,nil];
+        NSArray *assets=[NSArray arrayWithObjects:@"remove-ellipse",@"add-ellipse",nil];
+        for (NSUInteger index=0;index<2;index++) {
+            TGAquaUtilityButtonCell *cell=[[[TGAquaUtilityButtonCell alloc] initTextCell:@""] autorelease];
+            [cell setIconOnly:YES]; [cell setIconAssetName:[assets objectAtIndex:index]]; [[buttons objectAtIndex:index] setCell:cell];
+        }
+        [fitButton setCell:[[[TGAquaTextButtonCell alloc] initTextCell:TGLoc(@"media.viewer.fit")] autorelease]];
+        [fitButton setTitle:TGLoc(@"media.viewer.fit")];
+    }
     self.mediaPreviewWindow = window;
     [self layoutMediaPreviewWindowControls];
 }
 
-- (void)applyMediaPreviewZoomScale:(CGFloat)scale {
-    NSImage *image = [self.mediaPreviewImageView image];
-    if (!image) {
-        return;
-    }
-
-    CGFloat minimumScale = self.mediaPreviewMinimumZoomScale > 0.0 ? self.mediaPreviewMinimumZoomScale : 0.10;
-    if (scale < minimumScale) {
-        scale = minimumScale;
-    }
-    if (scale > 6.0) {
-        scale = 6.0;
-    }
-    self.mediaPreviewZoomScale = scale;
-    [self.mediaPreviewZoomOutButton setEnabled:(scale > minimumScale + 0.001)];
-
-    NSSize imageSize = [image size];
-    CGFloat width = ceil(imageSize.width * scale);
-    CGFloat height = ceil(imageSize.height * scale);
-    if (width < 1.0) {
-        width = 1.0;
-    }
-    if (height < 1.0) {
-        height = 1.0;
-    }
-    [self.mediaPreviewImageView setFrame:NSMakeRect(0, 0, width, height)];
-    [self.mediaPreviewImageView setNeedsDisplay:YES];
-}
-
-- (void)fitMediaPreview:(id)sender {
-    (void)sender;
-    NSImage *image = [self.mediaPreviewImageView image];
-    if (!image) {
-        return;
-    }
-
-    NSSize imageSize = [image size];
-    NSRect visibleRect = [[self.mediaPreviewScrollView contentView] bounds];
-    if (imageSize.width <= 0.0 || imageSize.height <= 0.0 || NSWidth(visibleRect) <= 0.0 || NSHeight(visibleRect) <= 0.0) {
-        [self applyMediaPreviewZoomScale:1.0];
-        return;
-    }
-
-    CGFloat scaleX = NSWidth(visibleRect) / imageSize.width;
-    CGFloat scaleY = NSHeight(visibleRect) / imageSize.height;
-    CGFloat scale = (scaleX < scaleY) ? scaleX : scaleY;
-    if (scale > 1.0) {
-        scale = 1.0;
-    }
-    self.mediaPreviewMinimumZoomScale = scale;
-    [self applyMediaPreviewZoomScale:scale];
-}
-
-- (void)zoomInMediaPreview:(id)sender {
-    (void)sender;
-    CGFloat scale = self.mediaPreviewZoomScale > 0.0 ? self.mediaPreviewZoomScale : 1.0;
-    [self applyMediaPreviewZoomScale:scale * 1.25];
-}
-
-- (void)zoomOutMediaPreview:(id)sender {
-    (void)sender;
-    CGFloat scale = self.mediaPreviewZoomScale > 0.0 ? self.mediaPreviewZoomScale : 1.0;
-    [self applyMediaPreviewZoomScale:scale / 1.25];
-}
-
-- (void)mediaPreviewView:(id)sender didMagnifyBy:(NSNumber *)magnificationNumber {
-    (void)sender;
-    CGFloat delta = [magnificationNumber respondsToSelector:@selector(doubleValue)] ? (CGFloat)[magnificationNumber doubleValue] : 0.0;
-    if (delta > -0.002 && delta < 0.002) {
-        return;
-    }
-
-    CGFloat scale = self.mediaPreviewZoomScale > 0.0 ? self.mediaPreviewZoomScale : 1.0;
-    CGFloat factor = 1.0 + delta;
-    if (factor < 0.25) {
-        factor = 0.25;
-    }
-    if (factor > 4.0) {
-        factor = 4.0;
-    }
-    [self applyMediaPreviewZoomScale:scale * factor];
-}
+#include "TGStatusWindowController+MediaPreviewZoom.inc"
 
 - (BOOL)openMediaPreviewAtPath:(NSString *)path preferAnimated:(BOOL)preferAnimated {
     if ([path length] == 0 || ![[NSFileManager defaultManager] fileExistsAtPath:path]) {
@@ -2690,6 +2676,7 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
         previewTitle = [NSString stringWithFormat:@"%@ — %@", previewTitle, fileName];
     }
     [self.mediaPreviewWindow setTitle:previewTitle];
+    if (TGInterfaceDesignIsAqua()) [(TGAquaMediaViewerView *)[self.mediaPreviewWindow contentView] setMediaTitle:fileName detail:[NSString stringWithFormat:@"%.0f × %.0f",[image size].width,[image size].height]];
     [self resizeMediaPreviewWindowForImage:image];
     [self fitMediaPreview:nil];
     [self.mediaPreviewWindow center];

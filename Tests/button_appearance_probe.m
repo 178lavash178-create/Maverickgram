@@ -4,7 +4,9 @@
 #import "TGTheme.h"
 #import "TGThemeContrast.h"
 #import "TGIconAssets.h"
+#import "TGInterfaceDesign.h"
 #include <math.h>
+#include <string.h>
 
 // Keep the actual asset renderer. Intercept only to capture the icon's bounds
 // and render its background without the icon for an independent pixel comparison.
@@ -91,7 +93,7 @@ static void CheckCell(NSString *theme, Class cellClass, NSString *title, TGButto
     [cell drawWithFrame:bounds inView:view];
     [NSGraphicsContext restoreGraphicsState];
     NSColor *ink = TGButtonForegroundColor(style, highlighted, selected, enabled);
-    double minimum = 21.0, maximumGlyph = 1.0;
+    double minimum = 21.0, maximumGlyph = 1.0, minimumLuminance=1.0, maximumLuminance=0.0;
     NSUInteger strongPixels = 0;
     NSInteger x, y;
     for (y = 5; y < size.height - 5; y++) {
@@ -99,6 +101,8 @@ static void CheckCell(NSString *theme, Class cellClass, NSString *title, TGButto
             // Settings colored icon tile has its own independent ink/surface pair.
             if (style == TGButtonSurfaceSettings && x < 46) { continue; }
             NSColor *background = Pixel(surface, x, y);
+            CGFloat luminance=0.2126*[background redComponent]+0.7152*[background greenComponent]+0.0722*[background blueComponent];
+            minimumLuminance=MIN(minimumLuminance,luminance);maximumLuminance=MAX(maximumLuminance,luminance);
             double contrast = TGThemeContrastRatio(ink, background);
             minimum = MIN(minimum, contrast);
             double glyphContrast = TGThemeContrastRatio(Pixel(render, x, y), background);
@@ -123,6 +127,9 @@ static void CheckCell(NSString *theme, Class cellClass, NSString *title, TGButto
         }
     }
     checks++;
+    if (TGInterfaceDesignIsAqua() && style==TGButtonSurfaceSecondary && maximumLuminance-minimumLuminance<0.015) {
+        fprintf(stderr,"Aqua secondary button must retain its dimensional silver material, not a flat fill.\n");failures++;
+    }
     worstSurface = MIN(worstSurface, minimum);
     if (minimum < (enabled ? 4.45 : 2.95) || strongPixels < 4) {
         fprintf(stderr, "Button %s %s sel=%d press=%d enabled=%d flip=%d: surface %.2f actual glyph max %.2f strong pixels %lu\n",
@@ -134,8 +141,19 @@ static void CheckCell(NSString *theme, Class cellClass, NSString *title, TGButto
 
 int main(int argc, const char **argv) {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    BOOL aquaSecondaryOnly=(argc>1 && strcmp(argv[1],"--aqua-secondary")==0);
+    if (aquaSecondaryOnly) [[NSUserDefaults standardUserDefaults] setVolatileDomain:[NSDictionary dictionaryWithObject:@"aqua" forKey:TGInterfaceDesignDefaultsKey] forName:NSArgumentDomain];
     if (!TGIconAssetImageNamed(@"chat")) { fprintf(stderr, "Bundle must contain the approved Resources/Icons assets.\n"); return 2; }
     IconRects = [[NSMutableArray alloc] init];
+    if (aquaSecondaryOnly) {
+        TGSetActiveThemeIdentifier(TGThemeIdentifierVKBlue);
+        for(NSUInteger highlighted=0;highlighted<2;highlighted++) for(NSUInteger enabled=0;enabled<2;enabled++) for(NSUInteger flipped=0;flipped<2;flipped++) {
+            CheckCell(@"aqua",[TGSecondaryTextButtonCell class],@"Edit profile",TGButtonSurfaceSecondary,NSMakeSize(120,32),NO,highlighted,enabled,flipped,NO);
+            CheckCell(@"aqua",[TGSecondaryTextButtonCell class],@"Show in Finder",TGButtonSurfaceSecondary,NSMakeSize(220,36),NO,highlighted,enabled,flipped,NO);
+        }
+        printf("Aqua secondary material: %lu real cell renders, normal/pressed/disabled,both orientations,unchanged title geometry; minimum contrast %.2f,%lu failures.\n",(unsigned long)checks,worstSurface,(unsigned long)failures);
+        [IconRects release];[pool drain];return failures?1:0;
+    }
     for (NSString *theme in TGThemeIdentifiers()) {
         if (argc > 1 && ![theme isEqualToString:[NSString stringWithUTF8String:argv[1]]]) { continue; }
         NSAutoreleasePool *iteration = [[NSAutoreleasePool alloc] init];

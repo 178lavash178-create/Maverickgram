@@ -120,7 +120,7 @@
 }
 
 - (void)buildViews {
-    TGUtilityWindowView *root = [[[TGUtilityWindowView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease];
+    TGDownloadManagerBackgroundView *root = [[[TGDownloadManagerBackgroundView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease];
     [root setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [[self window] setContentView:root];
     self.headerView = [[[TGDownloadManagerSurfaceView alloc] initWithFrame:NSZeroRect] autorelease];

@@ -1,6 +1,22 @@
 #import "TGMessageViewersWindowController.h"
 #import "TGLocalization.h"
 #import "../Media/TGMediaImageLoader.h"
+#import "TGInterfaceDesign.h"
+#import "TGAquaAppearance.h"
+#import "TGTheme.h"
+#import "TGThemeContrast.h"
+#import "TGStatusViewCells.h"
+
+@interface TGAquaMessageViewersBackgroundView : NSView
+@end
+@implementation TGAquaMessageViewersBackgroundView
+- (void)drawRect:(NSRect)dirtyRect {
+    (void)dirtyRect;
+    NSRect bounds=[self bounds];
+    TGAquaDrawSurfaceInPath([NSBezierPath bezierPathWithRect:bounds],bounds,TGThemeSurfaceRail,[self isFlipped]);
+    TGThemeDrawHeaderBackgroundInRect(NSMakeRect(0,MAX(0,NSHeight(bounds)-76),NSWidth(bounds),MIN(76,NSHeight(bounds))),[self isFlipped]);
+}
+@end
 
 @interface TGMessageViewersWindowController ()
 @property (nonatomic, retain) NSTextField *titleField;
@@ -65,19 +81,26 @@
 
 - (void)buildViews {
     NSView *root = [[self window] contentView];
-    [root setWantsLayer:YES];
-    [[root layer] setBackgroundColor:[[NSColor colorWithCalibratedRed:0.91 green:0.95 blue:0.98 alpha:1.0] CGColor]];
+    if (TGInterfaceDesignIsAqua()) {
+        root=[[[TGAquaMessageViewersBackgroundView alloc] initWithFrame:[root bounds]] autorelease];
+        [[self window] setContentView:root];
+        TGGroupedCardView *card=[[[TGGroupedCardView alloc] initWithFrame:NSMakeRect(18,18,384,244)] autorelease];
+        [root addSubview:card];
+    } else {
+        [root setWantsLayer:YES];
+        [[root layer] setBackgroundColor:[[NSColor colorWithCalibratedRed:0.91 green:0.95 blue:0.98 alpha:1.0] CGColor]];
+    }
 
     self.titleField = [self labelWithFrame:NSMakeRect(24, 294, 372, 24)
                                       font:[NSFont boldSystemFontOfSize:18.0]
-                                     color:[NSColor colorWithCalibratedWhite:0.08 alpha:1.0]];
+                                     color:TGInterfaceDesignIsAqua()?TGClassicHeaderTextColor(1):[NSColor colorWithCalibratedWhite:0.08 alpha:1.0]];
     [self.titleField setAlignment:NSCenterTextAlignment];
     [self.titleField setStringValue:TGLoc(@"message.viewers.title")];
     [root addSubview:self.titleField];
 
     self.subtitleField = [self labelWithFrame:NSMakeRect(34, 268, 352, 18)
                                          font:[NSFont systemFontOfSize:12.0]
-                                        color:[NSColor colorWithCalibratedWhite:0.35 alpha:1.0]];
+                                        color:TGInterfaceDesignIsAqua()?TGThemeSurfaceInkColor(TGClassicHeaderDetailTextColor(1),TGThemeSurfaceHeader,5.4):[NSColor colorWithCalibratedWhite:0.35 alpha:1.0]];
     [self.subtitleField setAlignment:NSCenterTextAlignment];
     [self.subtitleField setStringValue:([self.messagePreview length] > 0 ? self.messagePreview : TGLoc(@"message"))];
     [root addSubview:self.subtitleField];
@@ -86,6 +109,10 @@
     [self.scrollView setHasVerticalScroller:YES];
     [self.scrollView setBorderType:NSNoBorder];
     [self.scrollView setDrawsBackground:NO];
+    if (TGInterfaceDesignIsAqua()) {
+        [[self.scrollView contentView] setDrawsBackground:NO];
+        [self.scrollView setScrollerStyle:NSScrollerStyleOverlay];[self.scrollView setAutohidesScrollers:YES];
+    }
     self.contentView = [[[NSView alloc] initWithFrame:NSMakeRect(0, 0, 352, 232)] autorelease];
     [self.scrollView setDocumentView:self.contentView];
     [root addSubview:self.scrollView];
@@ -110,7 +137,7 @@
     [self.contentView setFrame:NSMakeRect(0, 0, 352, 232)];
     NSTextField *label = [self labelWithFrame:NSMakeRect(18, 100, 316, 24)
                                          font:[NSFont systemFontOfSize:13.0]
-                                        color:color];
+                                        color:TGInterfaceDesignIsAqua()?TGThemeSurfaceInkColor(color,TGThemeSurfaceCard,4.5):color];
     [label setAlignment:NSCenterTextAlignment];
     [label setStringValue:([message length] > 0 ? message : TGLoc(@"message.viewers.noData"))];
     [self.contentView addSubview:label];
@@ -174,16 +201,20 @@
 
         NSTextField *name = [self labelWithFrame:NSMakeRect(54, 16, 220, 18)
                                             font:[NSFont boldSystemFontOfSize:13.0]
-                                           color:[NSColor colorWithCalibratedWhite:0.12 alpha:1.0]];
+                                           color:TGInterfaceDesignIsAqua()?TGClassicCardInkColor():[NSColor colorWithCalibratedWhite:0.12 alpha:1.0]];
         NSString *displayName = [summary objectForKey:@"display_name"];
         [name setStringValue:([displayName length] > 0 ? displayName : @"Unknown")];
         [row addSubview:name];
 
         NSString *reactionDisplay = [summary objectForKey:@"reaction_display"];
         if ([reactionDisplay length] > 0) {
+            if (TGInterfaceDesignIsAqua()) {
+                [name setFrameSize:NSMakeSize(184,18)];
+                [name setToolTip:[name stringValue]];
+            }
             NSTextField *reaction = [self labelWithFrame:NSMakeRect(246, 14, 28, 22)
                                                      font:[NSFont systemFontOfSize:16.0]
-                                                    color:[NSColor colorWithCalibratedWhite:0.18 alpha:1.0]];
+                                                    color:TGInterfaceDesignIsAqua()?TGClassicCardInkColor():[NSColor colorWithCalibratedWhite:0.18 alpha:1.0]];
             [reaction setAlignment:NSCenterTextAlignment];
             [reaction setStringValue:reactionDisplay];
             [row addSubview:reaction];
@@ -197,7 +228,7 @@
             [formatter setTimeStyle:NSDateFormatterShortStyle];
             NSTextField *time = [self labelWithFrame:NSMakeRect(278, 16, 62, 18)
                                                 font:[NSFont systemFontOfSize:12.0]
-                                               color:[NSColor colorWithCalibratedWhite:0.50 alpha:1.0]];
+                                               color:TGInterfaceDesignIsAqua()?TGClassicCardMutedInkColor():[NSColor colorWithCalibratedWhite:0.50 alpha:1.0]];
             [time setAlignment:NSRightTextAlignment];
             [time setStringValue:[formatter stringFromDate:date]];
             [row addSubview:time];

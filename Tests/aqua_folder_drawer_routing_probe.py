@@ -232,6 +232,7 @@ __VIEW_METHODS__
 - (void)refreshInterfaceDesignControls { [_events addObject:@"refresh"]; }
 - (void)folderFilterChanged:(id)sender { _lastFolderTag=[sender tag]; }
 - (BOOL)aquaChatInfoReplacesConversation { return _infoReplacesConversation; }
+- (BOOL)isAquaChatInfoPanelActive { return _infoReplacesConversation; }
 __PRODUCTION_METHODS__
 @end
 int main(void) {

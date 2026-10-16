@@ -19,12 +19,12 @@ void TGDrawTemplateIconAsset(NSString *name,NSRect rect,NSColor *ink,CGFloat alp
 @synthesize displayName=_displayName,avatarLocalPath=_avatarLocalPath;
 - (void)dealloc { [_displayName release];[_avatarLocalPath release];[super dealloc]; }
 @end
-@interface PanelTarget : NSObject { @public NSUInteger closed,media,details; }
+@interface PanelTarget : NSObject { @public NSUInteger closed,media,details; TGAquaChatInfoPanel *panel; }
 @end
 @implementation PanelTarget
 - (void)closeAquaChatInfo:(TGAquaChatInfoPanel *)sender { (void)sender; }
 - (void)aquaChatInfoPanelDidClose:(id)sender { (void)sender;closed++; }
-- (void)openAquaChatInfoMedia:(id)sender { media+=(NSUInteger)[sender tag]+1; }
+- (void)openAquaChatInfoMedia:(id)sender { media+=(NSUInteger)([sender tag]+2); [panel setSelectedMediaTab:[sender tag]]; }
 - (void)openAquaChatInfoDetails:(id)sender { (void)sender;details++; }
 @end
 static void Spin(void) { NSDate *end=[NSDate dateWithTimeIntervalSinceNow:0.35];while([end timeIntervalSinceNow]>0) [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.01]]; }
@@ -49,7 +49,7 @@ int main(void) {
     NSWindow *window=[[[NSWindow alloc] initWithContentRect:NSMakeRect(0,0,1000,650) styleMask:NSTitledWindowMask backing:NSBackingStoreBuffered defer:NO] autorelease];
     [window setReleasedWhenClosed:NO];[window orderFront:nil];
     PanelTarget *target=[[[PanelTarget alloc] init] autorelease];
-    TGAquaChatInfoPanel *panel=[[TGAquaChatInfoPanel alloc] initWithFrame:NSZeroRect];[panel setTarget:target];[[window contentView] addSubview:panel];
+    TGAquaChatInfoPanel *panel=[[TGAquaChatInfoPanel alloc] initWithFrame:NSZeroRect];[panel setTarget:target];target->panel=panel;[[window contentView] addSubview:panel];
     NSDictionary *profile=[NSDictionary dictionaryWithObjectsAndKeys:@"Имя пользователя с очень длинной фамилией",@"display_name",@"long_username",@"username",@"1234567890",@"phone_number",@"Длинное описание профиля. Здесь можно прочитать информацию целиком, ничего не обрезая.\nВторая строка описания.",@"bio",nil];
     NSDictionary *summary=[NSDictionary dictionaryWithObjectsAndKeys:profile,@"profile",@"Длинное название группы с обсуждениями, путешествиями и фотографиями",@"title",@"supergroup",@"kind",[NSNumber numberWithInteger:120000],@"member_count",nil];
     NSString *previous=[TGLanguageCode() copy];
@@ -65,19 +65,56 @@ int main(void) {
             NSTextField *name=[panel valueForKey:@"nameField"],*details=[panel valueForKey:@"detailsField"];
             assert(NSHeight([name frame])>=ceil([[name cell] cellSizeForBounds:NSMakeRect(0,0,NSWidth([name frame]),100000)].height));
             assert(NSHeight([details frame])>=ceil([[details cell] cellSizeForBounds:NSMakeRect(0,0,NSWidth([details frame]),100000)].height));
+            NSView *sheet=[panel valueForKey:@"sheetView"];
+            NSView *avatar=[panel valueForKey:@"avatarView"];
+            NSTextField *subtitle=[panel valueForKey:@"subtitleField"];
+            assert([name superview]==sheet && [subtitle superview]==sheet && [avatar superview]==sheet);
+            NSRect nameFrame=[name frame],avatarFrame=[avatar frame],subtitleFrame=[subtitle frame];
+            Contains([panel bounds],nameFrame);Contains([panel bounds],avatarFrame);Contains([panel bounds],subtitleFrame);
+            NSScrollView *tabs=[panel valueForKey:@"tabScrollView"];
+            NSView *tabDocument=[panel valueForKey:@"tabDocumentView"];
+            Contains([panel bounds],[tabs frame]);
+            assert([tabs hasHorizontalScroller] && ![tabs hasVerticalScroller]);
+            assert([tabs documentView]==tabDocument);
+            assert(NSWidth([tabDocument frame])>NSWidth([[tabs contentView] bounds]));
             NSArray *buttons=[panel valueForKey:@"actionButtons"];
+            assert([buttons count]==9);
+            NSInteger expectedTag=-1;
+
             for(NSButton *button in buttons) {
+                assert([button tag]==expectedTag++ && [button superview]==tabDocument);
+                Contains([tabDocument bounds],[button frame]);
                 assert([[button toolTip] isEqual:[button title]]);
                 NSRect title=[[button cell] titleRectForBounds:[button bounds]];
                 NSSize text=[[button title] sizeWithAttributes:[NSDictionary dictionaryWithObject:[button font] forKey:NSFontAttributeName]];
                 assert(text.width<=NSWidth(title));
             }
-            layouts++;
+            NSButton *last=[buttons lastObject];
+            [tabDocument scrollRectToVisible:[last frame]];
+            Contains([[tabs contentView] bounds],[last frame]);
+            for(NSInteger tab=-1;tab<8;tab++) {
+                [panel setSelectedMediaTab:tab];
+                assert([panel selectedMediaTab]==tab);
+                assert([scroll isHidden]==(tab>=0));
+                assert([[panel mediaHostView] isHidden]==(tab<0));
+                Contains([panel bounds],[[panel mediaHostView] frame]);
+                assert(NSEqualRects(nameFrame,[name frame]) && NSEqualRects(avatarFrame,[avatar frame]) && NSEqualRects(subtitleFrame,[subtitle frame]));
+                NSUInteger selected=0;
+                for(NSButton *button in buttons) { if([button state]==NSOnState) { selected++;assert([button tag]==tab); } }
+                assert(selected==1);
+                layouts++;
+            }
+            [panel setSelectedMediaTab:-99];assert([panel selectedMediaTab]==-1);
+            [panel setSelectedMediaTab:99];assert([panel selectedMediaTab]==7);
+            [panel setSelectedMediaTab:-1];
+
         }
     }
     TGSetLanguageCode(previous);[previous release];
     NSArray *buttons=[panel valueForKey:@"actionButtons"];
-    for(NSButton *button in buttons) [button performClick:nil]; assert(target->media==10 && target->details==1);
+    for(NSButton *button in buttons) [button performClick:nil]; assert(target->media==45 && target->details==0);
+    NSButton *manage=[panel valueForKey:@"detailsButton"];[manage performClick:nil];
+    assert(target->details==1 && [panel selectedMediaTab]==7);
     [panel closeAnimated:NO];assert([panel isHidden] && target->closed==1 && ![panel isClosing]);
     Animate=YES;
     [panel presentInFrame:NSMakeRect(20,20,320,520) animated:YES];assert(![panel isHidden]);Spin();assert([panel valueForKey:@"animation"]==nil);
@@ -88,6 +125,6 @@ int main(void) {
     [panel presentInFrame:NSMakeRect(20,20,440,520) animated:YES];Spin();assert(NSEqualRects([panel frame],NSMakeRect(20,20,440,520)) && ![panel isHidden]);
     [panel closeAnimated:YES];[panel hideImmediately];Spin();assert([panel isHidden] && target->closed==2);
     [panel setTarget:nil];[panel removeFromSuperview];[panel release];[window close];
-    printf("Aqua profile panel: %lu geometry cases, %lu real localized layouts, media actions, immediate/animated close, interrupted open/close/resize, detach PASS.\n",(unsigned long)cases,(unsigned long)layouts);
+    printf("Aqua profile panel: %lu geometry cases, %lu real localized tab layouts, nine full-width horizontally scrollable tabs and fixed identity, separate manage action, immediate/animated close, interrupted open/close/resize, detach PASS.\n",(unsigned long)cases,(unsigned long)layouts);
     [pool drain];return 0;
 }

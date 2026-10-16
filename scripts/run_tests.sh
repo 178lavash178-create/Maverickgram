@@ -97,11 +97,13 @@ HOME="$TEST_HOME" "$BUILD_DIR/utility-surface-contrast-probe"
 BUTTON_APP="$BUILD_DIR/ButtonProbe.app"
 mkdir -p "$BUTTON_APP/Contents/MacOS" "$BUTTON_APP/Contents/Resources"
 cp -R Sources/Resources/Icons "$BUTTON_APP/Contents/Resources/Icons"
+cp -R Sources/Resources/Textures "$BUTTON_APP/Contents/Resources/Textures"
 cat > "$BUTTON_APP/Contents/Info.plist" <<'BUTTON_PLIST'
 <?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict><key>CFBundleExecutable</key><string>button-probe</string><key>CFBundleIdentifier</key><string>local.telegraphica.button-probe</string><key>CFBundlePackageType</key><string>APPL</string></dict></plist>
 BUTTON_PLIST
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/button_appearance_probe.m Sources/UI/TGStatusButtonCells.m Sources/UI/TGLocalization.m Sources/UI/TGTheme.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGAquaAppearance.m Sources/UI/TGVisualWorldThemeSpec.m -framework Cocoa -o "$BUTTON_APP/Contents/MacOS/button-probe"
 HOME="$TEST_HOME" "$BUTTON_APP/Contents/MacOS/button-probe"
+HOME="$TEST_HOME" "$BUTTON_APP/Contents/MacOS/button-probe" --aqua-secondary
 
 echo "== Asynchronous animated image loader =="
 "$CLANG" "${COMPILE_FLAGS[@]}" \
@@ -568,3 +570,24 @@ HOME="$TEST_HOME" "$BUILD_DIR/aqua-chat-info-routing-probe"
 "$PYTHON_BIN" Tests/aqua_transcript_corner_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 
 "$PYTHON_BIN" Tests/aqua_audio_routing_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+
+# Recording construction/state checks deliberately use no camera or microphone.
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_recording_ui_probe.m Sources/UI/TGVideoNoteRecorderWindowController.m Sources/UI/TGAquaRecordingViews.m Sources/UI/TGAquaShellViews.m Sources/UI/TGAquaAppearance.m Sources/UI/TGLocalization.m -framework Cocoa -framework AVFoundation -framework QuartzCore -framework CoreMedia -o "$BUILD_DIR/aqua-recording-ui-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/aqua-recording-ui-probe"
+
+"$PYTHON_BIN" Tests/aqua_attachment_tracking_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+
+"$PYTHON_BIN" Tests/aqua_media_viewer_routing_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+
+AUXILIARY_APP="$BUILD_DIR/AuxiliaryProbe.app"
+mkdir -p "$AUXILIARY_APP/Contents/MacOS" "$AUXILIARY_APP/Contents/Resources"
+cp -R Sources/Resources/Icons "$AUXILIARY_APP/Contents/Resources/Icons"
+cp -R Sources/Resources/Textures "$AUXILIARY_APP/Contents/Resources/Textures"
+cat > "$AUXILIARY_APP/Contents/Info.plist" <<'AUX_PLIST'
+<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict><key>CFBundleExecutable</key><string>probe</string><key>CFBundleIdentifier</key><string>local.telegraphica.auxiliary-probe</string></dict></plist>
+AUX_PLIST
+"$CLANG" "${COMPILE_FLAGS[@]}" -I"$ROOT_DIR/Sources/UI" -I"$ROOT_DIR/Sources/Services" -I"$ROOT_DIR/Sources/Media" Tests/aqua_auxiliary_surfaces_probe.m Sources/UI/TGDownloadManagerPresentation.m Sources/UI/TGDownloadManagerWindowController.m Sources/UI/TGLocalization.m Sources/UI/TGTheme.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGAquaAppearance.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGStatusButtonCells.m Sources/UI/TGButtonAppearance.m Sources/UI/TGIconAssets.m Sources/UI/TGIconDrawing.m Sources/UI/TGDownloadProgressWindowController.m Sources/UI/TGMessageViewersWindowController.m -framework Cocoa -framework CoreGraphics -framework QuartzCore -o "$AUXILIARY_APP/Contents/MacOS/probe"
+HOME="$TEST_HOME" "$AUXILIARY_APP/Contents/MacOS/probe" aqua
+HOME="$TEST_HOME" "$AUXILIARY_APP/Contents/MacOS/probe" classic
+
+"$PYTHON_BIN" Tests/aqua_chat_row_selection_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"

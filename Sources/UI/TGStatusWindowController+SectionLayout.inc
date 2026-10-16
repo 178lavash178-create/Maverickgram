@@ -135,7 +135,7 @@
     [self showView:self.messagesLabel visible:NO];
     BOOL showClosedChatPlaceholder = (showChats && self.chatNavigationClosed);
     BOOL showMediaCenter = (showChats && !showClosedChatPlaceholder && self.mediaCenterVisible);
-    BOOL showConversationContent = (showChats && !showClosedChatPlaceholder && !showMediaCenter && ![self aquaChatInfoReplacesConversation]);
+    BOOL showConversationContent = (showChats && !showClosedChatPlaceholder && (!showMediaCenter || [self isAquaChatInfoPanelActive]) && ![self aquaChatInfoReplacesConversation]);
     [self showView:self.mediaCenterPanelView visible:showMediaCenter];
     [self showView:self.loadMessagesButton visible:showConversationContent];
     [self showView:self.loadOlderMessagesButton visible:NO];
@@ -859,7 +859,7 @@
     CGFloat conversationVideoCallX = conversationCallX - 6.0 - headerButtonSize;
     BOOL layoutSelectedChatCall = ([self.selectedChatTypeSummary isEqualToString:@"Private"] &&
                                    [self.activeSection isEqualToString:TGSectionChats] &&
-                                   !self.mediaCenterVisible);
+                                   (!self.mediaCenterVisible || [self isAquaChatInfoPanelActive]));
     [self.loadOlderMessagesButton setFrame:NSMakeRect(conversationRefreshX, conversationButtonY, headerButtonSize, headerButtonSize)];
     [self.loadMessagesButton setFrame:NSMakeRect(conversationRefreshX, conversationButtonY, headerButtonSize, headerButtonSize)];
     [self.messageJumpToNewestButton setFrame:NSMakeRect(conversationJumpX, conversationButtonY, headerButtonSize, headerButtonSize)];

@@ -4,7 +4,7 @@
     return TGInterfaceDesignIsAqua() && self.client &&
         [self.currentAuthState isEqualToString:@"ready"] &&
         [self.activeSection isEqualToString:TGSectionChats] &&
-        !self.chatNavigationClosed && !self.mediaCenterVisible &&
+        !self.chatNavigationClosed &&
         self.aquaChatInfoChatID && [self.aquaChatInfoChatID isEqual:self.selectedChatID];
 }
 
@@ -17,7 +17,11 @@
 }
 
 - (void)invalidateAquaChatInfoPanel {
-    if (self.aquaChatInfoChatID) self.aquaChatInfoRequestGeneration++;
+    if (self.aquaChatInfoChatID) {
+        self.aquaChatInfoRequestGeneration++;
+        self.mediaCenterVisible=NO; self.mediaCenterGeneration++;
+        [self.mediaCenterPanelView setHidden:YES];
+    }
     self.aquaChatInfoChatID = nil;
     [self.aquaChatInfoPanel hideImmediately];
 }
@@ -34,6 +38,7 @@
     TGAquaChatInfoGeometry geometry = TGAquaChatInfoFrames(available,YES);
     [content addSubview:self.aquaChatInfoPanel positioned:NSWindowAbove relativeTo:nil];
     if (![self.aquaChatInfoPanel isClosing]) [self.aquaChatInfoPanel presentInFrame:geometry.panel animated:YES];
+    [self layoutAquaChatInfoMedia];
 }
 
 - (void)openAquaChatInfo:(id)sender {
@@ -45,6 +50,8 @@
         [self.aquaChatInfoPanel setTarget:self];
     }
     [self.aquaChatInfoPanel hideImmediately];
+    [self.aquaChatInfoPanel setSelectedMediaTab:-1];
+    self.mediaCenterVisible=NO;
     self.aquaChatInfoChatID = self.selectedChatID;
     self.aquaChatInfoRequestGeneration++;
     NSMutableDictionary *initial = [NSMutableDictionary dictionary];
@@ -71,6 +78,7 @@
             if (generation == self.aquaChatInfoRequestGeneration && client == self.client &&
                 [chatID isEqual:self.aquaChatInfoChatID] && [self isAquaChatInfoPanelActive] && ![self.aquaChatInfoPanel isClosing]) {
                 [self.aquaChatInfoPanel showSummary:snapshot loading:NO error:errorMessage];
+                [self layoutAquaChatInfoMedia];
             }
             [snapshot release]; [errorMessage release]; [chatID release]; [client release];
         });
@@ -86,21 +94,29 @@
 
 - (void)aquaChatInfoPanelDidClose:(id)sender {
     if (sender != self.aquaChatInfoPanel) return;
-    self.aquaChatInfoChatID = nil;
+    [self invalidateAquaChatInfoPanel];
     [self layoutContentView]; [self updateVisibleSection];
     [self requestComposerRefocus];
 }
 
 - (void)openAquaChatInfoMedia:(id)sender {
     if (![self isAquaChatInfoPanelActive]) return;
-    NSInteger tab = [sender respondsToSelector:@selector(tag)] ? [sender tag] : 0;
-    [self invalidateAquaChatInfoPanel];
-    [self layoutContentView];
+    NSInteger tab=[sender respondsToSelector:@selector(tag)] ? [sender tag] : 0;
+    [self.aquaChatInfoPanel setSelectedMediaTab:tab];
+    self.mediaCenterGeneration++;
+    [self closeMediaCenterInlinePreview:nil];
+    if (tab<0) {
+        self.mediaCenterVisible=NO; [self.mediaCenterPanelView setHidden:YES];
+        [self layoutContentView]; [self updateVisibleSection]; return;
+    }
     [self ensureMediaCenterWindow];
-    self.mediaCenterSelectedTabIndex = MAX(0,MIN(3,tab));
-    [self updateMediaCenterTabButtonStates];
-    [self openMediaCenter:sender];
+    self.mediaCenterSelectedTabIndex=MAX(0,MIN(7,tab)); self.mediaCenterVisible=YES;
+    [[self.aquaChatInfoPanel mediaHostView] addSubview:self.mediaCenterPanelView];
+    [self layoutContentView]; [self updateVisibleSection];
+    [self reloadMediaCenter:nil];
 }
+
+#include "TGStatusWindowController+AquaProfileMedia.inc"
 
 - (void)openAquaChatInfoDetails:(id)sender {
     (void)sender;

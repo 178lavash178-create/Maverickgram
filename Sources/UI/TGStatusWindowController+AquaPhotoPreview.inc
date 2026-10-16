@@ -27,7 +27,7 @@
 
 - (void)prepareAquaPhotoPreviewForMessage:(TGMessageItem *)item mediaItem:(NSDictionary *)mediaItem gridSender:(id)sender {
     [self setAquaPhotoPreviewSourceContext:nil];
-    if (!TGInterfaceDesignIsAqua() || !TGAquaPhotoTransitionIsStaticPhoto(mediaItem) || ![item messageID]) return;
+    if (!TGInterfaceDesignIsAqua() || !TGAquaMediaTransitionSupportsThumbnail(mediaItem) || ![item messageID]) return;
     NSMutableDictionary *context = [NSMutableDictionary dictionaryWithObjectsAndKeys:
                                     [self mediaPreviewSelectionContext], @"selection",
                                     [item messageID], @"message",
@@ -64,7 +64,7 @@
         NSRect picture = NSMakeRect(NSMidX(bounds) - imageSize.width * scale / 2.0,
                                     NSMidY(bounds) - imageSize.height * scale / 2.0,
                                     imageSize.width * scale, imageSize.height * scale);
-        return TGAquaPhotoVisibleScreenRect(gridImageView, picture);
+        return TGAquaPhotoIntersectedVisibleScreenRect(gridImageView, picture);
     }
     if (self.mediaCenterVisible || [self.messageTableView isHiddenOrHasHiddenAncestor]) return NSZeroRect;
     NSUInteger row = 0;
@@ -77,8 +77,8 @@
                 NSNumber *fileID = TGMediaItemFullFileID(original);
                 BOOL same = fileID && [fileID integerValue] > 0
                     ? [fileID isEqual:TGMediaItemFullFileID(candidate)] : [candidate isEqual:original];
-                if (same && TGAquaPhotoTransitionIsStaticPhoto(candidate))
-                    return TGAquaPhotoVisibleScreenRect(self.messageTableView, [[entry objectForKey:@"frame"] rectValue]);
+                if (same && TGAquaMediaTransitionSupportsThumbnail(candidate))
+                    return TGAquaPhotoIntersectedVisibleScreenRect(self.messageTableView, [[entry objectForKey:@"frame"] rectValue]);
             }
             return NSZeroRect;
         }
@@ -88,11 +88,40 @@
 }
 
 - (BOOL)windowShouldClose:(id)sender {
-    return sender != self.mediaPreviewWindow || TGAquaPhotoTransitionShouldClose(self.mediaPreviewWindow);
+    if (sender==self.mediaPreviewWindow || sender==self.mediaPlaybackWindow)
+        return TGAquaPhotoTransitionShouldClose(sender);
+    return YES;
 }
+
+- (NSDictionary *)aquaPlaybackTransitionSourceContext { return objc_getAssociatedObject(self,@selector(aquaPlaybackTransitionSourceContext)); }
+- (void)setAquaPlaybackTransitionSourceContext:(NSDictionary *)context { objc_setAssociatedObject(self,@selector(aquaPlaybackTransitionSourceContext),context,OBJC_ASSOCIATION_RETAIN_NONATOMIC); }
+- (NSDictionary *)takeAquaMediaTransitionContextForMediaItem:(NSDictionary *)media {
+    if (![media isKindOfClass:[NSDictionary class]]) return nil;
+    NSDictionary *context=[self aquaPhotoPreviewSourceContext];
+    NSDictionary *source=[context objectForKey:@"media"];
+    NSNumber *fileID=TGMediaItemFullFileID(media);
+    BOOL matches=TGAquaMediaTransitionSupportsThumbnail(media) &&
+        [TGMediaItemContentType(source) isEqual:TGMediaItemContentType(media)] &&
+        (fileID && [fileID integerValue]>0 ? [fileID isEqual:TGMediaItemFullFileID(source)] : [source isEqual:media]);
+    return matches ? [[context retain] autorelease] : nil;
+}
+- (NSImage *)aquaMediaPosterForTransitionContext:(NSDictionary *)context {
+    NSRect screen=[self aquaPhotoPreviewSourceScreenRectForContext:context];
+    NSView *view=[context objectForKey:@"grid_image_view"];
+    if (!view) view=self.messageTableView;
+    if (NSIsEmptyRect(screen) || NSWidth(screen)>1600 || NSHeight(screen)>1600) return nil;
+    NSRect rect=[view convertRect:[[view window] convertRectFromScreen:screen] fromView:nil];
+    NSBitmapImageRep *rep=[view bitmapImageRepForCachingDisplayInRect:rect];
+    if (!rep || [rep pixelsWide]<=0 || [rep pixelsHigh]<=0 || (double)[rep pixelsWide]*[rep pixelsHigh]>4000000) return nil;
+    [view cacheDisplayInRect:rect toBitmapImageRep:rep];
+    NSImage *poster=[[[NSImage alloc] initWithSize:rect.size] autorelease]; [poster addRepresentation:rep];
+    return poster;
+}
+- (void)closeAquaMediaViewer:(id)sender { [[sender window] performClose:sender]; }
 
 - (void)invalidateAquaPhotoPreview {
     self.mediaPreviewRequestGeneration = self.mediaPreviewRequestGeneration + 1;
     [self setAquaPhotoPreviewSourceContext:nil];
+    [self setAquaPlaybackTransitionSourceContext:nil];
     TGAquaPhotoTransitionClear(self.mediaPreviewWindow);
 }

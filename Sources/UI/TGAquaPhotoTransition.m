@@ -11,6 +11,12 @@ BOOL TGAquaPhotoTransitionIsStaticPhoto(NSDictionary *item) {
     return [item isKindOfClass:[NSDictionary class]] &&
            [TGMediaItemContentType(item) isEqualToString:@"messagePhoto"];
 }
+BOOL TGAquaMediaTransitionSupportsThumbnail(NSDictionary *item) {
+    if (![item isKindOfClass:[NSDictionary class]]) return NO;
+    NSString *kind=TGMediaItemContentType(item);
+    return TGAquaPhotoTransitionIsStaticPhoto(item) || [kind isEqualToString:@"messageVideo"] ||
+        [kind isEqualToString:@"messageVideoNote"] || [kind isEqualToString:@"messageAnimation"];
+}
 
 NSRect TGAquaPhotoAspectFillRect(NSSize imageSize, NSRect bounds) {
     if (imageSize.width <= 0.0 || imageSize.height <= 0.0 || NSIsEmptyRect(bounds)) return NSZeroRect;
@@ -30,16 +36,24 @@ NSRect TGAquaPhotoVisibleScreenRect(NSView *view, NSRect rect) {
     }
     return NSZeroRect;
 }
+NSRect TGAquaPhotoIntersectedVisibleScreenRect(NSView *view, NSRect rect) {
+    NSRect visible=NSIntersectionRect(rect,[view visibleRect]);
+    /* Scroll clipping is normal in a transcript. A useful visible portion is
+     * still a valid origin; a one-pixel sliver is not. */
+    if (NSWidth(visible)<24 || NSHeight(visible)<24) return NSZeroRect;
+    return TGAquaPhotoVisibleScreenRect(view,visible);
+}
 
 @interface TGAquaPhotoMotionImageView : NSView {
     NSImage *_image;
+    BOOL _circular;
 }
-- (id)initWithImage:(NSImage *)image;
+- (id)initWithImage:(NSImage *)image circular:(BOOL)circular;
 @end
 @implementation TGAquaPhotoMotionImageView
-- (id)initWithImage:(NSImage *)image {
+- (id)initWithImage:(NSImage *)image circular:(BOOL)circular {
     self = [super initWithFrame:NSZeroRect];
-    if (self) _image = [image retain];
+    if (self) { _image = [image retain]; _circular=circular; }
     return self;
 }
 - (void)dealloc { [_image release]; [super dealloc]; }
@@ -47,6 +61,7 @@ NSRect TGAquaPhotoVisibleScreenRect(NSView *view, NSRect rect) {
     (void)dirtyRect;
     [NSGraphicsContext saveGraphicsState];
     NSRectClip([self bounds]);
+    if (_circular) [[NSBezierPath bezierPathWithOvalInRect:[self bounds]] addClip];
     [[NSGraphicsContext currentContext] setImageInterpolation:NSImageInterpolationHigh];
     [_image drawInRect:TGAquaPhotoAspectFillRect([_image size], [self bounds])
              fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0];
@@ -56,7 +71,8 @@ NSRect TGAquaPhotoVisibleScreenRect(NSView *view, NSRect rect) {
 
 @interface TGAquaPhotoTransition : NSObject {
     NSWindow *_window; /* owner, deliberately not retained */
-    NSImageView *_imageView;
+    NSView *_imageView;
+    NSImage *_image;
     NSView *_policyView;
     id<TGAquaPhotoTransitionSource> _source; /* owning controller, not retained */
     NSDictionary *_context;
@@ -67,21 +83,26 @@ NSRect TGAquaPhotoVisibleScreenRect(NSView *view, NSRect rect) {
     NSTimeInterval _startTime;
     BOOL _closing;
     BOOL _allowClose;
+    BOOL _returnsToSource, _circular;
+    NSRect _viewerFrame;
 }
-- (id)initWithWindow:(NSWindow *)window imageView:(NSImageView *)imageView
-         policyView:(NSView *)view source:(id<TGAquaPhotoTransitionSource>)source context:(NSDictionary *)context;
+- (id)initWithWindow:(NSWindow *)window imageView:(NSView *)imageView image:(NSImage *)image
+         policyView:(NSView *)view source:(id<TGAquaPhotoTransitionSource>)source context:(NSDictionary *)context
+            returns:(BOOL)returns circular:(BOOL)circular;
 - (void)open;
 - (BOOL)shouldClose;
 - (void)cancel;
 @end
 
 @implementation TGAquaPhotoTransition
-- (id)initWithWindow:(NSWindow *)window imageView:(NSImageView *)imageView
-         policyView:(NSView *)view source:(id<TGAquaPhotoTransitionSource>)source context:(NSDictionary *)context {
+- (id)initWithWindow:(NSWindow *)window imageView:(NSView *)imageView image:(NSImage *)image
+         policyView:(NSView *)view source:(id<TGAquaPhotoTransitionSource>)source context:(NSDictionary *)context
+            returns:(BOOL)returns circular:(BOOL)circular {
     self = [super init];
     if (self) {
         _window = window;
         _imageView = [imageView retain];
+        _image=[image retain]; _returnsToSource=returns; _circular=circular;
         _policyView = [view retain];
         _source = source;
         _context = [context copy];
@@ -99,7 +120,7 @@ NSRect TGAquaPhotoVisibleScreenRect(NSView *view, NSRect rect) {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     [_timer invalidate]; [_timer release];
     [_imageWindow orderOut:nil]; [_imageWindow release];
-    [_imageView release]; [_policyView release]; [_context release];
+    [_imageView release]; [_image release]; [_policyView release]; [_context release];
     [super dealloc];
 }
 - (void)cancel {
@@ -119,11 +140,16 @@ NSRect TGAquaPhotoVisibleScreenRect(NSView *view, NSRect rect) {
     (void)notification;
     if (!TGInterfaceAnimationsEnabledForView(_policyView)) [self finish];
 }
-- (void)geometryChanged:(NSNotification *)notification { (void)notification; if (_timer) [self finish]; }
+- (void)geometryChanged:(NSNotification *)notification {
+    (void)notification;
+    /* First-show AppKit notifications can arrive after presentation starts.
+     * Only a real geometry change interrupts the reveal. */
+    if (_timer && !NSEqualRects(_viewerFrame,[_window frame])) [self finish];
+}
 - (void)sourceClosed:(NSNotification *)notification { (void)notification; [self cancel]; }
 - (void)tick:(NSTimer *)timer {
     (void)timer;
-    CGFloat progress = ([NSDate timeIntervalSinceReferenceDate] - _startTime) / 0.20;
+    CGFloat progress = ([NSDate timeIntervalSinceReferenceDate] - _startTime) / 0.28;
     if (progress >= 1.0 || !TGInterfaceAnimationsEnabledForView(_policyView)) { [self finish]; return; }
     CGFloat t = MAX(0.0, progress);
     CGFloat eased = t * t * (3.0 - 2.0 * t);
@@ -143,11 +169,13 @@ NSRect TGAquaPhotoVisibleScreenRect(NSView *view, NSRect rect) {
 - (void)startClosing:(BOOL)closing {
     [self cancel];
     _closing = closing;
+    _viewerFrame=[_window frame];
     NSRect sourceRect = [_source aquaPhotoPreviewSourceScreenRectForContext:_context];
+    if (closing && !_returnsToSource) sourceRect=NSZeroRect;
     /* A panned/zoomed image is not the full picture. Dissolve it in place
      * instead of substituting a differently cropped image during close. */
     NSRect imageRect = TGAquaPhotoVisibleScreenRect(_imageView, [_imageView bounds]);
-    if (!NSIsEmptyRect(sourceRect) && !NSIsEmptyRect(imageRect) && [_imageView image]) {
+    if (!NSIsEmptyRect(sourceRect) && !NSIsEmptyRect(imageRect) && _image) {
         _startRect = closing ? imageRect : sourceRect;
         _endRect = closing ? sourceRect : imageRect;
         _imageWindow = [[NSWindow alloc] initWithContentRect:_startRect styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:NO];
@@ -157,7 +185,7 @@ NSRect TGAquaPhotoVisibleScreenRect(NSView *view, NSRect rect) {
         [_imageWindow setHasShadow:YES];
         [_imageWindow setIgnoresMouseEvents:YES];
         [_imageWindow setLevel:[_window level]];
-        TGAquaPhotoMotionImageView *view = [[[TGAquaPhotoMotionImageView alloc] initWithImage:[_imageView image]] autorelease];
+        TGAquaPhotoMotionImageView *view = [[[TGAquaPhotoMotionImageView alloc] initWithImage:_image circular:_circular] autorelease];
         [_imageWindow setContentView:view];
         [_imageWindow setAlphaValue:closing ? 0.0 : 1.0];
         [_imageWindow orderWindow:NSWindowAbove relativeTo:[_window windowNumber]];
@@ -188,8 +216,16 @@ void TGAquaPhotoTransitionOpen(NSWindow *window, NSImageView *imageView, NSView 
                               id<TGAquaPhotoTransitionSource> source, NSDictionary *context) {
     TGAquaPhotoTransitionClear(window);
     if (!window || !context) return;
-    TGAquaPhotoTransition *motion = [[[TGAquaPhotoTransition alloc] initWithWindow:window imageView:imageView policyView:policyView source:source context:context] autorelease];
+    TGAquaPhotoTransition *motion = [[[TGAquaPhotoTransition alloc] initWithWindow:window imageView:imageView image:[imageView image] policyView:policyView source:source context:context returns:YES circular:NO] autorelease];
     objc_setAssociatedObject(window, &TGPhotoTransitionKey, motion, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [motion open];
+}
+void TGAquaMediaTransitionOpen(NSWindow *window, NSView *destinationView, NSImage *poster,
+                              NSView *policyView, id<TGAquaPhotoTransitionSource> source, NSDictionary *context, BOOL circular) {
+    TGAquaPhotoTransitionClear(window);
+    if (!window) return;
+    TGAquaPhotoTransition *motion=[[[TGAquaPhotoTransition alloc] initWithWindow:window imageView:destinationView image:poster policyView:policyView source:source context:context returns:NO circular:circular] autorelease];
+    objc_setAssociatedObject(window,&TGPhotoTransitionKey,motion,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [motion open];
 }
 BOOL TGAquaPhotoTransitionShouldClose(NSWindow *window) {

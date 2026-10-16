@@ -1,5 +1,7 @@
 #import "TGButtonAppearance.h"
 #import "TGTheme.h"
+#import "TGInterfaceDesign.h"
+#import "TGAquaAppearance.h"
 #include <math.h>
 
 typedef struct { CGFloat red, green, blue; } TGButtonSample;
@@ -13,6 +15,10 @@ static CGFloat TGButtonRGBLuminance(CGFloat r, CGFloat g, CGFloat b) {
 
 static void TGDrawOriginalButtonSurface(NSBezierPath *path, NSRect rect, TGButtonSurfaceStyle style,
                                         BOOL highlighted, BOOL selected, BOOL enabled, BOOL flipped) {
+    if (TGInterfaceDesignIsAqua() && style == TGButtonSurfaceSecondary) {
+        TGAquaDrawButtonInPath(path, rect, highlighted, NO, enabled, flipped);
+        return;
+    }
     [TGClassicPanelBottomColor() set];
     [path fill];
     CGFloat alpha = enabled ? 1.0 : 0.46;
@@ -51,7 +57,7 @@ static NSArray *TGButtonAppearance(TGButtonSurfaceStyle style, BOOL highlighted,
     static NSCache *cache = nil;
     static dispatch_once_t once;
     dispatch_once(&once, ^{ cache = [[NSCache alloc] init]; [cache setCountLimit:256]; });
-    NSString *key = [NSString stringWithFormat:@"%@|%lu|%d|%d|%d", TGCurrentThemeIdentifier(), (unsigned long)style, highlighted, selected, enabled];
+    NSString *key = [NSString stringWithFormat:@"%@|%d|%lu|%d|%d|%d", TGCurrentThemeIdentifier(), TGInterfaceDesignIsAqua(), (unsigned long)style, highlighted, selected, enabled];
     NSArray *appearance = [cache objectForKey:key];
     if (appearance) { return appearance; }
 

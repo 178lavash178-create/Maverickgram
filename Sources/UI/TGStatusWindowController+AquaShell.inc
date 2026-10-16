@@ -1,9 +1,9 @@
 // Optional shell. The controller's existing actions/data sources remain shared.
 - (void)installAquaTextCellOnButton:(NSButton *)button accented:(BOOL)accented {
     id target = [button target]; SEL action = [button action];
-    NSString *title = [[button title] copy]; NSInteger state = [button state];
+    NSString *title = [[button title] copy]; NSInteger state = NSOffState;
     TGAquaTextButtonCell *cell = [[[TGAquaTextButtonCell alloc] initTextCell:title] autorelease];
-    [cell setAccented:accented];
+    [cell setAccented:accented]; [cell setButtonType:NSMomentaryPushInButton];
     [button setCell:cell]; [button setTitle:title]; [button setState:state];
     [button setTarget:target]; [button setAction:action];
     [button setBordered:NO]; [button setFocusRingType:NSFocusRingTypeExterior];
@@ -125,7 +125,7 @@
     BOOL ready = [self.currentAuthState isEqualToString:@"ready"];
     BOOL chats = ready && [self.activeSection isEqualToString:TGSectionChats];
     for (NSView *view in [NSArray arrayWithObjects:self.aquaToolbarView, self.aquaSearchButton, self.aquaDownloadsButton, self.workshopDrawerButton, nil]) [view setHidden:!ready];
-    [self.aquaFooterView setHidden:(!chats || self.chatNavigationClosed || self.mediaCenterVisible || [self aquaChatInfoReplacesConversation])];
+    [self.aquaFooterView setHidden:(!chats || self.chatNavigationClosed || (self.mediaCenterVisible && ![self isAquaChatInfoPanelActive]) || [self aquaChatInfoReplacesConversation])];
     for (NSButton *button in self.navigationButtons) [button setHidden:!ready];
     [self.aquaFolderHeaderButton setHidden:!chats];
     [self.aquaFolderEditButton setHidden:(!chats || [self aquaUsesExternalFolderDrawer])];
@@ -149,7 +149,7 @@
     NSRect sidebar = [self.sidebarPanelView frame];
     CGFloat sidebarWidth = NSWidth(sidebar);
     BOOL showingChats = [self.activeSection isEqualToString:TGSectionChats];
-    BOOL composerVisible = showingChats && !self.chatNavigationClosed && !self.mediaCenterVisible && ![self aquaChatInfoReplacesConversation];
+    BOOL composerVisible = showingChats && !self.chatNavigationClosed && (!self.mediaCenterVisible || [self isAquaChatInfoPanelActive]) && ![self aquaChatInfoReplacesConversation];
     CGFloat footerHeight = TGAquaFooterHeight(composerVisible, [self.sendTextFieldBackgroundView frame]);
     [self.aquaToolbarView setFrame:NSMakeRect(0, height-54, width, 54)];
     CGFloat conversationX = NSMaxX(sidebar) + 6.0;
