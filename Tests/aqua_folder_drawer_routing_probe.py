@@ -223,9 +223,10 @@ __VIEW_DECLARATIONS__
     NSInteger tags[]={-1,-2,3,17};
     for(NSUInteger i=0;i<4;i++) { ProbeView *button=[[[ProbeView alloc] init] autorelease]; button.tag=tags[i]; button.target=self; button.action=@selector(folderFilterChanged:); [buttons addObject:button]; }
     self.drawerFolderButtons=buttons;
-    self.navigationButtons=[NSArray arrayWithObjects:[[[ProbeView alloc] init] autorelease],[[[ProbeView alloc] init] autorelease],nil];
+    self.navigationButtons=[NSArray arrayWithObjects:[[[ProbeView alloc] init] autorelease],[[[ProbeView alloc] init] autorelease],[[[ProbeView alloc] init] autorelease],[[[ProbeView alloc] init] autorelease],nil];
     return self;
 }
+- (void)refreshAquaToolbarAccount {} // Account menu is tested by the toolbar probe.
 - (void)dealloc { [_activeSection release]; [_currentAuthState release]; [_aquaFolderDrawer release]; [_drawerFolderButtons release]; [_navigationButtons release]; [_views release]; [_events release]; [_window release]; [super dealloc]; }
 - (ProbeView *)viewForName:(NSString *)name { ProbeView *view=[_views objectForKey:name]; if(!view) { view=[[[ProbeView alloc] init] autorelease]; [_views setObject:view forKey:name]; } return view; }
 __VIEW_METHODS__
@@ -320,6 +321,7 @@ int main(void) {
             [probe updateAquaShellVisibility];
             Check(probe.aquaFolderDrawer.prepareCount==prepared,"passive auth/section visibility updates never request accommodation");
             if(mode) {
+                Check([(ProbeView *)[probe.navigationButtons objectAtIndex:3] hidden],"Settings stays in account dropdown instead of duplicating a top button");
                 Check(probe.aquaFolderDrawer.visible==(chats && external && expanded && !empty),"external drawer cannot remain open in settings, other sections, auth or empty-folder state");
                 Check(probe.drawerFolderScrollView.hidden==(!chats || !expanded || empty),"shared folders visibility follows auth, section and expansion");
                 Check(probe.aquaFolderEditButton.hidden==(!chats || external),"main Edit control only appears for inline folders");

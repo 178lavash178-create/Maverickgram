@@ -193,13 +193,10 @@ Licensed under Creative Commons Attribution-ShareAlike 3.0 Unported.
 Full attribution, source links, and license: Resources/Textures/ATTRIBUTION.txt
 and Resources/Textures/CC-BY-SA-3.0.txt. Original texture files are unmodified.
 
-Oxygen Icons 5.116.0
--------------------
-Oxygen icons copyright KDE and licensed under the GNU LGPL version 3 or later.
-https://develop.kde.org/frameworks/oxygen-icons/
-
-Six unmodified Aqua toolbar PNGs from KDE/oxygen-icons v5.116.0, commit
-44040e666e0677bcd4cb1f666cbb1d05cbbc477f. Original SVGZ source, notices,
-LGPLv3/artwork clarification, incorporated GPLv3 terms and hash manifest are
-bundled in Icons/AquaToolbar. See Icons/AquaToolbar/ATTRIBUTION.txt and
-Icons/AquaToolbar/upstream/COPYING. The artwork import is unmodified.
+Aqua toolbar silhouettes: Font Awesome Free 6.7.2 by Fonticons, Inc.
+https://fontawesome.com/
+https://fontawesome.com/license/free
+Icons: Creative Commons Attribution 4.0 International.
+https://creativecommons.org/licenses/by/4.0/
+Paths unchanged; PNG conversion and runtime tint only.
+Original SVGs, license and attribution bundled in Icons/AquaGlyphs.

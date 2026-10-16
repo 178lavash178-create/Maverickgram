@@ -62,19 +62,19 @@ __CELL__
 - (void)dealloc {[_query release];[_searchField release];[super dealloc];}
 @end
 @interface ToolbarProbe : NSObject {
- NSView *_aquaToolbarView;Badge *_accountBadgeView;NSString *_profileFirstName,*_currentAuthState;
+ NSView *_aquaToolbarView;Badge *_accountBadgeView;NSString *_profileFirstName,*_currentAuthState,*_activeSection;
  NSWindow *_chatSearchWindow;TGChatSearchPanelView *_panel;NSUInteger _opened,_updated,_profileActions,_settingsActions;
 }
 @property(nonatomic,retain) NSView *aquaToolbarView;
 @property(nonatomic,retain) Badge *accountBadgeView;
-@property(nonatomic,copy) NSString *profileFirstName,*currentAuthState;
+@property(nonatomic,copy) NSString *profileFirstName,*currentAuthState,*activeSection;
 @property(nonatomic,retain) NSWindow *chatSearchWindow;
 @property(nonatomic,retain) TGChatSearchPanelView *panel;
 @property(nonatomic) NSUInteger opened,updated,profileActions,settingsActions;
 @end
 @implementation ToolbarProbe
-@synthesize aquaToolbarView=_aquaToolbarView,accountBadgeView=_accountBadgeView,profileFirstName=_profileFirstName,currentAuthState=_currentAuthState,chatSearchWindow=_chatSearchWindow,panel=_panel,opened=_opened,updated=_updated,profileActions=_profileActions,settingsActions=_settingsActions;
-- (void)dealloc {[_aquaToolbarView release];[_accountBadgeView release];[_profileFirstName release];[_currentAuthState release];[_chatSearchWindow release];[_panel release];[super dealloc];}
+@synthesize aquaToolbarView=_aquaToolbarView,accountBadgeView=_accountBadgeView,profileFirstName=_profileFirstName,currentAuthState=_currentAuthState,activeSection=_activeSection,chatSearchWindow=_chatSearchWindow,panel=_panel,opened=_opened,updated=_updated,profileActions=_profileActions,settingsActions=_settingsActions;
+- (void)dealloc {[_aquaToolbarView release];[_accountBadgeView release];[_profileFirstName release];[_currentAuthState release];[_activeSection release];[_chatSearchWindow release];[_panel release];[super dealloc];}
 - (void)openProfileFromDrawer:(id)sender {(void)sender;self.profileActions++;}
 - (void)navigationChanged:(id)sender {if([sender tag]==3) self.settingsActions++;}
 - (void)openChatSearchWindow:(id)sender {(void)sender;self.opened++;[self.panel setQuery:@""];}
@@ -96,9 +96,10 @@ int main(void) {
  for(NSString *language in [NSArray arrayWithObjects:@"ru",@"be",@"en",nil]) {
   TGSetLanguageCode(language);
   for(NSUInteger width=760;width<=980;width+=220) {
-   TGAquaToolbarGeometry g=TGAquaToolbarFrames(width,700);Check(NSMaxX(g.account)<NSMinX(g.sections[0]) && NSMaxX(g.sections[4])+12<=NSMinX(g.search) && NSMaxX(g.search)+12<=NSMinX(g.downloads),"account, five sections, native search and downloads never overlap at760/980");
+   TGAquaToolbarGeometry g=TGAquaToolbarFrames(width,700);Check(NSMaxX(g.account)<NSMinX(g.sections[0]) && NSMaxX(g.sections[3])+12<=NSMinX(g.search) && NSMaxX(g.search)+12<=NSMinX(g.downloads),"account, four sections, native search and downloads never overlap at760/980");
    for(NSUInteger i=0;i<6;i++) {
-    CGFloat available=(i<5 ? NSWidth(g.sections[i]):NSWidth(g.downloads))-4;
+    if(i==4) continue;
+    CGFloat available=(i<4 ? NSWidth(g.sections[i]):NSWidth(g.downloads))-4;
     CGFloat needed=[TGLoc([keys objectAtIndex:i]) sizeWithAttributes:[NSDictionary dictionaryWithObject:[NSFont systemFontOfSize:11] forKey:NSFontAttributeName]].width;
     Check(needed<=available,"all localized captions fit without hiding actions");
    }
@@ -122,6 +123,8 @@ int main(void) {
  Check([[account title] isEqual:@"Юрий"] && [[account toolTip] rangeOfString:owner.accountBadgeView.displayName].location!=NSNotFound,"short account caption keeps full profile name in tooltip");
  Check([[account itemAtIndex:1] action]==@selector(openProfileFromDrawer:) && [[account itemAtIndex:2] action]==@selector(navigationChanged:) && [[account itemAtIndex:2] tag]==3,"native dropdown reuses existing Profile and Settings actions");
  for(NSUInteger i=1;i<=2;i++) {NSMenuItem *item=[account itemAtIndex:i];[[item target] performSelector:[item action] withObject:item];}
+ owner.activeSection=@"settings";[owner refreshAquaToolbarAccount];Check([[account itemAtIndex:2] state]==NSOnState,"Settings is selected in account dropdown on Settings route");
+ owner.activeSection=@"chats";[owner refreshAquaToolbarAccount];Check([[account itemAtIndex:2] state]==NSOffState,"Settings dropdown clears selection on other routes");
  Check(owner.profileActions==1 && owner.settingsActions==1,"dropdown action routing preserves profile/settings identities");
  Check([[search cell] sendsWholeSearchString] && ![[search cell] sendsSearchStringImmediately],"native toolbar search submits whole query instead of sending every keystroke");
  [search setStringValue:@"  сохранённый запрос  "];[search sendAction:[search action] to:[search target]];
@@ -133,17 +136,21 @@ int main(void) {
  [owner installAquaToolbarCellOnButton:button asset:@"arrow-down" toggle:NO];[button performClick:nil];Check([(NSButtonCell *)[button cell] showsStateBy]==0 && ![[button cell] isHighlighted],"momentary downloads-style action never becomes selected tab");
  for(NSUInteger i=0;i<[assets count];i++) {
   [button setTitle:TGLoc([keys objectAtIndex:i])];[owner installAquaToolbarCellOnButton:button asset:[assets objectAtIndex:i] toggle:YES];
-  TGAquaToolbarItemCell *actual=(TGAquaToolbarItemCell *)[button cell];Check([actual usesOriginalIconColors] && [actual image]!=nil,"all six bundled Oxygen originals resolve through nested resource paths");
+  TGAquaToolbarItemCell *actual=(TGAquaToolbarItemCell *)[button cell];Check(![actual usesOriginalIconColors] && [actual image]!=nil && [[actual iconAssetName] hasPrefix:@"AquaGlyphs/"],"all six official solid glyphs resolve as tintable nested resources");
   [actual setState:NSOffState];NSBitmapImageRep *idle=Render(actual,NO);[actual setState:NSOnState];NSBitmapImageRep *selected=Render(actual,NO);
-  NSRect pixels=TGAquaToolbarItemIconFrame(NSMakeRect(10,10,70,52),NO);NSMutableSet *colors=[NSMutableSet set];NSUInteger covered=0;
+  NSRect pixels=TGAquaToolbarItemIconFrame(NSMakeRect(10,10,70,52),NO);NSUInteger covered=0;
   for(NSUInteger y=72-NSMaxY(pixels);y<72-NSMinY(pixels);y++) for(NSUInteger x=NSMinX(pixels);x<NSMaxX(pixels);x++) {
-   Check(SamePixel(idle,selected,x,y),"Oxygen original RGB and shading are preserved when selected");
-   const unsigned char *pixel=[idle bitmapData]+y*[idle bytesPerRow]+4*x;
-   if(pixel[3]>200) {[colors addObject:[NSNumber numberWithUnsignedLong:((NSUInteger)pixel[0]<<16)|((NSUInteger)pixel[1]<<8)|pixel[2]]];covered++;}
+   NSColor *a=[[idle colorAtX:x y:y] colorUsingColorSpaceName:NSCalibratedRGBColorSpace],*b=[[selected colorAtX:x y:y] colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
+   Check(fabs([a alphaComponent]-[b alphaComponent])<0.02,"selection preserves downloaded glyph silhouette and antialiasing");
+   if([a alphaComponent]>0.95) {
+    NSColor *graphite=TGColorFromHex(0x47515D),*blue=TGColorFromHex(0x1469A6);
+    Check(fabs([a redComponent]-[graphite redComponent])<0.04 && fabs([a greenComponent]-[graphite greenComponent])<0.04 && fabs([a blueComponent]-[graphite blueComponent])<0.04,"idle glyph uses graphite ink");
+    Check(fabs([b redComponent]-[blue redComponent])<0.04 && fabs([b greenComponent]-[blue greenComponent])<0.04 && fabs([b blueComponent]-[blue blueComponent])<0.04,"selected glyph uses blue ink");covered++;
+   }
   }
-  Check(covered>60 && [colors count]>16,"full-color toolbar retains source shading rather than flattening artwork");
+  Check(covered>60,"actual official glyph has visible substantial ink coverage");
   NSUInteger blue=0;for(NSUInteger y=45;y<60;y++) for(NSUInteger x=12;x<78;x++) {const unsigned char *pixel=[selected bitmapData]+y*[selected bytesPerRow]+4*x;if(pixel[3]>100 && pixel[2]>pixel[0]+20 && pixel[2]>pixel[1]+10) blue++;}
-  Check(blue>5,"active caption is blue while original icon artwork remains untouched");
+  Check(blue>5,"active caption follows selected blue icon");
  }
  TGAquaToolbarItemCell *original=[[[TGAquaToolbarItemCell alloc] initTextCell:@"Native"] autorelease];original.usesOriginalIconColors=YES;[original setImage:[NSImage imageNamed:NSImageNameComputer]];[original setButtonType:NSToggleButton];
  NSBitmapImageRep *off=Render(original,NO);[original setState:NSOnState];NSBitmapImageRep *on=Render(original,NO);NSRect icon=TGAquaToolbarItemIconFrame(NSMakeRect(10,10,70,52),NO);
@@ -159,8 +166,9 @@ int main(void) {
    NSRect accountRect=g.account;accountRect.size.width=MIN(NSWidth(accountRect),MAX(54,ceil([[account title] sizeWithAttributes:[NSDictionary dictionaryWithObject:[account font] forKey:NSFontAttributeName]].width)+28));
    [account removeFromSuperview];[search removeFromSuperview];[account setFrame:accountRect];[search setFrame:g.search];[root addSubview:account];[root addSubview:search];
    for(NSUInteger i=0;i<6;i++) {
-    NSButton *item=[[[NSButton alloc] initWithFrame:i<5 ? g.sections[i] : g.downloads] autorelease];
-    [item setTitle:TGLoc([keys objectAtIndex:i])];[owner installAquaToolbarCellOnButton:item asset:[assets objectAtIndex:i] toggle:i<5];[item setState:i==0 ? NSOnState:NSOffState];
+    if(i==4) continue;
+    NSButton *item=[[[NSButton alloc] initWithFrame:i<4 ? g.sections[i] : g.downloads] autorelease];
+    [item setTitle:TGLoc([keys objectAtIndex:i])];[owner installAquaToolbarCellOnButton:item asset:[assets objectAtIndex:i] toggle:i<4];[item setState:i==0 ? NSOnState:NSOffState];
     [(TGAquaToolbarItemCell *)[item cell] setBadgeText:i==0 ? @"7" : nil];[root addSubview:item];
    }
    [previewWindow display];NSBitmapImageRep *bar=[root bitmapImageRepForCachingDisplayInRect:bounds];[root cacheDisplayInRect:bounds toBitmapImageRep:bar];

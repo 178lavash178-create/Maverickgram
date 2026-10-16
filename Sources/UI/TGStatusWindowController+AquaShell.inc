@@ -24,14 +24,14 @@
     NSString *badge=[[button cell] respondsToSelector:@selector(badgeText)] ? [[(TGNavigationButtonCell *)[button cell] badgeText] copy] : nil;
     static NSDictionary *colorAssets=nil;
     if(!colorAssets) colorAssets=[[NSDictionary alloc] initWithObjectsAndKeys:
-        @"AquaToolbar/chats",@"chat",@"AquaToolbar/contacts",@"contacts",@"AquaToolbar/calls",@"call-receive",
-        @"AquaToolbar/workshop",@"workshop",@"AquaToolbar/settings",@"settings",@"AquaToolbar/downloads",@"arrow-down",nil];
+        @"AquaGlyphs/chats",@"chat",@"AquaGlyphs/contacts",@"contacts",@"AquaGlyphs/calls",@"call-receive",
+        @"AquaGlyphs/workshop",@"workshop",@"AquaGlyphs/settings",@"settings",@"AquaGlyphs/downloads",@"arrow-down",nil];
     NSString *originalName=[colorAssets objectForKey:asset];
     NSImage *original=TGIconAssetImageNamed(originalName);
     TGAquaToolbarItemCell *cell=[[[TGAquaToolbarItemCell alloc] initTextCell:title] autorelease];
     [cell setButtonType:toggle ? NSToggleButton : NSMomentaryPushInButton];
-    [cell setIconOnly:YES];[cell setIconAssetName:asset];[cell setBadgeText:badge];
-    [cell setImage:original ? original : TGIconAssetImageNamed(asset)];[cell setUsesOriginalIconColors:original!=nil];
+    [cell setIconOnly:YES];[cell setIconAssetName:originalName ? originalName : asset];[cell setBadgeText:badge];
+    [cell setImage:original ? original : TGIconAssetImageNamed(asset)];[cell setUsesOriginalIconColors:NO];
     [button setCell:cell];[button setTitle:title];[button setState:state];
     [button setTarget:target];[button setAction:action];[button setBordered:NO];
     [button setFocusRingType:NSFocusRingTypeExterior];[button setToolTip:title];[title release];[badge release];
@@ -67,6 +67,7 @@
     NSString *name=[self.profileFirstName length] ? self.profileFirstName : full;
     [[account itemAtIndex:0] setTitle:name];[account setTitle:name];
     [[account itemAtIndex:1] setTitle:TGLoc(@"profile.title")];[[account itemAtIndex:2] setTitle:TGLoc(@"settings")];
+    [[account itemAtIndex:2] setState:[self.activeSection isEqualToString:@"settings"] ? NSOnState : NSOffState];
     [account setToolTip:[NSString stringWithFormat:@"%@ — %@",full,TGLoc(@"profile.openHint")]];
     [[[self aquaToolbarSearchField] cell] setPlaceholderString:TGLoc(@"search.chats.title")];
     [[self aquaToolbarSearchField] setToolTip:TGLoc(@"search.chats.title")];
@@ -194,6 +195,8 @@
     [self.aquaSearchButton setHidden:YES]; // Replaced by the editable native search field.
     [self.aquaFooterView setHidden:(!chats || self.chatNavigationClosed || (self.mediaCenterVisible && ![self isAquaChatInfoPanelActive]) || [self aquaChatInfoReplacesConversation])];
     for (NSButton *button in self.navigationButtons) [button setHidden:!ready];
+    [[self.navigationButtons objectAtIndex:3] setHidden:YES]; // Settings is in the account menu.
+    [self refreshAquaToolbarAccount];
     [self.aquaFolderHeaderButton setHidden:!chats];
     [self.aquaFolderEditButton setHidden:(!chats || [self aquaUsesExternalFolderDrawer])];
     [self.aquaChatHeaderView setHidden:!chats];
@@ -228,7 +231,7 @@
     resizeFrame.size.height = MAX(0, NSMaxY(resizeFrame));
     resizeFrame.origin.y = 0;
     [self.sidebarResizeHandleView setFrame:resizeFrame];
-    for (NSView *control in [NSArray arrayWithObjects:self.attachPhotoButton, self.botActionButton, self.sendTextFieldBackgroundView, self.sendTextField, self.stickerButton, self.voiceRecordButton, self.sendMessageButton, nil]) {
+    for (NSView *control in [NSArray arrayWithObjects:self.attachPhotoButton, self.botActionButton, self.sendTextFieldBackgroundView, self.sendTextField, self.stickerButton, self.voiceRecordButton, self.sendMessageButton, [self aquaScheduledMessagesButton], nil]) {
         [content addSubview:control positioned:NSWindowAbove relativeTo:nil];
     }
     TGAquaToolbarGeometry toolbar=TGAquaToolbarFrames(width,height);
@@ -240,7 +243,7 @@
     CGFloat nameWidth=ceil([[account title] sizeWithAttributes:[NSDictionary dictionaryWithObject:[account font] forKey:NSFontAttributeName]].width)+28;
     accountFrame.size.width=MIN(NSWidth(accountFrame),MAX(54,nameWidth));
     [[self aquaToolbarAccountButton] setFrame:accountFrame];[[self aquaToolbarSearchField] setFrame:searchFrame];
-    NSArray *order = [NSArray arrayWithObjects:[self.navigationButtons objectAtIndex:2], [self.navigationButtons objectAtIndex:0], [self.navigationButtons objectAtIndex:1], self.workshopDrawerButton, [self.navigationButtons objectAtIndex:3], nil];
+    NSArray *order = [NSArray arrayWithObjects:[self.navigationButtons objectAtIndex:2], [self.navigationButtons objectAtIndex:0], [self.navigationButtons objectAtIndex:1], self.workshopDrawerButton, nil];
     NSUInteger index = 0;
     for (NSButton *button in order) {
         [button setFrame:TGAquaToolbarSectionFrame(width, height, index)];

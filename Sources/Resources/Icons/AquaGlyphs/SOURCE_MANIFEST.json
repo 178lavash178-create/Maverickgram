@@ -1,0 +1,36 @@
+{
+  "version": "Font Awesome Free 6.7.2",
+  "assets": {
+    "chats": {
+      "upstream": "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.7.2/svgs/solid/comment-dots.svg",
+      "svg_sha256": "7f8c235853ef8a8929317d5aac83a760e85c72471a9695cf2db9d9c1d3d17606",
+      "png_sha256": "e50eb5ae900d16fc7c870fe3086404667e3e484a132ac380d2c5f25da1cc2055"
+    },
+    "contacts": {
+      "upstream": "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.7.2/svgs/solid/user-group.svg",
+      "svg_sha256": "519ab5cb4449270731dfbecee0db8bfd009047d713b3c69e0e1c3ba6f2ad474f",
+      "png_sha256": "ea3c278ef394e6ffb7e8561c7453e5b25313aed3bdd0c16239a9b2671ab72ef0"
+    },
+    "calls": {
+      "upstream": "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.7.2/svgs/solid/phone.svg",
+      "svg_sha256": "e43dc81a834f7e22b11145516f8a82e4c2004506afa7fde69452b7fd2297a794",
+      "png_sha256": "221c07294b5bcf625b6481da2e8479539ccc6b7b5bb392c49d55067f3e9320be"
+    },
+    "workshop": {
+      "upstream": "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.7.2/svgs/solid/screwdriver-wrench.svg",
+      "svg_sha256": "7de213a52e480bac1ba993e49f7fcd246c3450329ca4df04e5af2864e39cebbf",
+      "png_sha256": "6ea98db42d5de59b35cc87a13da6e8b6ea8c3d8211e5600715826729246abc7e"
+    },
+    "settings": {
+      "upstream": "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.7.2/svgs/solid/gear.svg",
+      "svg_sha256": "b9a38444d7af356e89bb9b2d11852847f969e8b9a45981ca0a1387477247ae81",
+      "png_sha256": "ae1fa87cd0b2d87bbe4cd18855b4d46e7952580dc7e4bc2c0497488bcdaa3232"
+    },
+    "downloads": {
+      "upstream": "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.7.2/svgs/solid/circle-arrow-down.svg",
+      "svg_sha256": "0b9c00f7ac5095b8f8af454820755da0c0267e95a521b9b83dd632bde3951380",
+      "png_sha256": "a45f7f625ca7b5ef8dce9a3c4d1bfcb38a269ba9248110eb331d73e68061f3aa"
+    }
+  },
+  "conversion": "Original paths, padded square viewBox, aspect preserved. macOS sips PNG conversion and resize64. No shape edits."
+}

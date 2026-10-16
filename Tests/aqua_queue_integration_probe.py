@@ -7,6 +7,9 @@ def read(path):
     with open(os.path.join(ROOT,path),'rb') as handle:return handle.read().decode('utf-8')
 queue=read('Sources/UI/TGStatusWindowController+AquaQueuePresentation.inc')
 layout=read('Sources/UI/TGStatusWindowController+SectionLayout.inc')
+shell=read('Sources/UI/TGStatusWindowController+AquaShell.inc')
+start=shell.index('    [content addSubview:self.aquaFooterView positioned:')
+stacking=shell[start:shell.index('    TGAquaToolbarGeometry toolbar=',start)]
 start=layout.index('    CGFloat scheduledButtonWidth=')
 reservation=layout[start:layout.index('    CGFloat estimatedSendFieldWidth',start)]
 start=layout.index('    CGFloat sendButtonWidth = aqua ?')
@@ -63,7 +66,7 @@ static void Check(BOOL value,const char *message){if(!value){fprintf(stderr,"Aqu
     NSNumber *_selectedChatID;NSString *_selectedChatTitle,*_currentAuthState,*_activeSection;
     BOOL _chatNavigationClosed,_searchPanelVisible,_botComposerVisible,_profileReplaces,_profileActive,_mediaCenterVisible;
     NSButton *_sendTextField;
-    NSView *_sendLabel,*_attachPhotoButton,*_botActionButton,*_botCommandPanelView,*_sendTextFieldBackgroundView,*_stickerButton,*_voiceRecordButton,*_sendMessageButton;
+    NSView *_aquaFooterView,*_sidebarResizeHandleView,*_sendLabel,*_attachPhotoButton,*_botActionButton,*_botCommandPanelView,*_sendTextFieldBackgroundView,*_stickerButton,*_voiceRecordButton,*_sendMessageButton;
 }
 @property(nonatomic,retain) TGScheduledMessagesWindowController *scheduledMessagesWindowController;
 @property(nonatomic,retain) id client,downloadManagerWindowController;
@@ -71,12 +74,13 @@ static void Check(BOOL value,const char *message){if(!value){fprintf(stderr,"Aqu
 @property(nonatomic,copy) NSString *selectedChatTitle,*currentAuthState,*activeSection;
 @property(nonatomic,assign) BOOL chatNavigationClosed,searchPanelVisible,botComposerVisible,profileReplaces,profileActive,mediaCenterVisible;
 @property(nonatomic,retain) NSButton *sendTextField;
-@property(nonatomic,retain) NSView *sendLabel,*attachPhotoButton,*botActionButton,*botCommandPanelView,*sendTextFieldBackgroundView,*stickerButton,*voiceRecordButton,*sendMessageButton;
+@property(nonatomic,retain) NSView *aquaFooterView,*sidebarResizeHandleView,*sendLabel,*attachPhotoButton,*botActionButton,*botCommandPanelView,*sendTextFieldBackgroundView,*stickerButton,*voiceRecordButton,*sendMessageButton;
 @end
 @implementation QueueRoot
 @synthesize scheduledMessagesWindowController=_scheduledMessagesWindowController,client=_client,downloadManagerWindowController=_downloadManagerWindowController,selectedChatID=_selectedChatID,selectedChatTitle=_selectedChatTitle,currentAuthState=_currentAuthState,activeSection=_activeSection,chatNavigationClosed=_chatNavigationClosed,searchPanelVisible=_searchPanelVisible,botComposerVisible=_botComposerVisible,profileReplaces=_profileReplaces,profileActive=_profileActive,mediaCenterVisible=_mediaCenterVisible;
+@synthesize aquaFooterView=_aquaFooterView,sidebarResizeHandleView=_sidebarResizeHandleView;
 @synthesize sendTextField=_sendTextField,sendLabel=_sendLabel,attachPhotoButton=_attachPhotoButton,botActionButton=_botActionButton,botCommandPanelView=_botCommandPanelView,sendTextFieldBackgroundView=_sendTextFieldBackgroundView,stickerButton=_stickerButton,voiceRecordButton=_voiceRecordButton,sendMessageButton=_sendMessageButton;
-- (id)init{self=[super init];if(self){_window=[[QueueWindow alloc] init];self.client=[[[NSObject alloc] init] autorelease];self.selectedChatID=@42;self.currentAuthState=@"ready";self.activeSection=TGSectionChats;self.sendTextField=[[[NSButton alloc] init] autorelease];self.sendLabel=[[[NSView alloc] init] autorelease];self.attachPhotoButton=[[[NSView alloc] init] autorelease];self.botActionButton=[[[NSView alloc] init] autorelease];self.botCommandPanelView=[[[NSView alloc] init] autorelease];self.sendTextFieldBackgroundView=[[[NSView alloc] init] autorelease];self.stickerButton=[[[NSView alloc] init] autorelease];self.voiceRecordButton=[[[NSView alloc] init] autorelease];self.sendMessageButton=[[[NSView alloc] init] autorelease];}return self;}
+- (id)init{self=[super init];if(self){_window=[[QueueWindow alloc] init];self.aquaFooterView=[[[NSView alloc] initWithFrame:NSMakeRect(0,0,1200,58)] autorelease];self.sidebarResizeHandleView=[[[NSView alloc] init] autorelease];self.client=[[[NSObject alloc] init] autorelease];self.selectedChatID=@42;self.currentAuthState=@"ready";self.activeSection=TGSectionChats;self.sendTextField=[[[NSButton alloc] init] autorelease];self.sendLabel=[[[NSView alloc] init] autorelease];self.attachPhotoButton=[[[NSView alloc] init] autorelease];self.botActionButton=[[[NSView alloc] init] autorelease];self.botCommandPanelView=[[[NSView alloc] init] autorelease];self.sendTextFieldBackgroundView=[[[NSView alloc] init] autorelease];self.stickerButton=[[[NSView alloc] init] autorelease];self.voiceRecordButton=[[[NSView alloc] init] autorelease];self.sendMessageButton=[[[NSView alloc] init] autorelease];}return self;}
 - (id)window{return _window;}
 - (void)applyUtilityButtonStyle:(NSButton *)button{(void)button;}
 - (void)installAquaTextCellOnButton:(NSButton *)button accented:(BOOL)accented{(void)button;(void)accented;}
@@ -92,7 +96,11 @@ __QUEUE__
 __RESERVATION__
 __COMPOSER__
 }
-- (void)dealloc{[_scheduledMessagesWindowController release];[_window release];[_client release];[_downloadManagerWindowController release];[_selectedChatID release];[_selectedChatTitle release];[_currentAuthState release];[_activeSection release];[_sendTextField release];[_sendLabel release];[_attachPhotoButton release];[_botActionButton release];[_botCommandPanelView release];[_sendTextFieldBackgroundView release];[_stickerButton release];[_voiceRecordButton release];[_sendMessageButton release];[super dealloc];}
+- (void)restackComposerChrome {
+    NSView *content=[[self window] contentView];
+__STACKING__
+}
+- (void)dealloc{[_aquaFooterView release];[_sidebarResizeHandleView release];[_scheduledMessagesWindowController release];[_window release];[_client release];[_downloadManagerWindowController release];[_selectedChatID release];[_selectedChatTitle release];[_currentAuthState release];[_activeSection release];[_sendTextField release];[_sendLabel release];[_attachPhotoButton release];[_botActionButton release];[_botCommandPanelView release];[_sendTextFieldBackgroundView release];[_stickerButton release];[_voiceRecordButton release];[_sendMessageButton release];[super dealloc];}
 @end
 int main(void){
     NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];[NSApplication sharedApplication];
@@ -114,11 +122,19 @@ int main(void){
     Aqua=NO;root.scheduledMessagesWindowController=[[[TGScheduledMessagesWindowController alloc] initWithClient:root.client chatID:root.selectedChatID title:@""] autorelease];bottom=[root layoutAquaScheduledShelfAtX:300 bottom:58 width:650 top:700];Check(bottom==58&&root.scheduledMessagesWindowController.getterCalls==0,"Classic layout must not lazily create Aqua content");Aqua=YES;
     [root ensureAquaScheduledMessagesButton];NSUInteger layouts=0;
     for(NSUInteger bot=0;bot<2;bot++)for(CGFloat width=320;width<=1000;width+=2){root.botComposerVisible=bot;[[root aquaScheduledMessagesButton] setHidden:NO];[root layoutComposerWidth:width];NSButton *queue=[root aquaScheduledMessagesButton];
-        if(![queue isHidden]&&NSWidth([queue frame])>0){Check(!NSIntersectsRect([queue frame],[root.stickerButton frame]),"scheduled control cannot overlap sticker button at narrow/profile width");Check(!NSIntersectsRect([queue frame],[root.sendTextFieldBackgroundView frame]),"scheduled control cannot overlap input");Check(NSMaxX([queue frame])<=width,"scheduled control stays within conversation");}layouts++;
+        if(![queue isHidden]&&NSWidth([queue frame])>0){Check(!NSIntersectsRect([queue frame],[root.stickerButton frame]),"scheduled control cannot overlap sticker button at narrow/profile width");Check(!NSIntersectsRect([queue frame],[root.sendTextFieldBackgroundView frame]),"scheduled control cannot overlap input");Check(NSMaxX([queue frame])<=width,"scheduled control stays within conversation");
+            // Reproduce the reported order: queue exists first; chrome is raised
+            // during shell relayout. Execute that exact production block.
+            NSView *content=[[root window] contentView];[content addSubview:queue];
+            [root restackComposerChrome];NSArray *order=[content subviews];
+            Check([queue superview]==content && [order indexOfObjectIdenticalTo:queue]>[order indexOfObjectIdenticalTo:root.aquaFooterView],"queue is above raised footer after actual shell restacking");
+            NSPoint center=NSMakePoint(NSMidX([queue frame]),NSMidY([queue frame]));
+            Check([content hitTest:center]==queue,"queue center hits native button rather than footer chrome");
+        }layouts++;
     }
     printf("Aqua queue integration: %lu production composer layouts; toggle/close, detached invalidation, profile replacement, section lifecycle and Classic allocation guard PASS.\n",(unsigned long)layouts);[pool drain];return 0;
 }
-'''.replace('__QUEUE__',queue).replace('__RESERVATION__',reservation).replace('__COMPOSER__',composer)
+'''.replace('__QUEUE__',queue).replace('__RESERVATION__',reservation).replace('__COMPOSER__',composer).replace('__STACKING__',stacking)
 folder=tempfile.mkdtemp(prefix='telegraphica-queue-integration-')
 try:
     path=os.path.join(folder,'probe.m');binary=os.path.join(folder,'probe')

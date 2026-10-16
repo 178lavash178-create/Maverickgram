@@ -23,7 +23,8 @@ NSAttributedString *TGAttributedMessageStringForItem(TGMessageItem *item, NSStri
 CGFloat TGMessageExtraBlockVerticalPadding(void);
 CGFloat TGMessageTopAccessoryHeightForItem(TGMessageItem *item);
 BOOL TGMessageUsesSeparateMetadataFooter(void);
-// Short, unadorned text reserves one indivisible time/status unit beside the body.
+// Short text without reactions may reserve one time/status unit beside the body.
+// Every reaction is rendered in the separate footer below the body.
 BOOL TGMessageUsesInlineMetadataForItem(TGMessageItem *item, CGFloat maximumBubbleWidth, BOOL showSenderDetails);
 NSRect TGMessageInlineReactionRectForItem(TGMessageItem *item, NSRect bubbleRect, BOOL flipped);
 NSRect TGMessageInlineTextRectForItem(TGMessageItem *item, NSRect bubbleRect, BOOL flipped);

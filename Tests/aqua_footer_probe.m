@@ -57,6 +57,57 @@ static void CheckFooter(TGMessageItem *item, CGFloat width, BOOL flipped) {
     [NSGraphicsContext restoreGraphicsState];
 }
 
+static void CheckReactionsBelowBodyAcrossThemes(void) {
+    // These are the same measured text and footer rectangles used by the cell.
+    // Exercise geometry without changing receipt assets, paint or chip colors.
+    NSString *originalTheme=[[TGCurrentThemeIdentifier() copy] autorelease];
+    for(NSString *theme in TGThemeIdentifiers()) {
+        NSAutoreleasePool *iteration=[[NSAutoreleasePool alloc] init];
+        TGSetActiveThemeIdentifier(theme);
+        for(NSNumber *level in [NSArray arrayWithObjects:@0,@3,nil]) {
+            TGSetChatMessageTextSizeLevel([level integerValue]);
+            for(NSNumber *outgoing in [NSArray arrayWithObjects:@NO,@YES,nil]) {
+                for(NSString *text in [NSArray arrayWithObjects:@"Hi",@"مرحبا بالعالم",@"A long message that wraps onto several lines at narrow widths and must keep reactions below the complete message text.",nil]) {
+                    TGMessageItem *item=[[[TGMessageItem alloc] initWithChatID:@1 messageID:@2 date:@1720000000 outgoing:[outgoing boolValue] preview:text] autorelease];
+                    [item setContentType:@"messageText"];
+                    for(NSString *summary in [NSArray arrayWithObjects:@"❤️ 1",@"❤️ 9999999999",@"❤️ 1  👍 22  🔥 333  🎉 4444",nil]) {
+                        [item setReactionSummary:summary];
+                        for(NSNumber *width in [NSArray arrayWithObjects:@240,@400,@640,nil]) {
+                            CGFloat available=[width doubleValue],maximum=TGMaximumBubbleWidthForItem(item,available);
+                            Require(!TGMessageUsesInlineMetadataForItem(item,maximum,NO),@"every theme rejects inline reactions, including short and RTL text");
+                            NSRect bubble=TGMessageBubbleRectForItem(item,NSMakeRect(0,0,available,1000),NO);
+                            CGFloat footer=TGReactionBandHeightForMessageItemWidth(item,NSWidth(bubble));
+                            NSDictionary *attributes=[NSDictionary dictionaryWithObjectsAndKeys:TGChatMessageBodyFont(),NSFontAttributeName,TGMessageTextParagraphStyle(),NSParagraphStyleAttributeName,nil];
+                            NSAttributedString *bodyText=TGAttributedMessageStringForItem(item,TGDisplayTextForMessageItem(item),attributes);
+                            CGFloat textHeight=ceil(NSHeight([bodyText boundingRectWithSize:NSMakeSize(maximum-24,12000) options:NSStringDrawingUsesLineFragmentOrigin]));
+                            for(NSNumber *flip in [NSArray arrayWithObjects:@NO,@YES,nil]) {
+                                BOOL flipped=[flip boolValue];
+                                NSRect body=NSMakeRect(NSMinX(bubble)+12,flipped?NSMinY(bubble)+9:NSMaxY(bubble)-9-textHeight,NSWidth(bubble)-24,textHeight+2);
+                                NSRect band=NSMakeRect(NSMinX(bubble)+10,flipped?NSMaxY(bubble)-footer:NSMinY(bubble),NSWidth(bubble)-20,footer);
+                                Require(NSContainsRect(bubble,body)&&NSContainsRect(bubble,band),@"message and lower reaction band remain in bubble");
+                                Require(flipped?NSMaxY(body)<NSMinY(band):NSMaxY(band)<NSMinY(body),@"reaction band is strictly below complete text, never on its baseline");
+                                Require(NSIsEmptyRect(TGMessageInlineReactionRectForItem(item,bubble,flipped)),@"obsolete inline route supplies no drawable reaction rectangle");
+                                NSRect time=TGMessageReactionTimeRect(item,band,flipped),metadata=time;
+                                CGFloat status=TGOutgoingStatusDotsWidthForItem(item);metadata.size.width+=status+(status>0?5:0);
+                                Require(!NSIsEmptyRect(time)&&NSContainsRect(band,metadata),@"time and unchanged delivery-check width stay in lower footer");
+                                Require(fabs(NSMaxX(metadata)-(NSMaxX(band)-2))<0.01,@"time/check unit remains anchored at bottom-right edge");
+                                for(NSDictionary *entry in TGReactionChipLayoutForItem(item,TGMessageReactionContentWidth(item,NSWidth(band)))) {
+                                    NSRect local=[[entry objectForKey:@"frame"] rectValue];
+                                    NSRect chip=NSMakeRect(NSMinX(band)+NSMinX(local),flipped?NSMinY(band)+2+NSMinY(local):NSMaxY(band)-2-NSMaxY(local),NSWidth(local),NSHeight(local));
+                                    Require(NSContainsRect(band,chip)&&!NSIntersectsRect(chip,body)&&!NSIntersectsRect(chip,metadata),@"wrapped reaction chips never overlap message, timestamp or checks");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        [iteration drain];
+    }
+    TGSetActiveThemeIdentifier(originalTheme);
+    TGSetChatMessageTextSizeLevel(TGChatMessageTextSizeNormal);
+}
+
 static void CheckCommentPresentation(void) {
     for (NSNumber *outgoing in [NSArray arrayWithObjects:@NO,@YES,nil]) {
         TGMessageItem *item=[[[TGMessageItem alloc] initWithChatID:@1 messageID:@2 date:@1720000000 outgoing:[outgoing boolValue] preview:@"Thanks"] autorelease];
@@ -129,6 +180,7 @@ int main(int argc,const char **argv) {
     [[NSUserDefaults standardUserDefaults] setObject:aqua ? @"aqua" : @"classic" forKey:TGInterfaceDesignDefaultsKey];
     Require(TGInterfaceDesignIsAqua()==aqua,@"production design gate selects requested process mode");
     TGSetChatMessagesAsBlocksEnabled(NO);
+    CheckReactionsBelowBodyAcrossThemes();
     CheckCommentPresentation();
     for(NSNumber *outgoing in [NSArray arrayWithObjects:@NO,@YES,nil]) {
         TGMessageItem *item=[[[TGMessageItem alloc] initWithChatID:@1 messageID:@2 date:@1720000000 outgoing:[outgoing boolValue] preview:@"Hi"] autorelease];
@@ -138,16 +190,10 @@ int main(int argc,const char **argv) {
             [item setReactionSummary:nil];
             Require(TGMessageUsesInlineMetadataForItem(item,420,NO),@"plain short text remains compact");
             [item setReactionSummary:@"❤️ 1"];
-            Require(TGMessageUsesInlineMetadataForItem(item,420,NO)==aqua,@"only Aqua puts one short reaction beside text");
+            Require(!TGMessageUsesInlineMetadataForItem(item,420,NO),@"even one short reaction always uses the lower footer in every design");
             NSRect bubble=TGMessageBubbleRectForItem(item,NSMakeRect(0,0,640,1000),NO);
-            if(aqua) for(NSNumber *flip in [NSArray arrayWithObjects:@NO,@YES,nil]) {
-                NSRect body=TGMessageInlineTextRectForItem(item,bubble,[flip boolValue]);
-                NSRect chip=TGMessageInlineReactionRectForItem(item,bubble,[flip boolValue]);
-                NSRect time=TGMessageInlineTimeRectForItem(item,bubble,[flip boolValue]);
-                NSRect metadata=time;metadata.size.width+=TGOutgoingStatusDotsWidthForItem(item)+(TGOutgoingStatusDotsWidthForItem(item)>0 ? 5.0 : 0.0);
-                Require(NSContainsRect(bubble,body)&&NSContainsRect(bubble,chip)&&NSContainsRect(bubble,metadata),@"compact row contains body/chip/complete metadata");
-                Require(!NSIntersectsRect(body,chip)&&!NSIntersectsRect(chip,metadata)&&!NSIntersectsRect(body,metadata),@"compact row parts are disjoint");
-                Require(NSHeight(bubble)<=50,@"single reaction preserves compact row height");
+            for(NSNumber *flip in [NSArray arrayWithObjects:@NO,@YES,nil]) {
+                Require(NSIsEmptyRect(TGMessageInlineReactionRectForItem(item,bubble,[flip boolValue])),@"legacy inline reaction geometry never shares the text baseline");
             }
             Require(!TGMessageUsesInlineMetadataForItem(item,80,NO),@"narrow width forces lower footer");
             for(NSString *summary in [NSArray arrayWithObjects:@"❤️ 9999999999",@"❤️ 1  👍 2",@"❤️ 99999  👍 888888  😁 77  🔥 1234567890  🎉 1",nil]) {
@@ -173,9 +219,17 @@ int main(int argc,const char **argv) {
         [item setReactionAnimationRemoving:NO];
         for(NSNumber *progress in [NSArray arrayWithObjects:@0,@0.1,@0.3,@0.5,@1,nil]) {
             [item setReactionAnimationProgress:[progress doubleValue]];
+            Require(!TGMessageUsesInlineMetadataForItem(item,420,NO),@"animated reaction insertion never restores inline metadata");
             CGFloat height=TGMessageReactionFooterHeight(item,120);
             NSRect band=NSMakeRect(0,0,120,height), time=TGMessageReactionTimeRect(item,band,YES);
             Require(NSIsEmptyRect(time)||NSContainsRect(band,time),@"animated metadata stays hidden until its row fits");
+        }
+        [item setReactionSummary:nil];
+        [item setReactionAnimationDisplaySummary:@"❤️ 1"];
+        [item setReactionAnimationRemoving:YES];
+        for(NSNumber *progress in [NSArray arrayWithObjects:@0,@0.5,@1,nil]) {
+            [item setReactionAnimationProgress:[progress doubleValue]];
+            Require(!TGMessageUsesInlineMetadataForItem(item,420,NO),@"departing single reaction remains below text until animation state clears");
         }
     }
     printf("Aqua footer probe %s: %lu checks PASS\n",aqua ? "aqua" : "classic",(unsigned long)checks);

@@ -43,16 +43,16 @@ TGAquaToolbarGeometry TGAquaToolbarFrames(CGFloat width, CGFloat height) {
     TGAquaToolbarGeometry g;memset(&g,0,sizeof(g));
     width=isfinite(width) ? MAX(0,width) : 0; height=isfinite(height) ? MAX(0,height) : 0;
     CGFloat y=height-TGAquaToolbarHeight(), gap=12.0;
-    CGFloat accountEnd=MIN(198,MAX(160,floor(width*0.20)));
+    CGFloat accountEnd=MIN(220,MAX(174,floor(width*0.23)));
     CGFloat itemWidth=MIN(78,MAX(64,70+floor((width-760)*0.04)));
-    CGFloat searchWidth=MIN(184,MAX(106,120+floor((width-760)*0.29)));
+    CGFloat searchWidth=MIN(220,MAX(138,152+floor((width-760)*0.31)));
     g.avatar=NSMakeRect(10,y+10,44,44);
     g.account=NSMakeRect(60,y+19,MAX(0,accountEnd-60),26);
     g.downloads=NSMakeRect(MAX(0,width-76),y+6,64,52);
     g.search=NSMakeRect(MAX(0,NSMinX(g.downloads)-gap-searchWidth),y+20,searchWidth,26);
-    CGFloat total=itemWidth*5;
+    CGFloat total=itemWidth*4;
     CGFloat left=MAX(accountEnd+gap,MIN(floor((width-total)/2),NSMinX(g.search)-gap-total));
-    for(NSUInteger i=0;i<5;i++) g.sections[i]=NSMakeRect(left+i*itemWidth,y+6,itemWidth,52);
+    for(NSUInteger i=0;i<4;i++) g.sections[i]=NSMakeRect(left+i*itemWidth,y+6,itemWidth,52);
     return g;
 }
 NSRect TGAquaToolbarSectionFrame(CGFloat width, CGFloat height, NSUInteger index) {

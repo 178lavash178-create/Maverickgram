@@ -79,13 +79,14 @@ int main(void) {
         AssertContained(toolbar.search,bar);AssertContained(toolbar.downloads,bar);
         assert(NSMinX(toolbar.account)>=NSMaxX(toolbar.avatar)+6);
         NSRect previous=toolbar.account;
-        for (NSUInteger i=0;i<5;i++) {
+        for (NSUInteger i=0;i<4;i++) {
             NSRect frame=TGAquaToolbarSectionFrame(width,700,i);
             assert(NSEqualRects(frame,toolbar.sections[i]));AssertContained(frame,bar);
             assert(NSMinX(frame)>=NSMaxX(previous));
             assert(NSWidth(frame)>=64 && NSHeight(frame)==52);
             previous=frame;
         }
+        assert(NSEqualRects(toolbar.sections[4],NSZeroRect) && NSEqualRects(TGAquaToolbarSectionFrame(width,700,4),NSZeroRect));
         assert(NSMaxX(previous)+12<=NSMinX(toolbar.search));
         assert(NSWidth(toolbar.search)>=106 && NSMaxX(toolbar.search)+12<=NSMinX(toolbar.downloads));
     }

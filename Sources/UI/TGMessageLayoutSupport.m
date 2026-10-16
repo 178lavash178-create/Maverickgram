@@ -716,23 +716,13 @@ static NSSize TGMessageSingleLineTextSize(TGMessageItem *item) {
     return NSMakeSize(ceil(NSWidth(bounds)), ceil(NSHeight(bounds)));
 }
 
-// Only a short, settled single reaction may join the compact Aqua row.
-static CGFloat TGAquaInlineReactionWidth(TGMessageItem *item) {
-    if (!TGInterfaceDesignIsAqua() || [[item reactionAnimationDisplaySummary] length] > 0) { return 0.0; }
-    NSArray *chips = TGReactionChipLayoutForItem(item, 1000.0);
-    if ([chips count] != 1) { return 0.0; }
-    NSDictionary *chip = [chips objectAtIndex:0];
-    CGFloat width = NSWidth([[chip objectForKey:@"frame"] rectValue]);
-    return [[chip objectForKey:@"count"] length] <= 3 && width <= 64.0 ? width : 0.0;
-}
-
 static BOOL TGMessageCanUseSingleLineBody(TGMessageItem *item, CGFloat maximumBubbleWidth, BOOL showSenderDetails, BOOL inlineMetadata) {
     if (![item isKindOfClass:[TGMessageItem class]] || TGChatMessagesAsBlocksEnabled() ||
         [item isPinned] || [item isVisualMediaMessage] || TGMessageItemIsNonVisualPlayableMedia(item) ||
         TGMessageItemIsNonVisualDocument(item) || TGMessageItemIsPollContent(item) || TGMessageItemIsCallContent(item) ||
         TGMessageItemHasLinkPreview(item) || TGMessageItemShowsCommentBar(item) ||
         TGMessageSenderHeaderHeightForItem(item, showSenderDetails) > 0.0 ||
-        TGMessageContextHeaderHeightForItem(item) > 0.0 || (inlineMetadata && TGReactionChipsMinimumWidthForItem(item) > 0.0 && TGAquaInlineReactionWidth(item) <= 0.0)) {
+        TGMessageContextHeaderHeightForItem(item) > 0.0 || (inlineMetadata && TGReactionChipsMinimumWidthForItem(item) > 0.0)) {
         return NO;
     }
     NSString *type = [item contentType];
@@ -752,8 +742,7 @@ static BOOL TGMessageCanUseSingleLineBody(TGMessageItem *item, CGFloat maximumBu
     }
     NSSize body = TGMessageSingleLineTextSize(item);
     CGFloat metadata = inlineMetadata ? TGMessageInlineMetadataWidth(item) : 0.0;
-    CGFloat reaction = inlineMetadata ? TGAquaInlineReactionWidth(item) : 0.0;
-    CGFloat width = body.width + 24.0 + metadata + (metadata > 0.0 ? 8.0 : 0.0) + (reaction > 0.0 ? reaction + 8.0 : 0.0);
+    CGFloat width = body.width + 24.0 + metadata + (metadata > 0.0 ? 8.0 : 0.0);
     return body.width > 0.0 && body.height > 0.0 && width <= maximumBubbleWidth;
 }
 
@@ -764,19 +753,17 @@ BOOL TGMessageUsesInlineMetadataForItem(TGMessageItem *item, CGFloat maximumBubb
 NSRect TGMessageInlineTextRectForItem(TGMessageItem *item, NSRect bubbleRect, BOOL flipped) {
     NSSize body = TGMessageSingleLineTextSize(item);
     CGFloat metadata = TGMessageInlineMetadataWidth(item);
-    CGFloat reaction = TGAquaInlineReactionWidth(item);
-    CGFloat available = NSWidth(bubbleRect) - 24.0 - metadata - (metadata > 0.0 ? 8.0 : 0.0) - (reaction > 0.0 ? reaction + 8.0 : 0.0);
+    CGFloat available = NSWidth(bubbleRect) - 24.0 - metadata - (metadata > 0.0 ? 8.0 : 0.0);
     return NSMakeRect(NSMinX(bubbleRect) + 12.0,
-                      reaction > 0.0 ? NSMidY(bubbleRect) - (body.height + 2.0) / 2.0 :
                       (flipped ? NSMinY(bubbleRect) + 9.0 : NSMaxY(bubbleRect) - 9.0 - body.height),
                       MAX(1.0, available), body.height + 2.0);
 }
 
 NSRect TGMessageInlineReactionRectForItem(TGMessageItem *item, NSRect bubbleRect, BOOL flipped) {
-    CGFloat width = TGAquaInlineReactionWidth(item);
-    if (width <= 0.0) { return NSZeroRect; }
-    NSRect text = TGMessageInlineTextRectForItem(item, bubbleRect, flipped);
-    return NSMakeRect(NSMaxX(text) + 8.0, NSMidY(bubbleRect) - 14.0, width, 28.0);
+    // Retained for existing cell callers; reactions always belong to the lower
+    // footer, including short single reactions and animated insertion/removal.
+    (void)item; (void)bubbleRect; (void)flipped;
+    return NSZeroRect;
 }
 
 NSRect TGMessageInlineTimeRectForItem(TGMessageItem *item, NSRect bubbleRect, BOOL flipped) {
@@ -2312,9 +2299,8 @@ NSRect TGMessageBubbleRectForItem(TGMessageItem *item, NSRect cellFrame, BOOL sh
     if (TGMessageUsesInlineMetadataForItem(item, maximumBubbleWidth, showSenderDetails)) {
         NSSize body = TGMessageSingleLineTextSize(item);
         CGFloat metadata = TGMessageInlineMetadataWidth(item);
-        CGFloat reaction = TGAquaInlineReactionWidth(item);
-        CGFloat width = body.width + 24.0 + metadata + (metadata > 0.0 ? 8.0 : 0.0) + (reaction > 0.0 ? reaction + 8.0 : 0.0);
-        CGFloat height = MAX(reaction > 0.0 ? 40.0 : 32.0, body.height + 18.0);
+        CGFloat width = body.width + 24.0 + metadata + (metadata > 0.0 ? 8.0 : 0.0);
+        CGFloat height = MAX(32.0, body.height + 18.0);
         CGFloat x = outgoing ? NSMaxX(cellFrame) - width - sidePadding : NSMinX(cellFrame) + sidePadding + avatarGutter;
         CGFloat y = NSMinY(cellFrame) + 5.0 + floor(TGMessageExtraBlockVerticalPadding() / 2.0) + TGMessageTopAccessoryHeightForItem(item);
         return NSMakeRect(x, y, width, height);
