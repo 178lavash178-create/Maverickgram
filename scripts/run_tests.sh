@@ -494,7 +494,7 @@ HOME="$TEST_HOME" "$RECEIPT_PROBE_BUNDLE/Contents/MacOS/receipt-raster-probe"
 echo "Telegraphica tests passed."
 
 echo "== Interface design restart =="
-"$CLANG" "${COMPILE_FLAGS[@]}" Tests/interface_design_probe.m -framework Cocoa -o "$BUILD_DIR/interface-design-probe"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/interface_design_probe.m Sources/UI/TGDialogPresentation.m -framework Cocoa -o "$BUILD_DIR/interface-design-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/interface-design-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/interface-design-probe" aqua
 
