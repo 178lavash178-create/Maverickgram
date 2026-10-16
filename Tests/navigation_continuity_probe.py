@@ -14,13 +14,19 @@ start = flow.index('- (void)reloadMessagesForChatID:')
 start = flow.index('            BOOL sameThread =', start)
 end = flow.index('            if (!selectionStillCurrent)', start)
 guards = flow[start:end]
+reload_start = flow.index('- (void)reloadMessagesForChatID:')
+reload_end = flow.index('\n- (void)reloadOlderMessagesInteractive', reload_start)
+reload_method = flow[reload_start:reload_end]
+jump_start = flow.index('- (void)jumpToNewestMessages:')
+jump_end = flow.index('\n- (NSInteger)firstUnreadMessageRow', jump_start)
+jump_method = flow[jump_start:jump_end]
 props = [
  ('TGNavigationPositionStore *','navigationPositionStore','retain'),
  ('NSNumber *','profileUserID','retain'),('NSNumber *','selectedChatFilterID','retain'),
  ('NSNumber *','topicParentChatID','retain'),('NSNumber *','selectedChatID','retain'),
  ('NSNumber *','selectedMessageThreadID','retain'),('NSString *','selectedMessageTopicKind','copy'),
  ('NSString *','topicParentTitle','copy'),('NSString *','selectedChatTitle','copy'),
- ('NSString *','currentAuthState','copy'),('NSObject *','client','retain'),
+ ('NSString *','currentAuthState','copy'),('TGTDLibClient *','client','retain'),
  ('NSMutableArray *','chatItems','retain'),('NSMutableArray *','messageItems','retain'),
  ('NSArray *','drawerFolderButtons','retain'),('NSScrollView *','chatScrollView','retain'),
  ('NSScrollView *','messageScrollView','retain'),('NSTableView *','chatTableView','retain'),
@@ -30,7 +36,14 @@ props = [
  ('BOOL','forumTopicsPresentedInTopBar','assign'),('BOOL','chatNavigationClosed','assign'),
  ('BOOL','messageItemsRepresentFocusedContext','assign'),('BOOL','forceMessageScrollToNewest','assign'),
  ('BOOL','initialUnreadPositionPending','assign'),('NSUInteger','searchGeneration','assign'),
- ('NSUInteger','jumpUpdates','assign')]
+ ('NSUInteger','jumpUpdates','assign'),
+ ('BOOL','backgroundMessageRefreshInFlight','assign'),('BOOL','pendingLiveMessageRefresh','assign'),
+ ('BOOL','messageLoadingIndicatorVisible','assign'),('BOOL','composerRefocusPending','assign'),
+ ('BOOL','olderMessagesExhausted','assign'),('BOOL','lastPreserveOlder','assign'),
+ ('NSUInteger','messageLoadingGeneration','assign'),('NSUInteger','selectedChatUnreadCount','assign'),
+ ('NSUInteger','applyCount','assign'),('NSNumber *','selectedChatLastReadInboxMessageID','retain'),
+ ('NSProgressIndicator *','messageLoadingSpinner','retain'),('NSTextField *','statusField','retain'),
+ ('NSArray *','lastAppliedItems','retain')]
 ivars='\n'.join('    %s _%s;' % (t,n) for t,n,a in props)
 properties='\n'.join('@property(nonatomic,%s) %s %s;' % (a,t,n) for t,n,a in props)
 synth='\n'.join('@synthesize %s=_%s;' % (n,n) for t,n,a in props)
@@ -48,6 +61,21 @@ static NSUInteger const TGStatusChatPreviewInitialLimit=50,TGStatusChatPreviewMa
 static BOOL Aqua=YES;
 static BOOL TGInterfaceDesignIsAqua(void) { return Aqua; }
 static NSString *TGLoc(NSString *key) { return key; }
+static NSUInteger const TGMessagePreviewInitialLimit=20,TGMessagePrefillMaxAttempts=3;
+static BOOL TGStatusErrorLooksOffline(NSString *message) { (void)message;return NO; }
+static NSMutableArray *WorkerBlocks,*MainBlocks;
+static void ProbeDispatch(dispatch_queue_t queue,dispatch_block_t block) {
+ id copied=[block copy];[(queue==dispatch_get_main_queue() ? MainBlocks : WorkerBlocks) addObject:copied];[copied release];
+}
+static void RunOne(NSMutableArray *queue) { dispatch_block_t block=[[queue objectAtIndex:0] copy];[queue removeObjectAtIndex:0];block();[block release]; }
+@interface TGLogger : NSObject
++ (id)sharedLogger;
+- (void)log:(NSString *)text;
+@end
+@implementation TGLogger
++ (id)sharedLogger { static TGLogger *logger; if(!logger) logger=[[self alloc] init];return logger; }
+- (void)log:(NSString *)text { (void)text; }
+@end
 static NSUInteger checks;
 static void Check(BOOL yes,const char *message) { checks++;if(!yes) { fprintf(stderr,"Navigation continuity: %s\n",message);exit(1); } }
 static void Near(CGFloat actual,CGFloat expected,const char *message) { if(fabs(actual-expected)>=0.05) fprintf(stderr,"actual=%f expected=%f\n",actual,expected);Check(fabs(actual-expected)<0.05,message); }
@@ -64,6 +92,31 @@ static void Near(CGFloat actual,CGFloat expected,const char *message) { if(fabs(
 @end
 @interface TGMessageItem : TGChatItem @end
 @implementation TGMessageItem @end
+@interface TGTDLibClient : NSObject {
+ NSArray *_aroundItems,*_latestItems;NSMutableArray *_requestedAnchors;BOOL _aroundError;NSUInteger _latestCalls;NSString *_authorizationState;
+}
+@property(nonatomic,retain) NSArray *aroundItems,*latestItems;
+@property(nonatomic,retain) NSMutableArray *requestedAnchors;
+@property(nonatomic) BOOL aroundError;
+@property(nonatomic) NSUInteger latestCalls;
+@property(nonatomic,copy) NSString *authorizationState;
+- (NSArray *)messagePreviewItemsForChatID:(NSNumber *)chat messageThreadID:(NSNumber *)thread messageTopicKind:(NSString *)kind aroundMessageID:(NSNumber *)anchor newerMessageCount:(NSUInteger)newer limit:(NSUInteger)limit timeout:(NSTimeInterval)timeout error:(NSError **)error;
+- (NSArray *)recentMessagePreviewItemsForChatID:(NSNumber *)chat messageThreadID:(NSNumber *)thread messageTopicKind:(NSString *)kind limit:(NSUInteger)limit timeout:(NSTimeInterval)timeout error:(NSError **)error;
+- (NSString *)currentAuthorizationStatePreparingIfNeededWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
+@end
+@implementation TGTDLibClient
+@synthesize aroundItems=_aroundItems,latestItems=_latestItems,requestedAnchors=_requestedAnchors,aroundError=_aroundError,latestCalls=_latestCalls,authorizationState=_authorizationState;
+- (id)init { if((self=[super init])) _requestedAnchors=[[NSMutableArray alloc] init];return self; }
+- (void)dealloc { [_aroundItems release];[_latestItems release];[_requestedAnchors release];[_authorizationState release];[super dealloc]; }
+- (NSArray *)messagePreviewItemsForChatID:(NSNumber *)chat messageThreadID:(NSNumber *)thread messageTopicKind:(NSString *)kind aroundMessageID:(NSNumber *)anchor newerMessageCount:(NSUInteger)newer limit:(NSUInteger)limit timeout:(NSTimeInterval)timeout error:(NSError **)error {
+ (void)chat;(void)thread;(void)kind;(void)newer;(void)limit;(void)timeout;[_requestedAnchors addObject:anchor];
+ if(_aroundError) { if(error) *error=[NSError errorWithDomain:@"synthetic" code:400 userInfo:nil];return nil; }return _aroundItems;
+}
+- (NSArray *)recentMessagePreviewItemsForChatID:(NSNumber *)chat messageThreadID:(NSNumber *)thread messageTopicKind:(NSString *)kind limit:(NSUInteger)limit timeout:(NSTimeInterval)timeout error:(NSError **)error {
+ (void)chat;(void)thread;(void)kind;(void)limit;(void)timeout;(void)error;_latestCalls++;return _latestItems;
+}
+- (NSString *)currentAuthorizationStatePreparingIfNeededWithTimeout:(NSTimeInterval)timeout error:(NSError **)error { (void)timeout;(void)error;return _authorizationState ? _authorizationState : @"ready"; }
+@end
 @interface NavigationProbe : NSObject <NSTableViewDataSource> {
 __IVARS__
 }
@@ -80,15 +133,42 @@ __SYNTH__
 - (void)beginExplicitSearchJump {
 __SEARCH_CANCEL__
 }
-- (BOOL)acceptsClient:(NSObject *)client chat:(NSNumber *)chatIDCopy thread:(NSNumber *)messageThreadIDCopy kind:(NSString *)messageTopicKindCopy generation:(NSUInteger)navigationGeneration anchor:(NSNumber *)navigationAnchorCopy key:(NSString *)navigationKeyCopy {
+- (BOOL)acceptsClient:(NSObject *)client chat:(NSNumber *)chatIDCopy thread:(NSNumber *)messageThreadIDCopy kind:(NSString *)messageTopicKindCopy generation:(NSUInteger)navigationPresentationGeneration anchor:(NSNumber *)navigationAnchorCopy key:(NSString *)navigationKeyCopy {
+BOOL navigationInitialRestore=navigationAnchorCopy!=nil,navigationContinuingRestore=NO;
 __GUARDS__
  return selectionStillCurrent && !cancelledRestore;
 }
+- (void)appendDetail:(NSString *)text { (void)text; }
+- (void)setControlsBusy:(BOOL)value { (void)value; }
+- (void)updateVisibleSection {}
+- (void)scheduleVisibleMessageItemsRead {}
+- (void)setOfflineModeActive:(BOOL)value reason:(NSString *)reason { (void)value;(void)reason; }
+- (BOOL)messageHistoryNeedsPrefill { return NO; }
+- (void)prefillOlderMessagesIfNeededWithAttemptsRemaining:(NSUInteger)attempts { (void)attempts; }
+- (void)handlePendingLiveRefreshesIfPossible {}
+- (void)consumePendingComposerRefocus:(id)sender { (void)sender; }
+- (void)updateAuthControlsForState:(NSString *)state { self.currentAuthState=state; }
+- (void)scrollMessagesToNewestIfAvailable {}
+- (void)performSelector:(SEL)selector withObject:(id)object afterDelay:(NSTimeInterval)delay { (void)selector;(void)object;(void)delay; }
+- (void)applyRecentMessageItems:(NSArray *)items preservingOlderItems:(BOOL)preserve {
+ self.applyCount++;self.lastAppliedItems=items;self.lastPreserveOlder=preserve;
+ if(!preserve) [self.messageItems removeAllObjects];
+ for(TGMessageItem *item in items) {
+  BOOL found=NO;for(TGMessageItem *old in self.messageItems) if([[old messageID] isEqual:[item messageID]]) found=YES;
+  if(!found) [self.messageItems addObject:item];
+ }
+ [self.messageTableView reloadData];self.forceMessageScrollToNewest=NO;
+ if(!preserve) [self restoreNavigationTranscriptIfPending];
+}
+#define dispatch_async(queue, ...) ProbeDispatch(queue, (__VA_ARGS__))
+__RELOAD_METHOD__
+#undef dispatch_async
+__JUMP_METHOD__
 @end
 static TGChatItem *Chat(NSInteger i) { TGChatItem *item=[[[TGChatItem alloc] init] autorelease];item.chatID=[NSNumber numberWithInteger:i];return item; }
 static TGMessageItem *Message(NSInteger i) { TGMessageItem *item=[[[TGMessageItem alloc] init] autorelease];item.messageID=[NSNumber numberWithInteger:i];return item; }
 static void Prepare(NavigationProbe *p) {
- p.profileUserID=@1;p.selectedChatID=@12;p.currentAuthState=@"ready";p.client=[[[NSObject alloc] init] autorelease];
+ p.profileUserID=@1;p.selectedChatID=@12;p.currentAuthState=@"ready";p.client=[[[TGTDLibClient alloc] init] autorelease];
  p.chatItems=[NSMutableArray array];p.messageItems=[NSMutableArray array];
  for(NSInteger i=0;i<40;i++) { [p.chatItems addObject:Chat(100+i)];[p.messageItems addObject:Message(200+i)]; }
  for(NSUInteger t=0;t<2;t++) {
@@ -155,27 +235,74 @@ int main(void) {
  Check([p restoreNavigationTranscriptIfPending] && !p.initialUnreadPositionPending && p.jumpUpdates==1,"restored history replaces initial unread positioning only after matching anchor exists");
  Near([transcript bounds].origin.y,NSMinY([p.messageTableView rectOfRow:16])+11,"message restoration preserves intra-row offset after history insertion");
  NSString *transcriptKey=[p navigationTranscriptKey];
- p.messageItemsRepresentFocusedContext=YES;[p.navigationPositionStore markRestoredTranscriptKey:transcriptKey generation:p.searchGeneration];
+ p.messageItemsRepresentFocusedContext=YES;[p.navigationPositionStore markRestoredTranscriptKey:transcriptKey generation:0];
  CGFloat laterY=NSMinY([p.messageTableView rectOfRow:20])+4;[transcript scrollToPoint:NSMakePoint(0,laterY)];[p captureNavigationTranscript];
  Check([[[p.navigationPositionStore positionForKey:transcriptKey] objectForKey:@"anchor"] isEqual:@219],"scrolling restored around-anchor history updates next return anchor");
  [p beginExplicitSearchJump];[transcript scrollToPoint:NSMakePoint(0,10)];[p captureNavigationTranscript];
  Check([[[p.navigationPositionStore positionForKey:transcriptKey] objectForKey:@"anchor"] isEqual:@219],"explicit search focus cannot overwrite normal history anchor");
- p.messageItemsRepresentFocusedContext=NO;[p armNavigationTranscriptRestore];NSObject *client=p.client;
- Check([p acceptsClient:client chat:@12 thread:nil kind:nil generation:p.searchGeneration anchor:@219 key:transcriptKey],"matching async anchored reply accepted");
- Check(![p acceptsClient:[[[NSObject alloc] init] autorelease] chat:@12 thread:nil kind:nil generation:p.searchGeneration anchor:@219 key:transcriptKey],"previous account client cannot apply async history");
- Check(![p acceptsClient:client chat:@12 thread:@2 kind:@"forum" generation:p.searchGeneration anchor:@219 key:transcriptKey],"old topic reply cannot apply to parent history");
- Check(![p acceptsClient:client chat:@12 thread:nil kind:nil generation:p.searchGeneration-1 anchor:@219 key:transcriptKey],"explicit search supersedes in-flight history reply");
+ [p armNavigationTranscriptRestore];Check(!p.messageItemsRepresentFocusedContext,"switching from search/restored history clears previous focus before requesting new anchor");NSObject *client=p.client;
+ Check([p acceptsClient:client chat:@12 thread:nil kind:nil generation:p.messageLoadingGeneration anchor:@219 key:transcriptKey],"matching async anchored reply accepted");
+ Check(![p acceptsClient:[[[NSObject alloc] init] autorelease] chat:@12 thread:nil kind:nil generation:p.messageLoadingGeneration anchor:@219 key:transcriptKey],"previous account client cannot apply async history");
+ Check(![p acceptsClient:client chat:@12 thread:@2 kind:@"forum" generation:p.messageLoadingGeneration anchor:@219 key:transcriptKey],"old topic reply cannot apply to parent history");
+ Check(![p acceptsClient:client chat:@12 thread:nil kind:nil generation:p.messageLoadingGeneration+1 anchor:@219 key:transcriptKey],"explicit search supersedes in-flight history reply");
  [p forgetNavigationTranscriptPosition];p.forceMessageScrollToNewest=YES;
- Check(![p navigationPendingTranscriptAnchor] && ![p restoreNavigationTranscriptIfPending] && ![p acceptsClient:client chat:@12 thread:nil kind:nil generation:p.searchGeneration anchor:@219 key:transcriptKey],"explicit latest cancels both viewport restore and late anchored reply");
+ Check(![p navigationPendingTranscriptAnchor] && ![p restoreNavigationTranscriptIfPending] && ![p acceptsClient:client chat:@12 thread:nil kind:nil generation:p.messageLoadingGeneration anchor:@219 key:transcriptKey],"explicit latest cancels both viewport restore and late anchored reply");
  p.forceMessageScrollToNewest=NO;[p.navigationPositionStore savePosition:Position(@999,0,200,NO) forKey:transcriptKey];[p armNavigationTranscriptRestore];
  Check(![p restoreNavigationTranscriptIfPending],"deleted message falls through to normal unread/latest behavior");
  [p captureNavigationTranscript];[p armNavigationTranscriptRestore];[p clearNavigationContinuity];Check(![p navigationPendingTranscriptAnchor] && ![p.navigationPositionStore isRestoredTranscriptKey:transcriptKey generation:p.searchGeneration],"account reset clears pending and restored provenance");
+ // Execute the complete production TDLib request/completion method without network.
+ WorkerBlocks=[[NSMutableArray alloc] init];MainBlocks=[[NSMutableArray alloc] init];
+ TGTDLibClient *backend=[[[TGTDLibClient alloc] init] autorelease];
+ NavigationProbe *r=[[[NavigationProbe alloc] init] autorelease];Prepare(r);r.client=backend;
+ NSArray *history=[NSArray arrayWithObjects:Message(10),Message(11),Message(12),Message(13),Message(14),Message(15),Message(16),Message(17),Message(18),Message(19),Message(20),nil];
+ backend.aroundItems=history;backend.latestItems=[NSArray arrayWithObjects:Message(9000),Message(9001),nil];
+ NSString *returnKey=[r navigationTranscriptKey];
+ [r.preparedNavigationPositionStore savePosition:Position(@12,3,94,NO) forKey:returnKey];
+ r.messageItemsRepresentFocusedContext=YES;[r armNavigationTranscriptRestore];[r.messageItems removeAllObjects];[r.messageTableView reloadData];
+ [r reloadMessagesForChatID:r.selectedChatID interactive:NO];RunOne(WorkerBlocks);
+ Check([[backend.requestedAnchors lastObject] isEqual:@12],"whole reload requests saved anchor after switching from focused page");
+ r.searchGeneration+=3;RunOne(MainBlocks);
+ Check(r.applyCount==1 && r.messageItemsRepresentFocusedContext && [r navigationRestoredHistoryIsActive],"opening/typing/closing search does not discard initial history response");
+ NSUInteger latestBefore=backend.latestCalls;
+ [r reloadMessagesForChatID:r.selectedChatID interactive:NO];RunOne(WorkerBlocks);RunOne(MainBlocks);
+ Check(backend.latestCalls==latestBefore && [backend.requestedAnchors count]==2 && r.messageItemsRepresentFocusedContext,"next live poll refreshes visible historical page rather than latest gap");
+ for(TGMessageItem *item in r.messageItems) Check([[item messageID] integerValue]<100,"restored history never merges far latest messages");
+ r.searchGeneration+=4;Check([r navigationRestoredHistoryIsActive],"query-only changes preserve restored provenance");
+ [r captureNavigationTranscript];Check(![[[r.navigationPositionStore positionForKey:returnKey] objectForKey:@"nearEnd"] boolValue],"end of historical slice is not latest end of chat");
+ [r reloadMessagesForChatID:r.selectedChatID interactive:NO];RunOne(WorkerBlocks);NSUInteger before=r.applyCount;
+ [r beginExplicitSearchJump];r.messageLoadingGeneration++;RunOne(MainBlocks);
+ Check(r.applyCount==before && ![r navigationRestoredHistoryIsActive],"actual explicit search jump supersedes queued historical poll");
+ // A same-client account swap must reject an already completed worker result.
+ r.messageItemsRepresentFocusedContext=NO;[r.navigationPositionStore savePosition:Position(@12,0,0,NO) forKey:returnKey];[r armNavigationTranscriptRestore];
+ backend.authorizationState=@"closing";[r reloadMessagesForChatID:r.selectedChatID interactive:NO];RunOne(WorkerBlocks);before=r.applyCount;r.profileUserID=@2;RunOne(MainBlocks);
+ Check(r.applyCount==before && [r.currentAuthState isEqual:@"ready"],"same client and same chat IDs cannot apply previous account history or auth state");r.profileUserID=@1;
+ [r armNavigationTranscriptRestore];[r reloadMessagesForChatID:r.selectedChatID interactive:NO];RunOne(WorkerBlocks);r.client=[[[TGTDLibClient alloc] init] autorelease];RunOne(MainBlocks);
+ Check([r.currentAuthState isEqual:@"ready"],"old client callback cannot replace current authorization state");r.client=backend;backend.authorizationState=@"ready";
+ // Initial deleted/missing anchors fall back once, including TDLib 400 errors.
+ for(NSUInteger errorCase=0;errorCase<2;errorCase++) {
+  [r.navigationPositionStore savePosition:Position(@777,0,0,NO) forKey:returnKey];r.messageItemsRepresentFocusedContext=YES;[r armNavigationTranscriptRestore];
+  [r.messageItems removeAllObjects];[r.messageTableView reloadData];backend.aroundError=errorCase!=0;
+  [r reloadMessagesForChatID:r.selectedChatID interactive:NO];RunOne(WorkerBlocks);RunOne(MainBlocks);
+  Check(!r.messageItemsRepresentFocusedContext && !r.navigationPositionStore.pendingTranscriptKey && !r.lastPreserveOlder && [r.messageItems count]==2,"deleted/errored saved anchor falls back to normal latest without focused flag");
+ }
+ backend.aroundError=NO;
+ // Ongoing historical refresh errors keep the visible page without latest fetch.
+ [r.messageItems removeAllObjects];[r.messageItems addObjectsFromArray:history];[r.messageTableView reloadData];r.messageItemsRepresentFocusedContext=YES;
+ [r.navigationPositionStore markRestoredTranscriptKey:returnKey generation:0];backend.aroundError=YES;latestBefore=backend.latestCalls;before=r.applyCount;
+ [r reloadMessagesForChatID:r.selectedChatID interactive:NO];RunOne(WorkerBlocks);RunOne(MainBlocks);
+ Check(r.applyCount==before && backend.latestCalls==latestBefore && r.messageItemsRepresentFocusedContext,"ongoing history error preserves cached focused page");backend.aroundError=NO;
+ // Latest cancels an ongoing history request and replaces, rather than merges.
+ [r reloadMessagesForChatID:r.selectedChatID interactive:NO];RunOne(WorkerBlocks);before=r.applyCount;[r jumpToNewestMessages:nil];RunOne(MainBlocks);
+ Check(r.applyCount==before && r.pendingLiveMessageRefresh,"latest cancels queued around-anchor completion");
+ r.pendingLiveMessageRefresh=NO;[r reloadMessagesForChatID:r.selectedChatID interactive:NO];RunOne(WorkerBlocks);RunOne(MainBlocks);
+ Check(!r.lastPreserveOlder && !r.messageItemsRepresentFocusedContext && [r.messageItems count]==2 && [[[r.messageItems objectAtIndex:0] messageID] isEqual:@9000],"explicit latest replaces ancient page without disjoint merge");
+ Check(![WorkerBlocks count] && ![MainBlocks count],"all synthetic production async callbacks drained");[WorkerBlocks release];[MainBlocks release];
  Aqua=NO;[p captureNavigationContinuity];[p armNavigationTranscriptRestore];Check(!p.navigationPositionStore.pendingTranscriptKey,"Classic does not acquire navigation restore state");
  [listKey release];printf("Navigation continuity PASS: %lu checks, semantic isolation, actual viewports and production async guards.\n",(unsigned long)checks);
  [pool drain];return 0;
 }
 '''
-for token,value in [('__IVARS__',ivars),('__PROPERTIES__',properties),('__SYNTH__',synth),('__RELEASES__',releases),('__GUARDS__',guards),('__SEARCH_CANCEL__',search_cancel)]:
+for token,value in [('__IVARS__',ivars),('__PROPERTIES__',properties),('__SYNTH__',synth),('__RELEASES__',releases),('__GUARDS__',guards),('__SEARCH_CANCEL__',search_cancel),('__RELOAD_METHOD__',reload_method),('__JUMP_METHOD__',jump_method)]:
     harness=harness.replace(token,value)
 folder=tempfile.mkdtemp(prefix='telegraphica-navigation-')
 try:

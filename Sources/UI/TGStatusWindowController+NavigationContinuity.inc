@@ -25,14 +25,14 @@
     [[self preparedNavigationPositionStore] savePosition:position forKey:[self navigationChatListKey]];
 }
 - (void)captureNavigationTranscript {
-    if (!TGInterfaceDesignIsAqua() || ![self.profileUserID longLongValue] || ![self.messageItems count] || self.chatNavigationClosed || (self.messageItemsRepresentFocusedContext && ![self.navigationPositionStore isRestoredTranscriptKey:[self navigationTranscriptKey] generation:self.searchGeneration])) return;
+    if (!TGInterfaceDesignIsAqua() || ![self.profileUserID longLongValue] || ![self.messageItems count] || self.chatNavigationClosed || (self.messageItemsRepresentFocusedContext && ![self navigationRestoredHistoryIsActive])) return;
     NSClipView *clip=[self.messageScrollView contentView];
     NSRange rows=[self.messageTableView rowsInRect:[clip bounds]];
     if(rows.location==NSNotFound || rows.location>=[self.messageItems count]) return;
     NSUInteger row=rows.location;
     while(row<[self.messageItems count] && ![[self.messageItems objectAtIndex:row] messageID]) row++;
     if(row>=[self.messageItems count]) return;
-    NSDictionary *position=[NSDictionary dictionaryWithObjectsAndKeys:[[self.messageItems objectAtIndex:row] messageID],@"anchor",[NSNumber numberWithDouble:[clip bounds].origin.y-NSMinY([self.messageTableView rectOfRow:row])],@"offset",[NSNumber numberWithDouble:[clip bounds].origin.y],@"origin",[NSNumber numberWithBool:[self isMessageHistoryNearBottom]],@"nearEnd",nil];
+    NSDictionary *position=[NSDictionary dictionaryWithObjectsAndKeys:[[self.messageItems objectAtIndex:row] messageID],@"anchor",[NSNumber numberWithDouble:[clip bounds].origin.y-NSMinY([self.messageTableView rectOfRow:row])],@"offset",[NSNumber numberWithDouble:[clip bounds].origin.y],@"origin",[NSNumber numberWithBool:(!self.messageItemsRepresentFocusedContext && [self isMessageHistoryNearBottom])],@"nearEnd",nil];
     [[self preparedNavigationPositionStore] savePosition:position forKey:[self navigationTranscriptKey]];
 }
 - (void)captureNavigationContinuity { [self captureNavigationChatList];[self captureNavigationTranscript]; }
@@ -46,7 +46,12 @@
     return MIN(TGStatusChatPreviewMaximumLimit,MAX(TGStatusChatPreviewInitialLimit,saved));
 }
 - (void)armNavigationTranscriptRestore {
-    if(TGInterfaceDesignIsAqua()) { self.forceMessageScrollToNewest=NO; [[self preparedNavigationPositionStore] armKey:[self navigationTranscriptKey] transcript:YES]; }
+    if(TGInterfaceDesignIsAqua()) {
+        self.forceMessageScrollToNewest=NO;
+        self.messageItemsRepresentFocusedContext=NO;
+        [[self preparedNavigationPositionStore] markRestoredTranscriptKey:nil generation:0];
+        [self.navigationPositionStore armKey:[self navigationTranscriptKey] transcript:YES];
+    }
 }
 - (void)restoreNavigationClip:(NSClipView *)clip table:(NSTableView *)table row:(NSUInteger)row offset:(CGFloat)offset fallback:(CGFloat)fallback {
     CGFloat y=row==NSNotFound ? fallback : NSMinY([table rectOfRow:row])+offset;
@@ -60,6 +65,15 @@
     NSUInteger row=0,found=NSNotFound;
     for(TGChatItem *item in self.chatItems) { if([[self navigationChatAnchor:item] isEqual:[position objectForKey:@"anchor"]]) { found=row;break; } row++; }
     [self restoreNavigationClip:[self.chatScrollView contentView] table:self.chatTableView row:found offset:[[position objectForKey:@"offset"] doubleValue] fallback:[[position objectForKey:@"origin"] doubleValue]];
+}
+- (BOOL)navigationRestoredHistoryIsActive {
+    return TGInterfaceDesignIsAqua() && self.messageItemsRepresentFocusedContext &&
+        [self.navigationPositionStore isRestoredTranscriptKey:[self navigationTranscriptKey] generation:0];
+}
+- (NSNumber *)navigationVisibleTranscriptAnchor {
+    if(![self navigationRestoredHistoryIsActive] || self.forceMessageScrollToNewest) return nil;
+    [self captureNavigationTranscript];
+    return [[self.navigationPositionStore positionForKey:[self navigationTranscriptKey]] objectForKey:@"anchor"];
 }
 - (NSNumber *)navigationPendingTranscriptAnchor {
     if(!TGInterfaceDesignIsAqua() || self.forceMessageScrollToNewest || self.messageItemsRepresentFocusedContext) return nil;

@@ -56,9 +56,9 @@ static NSArray *TGCurrentVisibleScreens(void) {
                 if (!NSIsEmptyRect(frame)) [window setFrame:frame display:NO];
             }
         }
-        _preferredFrame = [window frame];
         NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
         [center addObserver:self selector:@selector(windowWillMove:) name:NSWindowWillMoveNotification object:window];
+        [center addObserver:self selector:@selector(windowDidResize:) name:NSWindowDidResizeNotification object:window];
         [center addObserver:self selector:@selector(windowDidMove:) name:NSWindowDidMoveNotification object:window];
         [center addObserver:self selector:@selector(windowWillStartLiveResize:) name:NSWindowWillStartLiveResizeNotification object:window];
         [center addObserver:self selector:@selector(windowDidEndLiveResize:) name:NSWindowDidEndLiveResizeNotification object:window];
@@ -72,8 +72,21 @@ static NSArray *TGCurrentVisibleScreens(void) {
     [_defaultsKey release];
     [super dealloc];
 }
-- (void)beginProgrammaticChanges { _programmaticDepth++; _userMoving = NO; }
-- (void)endProgrammaticChanges { if (_programmaticDepth) _programmaticDepth--; }
+- (void)beginProgrammaticChanges {
+    if (!_programmaticDepth) _programmaticStartFrame = [_window frame];
+    _programmaticDepth++;
+    _userMoving = NO;
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(finishUserMove) object:nil];
+}
+- (void)endProgrammaticChanges {
+    if (!_programmaticDepth) return;
+    _programmaticDepth--;
+    if (!_programmaticDepth) {
+        NSRect frame = [_window frame];
+        _programmaticOriginOffset.x += NSMinX(frame) - NSMinX(_programmaticStartFrame);
+        _programmaticOriginOffset.y += NSMinY(frame) - NSMinY(_programmaticStartFrame);
+    }
+}
 - (void)windowWillMove:(NSNotification *)notification {
     (void)notification;
     NSEvent *event = [NSApp currentEvent];
@@ -88,7 +101,6 @@ static NSArray *TGCurrentVisibleScreens(void) {
 - (void)saveUserFrame:(NSRect)frame {
     if (_programmaticDepth || ![_window isVisible] || [_window isMiniaturized] ||
         ([_window styleMask] & NSFullScreenWindowMask) || !TGFrameIsUsable(frame)) return;
-    _preferredFrame = frame;
     NSArray *numbers = [NSArray arrayWithObjects:[NSNumber numberWithDouble:NSMinX(frame)],
         [NSNumber numberWithDouble:NSMinY(frame)], [NSNumber numberWithDouble:NSWidth(frame)],
         [NSNumber numberWithDouble:NSHeight(frame)], nil];
@@ -98,25 +110,39 @@ static NSArray *TGCurrentVisibleScreens(void) {
     (void)notification;
     NSEvent *event = [NSApp currentEvent];
     if (_userMoving && [event window] == _window &&
-        ([event type] == NSLeftMouseDown || [event type] == NSLeftMouseDragged || [event type] == NSLeftMouseUp)) [self saveUserFrame:[_window frame]];
-    else _userMoving = NO;
+        ([event type] == NSLeftMouseDown || [event type] == NSLeftMouseDragged || [event type] == NSLeftMouseUp)) {
+        _programmaticOriginOffset = NSZeroPoint;
+        [self saveUserFrame:[_window frame]];
+    } else {
+        _userMoving = NO;
+        if (!_programmaticDepth && !_userResizing) _programmaticOriginOffset = NSZeroPoint;
+    }
 }
 - (void)finishUserMove {
-    if (_userMoving) [self saveUserFrame:[_window frame]];
+    if (_userMoving) { _programmaticOriginOffset = NSZeroPoint; [self saveUserFrame:[_window frame]]; }
     _userMoving = NO;
+}
+- (void)windowDidResize:(NSNotification *)notification {
+    (void)notification;
+    if (!_programmaticDepth && !_userResizing) {
+        // Native zoom/fullscreen and OS display adjustments establish a new
+        // geometry baseline, while leaving the saved ordinary frame untouched.
+        _programmaticOriginOffset = NSZeroPoint;
+        _userMoving = NO;
+    }
 }
 - (void)windowWillStartLiveResize:(NSNotification *)notification {
     (void)notification;
     _userResizing = !_programmaticDepth;
-    _liveResizeStartFrame = [_window frame];
 }
 - (void)windowDidEndLiveResize:(NSNotification *)notification {
     (void)notification;
     if (_userResizing) {
         NSRect frame = [_window frame];
-        // A previous drawer accommodation must not become a saved user move.
-        frame.origin.x = NSMinX(_preferredFrame) + NSMinX(frame) - NSMinX(_liveResizeStartFrame);
-        frame.origin.y = NSMinY(_preferredFrame) + NSMinY(frame) - NSMinY(_liveResizeStartFrame);
+        // Compensate only explicitly bracketed accommodation. Native zoom or
+        // display relocation must not reuse a stale pre-zoom preferred origin.
+        frame.origin.x -= _programmaticOriginOffset.x;
+        frame.origin.y -= _programmaticOriginOffset.y;
         [self saveUserFrame:frame];
     }
     _userResizing = NO;

@@ -10,8 +10,8 @@ NSRect TGWindowFrameConstrainedToScreens(NSRect frame, NSSize minimumSize, NSArr
     NSUInteger _programmaticDepth;
     BOOL _userMoving;
     BOOL _userResizing;
-    NSRect _preferredFrame;
-    NSRect _liveResizeStartFrame;
+    NSRect _programmaticStartFrame;
+    NSPoint _programmaticOriginOffset;
 }
 - (id)initWithWindow:(NSWindow *)window designIdentifier:(NSString *)identifier;
 - (void)beginProgrammaticChanges;

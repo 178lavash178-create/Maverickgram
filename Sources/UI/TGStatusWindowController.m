@@ -908,6 +908,8 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 - (NSUInteger)navigationChatListRestoreLimit;
 - (void)refreshNavigationBreadcrumb;
 - (NSNumber *)navigationPendingTranscriptAnchor;
+- (BOOL)navigationRestoredHistoryIsActive;
+- (NSNumber *)navigationVisibleTranscriptAnchor;
 - (BOOL)restoreNavigationTranscriptIfPending;
 - (TGNavigationPositionStore *)preparedNavigationPositionStore;
 - (NSString *)navigationChatListKey;

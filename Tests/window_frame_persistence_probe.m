@@ -18,8 +18,13 @@ static void Require(BOOL condition, const char *message) {
 - (id)init { self=[super init]; if(self) _frame=NSMakeRect(100,100,980,700); return self; }
 - (NSRect)frame { return _frame; }
 - (NSSize)minSize { return NSMakeSize(760,620); }
-- (void)setFrame:(NSRect)frame display:(BOOL)display { (void)display; _frame=frame; }
-- (void)setFrameOrigin:(NSPoint)origin { _frame.origin=origin; }
+- (void)setFrame:(NSRect)frame display:(BOOL)display {
+    (void)display;
+    NSRect old=_frame;_frame=frame;
+    if (!NSEqualSizes(old.size,frame.size)) [[NSNotificationCenter defaultCenter] postNotificationName:NSWindowDidResizeNotification object:self];
+    if (!NSEqualPoints(old.origin,frame.origin)) [[NSNotificationCenter defaultCenter] postNotificationName:NSWindowDidMoveNotification object:self];
+}
+- (void)setFrameOrigin:(NSPoint)origin { NSRect frame=_frame;frame.origin=origin;[self setFrame:frame display:NO]; }
 - (BOOL)isVisible { return YES; }
 - (BOOL)isMiniaturized { return NO; }
 - (NSUInteger)styleMask { return NSTitledWindowMask|NSResizableWindowMask; }
@@ -66,6 +71,14 @@ static void CheckPersistence(void) {
     Require([[resizedSaved objectAtIndex:0] doubleValue]==chosen.origin.x && [[resizedSaved objectAtIndex:2] doubleValue]==940,
         "user resize preserves preferred origin after automatic drawer accommodation");
     chosen.size.width=940;
+    [window setFrame:NSMakeRect(0,24,1440,854) display:NO];
+    Require([[defaults objectForKey:aqua] isEqual:resizedSaved],"native zoom alone leaves ordinary saved geometry unchanged");
+    Post(NSWindowWillStartLiveResizeNotification,window);
+    chosen=NSMakeRect(0,24,1180,740);[window setFrame:chosen display:NO];
+    Post(NSWindowDidEndLiveResizeNotification,window);
+    NSArray *afterZoom=[defaults objectForKey:aqua];
+    Require([[afterZoom objectAtIndex:0] doubleValue]==0 && [[afterZoom objectAtIndex:1] doubleValue]==24,
+        "native zoom clears earlier drawer offset before the next manual resize");
     [keeper release];
     keeper=[[TGWindowFramePersistence alloc] initWithWindow:window designIdentifier:@"aqua-probe"];
     Require(NSEqualRects([window frame],chosen),"recreated helper restores persisted geometry to current display");
@@ -77,13 +90,21 @@ static void CheckPersistence(void) {
     Post(NSWindowWillMoveNotification,window);[window setFrameOrigin:NSMakePoint(140,95)];Post(NSWindowDidMoveNotification,window);
     NSApp=previousApplication;TGFrameCurrentEvent=nil;
     Require(![[defaults objectForKey:aqua] isEqual:saved],"deliberate title-bar drag persists new position");
+    // Native zoom is an ordinary resize, not a suppressed drawer movement.
+    [window setFrame:NSMakeRect(0,24,1440,854) display:NO];
+    Post(NSWindowWillStartLiveResizeNotification,window);
+    NSRect userResize=NSMakeRect(0,24,1200,760);[window setFrame:userResize display:NO];
+    Post(NSWindowDidEndLiveResizeNotification,window);
+    NSArray *zoomResized=[defaults objectForKey:aqua];
+    Require([[zoomResized objectAtIndex:0] doubleValue]==0 && [[zoomResized objectAtIndex:1] doubleValue]==24,
+        "manual resize after native zoom saves actual chosen origin rather than old unzoomed origin");
     [keeper release];[saved release];
     [defaults setObject:[NSArray arrayWithObjects:@"bad",@0,@900,@680,nil] forKey:aqua];
     chosen=[window frame];keeper=[[TGWindowFramePersistence alloc] initWithWindow:window designIdentifier:@"aqua-probe"];
     Require(NSEqualRects([window frame],chosen),"corrupt saved preference leaves current frame alone");[keeper release];
     method_setImplementation(method,original);TGFrameProbeScreens=nil;
     [defaults removeObjectForKey:aqua];[defaults removeObjectForKey:classic];
-    printf("Window persistence: restore, drag, live resize, mode isolation, corrupt preferences and nested automatic-change suppression PASS (window/screen doubles).\n");
+    printf("Window persistence: restore, drag, live resize, native zoom then manual resize, mode isolation, corrupt preferences and nested automatic-change suppression PASS (window/screen doubles).\n");
 }
 int main(void) {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
