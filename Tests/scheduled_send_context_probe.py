@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Run the production scheduling action against modal-time context changes; no TDLib."""
 from __future__ import print_function
-import os, subprocess, tempfile, shutil
+import os, subprocess, tempfile, shutil, sys
 root=os.path.abspath(os.path.join(os.path.dirname(__file__),os.pardir))
 with open(os.path.join(root,'Sources/UI/TGStatusWindowController+ComposerMedia.inc'),'rb') as f:
     source=f.read().decode('utf-8')
@@ -64,6 +64,7 @@ try:
     path=os.path.join(build,'probe.m')
     with open(path,'wb') as f:f.write(harness.replace('__METHOD__',method).encode('utf-8'))
     clang=os.environ.get('CLANG') or subprocess.check_output(['xcrun','--find','clang']).decode('utf-8').strip()
-    command=[clang,'-fblocks','-fno-objc-arc','-arch',os.environ.get('TELEGRAPHICA_TEST_ARCH','x86_64'),'-mmacosx-version-min='+os.environ.get('TELEGRAPHICA_TEST_DEPLOYMENT_TARGET','10.8'),path,'-framework','Cocoa','-o',os.path.join(build,'probe')]
+    sdk=subprocess.check_output(['xcrun','--show-sdk-path']).decode('utf-8').strip()
+    command=[clang,'-isysroot',sdk,'-fblocks','-fno-objc-arc','-arch',os.environ.get('TELEGRAPHICA_TEST_ARCH','x86_64'),'-mmacosx-version-min='+os.environ.get('TELEGRAPHICA_TEST_DEPLOYMENT_TARGET','10.8'),path,'-framework','Cocoa','-o',os.path.join(build,'probe')]
     subprocess.check_call(command);subprocess.check_call([os.path.join(build,'probe')])
 finally:shutil.rmtree(build)
