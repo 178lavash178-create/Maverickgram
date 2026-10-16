@@ -83,4 +83,3 @@
     }
     [self applyMediaPreviewZoomScale:scale * factor];
 }
-
