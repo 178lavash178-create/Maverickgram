@@ -408,6 +408,11 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
 @implementation TGGroupedCardView
 
 @synthesize drawsInterior = _drawsInterior;
+@synthesize squareTopCorners = _squareTopCorners;
+- (void)setSquareTopCorners:(BOOL)value {
+    if(_squareTopCorners==value) return;
+    _squareTopCorners=value; [self setNeedsDisplay:YES];
+}
 
 - (id)initWithFrame:(NSRect)frameRect {
     self = [super initWithFrame:frameRect];
@@ -421,14 +426,26 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
     (void)dirtyRect;
     NSRect bounds = [self bounds];
     NSRect cardRect = NSInsetRect(bounds, 0.5, 0.5);
-    NSBezierPath *cardPath = [NSBezierPath bezierPathWithRoundedRect:cardRect
-                                                             xRadius:14.0
-                                                             yRadius:14.0];
+    // Extending only the top beyond the view clips its rounded corners; the
+    // bottom remains inside the view. Other grouped cards retain their shape.
+    NSRect pathRect=cardRect;
+    CGFloat radius=self.squareTopCorners ? 8.0 : 14.0;
+    if(self.squareTopCorners) {
+        if([self isFlipped]) pathRect.origin.y-=radius;
+        pathRect.size.height+=radius;
+    }
+    NSBezierPath *cardPath = [NSBezierPath bezierPathWithRoundedRect:pathRect xRadius:radius yRadius:radius];
     if (self.drawsInterior) {
         TGThemeDrawGroupedCardInPath(cardPath, cardRect, [self isFlipped]);
         [TGClassicTableGridColor() set];
         [cardPath setLineWidth:1.0];
         [cardPath stroke];
+        if(self.squareTopCorners) {
+            CGFloat top=[self isFlipped] ? NSMinY(cardRect) : NSMaxY(cardRect);
+            NSBezierPath *edge=[NSBezierPath bezierPath];
+            [edge moveToPoint:NSMakePoint(NSMinX(cardRect),top)];
+            [edge lineToPoint:NSMakePoint(NSMaxX(cardRect),top)]; [edge stroke];
+        }
     }
 }
 

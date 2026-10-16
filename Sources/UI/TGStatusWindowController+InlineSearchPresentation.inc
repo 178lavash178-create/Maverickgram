@@ -39,6 +39,7 @@ static char TGInlineSearchJumpPendingKey;
     objc_setAssociatedObject(self,&TGInlineSearchControlsKey,controls,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [[[self window] contentView] addSubview:view]; [view setHidden:YES];
     if(TGInterfaceDesignIsAqua()) {
+        [self.searchPanelView setSquareTopCorners:YES];
         for(NSButton *button in buttons) [self installAquaTextCellOnButton:button accented:NO];
         [self installAquaTextCellOnButton:self.searchAdvancedButton accented:NO];
         [self installAquaTextCellOnButton:self.searchCloseButton accented:NO];

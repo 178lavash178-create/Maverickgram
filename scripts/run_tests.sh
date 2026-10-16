@@ -527,6 +527,7 @@ HOME="$TEST_HOME" "$BUILD_DIR/aqua-media-center-layout-probe"
 "$PYTHON_BIN" Tests/aqua_section_routing_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_shell_layout_probe.m Sources/UI/TGAquaShellLayout.m -framework Cocoa -o "$BUILD_DIR/aqua-shell-layout-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/aqua-shell-layout-probe"
+"$PYTHON_BIN" Tests/search_panel_corner_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 "$PYTHON_BIN" Tests/aqua_settings_chrome_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 "$PYTHON_BIN" Tests/aqua_folder_chrome_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 

@@ -11,7 +11,7 @@ def methods(first,last):
 production='\n'.join([
  methods('- (void)closeSearchPanel:','- (void)searchDebounceTimerFired:'),
  methods('- (void)jumpToSearchResult:','- (BOOL)handleSearchKeyEquivalent:')])
-objects=[('NSWindow *','hostWindow'),('TGTDLibClient *','client'),('NSNumber *','profileUserID'),('NSString *','activeSection'),('NSString *','currentAuthState'),('NSNumber *','selectedChatID'),('NSString *','selectedChatTitle'),('NSNumber *','selectedMessageThreadID'),('NSString *','selectedMessageTopicKind'),('NSNumber *','highlightedSearchMessageID'),('NSMutableArray *','searchResultItems'),('NSMutableArray *','messageItems'),('NSMutableArray *','chatItems'),('NSView *','searchPanelView'),('NSTextField *','searchTextField'),('NSTextField *','sendTextField'),('NSButton *','searchCloseButton'),('NSButton *','searchAdvancedButton'),('NSPopUpButton *','searchScopePopUpButton'),('NSPopUpButton *','searchFilterPopUpButton'),('NSTextField *','searchStatusField'),('NSScrollView *','searchResultsScrollView'),('TGInlineSearchResultsTableView *','searchResultsTableView'),('NSTableView *','messageTableView'),('NSTableView *','chatTableView'),('NSProgressIndicator *','messageLoadingSpinner'),('NSTimer *','searchHighlightTimer'),('NSTimer *','searchDebounceTimer'),('TGNavigationPositionStore *','navigationPositionStore')]
+objects=[('NSWindow *','hostWindow'),('TGTDLibClient *','client'),('NSNumber *','profileUserID'),('NSString *','activeSection'),('NSString *','currentAuthState'),('NSNumber *','selectedChatID'),('NSString *','selectedChatTitle'),('NSNumber *','selectedMessageThreadID'),('NSString *','selectedMessageTopicKind'),('NSNumber *','highlightedSearchMessageID'),('NSMutableArray *','searchResultItems'),('NSMutableArray *','messageItems'),('NSMutableArray *','chatItems'),('SearchCardProbe *','searchPanelView'),('NSTextField *','searchTextField'),('NSTextField *','sendTextField'),('NSButton *','searchCloseButton'),('NSButton *','searchAdvancedButton'),('NSPopUpButton *','searchScopePopUpButton'),('NSPopUpButton *','searchFilterPopUpButton'),('NSTextField *','searchStatusField'),('NSScrollView *','searchResultsScrollView'),('TGInlineSearchResultsTableView *','searchResultsTableView'),('NSTableView *','messageTableView'),('NSTableView *','chatTableView'),('NSProgressIndicator *','messageLoadingSpinner'),('NSTimer *','searchHighlightTimer'),('NSTimer *','searchDebounceTimer'),('TGNavigationPositionStore *','navigationPositionStore')]
 scalars=[('BOOL',p) for p in ['searchEndReached','searchPanelVisible','searchLoading','chatTitleSearchOnly','searchInlineCurrentChatOnly','messageLoadingIndicatorVisible','messageItemsRepresentFocusedContext','showingForumTopicList','forumTopicsPresentedInTopBar']]+[('NSUInteger',p) for p in ['searchGeneration','messageLoadingGeneration','activations','latestRequests','headerRefreshes','visibleUpdates']]
 props=objects+scalars
 ivars='\n'.join(' %s _%s;'%(t,n) for t,n in props)
@@ -26,6 +26,12 @@ harness=r'''
 #import "TGLocalization.h"
 #import "TGNavigationPositionStore.h"
 #import "TGSearchResultItem.h"
+@interface SearchCardProbe : NSView { BOOL _squareTopCorners; }
+@property(nonatomic,assign) BOOL squareTopCorners;
+@end
+@implementation SearchCardProbe
+@synthesize squareTopCorners=_squareTopCorners;
+@end
 static BOOL Aqua=YES;
 BOOL TGInterfaceDesignIsAqua(void) { return Aqua; }
 NSColor *TGClassicCardInkColor(void) { return [NSColor blackColor]; }
@@ -96,7 +102,7 @@ static InlineProbe *Prepare(void) {
  p.hostWindow=[[[NSWindow alloc] initWithContentRect:NSMakeRect(0,0,800,700) styleMask:NSTitledWindowMask backing:NSBackingStoreBuffered defer:NO] autorelease];[p.hostWindow setReleasedWhenClosed:NO];
  p.searchTextField=[[[NSTextField alloc] initWithFrame:NSMakeRect(0,0,200,24)] autorelease];[p.searchTextField setStringValue:@"query"];[[p.hostWindow contentView] addSubview:p.searchTextField];
  p.sendTextField=[[[NSTextField alloc] initWithFrame:NSMakeRect(0,40,200,24)] autorelease];[[p.hostWindow contentView] addSubview:p.sendTextField];
- p.searchPanelView=[[[NSView alloc] init] autorelease];p.searchCloseButton=[[[NSButton alloc] init] autorelease];p.searchAdvancedButton=[[[NSButton alloc] init] autorelease];
+ p.searchPanelView=[[[SearchCardProbe alloc] init] autorelease];p.searchCloseButton=[[[NSButton alloc] init] autorelease];p.searchAdvancedButton=[[[NSButton alloc] init] autorelease];
  p.searchScopePopUpButton=[[[NSPopUpButton alloc] init] autorelease];p.searchFilterPopUpButton=[[[NSPopUpButton alloc] init] autorelease];p.searchStatusField=[[[NSTextField alloc] init] autorelease];
  p.searchResultsScrollView=[[[NSScrollView alloc] initWithFrame:NSMakeRect(0,80,400,180)] autorelease];p.searchResultsTableView=[[[TGInlineSearchResultsTableView alloc] initWithFrame:NSMakeRect(0,0,400,180)] autorelease];[p.searchResultsTableView setHeaderView:nil];[p.searchResultsTableView setTarget:p];[p.searchResultsTableView setNextKeyView:p.searchTextField];[p.searchResultsTableView addTableColumn:[[[NSTableColumn alloc] initWithIdentifier:@"search"] autorelease]];[p.searchResultsTableView setDataSource:p];[p.searchResultsTableView setDelegate:p];[p.searchResultsScrollView setDocumentView:p.searchResultsTableView];[[p.hostWindow contentView] addSubview:p.searchResultsScrollView];
  p.messageTableView=[[[NSTableView alloc] initWithFrame:NSMakeRect(0,300,400,150)] autorelease];[p.messageTableView setHeaderView:nil];[p.messageTableView setDataSource:p];[p.messageTableView addTableColumn:[[[NSTableColumn alloc] initWithIdentifier:@"message"] autorelease]];p.chatTableView=[[[NSTableView alloc] init] autorelease];

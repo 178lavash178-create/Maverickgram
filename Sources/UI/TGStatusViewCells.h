@@ -27,6 +27,7 @@
     BOOL _squareEdges;
 }
 @property (nonatomic, assign) BOOL drawsInterior;
+@property (nonatomic, assign) BOOL squareTopCorners;
 @property (nonatomic, assign) BOOL squareEdges;
 @end
 
@@ -41,8 +42,10 @@
 
 @interface TGGroupedCardView : NSView {
     BOOL _drawsInterior;
+    BOOL _squareTopCorners;
 }
 @property (nonatomic, assign) BOOL drawsInterior;
+@property (nonatomic, assign) BOOL squareTopCorners;
 @end
 
 @interface TGFlippedDocumentView : NSView
