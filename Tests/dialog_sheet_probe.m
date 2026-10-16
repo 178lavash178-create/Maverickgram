@@ -60,12 +60,7 @@ static NSAlert *Alert(void) {
     [alert addButtonWithTitle:@"First"]; [alert addButtonWithTitle:@"Second"]; [alert addButtonWithTitle:@"Third"];
     return alert;
 }
-int main(void) {
-    alarm(30);
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-    [NSApplication sharedApplication];
-    [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
-    [NSApp finishLaunching];
+static void RunCases(void) {
     NSWindow *parent = Window();
     Aqua = NO;
     Check(TGRunAlert([[[TGProbeAlert alloc] init] autorelease],parent)==2345,@"Classic retains runModal result");
@@ -87,6 +82,7 @@ int main(void) {
         Check([[field stringValue] isEqualToString:@"preserved accessory input"],@"accessory values survive");
     }
     for (NSInteger operation=1;operation<=3;operation++) {
+        if (operation==2) continue; // Termination notification is tested last.
         parent=Window();
         TGSheetDriver *driver=[[[TGSheetDriver alloc] init] autorelease];driver->parent=parent;driver->alert=Alert();driver->operation=operation;Schedule(driver);
         Check(TGRunAlert(driver->alert,parent)==NSRunAbortedResponse,@"close, termination or external abort cannot accept");
@@ -95,10 +91,11 @@ int main(void) {
     }
     parent=Window();
     TGSheetDriver *driver=[[[TGSheetDriver alloc] init] autorelease];driver->parent=parent;driver->alert=Alert();driver->operation=5;Schedule(driver);
-    Check(TGRunAlert(driver->alert,nil)==NSAlertFirstButtonReturn,@"nil owner resolves current key window");
+    Check(TGRunAlert(driver->alert,nil)==NSAlertFirstButtonReturn,@"nil owner resolves an available window or uses modal fallback");
     Check(driver->nestedRejected,@"nested presentation safely rejected");
-    NSWindow *foreign=Window();
+    NSWindow *foreign=Window(); [foreign orderOut:nil];
     [NSApp beginSheet:foreign modalForWindow:parent modalDelegate:nil didEndSelector:NULL contextInfo:NULL];
+    Check([parent attachedSheet]==foreign,@"foreign sheet fixture is attached before presenting another");
     Check(TGRunAlert(Alert(),parent)==NSRunAbortedResponse,@"unrelated existing sheet left alone");
     Check([parent attachedSheet]==foreign,@"foreign sheet retained");
     Check(TGRunFilePanel([NSSavePanel savePanel],parent)==NSCancelButton,@"file panel never nests on busy owner");
@@ -117,6 +114,27 @@ int main(void) {
     Check(driver->wasAttached,@"real save panel attached");
     Check([[driver->panel nameFieldStringValue] isEqualToString:filename],@"configured save filename preserved");
     Check(![parent attachedSheet],@"accepted save panel detached");
+    parent=Window();
+    driver=[[[TGSheetDriver alloc] init] autorelease];driver->parent=parent;driver->alert=Alert();driver->operation=2;Schedule(driver);
+    Check(TGRunAlert(driver->alert,parent)==NSRunAbortedResponse,@"application termination cannot accept");
+    Check(![parent attachedSheet],@"termination sheet detached");
+    Check(![[driver->alert window] isVisible],@"termination sheet hidden");
     printf("PASS: %lu native sheet lifecycle, return-code, accessory, busy-owner and file-panel checks\n",(unsigned long)Checks);
-    alarm(0);[pool drain];return 0;
+}
+@interface TGSheetProbeRunner : NSObject
+- (void)runCases:(id)sender;
+@end
+@implementation TGSheetProbeRunner
+- (void)runCases:(id)sender {
+    (void)sender; RunCases(); [NSApp stop:nil];
+    [NSApp postEvent:[NSEvent otherEventWithType:NSApplicationDefined location:NSZeroPoint modifierFlags:0 timestamp:0 windowNumber:0 context:nil subtype:0 data1:0 data2:0] atStart:NO];
+}
+@end
+int main(void) {
+    alarm(30);
+    NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];
+    [NSApplication sharedApplication]; [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
+    TGSheetProbeRunner *runner=[[[TGSheetProbeRunner alloc] init] autorelease];
+    [runner performSelector:@selector(runCases:) withObject:nil afterDelay:0.1];
+    [NSApp run]; alarm(0); [pool drain]; return 0;
 }

@@ -82,6 +82,7 @@ static BOOL TGDialogParentCanPresent(NSWindow *parent) {
 NSInteger TGRunAlert(NSAlert *alert, NSWindow *preferredParent) {
     if (!alert || ![NSThread isMainThread]) return NSRunAbortedResponse;
     if (!TGInterfaceDesignIsAqua()) return [alert runModal];
+    if (TGActiveDialogSheetSession || [NSApp modalWindow]) return NSRunAbortedResponse;
     NSWindow *parent = TGDialogParent(preferredParent);
     if (!parent && !TGActiveDialogSheetSession) return [alert runModal];
     if (!TGDialogParentCanPresent(parent)) return NSRunAbortedResponse;
@@ -104,6 +105,7 @@ NSInteger TGRunAlert(NSAlert *alert, NSWindow *preferredParent) {
 NSInteger TGRunFilePanel(NSSavePanel *panel, NSWindow *preferredParent) {
     if (!panel || ![NSThread isMainThread]) return NSCancelButton;
     if (!TGInterfaceDesignIsAqua()) return [panel runModal];
+    if (TGActiveDialogSheetSession || [NSApp modalWindow]) return NSCancelButton;
     NSWindow *parent = TGDialogParent(preferredParent);
     if (!parent && !TGActiveDialogSheetSession) return [panel runModal];
     if (!TGDialogParentCanPresent(parent)) return NSCancelButton;

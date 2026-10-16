@@ -564,3 +564,7 @@ HOME="$TEST_HOME" "$BUILD_DIR/aqua-chat-info-panel-probe"
 
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_chat_info_routing_probe.m Sources/UI/TGAquaChatInfoPanel.m Sources/UI/TGAquaShellViews.m Sources/UI/TGAquaAppearance.m Sources/UI/TGLocalization.m -framework Cocoa -o "$BUILD_DIR/aqua-chat-info-routing-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/aqua-chat-info-routing-probe"
+
+"$PYTHON_BIN" Tests/aqua_transcript_corner_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+
+"$PYTHON_BIN" Tests/aqua_audio_routing_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"

@@ -8,10 +8,10 @@ NSRect TGAquaAudioPlayerFrame(NSRect bounds) {
 NSArray *TGAquaAudioPlayerControlFrames(CGFloat width) {
     CGFloat end=MAX(260.0,width)-10.0;
     CGFloat closeX=end-28.0, rateX=closeX-70.0, timeX=rateX-110.0;
-    CGFloat start=102.0;
+    CGFloat start=146.0;
     return [NSArray arrayWithObjects:
-        [NSValue valueWithRect:NSMakeRect(10,7,34,34)],
-        [NSValue valueWithRect:NSMakeRect(50,7,38,34)],
+        [NSValue valueWithRect:NSMakeRect(54,7,34,34)],
+        [NSValue valueWithRect:NSMakeRect(94,7,38,34)],
         [NSValue valueWithRect:NSMakeRect(start,27,MAX(0,timeX-start-8),17)],
         [NSValue valueWithRect:NSMakeRect(start,5,MAX(0,timeX-start-8),20)],
         [NSValue valueWithRect:NSMakeRect(timeX,16,106,18)],
@@ -21,10 +21,14 @@ NSArray *TGAquaAudioPlayerControlFrames(CGFloat width) {
 @implementation TGAquaAudioPlayerView
 @synthesize layoutTarget=_layoutTarget, layoutAction=_layoutAction;
 - (NSView *)surface { return _surface; }
+- (void)setArtworkImage:(NSImage *)image { [_artworkView setImage:image]; }
 - (id)initWithFrame:(NSRect)frame {
     if ((self=[super initWithFrame:frame])) {
         _surface=[[TGAquaMetalView alloc] initWithFrame:[self bounds]];
         [_surface setAutoresizingMask:NSViewWidthSizable];
+        _artworkView=[[NSImageView alloc] initWithFrame:NSMakeRect(10,6,36,36)];
+        [_artworkView setImageScaling:NSImageScaleProportionallyUpOrDown];
+        [_surface addSubview:_artworkView];
         [self addSubview:_surface]; [self setHidden:YES];
     }
     return self;
@@ -51,5 +55,5 @@ NSArray *TGAquaAudioPlayerControlFrames(CGFloat width) {
     [_reveal setDuration:0.20]; [_reveal setAnimationCurve:NSAnimationEaseOut]; [_reveal setAnimationBlockingMode:NSAnimationNonblocking]; [_reveal setDelegate:self]; [_reveal startAnimation];
 }
 - (void)animationDidEnd:(NSAnimation *)animation { if (animation==_reveal) [self finishPresentation]; }
-- (void)dealloc { _layoutTarget=nil; [self cancelAnimation]; [_surface release]; [super dealloc]; }
+- (void)dealloc { _layoutTarget=nil; [self cancelAnimation]; [_artworkView release]; [_surface release]; [super dealloc]; }
 @end

@@ -2774,7 +2774,11 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     NSArray *options = [self pollOptionsFromText:[optionsView string]];
     if ([question length] == 0 || [options count] < 2) {
         NSString *message = ([question length] == 0) ? TGLoc(@"poll.create.error.question") : TGLoc(@"poll.create.error.options");
-        NSRunAlertPanel(TGLoc(@"poll.create.failed"), message, TGLoc(@"ok"), nil, nil);
+        NSAlert *validationAlert=[[[NSAlert alloc] init] autorelease];
+        [validationAlert setMessageText:TGLoc(@"poll.create.failed")];
+        [validationAlert setInformativeText:message];
+        [validationAlert addButtonWithTitle:TGLoc(@"ok")];
+        TGRunAlert(validationAlert,[self window]);
         [self requestComposerRefocus];
         return;
     }
@@ -2790,8 +2794,11 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     NSInteger correctOptionIndex = [[correctField stringValue] integerValue] - 1;
     NSString *explanation = [[explanationField stringValue] copy];
     if (quiz && (correctOptionIndex < 0 || (NSUInteger)correctOptionIndex >= [optionsCopy count])) {
-        NSRunAlertPanel(TGLoc(@"poll.create.failed"), @"%@", TGLoc(@"ok"), nil, nil,
-                        TGLoc(@"poll.create.error.correct"));
+        NSAlert *validationAlert=[[[NSAlert alloc] init] autorelease];
+        [validationAlert setMessageText:TGLoc(@"poll.create.failed")];
+        [validationAlert setInformativeText:TGLoc(@"poll.create.error.correct")];
+        [validationAlert addButtonWithTitle:TGLoc(@"ok")];
+        TGRunAlert(validationAlert,[self window]);
         [explanation release];
         [optionsCopy release];
         [questionCopy release];

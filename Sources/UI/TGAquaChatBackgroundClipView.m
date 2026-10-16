@@ -1,5 +1,15 @@
 #import "TGAquaChatBackgroundClipView.h"
 #import "TGAquaChatBackground.h"
+#import "TGStatusViewCells.h"
+
+void TGAquaConfigureTranscriptViewport(NSScrollView *scrollView, TGScrollSurfaceView *surfaceView) {
+    [surfaceView setSquareEdges:YES];
+    [surfaceView setDrawsInterior:NO];
+    [scrollView setScrollerStyle:NSScrollerStyleOverlay];
+    [scrollView setAutohidesScrollers:YES];
+    [scrollView setHasHorizontalScroller:NO];
+    [scrollView tile];
+}
 
 @implementation TGAquaChatBackgroundClipView
 

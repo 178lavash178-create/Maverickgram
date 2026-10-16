@@ -174,6 +174,7 @@ enum { NSWindowAbove=1 };
     NSString *_activeSection, *_currentAuthState;
     ProbeDrawer *_aquaFolderDrawer;
     BOOL _aquaFolderDrawerRequestedOpen, _aquaFoldersCollapsed, _chatNavigationClosed, _mediaCenterVisible;
+    BOOL _infoReplacesConversation;
     NSArray *_drawerFolderButtons, *_navigationButtons;
     NSMutableDictionary *_views;
     NSMutableArray *_events;
@@ -187,6 +188,7 @@ enum { NSWindowAbove=1 };
 @property(nonatomic,assign) BOOL aquaFoldersCollapsed;
 @property(nonatomic,assign) BOOL chatNavigationClosed;
 @property(nonatomic,assign) BOOL mediaCenterVisible;
+@property(nonatomic,assign) BOOL infoReplacesConversation;
 @property(nonatomic,retain) NSArray *drawerFolderButtons;
 @property(nonatomic,retain) NSArray *navigationButtons;
 @property(nonatomic,readonly) NSMutableArray *events;
@@ -196,12 +198,14 @@ enum { NSWindowAbove=1 };
 - (void)updateVisibleSection;
 - (void)refreshInterfaceDesignControls;
 - (void)folderFilterChanged:(id)sender;
+- (BOOL)aquaChatInfoReplacesConversation;
 __VIEW_DECLARATIONS__
 @end
 @implementation RoutingProbe
 @synthesize activeSection=_activeSection,currentAuthState=_currentAuthState,aquaFolderDrawer=_aquaFolderDrawer;
 @synthesize aquaFolderDrawerRequestedOpen=_aquaFolderDrawerRequestedOpen,aquaFoldersCollapsed=_aquaFoldersCollapsed,chatNavigationClosed=_chatNavigationClosed,mediaCenterVisible=_mediaCenterVisible;
 @synthesize drawerFolderButtons=_drawerFolderButtons,navigationButtons=_navigationButtons;
+@synthesize infoReplacesConversation=_infoReplacesConversation;
 - (id)init {
     self=[super init]; if(!self) return nil;
     _views=[[NSMutableDictionary alloc] init]; _events=[[NSMutableArray alloc] init];
@@ -227,6 +231,7 @@ __VIEW_METHODS__
 - (void)updateVisibleSection { [_events addObject:@"visibility"]; }
 - (void)refreshInterfaceDesignControls { [_events addObject:@"refresh"]; }
 - (void)folderFilterChanged:(id)sender { _lastFolderTag=[sender tag]; }
+- (BOOL)aquaChatInfoReplacesConversation { return _infoReplacesConversation; }
 __PRODUCTION_METHODS__
 @end
 int main(void) {
@@ -296,13 +301,16 @@ int main(void) {
                 Check(probe.lastFolderTag==button.tag,"All, Archive and custom folders keep their original IDs after moving");
             }
         }
-        for(NSUInteger auth=0;auth<2;auth++) for(NSString *section in sections) for(NSUInteger empty=0;empty<2;empty++) {
+        for(NSUInteger auth=0;auth<2;auth++) for(NSString *section in sections) for(NSUInteger empty=0;empty<2;empty++)
+        for(NSUInteger info=0;info<2;info++) for(NSUInteger closed=0;closed<2;closed++) for(NSUInteger media=0;media<2;media++) {
             probe.currentAuthState=auth ? @"ready" : @"waitCode"; probe.activeSection=section;
+            probe.infoReplacesConversation=info;probe.chatNavigationClosed=closed;probe.mediaCenterVisible=media;
             probe.drawerFolderButtons=empty ? [NSArray array] : identity;
             BOOL expanded=preference ? probe.aquaFolderDrawerRequestedOpen : !probe.aquaFoldersCollapsed;
             BOOL chats=auth && [section isEqual:@"chats"], external=mode && preference && edge;
             probe.aquaFolderDrawer.visible=YES;
             probe.drawerFolderScrollView.hidden=NO;
+            probe.aquaFooterView.hidden=NO;
             [probe updateAquaShellVisibility];
             Check(probe.aquaFolderDrawer.prepareCount==prepared,"passive auth/section visibility updates never request accommodation");
             if(mode) {
@@ -311,11 +319,12 @@ int main(void) {
                 Check(probe.aquaFolderEditButton.hidden==(!chats || external),"main Edit control only appears for inline folders");
                 Check(probe.aquaFolderDivider.hidden==(!chats || external || !expanded || empty),"external drawer never leaves a duplicate inline splitter");
                 Check(probe.aquaFolderHeaderButton.hidden==!chats,"folder toggle only appears in authorized chat section");
-            } else Check(probe.aquaFolderDrawer.visible && !probe.drawerFolderScrollView.hidden,"Aqua visibility routine does not mutate Classic views");
+                Check(probe.aquaFooterView.hidden==(!chats || closed || media || info),"composer footer hides for replacing profile, closed conversation, media and non-chat/auth state without changing folders");
+            } else Check(probe.aquaFolderDrawer.visible && !probe.drawerFolderScrollView.hidden && !probe.aquaFooterView.hidden,"Aqua visibility routine does not mutate Classic folder/footer views");
             cases++;
         }
     }
-    printf("Aqua folder production routing passed: %lu cases, %lu assertions; mode, edge fallback, auth, sections and shared-control routes.\n",(unsigned long)cases,(unsigned long)checks);
+    printf("Aqua folder production routing passed: %lu cases, %lu assertions; mode, edge fallback, auth, sections, shared-control routes and replacing-profile/media/closed-chat footer isolation.\n",(unsigned long)cases,(unsigned long)checks);
     [pool drain]; return 0;
 }
 '''

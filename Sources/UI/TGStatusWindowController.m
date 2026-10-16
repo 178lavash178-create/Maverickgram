@@ -2464,7 +2464,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.typingIndicatorField setHidden:([typingText length] == 0)];
     [self.selectedChatAvatarView setDisplayName:title];
     [self.selectedChatAvatarView setAvatarLocalPath:self.selectedChatAvatarLocalPath];
-    [self.selectedChatProfileButton setToolTip:(self.selectedChatID ? TGLoc(@"media.center.title") : @"Select a chat")];
+    [self.selectedChatProfileButton setToolTip:(self.selectedChatID ? TGLoc(TGInterfaceDesignIsAqua() ? @"profile.title" : @"media.center.title") : @"Select a chat")];
     BOOL canCall = (self.selectedChatID != nil &&
                     [self.selectedChatTypeSummary isEqualToString:@"Private"] &&
                     self.callCoordinator.transportAvailable);
@@ -2482,12 +2482,11 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 - (void)startSelectedChatVideoCall:(id)sender {
     (void)sender;
     if (!self.callCoordinator.transportAvailable) {
-        NSRunAlertPanel(TGLoc(@"calls.video.window.title"),
-                        @"%@",
-                        TGLoc(@"ok"),
-                        nil,
-                        nil,
-                        TGLoc(@"calls.transportUnavailable"));
+        NSAlert *alert=[[[NSAlert alloc] init] autorelease];
+        [alert setMessageText:TGLoc(@"calls.video.window.title")];
+        [alert setInformativeText:TGLoc(@"calls.transportUnavailable")];
+        [alert addButtonWithTitle:TGLoc(@"ok")];
+        TGRunAlert(alert,[self window]);
         return;
     }
     NSNumber *chatID = [self.selectedChatID retain];
@@ -2521,12 +2520,11 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 - (void)startSelectedChatCall:(id)sender {
     (void)sender;
     if (!self.callCoordinator.transportAvailable) {
-        NSRunAlertPanel(TGLoc(@"calls.window.title"),
-                        @"%@",
-                        TGLoc(@"ok"),
-                        nil,
-                        nil,
-                        TGLoc(@"calls.transportUnavailable"));
+        NSAlert *alert=[[[NSAlert alloc] init] autorelease];
+        [alert setMessageText:TGLoc(@"calls.window.title")];
+        [alert setInformativeText:TGLoc(@"calls.transportUnavailable")];
+        [alert addButtonWithTitle:TGLoc(@"ok")];
+        TGRunAlert(alert,[self window]);
         return;
     }
     NSNumber *chatID = [self.selectedChatID retain];

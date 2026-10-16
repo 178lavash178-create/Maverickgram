@@ -28,6 +28,7 @@
     [self.settingsContentView addSubview:self.interfaceDesignHint];
     [self.settingsContentView addSubview:self.interfaceDesignPopUpButton];
     if (!TGInterfaceDesignIsAqua()) return;
+    TGAquaConfigureTranscriptViewport(self.messageScrollView, (TGScrollSurfaceView *)self.messageScrollSurfaceView);
     self.aquaFolderPresentationSettingsView = [[[TGAquaFolderPresentationSettingsView alloc] initWithFrame:NSZeroRect] autorelease];
     [self.settingsContentView addSubview:self.aquaFolderPresentationSettingsView];
     [self configureAquaFolderDrawer];

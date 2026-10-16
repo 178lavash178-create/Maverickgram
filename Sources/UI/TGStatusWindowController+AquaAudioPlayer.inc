@@ -1,9 +1,10 @@
+static NSDictionary *TGMediaCenterFirstMediaDictionaryForItem(TGMessageItem *item);
 - (BOOL)isAquaAudioPlayerVisible {
     return TGInterfaceDesignIsAqua() && [self.currentAuthState isEqualToString:@"ready"] && self.aquaAudioPlayerView && ![self.aquaAudioPlayerView isHidden];
 }
 - (void)aquaAudioPlayerPresentationChanged:(id)sender { (void)sender; [self layoutContentView]; }
 - (void)layoutAquaAudioPlayerForContentBounds:(NSRect)bounds {
-    if (!self.aquaAudioPlayerView) return;
+    if (!self.aquaAudioPlayerView || [self.mediaPlaybackPlayPauseButton superview] != [self.aquaAudioPlayerView surface]) return;
     [self.aquaAudioPlayerView setFrame:TGAquaAudioPlayerFrame(bounds)];
     NSArray *frames=TGAquaAudioPlayerControlFrames(NSWidth(bounds));
     NSArray *controls=[NSArray arrayWithObjects:self.mediaPlaybackPlayPauseButton,self.aquaAudioNextButton,self.mediaPlaybackTitleField,self.mediaPlaybackProgressSlider,self.mediaPlaybackTimeField,self.mediaPlaybackRatePopUpButton,self.aquaAudioCloseButton,nil];
@@ -21,19 +22,23 @@
         TGAquaUtilityButtonCell *nextCell=[[[TGAquaUtilityButtonCell alloc] initTextCell:@""] autorelease];
         [nextCell setIconAssetName:@"next"]; [next setCell:nextCell]; [next setBordered:NO];
         [next setTarget:self]; [next setAction:@selector(aquaAudioNext:)];
-        [next setToolTip:[TGLanguageCode() isEqualToString:@"ru"] ? @"Следующая запись" : @"Next recording"];
+        [next setToolTip:TGLoc(@"media.playback.next")];
         self.aquaAudioNextButton=next; [[self.aquaAudioPlayerView surface] addSubview:next];
         NSButton *close=[[[NSButton alloc] initWithFrame:NSZeroRect] autorelease];
         TGAquaUtilityButtonCell *closeCell=[[[TGAquaUtilityButtonCell alloc] initTextCell:@""] autorelease];
         [closeCell setIconAssetName:@"cross"]; [close setCell:closeCell]; [close setBordered:NO];
         [close setTarget:self]; [close setAction:@selector(closeAquaAudioPlayer:)];
-        [close setToolTip:[TGLanguageCode() isEqualToString:@"ru"] ? @"Закрыть плеер" : @"Close player"];
+        [close setToolTip:TGLoc(@"media.playback.close")];
         self.aquaAudioCloseButton=close; [[self.aquaAudioPlayerView surface] addSubview:close];
     }
     for (NSView *view in [NSArray arrayWithObjects:self.mediaPlaybackPlayPauseButton,self.mediaPlaybackTitleField,self.mediaPlaybackProgressSlider,self.mediaPlaybackTimeField,self.mediaPlaybackRatePopUpButton,nil]) {
         if ([view superview]!=[self.aquaAudioPlayerView surface]) { [view removeFromSuperview]; [[self.aquaAudioPlayerView surface] addSubview:view]; }
         [view setHidden:NO];
     }
+    NSDictionary *audioMedia=TGMediaCenterFirstMediaDictionaryForItem(self.mediaPlaybackSourceMessageItem);
+    NSData *artworkData=TGMediaItemMiniThumbnailData(audioMedia);
+    NSImage *artwork=[artworkData length]>0 && [artworkData length]<=1024*1024 ? [[[NSImage alloc] initWithData:artworkData] autorelease] : nil;
+    [self.aquaAudioPlayerView setArtworkImage:artwork ? artwork : TGIconAssetImageNamed(@"headphones")];
     [[self.mediaPlaybackTitleField cell] setLineBreakMode:NSLineBreakByTruncatingTail];
     [self.mediaPlaybackTitleField setToolTip:[self.mediaPlaybackTitleField stringValue]];
     [self.mediaPlaybackWindow orderOut:nil];
