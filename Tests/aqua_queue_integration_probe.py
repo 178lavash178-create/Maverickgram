@@ -10,8 +10,7 @@ layout=read('Sources/UI/TGStatusWindowController+SectionLayout.inc')
 shell=read('Sources/UI/TGStatusWindowController+AquaShell.inc')
 start=shell.index('    [content addSubview:self.aquaFooterView positioned:')
 stacking=shell[start:shell.index('    TGAquaToolbarGeometry toolbar=',start)]
-start=layout.index('    CGFloat scheduledButtonWidth=')
-reservation=layout[start:layout.index('    CGFloat estimatedSendFieldWidth',start)]
+reservation=''
 start=layout.index('    CGFloat sendButtonWidth = aqua ?')
 composer=layout[start:layout.index('    [self.voiceRecordingIndicatorField setFrame:',start)]
 harness=r'''
@@ -55,6 +54,7 @@ static void Check(BOOL value,const char *message){if(!value){fprintf(stderr,"Aqu
 - (BOOL)matchesClient:(id)client chatID:(NSNumber *)chatID{return _client==client&&[_chatID isEqual:chatID];}
 - (CGFloat)preferredEmbeddedShelfHeight{return 228;}
 - (void)setEmbeddedParentWindow:(id)window{(void)window;}
+- (void)setShelfLayoutAction:(SEL)action{(void)action;}
 - (void)setShelfCloseTarget:(id)target action:(SEL)action{(void)target;(void)action;}
 - (void)reloadMessages{self.reloads++;}
 - (id)window{return _window;}
@@ -120,17 +120,15 @@ int main(void){
     [root toggleAquaScheduledMessages];root.activeSection=@"settings";bottom=[root layoutAquaScheduledShelfAtX:300 bottom:58 width:650 top:700];Check(bottom==58&&!root.scheduledMessagesWindowController,"section change retires shelf");root.activeSection=TGSectionChats;
     root.scheduledMessagesWindowController=[[[TGScheduledMessagesWindowController alloc] initWithClient:root.client chatID:root.selectedChatID title:@""] autorelease];opened=[root.scheduledMessagesWindowController retain];[root closeAquaScheduledMessages];Check(root.scheduledMessagesWindowController==nil&&opened.invalidations==1,"detached controller also invalidated on close");[opened release];
     Aqua=NO;root.scheduledMessagesWindowController=[[[TGScheduledMessagesWindowController alloc] initWithClient:root.client chatID:root.selectedChatID title:@""] autorelease];bottom=[root layoutAquaScheduledShelfAtX:300 bottom:58 width:650 top:700];Check(bottom==58&&root.scheduledMessagesWindowController.getterCalls==0,"Classic layout must not lazily create Aqua content");Aqua=YES;
-    [root ensureAquaScheduledMessagesButton];NSUInteger layouts=0;
-    for(NSUInteger bot=0;bot<2;bot++)for(CGFloat width=320;width<=1000;width+=2){root.botComposerVisible=bot;[[root aquaScheduledMessagesButton] setHidden:NO];[root layoutComposerWidth:width];NSButton *queue=[root aquaScheduledMessagesButton];
-        if(![queue isHidden]&&NSWidth([queue frame])>0){Check(!NSIntersectsRect([queue frame],[root.stickerButton frame]),"scheduled control cannot overlap sticker button at narrow/profile width");Check(!NSIntersectsRect([queue frame],[root.sendTextFieldBackgroundView frame]),"scheduled control cannot overlap input");Check(NSMaxX([queue frame])<=width,"scheduled control stays within conversation");
-            // Reproduce the reported order: queue exists first; chrome is raised
-            // during shell relayout. Execute that exact production block.
-            NSView *content=[[root window] contentView];[content addSubview:queue];
-            [root restackComposerChrome];NSArray *order=[content subviews];
-            Check([queue superview]==content && [order indexOfObjectIdenticalTo:queue]>[order indexOfObjectIdenticalTo:root.aquaFooterView],"queue is above raised footer after actual shell restacking");
-            NSPoint center=NSMakePoint(NSMidX([queue frame]),NSMidY([queue frame]));
-            Check([content hitTest:center]==queue,"queue center hits native button rather than footer chrome");
-        }layouts++;
+    NSUInteger layouts=0;
+    for(NSUInteger bot=0;bot<2;bot++)for(CGFloat width=400;width<=1000;width+=2){
+        root.botComposerVisible=bot;[root layoutComposerWidth:width];
+        NSRect input=[root.sendTextFieldBackgroundView frame],sticker=[root.stickerButton frame];
+        Check(fabs(NSMaxX(input)+10-NSMinX(sticker))<0.01,"input reclaims all former queue-button width");
+        Check(NSMaxX([root.sendMessageButton frame])<=width,"send context-menu anchor stays inside composer");
+        NSView *content=[[root window] contentView];[root restackComposerChrome];
+        Check([[content subviews] indexOfObjectIdenticalTo:root.sendMessageButton]>[[content subviews] indexOfObjectIdenticalTo:root.aquaFooterView],"send anchor remains above footer");
+        layouts++;
     }
     printf("Aqua queue integration: %lu production composer layouts; toggle/close, detached invalidation, profile replacement, section lifecycle and Classic allocation guard PASS.\n",(unsigned long)layouts);[pool drain];return 0;
 }

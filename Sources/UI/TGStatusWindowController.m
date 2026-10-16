@@ -941,9 +941,6 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 - (void)disposeAquaStickerPicker;
 - (void)closeAquaScheduledMessages;
 - (BOOL)toggleAquaScheduledMessages;
-- (NSButton *)aquaScheduledMessagesButton;
-- (CGFloat)aquaScheduledButtonWidthForConversationWidth:(CGFloat)width bot:(BOOL)bot;
-- (void)ensureAquaScheduledMessagesButton;
 - (CGFloat)layoutAquaScheduledShelfAtX:(CGFloat)x bottom:(CGFloat)bottom width:(CGFloat)width top:(CGFloat)top;
 - (NSMutableDictionary *)aquaSearchFilterState;
 - (void)toggleAquaSearchFilters:(id)sender;
@@ -2252,7 +2249,6 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.contactsViewController refreshLocalizedText];
     [self.callsPlaceholderView refreshLocalizedText];
     [self refreshAquaSearchFilterControls];
-    [[self aquaScheduledMessagesButton] setTitle:TGLoc(@"scheduled.shelf.title")];
     [self refreshProfileDisplay];
     [self refreshAccessibilityDescriptions];
     [[self.searchTextField cell] setPlaceholderString:TGLoc(@"search.messages.prompt")];

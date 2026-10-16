@@ -196,9 +196,6 @@
     [self showView:self.pinnedMessageLabelField visible:showPinnedPanel];
     [self showView:self.pinnedMessageTextField visible:showPinnedPanel];
     [self showView:self.pinnedMessageButton visible:showPinnedPanel];
-    [self ensureAquaScheduledMessagesButton];
-    [self showView:[self aquaScheduledMessagesButton] visible:showConversationContent && TGInterfaceDesignIsAqua()];
-    [[self aquaScheduledMessagesButton] setEnabled:showConversationContent && [self.currentAuthState isEqualToString:@"ready"]];
     if(!showSearchPanel) [[[self aquaSearchFilterState] objectForKey:@"view"] setHidden:YES];
     BOOL showReplyPanel = (showConversationContent && self.replyTargetMessageItem != nil);
     [self showView:self.replyPanelView visible:showReplyPanel];
@@ -931,8 +928,7 @@
         }
     }
 
-    CGFloat scheduledButtonWidth=aqua ? [self aquaScheduledButtonWidthForConversationWidth:conversationWidth bot:self.botComposerVisible] : 0.0;
-    CGFloat estimatedSendFieldWidth = conversationWidth - (aqua ? (self.botComposerVisible ? 366.0 : 288.0) + (scheduledButtonWidth>0 ? scheduledButtonWidth + 6.0 : 0.0) : 198.0);
+    CGFloat estimatedSendFieldWidth = conversationWidth - (aqua ? (self.botComposerVisible ? 366.0 : 288.0) : 198.0);
     if (!aqua && estimatedSendFieldWidth < 160.0) {
         estimatedSendFieldWidth = 160.0;
     }
@@ -1105,7 +1101,6 @@
     if (!aqua && sendFieldWidth < 160.0) {
         sendFieldWidth = 160.0;
     }
-    if(aqua && scheduledButtonWidth>0) { sendFieldWidth-=scheduledButtonWidth+6.0; }
     CGFloat composerInnerHeight = composerInputHeight + 10.0;
     CGFloat composerControlY = composerY + floor((composerHeight - 32.0) / 2.0);
     CGFloat composerInputBackgroundY = composerY + floor((composerHeight - composerInnerHeight) / 2.0);
@@ -1118,12 +1113,6 @@
                                                   150.0)];
     [self.sendTextFieldBackgroundView setFrame:NSMakeRect(sendFieldX, composerInputBackgroundY, sendFieldWidth, composerInnerHeight)];
     [self.sendTextField setFrame:NSMakeRect(sendFieldX + 8.0, composerInputBackgroundY + 5.0, sendFieldWidth - 16.0, composerInputHeight)];
-    if(aqua) {
-        NSButton *queue=[self aquaScheduledMessagesButton];
-        [queue setHidden:scheduledButtonWidth<=0 || [self.sendTextField isHidden]];
-        [queue setTitle:TGLoc(conversationWidth<500 ? @"scheduled.shelf.short" : @"scheduled.shelf.title")];
-        [queue setFrame:NSMakeRect(sendFieldX+sendFieldWidth+6,composerControlY,scheduledButtonWidth,32)];
-    }
     [self.stickerButton setFrame:NSMakeRect(stickerButtonX, composerControlY, smallComposerButtonWidth, 32.0)];
     [self.voiceRecordButton setFrame:NSMakeRect(voiceButtonX, composerControlY, smallComposerButtonWidth, 32.0)];
     [self.sendMessageButton setFrame:NSMakeRect(sendButtonX, composerControlY, sendButtonWidth, 32.0)];

@@ -1,18 +1,4 @@
-// A single scheduled shelf is owned by the active conversation. Closing it
-// invalidates callbacks rather than retaining an invisible queue for another chat.
-static char TGAquaScheduledButtonKey;
-- (NSButton *)aquaScheduledMessagesButton {
-    return objc_getAssociatedObject(self,&TGAquaScheduledButtonKey);
-}
-- (void)ensureAquaScheduledMessagesButton {
-    if(!TGInterfaceDesignIsAqua() || [self aquaScheduledMessagesButton]) return;
-    NSButton *button=[[[NSButton alloc] initWithFrame:NSZeroRect] autorelease];
-    [button setTarget:self]; [button setAction:@selector(showScheduledMessages:)];
-    [self applyUtilityButtonStyle:button]; [self installAquaTextCellOnButton:button accented:NO];
-    [button setTitle:TGLoc(@"scheduled.shelf.title")]; [button setToolTip:TGLoc(@"scheduled.title")];
-    [button setHidden:YES]; [[[self window] contentView] addSubview:button];
-    objc_setAssociatedObject(self,&TGAquaScheduledButtonKey,button,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
+// The send button context menu owns access to this per-chat shelf.
 - (void)closeAquaScheduledMessages {
     if(!TGInterfaceDesignIsAqua()) return;
     NSView *shelf=[self.scheduledMessagesWindowController embeddedShelfView];
@@ -40,14 +26,11 @@ static char TGAquaScheduledButtonKey;
     NSView *shelf=[self.scheduledMessagesWindowController embeddedShelfView];
     [self.scheduledMessagesWindowController setEmbeddedParentWindow:[self window]];
     [self.scheduledMessagesWindowController setShelfCloseTarget:self action:@selector(hideAquaScheduledMessages:)];
+    [self.scheduledMessagesWindowController setShelfLayoutAction:@selector(layoutContentView)];
     [[[self window] contentView] addSubview:shelf];
     [self.scheduledMessagesWindowController reloadMessages];
     [self layoutContentView];
     [self.scheduledMessagesWindowController presentEmbeddedShelfAnimated:YES]; return YES;
-}
-- (CGFloat)aquaScheduledButtonWidthForConversationWidth:(CGFloat)width bot:(BOOL)bot {
-    CGFloat button=width<500 ? 76.0 : 100.0;
-    return width-(bot ? 366.0 : 288.0)-button-6.0>=112.0 ? button : 0.0;
 }
 - (CGFloat)layoutAquaScheduledShelfAtX:(CGFloat)x bottom:(CGFloat)bottom width:(CGFloat)width top:(CGFloat)top {
     if(!TGInterfaceDesignIsAqua()) return bottom;

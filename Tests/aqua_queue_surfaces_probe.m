@@ -62,11 +62,12 @@ static void CaptureCompactResume(id self,SEL selector,NSString *identifier,TGDow
 @interface TGScheduledMessagesWindowController (ShelfProbe)
 - (void)scheduledShelfPerformAction:(NSString *)action messageID:(NSNumber *)messageID;
 @end
-@interface QueueTarget : NSObject <TGDownloadCompactPopoverTarget,TGScheduledMessagesShelfTarget> { @public NSUInteger downloads,schedules,closed,all; }
+@interface QueueTarget : NSObject <TGDownloadCompactPopoverTarget,TGScheduledMessagesShelfTarget> { @public NSUInteger downloads,schedules,closed,all,relayouts; }
 @end
 @implementation QueueTarget
 - (void)compactDownloadPerformAction:(NSString *)action identifier:(NSString *)identifier {Require([action length]&&[identifier length],"compact action preserves record identifier");downloads++;}
 - (void)compactDownloadShowAll {all++;}
+- (void)scheduledLayoutChanged {relayouts++;}
 - (void)scheduledShelfPerformAction:(NSString *)action messageID:(NSNumber *)messageID {Require([action length]&&[messageID longLongValue],"shelf action preserves exact message identifier");schedules++;}
 - (void)scheduledShelfRequestClose {closed++;}
 @end
@@ -181,7 +182,11 @@ int main(void) {
     TGTDLibClient *client=[[[TGTDLibClient alloc] init] autorelease];ScheduledFixture=[[NSArray alloc] initWithObjects:Message(@11,@"messageText",@"Full editable source with preserved bold"),Message(@12,@"messagePhoto",@"not caption text"),nil];
     NSArray *summaries=[client scheduledMessageSummariesForChatID:@42 timeout:1 error:NULL];Require([[[summaries objectAtIndex:0] objectForKey:@"editable_text"] isEqual:@"Full editable source with preserved bold"] && ![[[summaries objectAtIndex:0] objectForKey:@"preview"] isEqual:[[summaries objectAtIndex:0] objectForKey:@"editable_text"]],"scheduled edit uses full text independent of display preview");Require([[[summaries objectAtIndex:0] objectForKey:@"entities"] count]==1 && [[summaries objectAtIndex:1] objectForKey:@"editable_text"]==nil,"entities preserved and nontext edits unavailable");
     TGScheduledMessagesWindowController *controller=[[[TGScheduledMessagesWindowController alloc] initWithClient:client chatID:@42 title:@"Synthetic chat"] autorelease];
-    Require([controller matchesClient:client chatID:@42] && ![controller matchesClient:client chatID:@43],"shelf controller bound to captured chat/client");[controller embeddedShelfView];[controller reloadMessages];WaitFor(^BOOL{return ![[controller valueForKey:@"loading"] boolValue];});
+    Require([controller matchesClient:client chatID:@42] && ![controller matchesClient:client chatID:@43],"shelf controller bound to captured chat/client");Require([controller preferredEmbeddedShelfHeight]==120,"empty scheduled shelf uses compact height");
+    NSView *host=[[[NSView alloc] initWithFrame:NSMakeRect(0,0,700,400)] autorelease];[host addSubview:[controller embeddedShelfView]];
+    [controller setShelfCloseTarget:target action:@selector(scheduledShelfRequestClose)];[controller setShelfLayoutAction:@selector(scheduledLayoutChanged)];
+    [controller reloadMessages];WaitFor(^BOOL{return ![[controller valueForKey:@"loading"] boolValue];});
+    Require([controller preferredEmbeddedShelfHeight]==228 && target->relayouts>=2,"loaded rows expand shelf and notify owning layout");
     [controller scheduledShelfPerformAction:@"edit" messageID:@11];WaitFor(^BOOL{return ![[controller valueForKey:@"loading"] boolValue];});Require(EditCalls==1 && CapabilityReads==1 && [EditedOriginal isEqual:@"Full editable source with preserved bold"] && [EditedEntities isEqual:[[summaries objectAtIndex:0] objectForKey:@"entities"]] && [EditedValue hasSuffix:@" edited"],"edit rechecks capability and routes original text/entities through existing edit API");
     [controller scheduledShelfPerformAction:@"edit" messageID:@12];Require(EditCalls==1,"media preview cannot be edited as text");
     ReadGate=dispatch_semaphore_create(0);BlockScheduledRead=YES;NSUInteger previousReads=ScheduledReads;[controller reloadMessages];WaitFor(^BOOL{return ScheduledReads>previousReads;});[controller invalidateEmbeddedShelf];[[controller valueForKey:@"statusField"] setStringValue:@"Dismissed marker"];dispatch_semaphore_signal(ReadGate);BlockScheduledRead=NO;

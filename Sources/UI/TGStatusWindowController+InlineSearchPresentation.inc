@@ -119,5 +119,10 @@ static char TGInlineSearchJumpPendingKey;
     SEL action=[item action];
     if(action==@selector(openChatListSearch:) || action==@selector(openChatSearch:))
         return [self.currentAuthState isEqualToString:@"ready"] && (action!=@selector(openChatSearch:) || self.selectedChatID!=nil);
+    if(action==@selector(showScheduledMessages:))
+        return self.client && [self.currentAuthState isEqualToString:@"ready"] && self.selectedChatID!=nil;
+    if(action==@selector(scheduleMessage:) || action==@selector(sendMessageSilently:) || action==@selector(sendMessageWhenOnline:) ||
+       action==@selector(sendMessageWithoutLinkPreview:) || action==@selector(sendMessageWithPreviewAboveText:) || action==@selector(sendMessageWithLinkPreviewOptions:))
+        return [self.sendMessageButton isEnabled];
     return YES;
 }

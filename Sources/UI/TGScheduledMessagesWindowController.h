@@ -12,6 +12,7 @@
 - (CGFloat)preferredEmbeddedShelfHeight;
 - (void)setEmbeddedParentWindow:(NSWindow *)window;
 - (void)setShelfCloseTarget:(id)target action:(SEL)action;
+- (void)setShelfLayoutAction:(SEL)action;
 - (void)invalidateEmbeddedShelf;
 - (void)presentEmbeddedShelfAnimated:(BOOL)animated;
 - (void)hideEmbeddedShelfImmediately;

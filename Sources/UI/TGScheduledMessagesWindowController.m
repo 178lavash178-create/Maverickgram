@@ -17,6 +17,7 @@
 @property(nonatomic,retain) NSWindow *embeddedParentWindow;
 @property(nonatomic,assign) id shelfCloseTarget;
 @property(nonatomic,assign) SEL shelfCloseAction;
+@property(nonatomic,assign) SEL shelfLayoutAction;
 @property(nonatomic,assign) NSUInteger requestGeneration;
 @property(nonatomic,assign) BOOL embeddedInvalidated;
 @property (nonatomic, retain) TGTDLibClient *client;
@@ -249,6 +250,8 @@
     [self.whenOnlineButton setEnabled:selected];
     [self.deleteButton setEnabled:selected];
     [self.shelfView updateWithMessages:self.messages status:[self.statusField stringValue] loading:self.loading];
+    if([self.shelfView superview] && !self.embeddedInvalidated && [self.shelfCloseTarget respondsToSelector:self.shelfLayoutAction])
+        [self.shelfCloseTarget performSelector:self.shelfLayoutAction];
 }
 
 - (void)setLoading:(BOOL)loading status:(NSString *)status {
@@ -423,7 +426,7 @@
     if(!self.shelfView){self.shelfView=[[[TGScheduledMessagesShelfView alloc] initWithFrame:NSMakeRect(0,0,700,228)] autorelease];self.shelfView.target=self;[self updateControls];}
     return self.shelfView;
 }
-- (CGFloat)preferredEmbeddedShelfHeight {return 228;}
+- (CGFloat)preferredEmbeddedShelfHeight {return [self.messages count] ? 228 : 120;}
 - (void)setEmbeddedParentWindow:(NSWindow *)window {
     if(_embeddedParentWindow!=window){[_embeddedParentWindow release];_embeddedParentWindow=[window retain];}
     if(window)self.embeddedInvalidated=NO;

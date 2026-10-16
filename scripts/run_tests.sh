@@ -559,6 +559,8 @@ HOME="$TEST_HOME" "$BUILD_DIR/aqua-folder-drawer-probe"
 echo "== Local window state, gallery and playback updates =="
 "$PYTHON_BIN" Tests/aqua_toolbar_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 "$PYTHON_BIN" Tests/aqua_sticker_popover_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/scheduled_date_picker_probe.m Sources/UI/TGDatePickerDialog.m Sources/UI/TGLocalization.m -framework Cocoa -o "$BUILD_DIR/scheduled-date-picker"
+HOME="$TEST_HOME" "$BUILD_DIR/scheduled-date-picker"
 TELEGRAPHICA_TEST_ARCH="$ARCH" TELEGRAPHICA_TEST_DEPLOYMENT_TARGET="$DEPLOYMENT_TARGET" scripts/run_aqua_queue_surfaces_probe.sh
 "$PYTHON_BIN" Tests/aqua_queue_integration_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 "$PYTHON_BIN" Tests/aqua_search_filter_backend_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"

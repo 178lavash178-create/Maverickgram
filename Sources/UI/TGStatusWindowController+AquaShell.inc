@@ -231,7 +231,7 @@
     resizeFrame.size.height = MAX(0, NSMaxY(resizeFrame));
     resizeFrame.origin.y = 0;
     [self.sidebarResizeHandleView setFrame:resizeFrame];
-    for (NSView *control in [NSArray arrayWithObjects:self.attachPhotoButton, self.botActionButton, self.sendTextFieldBackgroundView, self.sendTextField, self.stickerButton, self.voiceRecordButton, self.sendMessageButton, [self aquaScheduledMessagesButton], nil]) {
+    for (NSView *control in [NSArray arrayWithObjects:self.attachPhotoButton, self.botActionButton, self.sendTextFieldBackgroundView, self.sendTextField, self.stickerButton, self.voiceRecordButton, self.sendMessageButton, nil]) {
         [content addSubview:control positioned:NSWindowAbove relativeTo:nil];
     }
     TGAquaToolbarGeometry toolbar=TGAquaToolbarFrames(width,height);

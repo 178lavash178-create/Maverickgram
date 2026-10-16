@@ -3318,7 +3318,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     (void)sender;
     NSDate *date = [TGDatePickerDialog dateWithTitle:TGLoc(@"composer.schedule.title")
                                                help:TGLoc(@"composer.schedule.help")
-                                        actionTitle:TGLoc(@"composer.schedule.action")
+                                        actionTitle:TGLoc(@"composer.schedule.confirm")
                                         initialDate:[NSDate dateWithTimeIntervalSinceNow:60.0 * 60.0]
                                             minDate:[NSDate dateWithTimeIntervalSinceNow:60.0]];
     if (!date) {
