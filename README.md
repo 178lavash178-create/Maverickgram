@@ -1,454 +1,282 @@
-# Telegraphica ✦ Legacy Telegram for Intel Macs
+# Telegraphica — a native Telegram client for older Macs
 
 <div align="center">
   <img src="readme-assets/app-icon.png" alt="Telegraphica app icon" width="120" />
-  <p><b>An experimental, unofficial Telegram client for OS X 10.8 through macOS 10.13 on Intel Macs.</b></p>
+  <p><b>For the Intel Macs that still have plenty of life left in them.</b></p>
+  <p>OS X 10.8–macOS 10.13 · Objective-C · Cocoa/AppKit · TDLib</p>
   <p>
     <img src="https://img.shields.io/badge/version-v0.6.0-blue" alt="version v0.6.0" />
-    <img src="https://img.shields.io/badge/macOS-10.8--10.13-black" alt="OS X 10.8 through macOS 10.13" />
-    <img src="https://img.shields.io/badge/Objective--C-AppKit-lightgrey" alt="Objective-C AppKit" />
-    <img src="https://img.shields.io/badge/Telegram-TDLib%20JSON-2CA5E0" alt="TDLib JSON" />
-    <img src="https://img.shields.io/badge/status-open%20beta-brightgreen" alt="open beta status" />
+    <img src="https://img.shields.io/badge/status-open%20beta-brightgreen" alt="open beta" />
+    <img src="https://img.shields.io/badge/architecture-Intel%20x86__64-lightgrey" alt="Intel x86_64" />
     <img src="https://img.shields.io/badge/no-Electron-success" alt="no Electron" />
   </p>
   <p>
-    📣 <a href="https://t.me/macos_telegraphica"><b>Follow development news and release announcements on Telegram</b></a>
+    <a href="https://github.com/MiChiRose/telegraphica/releases/latest"><b>Download Telegraphica</b></a>
+    · <a href="https://t.me/macos_telegraphica">Development news on Telegram</a>
+    · <a href="https://github.com/MiChiRose/telegraphica/issues">Report an issue</a>
   </p>
 </div>
 
-## A Personal Project That Became Public
+Telegraphica is an unofficial Telegram client built for **OS X 10.8 Mountain
+Lion through macOS 10.13 High Sierra on Intel Macs**. It uses native AppKit
+windows and TDLib, with no Electron or embedded browser.
 
-I originally created Telegraphica for my own use. A friend indirectly inspired
-me to start the project: while chatting with him through Telegram Web on my old
-MacBook running OS X 10.9 Mavericks, I noticed that the machine became hot,
-started throttling, and slowed down under the browser workload. Building a
-small native client seemed like a practical way to take that pressure off the
-system.
+You can read and send messages, use folders and forum topics, browse media,
+handle downloads and keep a Telegram session on an older Mac. It is an open
+beta: useful for everyday conversations, with rough edges still being worked
+on. It is not affiliated with Telegram.
 
-Once the first working version proved that the idea was possible, I showed it
-to several people. Their surprise, enthusiasm, and support encouraged me to
-turn a private experiment into a public project. I decided to release
-Telegraphica so that other owners of older Macs could use it too.
+## New in 0.6.0: Aqua
 
-Anyone who wants to try Telegraphica on a supported legacy system is welcome to
-do so. Detailed installation instructions are included below.
+I spent a long time rethinking Telegraphica's interface for this update.
+Reading magazines, watching old films and visiting a museum of art and
+architecture made me pay more attention to materials, light and small details.
+I kept coming back to the interfaces I loved on older Apple devices: Mac OS X
+10.7–10.9, the iPod Classic and early iPhones.
 
-Telegraphica is a small native Cocoa/AppKit Telegram client for **OS X 10.8
-through macOS 10.13** on Intel `x86_64`. It is intended for every Intel-based
-Mac, including MacBook models, that can run one of those operating systems.
-Newer Intel Macs and Apple Silicon Macs may also run the app, but those
-configurations are unofficial and I cannot guarantee current or future
-compatibility.
+Aqua grew out of that: textured metal, glossy blue controls, inset panels and
+an interface that feels at home on an older Mac. I am proud of how far its
+visual design has come, and I want to keep refining it.
 
-It is not a Telegram clone, not an official Telegram app, and not a branded
-Telegram distribution. It is an independent legacy-Mac experiment that talks to
-Telegram through **TDLib's JSON API** and keeps the UI native, small, and
-legacy-Mac-friendly.
+Aqua includes:
 
-> Telegraphica is not affiliated with Telegram. This repository does not include
-> Telegram logos, official artwork, user credentials, TDLib databases, sessions,
-> or account data.
+- A top navigation toolbar, account menu and chat search.
+- An animated folder drawer beside the main window, with an internal list
+  when there is not enough screen space.
+- Local chat backgrounds: colors, textures, five bundled wallpapers or your
+  own image, cropped to fill without stretching. No Premium is required.
+- Compact sticker and download panels beside the conversation.
+- A dark photo viewer with gallery navigation, zoom and reset controls.
+- Refined audio playback, profiles, media browsing, recording windows and
+  scheduling dialogs.
 
----
+### How to enable Aqua
 
-## Compatibility
+1. Install **Telegraphica 0.6.0** or newer.
+2. Open **Settings → Appearance**.
+3. Choose **Aqua** in the **Interface** dropdown.
+4. Confirm the change. Telegraphica closes and reopens automatically.
 
-Telegraphica uses one Intel `x86_64` application and one release lane for OS X
-10.8 through macOS 10.13. The app selects its Mountain Lion fallbacks at
-runtime, while Mavericks and newer systems retain the normal feature path.
+In Russian: **Настройки → Оформление → Интерфейс → Aqua**.
 
-| macOS version | Telegraphica support began | Architecture | Status |
-| --- | --- | --- | --- |
-| OS X 10.8 Mountain Lion | v0.5.2 unified legacy release | Intel `x86_64` | Supported with Mountain Lion-safe TDLib storage and reduced background work |
-| OS X 10.9 Mavericks | First public mainline release | Intel `x86_64` | Primary development and HITL platform |
-| OS X 10.10-10.13 | First public mainline release | Intel `x86_64` | Supported by the same unified build |
-| macOS 10.14-10.15 | No formal support milestone | Intel `x86_64` | Unofficial, best effort, not part of regular HITL testing |
-| macOS 11-27 / Apple Silicon era | No formal support milestone | Intel `x86_64`; Rosetta 2 where available | Unofficial and untested; no native `arm64` build |
-| macOS 28 and newer | No formal support milestone | No supported architecture | General-purpose Rosetta support for ordinary Intel apps is expected to be unavailable |
+Choose **Classic** in the same dropdown to return to the previous interface.
+Classic themes and Workshop remain available, and your Classic theme is kept.
+Aqua is optional; an installation without a saved choice starts in Classic.
 
-The exact operating systems available still depend on the Mac model. Apple says
-that general-purpose Rosetta support for Intel apps remains available through
-macOS 27 and ends after that release, with only a limited legacy-game exception.
-See [Apple's Intel-app compatibility guidance](https://support.apple.com/102527).
+The update also improves theme contrast, read receipts, reaction placement,
+muted-chat notifications and button states. Reactions stay below message text.
+Scheduling is available by **right-clicking Send → Send on schedule…**; the
+same menu opens that chat's scheduled messages.
 
-I do most of the development and hands-on testing on **OS X 10.9 Mavericks**.
-It gives me the project's main legacy toolchain and hardware baseline. The less
-serious reason is that I like skeuomorphic systems and would like to make them
-great again.
+[Full 0.6.0 release notes](docs/releases/v0.6.0.md)
 
----
+## Download and install
 
-## What Telegraphica Is For
+One application covers the complete supported range: **OS X 10.8–macOS 10.13,
+Intel `x86_64`**. There are no separate Mountain Lion and Mavericks downloads.
 
-Telegraphica exists for one very specific reason: keeping an old Mac useful for
-real messaging again.
-
-The current official Telegram Desktop client no longer supports these legacy
-macOS releases. Telegram's web version remains an option, but keeping a modern
-browser and a full web client open can place sustained CPU and memory pressure
-on older hardware. That can contribute to heat, throttling, and visible system
-slowdowns.
-
-Telegraphica takes the opposite route: a native Objective-C/AppKit shell,
-old-Xcode-safe code, TDLib underneath, and no embedded browser engine. The goal
-is lower overhead so the system can "breathe easier" and leave more of its
-limited resources available for other useful work.
-
-In plain language, the goal is:
-
-- 🧭 open Telegram on an Intel Mac running OS X 10.8 through macOS 10.13;
-- 🔐 pass modern Telegram authorization through TDLib;
-- 💬 read chats, topics, messages, media previews, and unread state;
-- 📤 send text, photos, reactions, and voice messages;
-- 🔔 integrate with Notification Center and the Dock;
-- 🧰 keep the build reproducible for the old Mac lane.
-
----
-
-## Current Open Beta: `v0.6.0`
-
-Version 0.6.0 introduces Aqua: an optional interface inspired by classic Mac OS X,
-with textured controls, an attached folder drawer, chat wallpapers and compact
-sticker/download panels. Classic themes and Workshop remain available. Switch in
-Settings → Appearance → Interface; confirmation restarts the application.
-See the [0.6.0 release notes](docs/releases/v0.6.0.md).
-
-This open beta is ready for broader legacy-Mac testing. Telegraphica is still
-young software, but the everyday loop is now useful enough for real feedback:
-sign in, read chats, send messages, handle media, manage pinned dialogs, play
-voice messages, and keep the app updated from GitHub Releases.
-
-### ✅ Working In This Beta
-
-- 🔐 TDLib login flow: phone number, QR code, login code, and 2FA password.
-- 🧾 Automatic TDLib app configuration bootstrap for public builds, with local
-  developer override support.
-- 💬 Chat list with unread badges, muted indicators, avatars, and selected chat
-  state.
-- 🧵 Supergroup topics / forum-style subchat selection.
-- 📜 Message history with scroll-based older-message loading.
-- ✍️ Typing indicators when TDLib reports active chat actions.
-- 📨 Text sending with multiline input support.
-- 🖼 Photo sending with preview and optional caption.
-- 🎙 Voice-message recording, preview, sending, and playback.
-- 🔊 Ogg/Opus voice-message playback through a bundled Mavericks-safe helper.
-- 👍 Message reactions with local display and real Telegram sync.
-- 📹 One-to-one Telegram video calls with local camera preview on OS X
-  10.9 and newer.
-- 🖼 Grouped photo display, image preview, zoom controls, and pinch-to-zoom.
-- 🔊 Independent audio/video playback speeds and optional sequential voice-message playback.
-- 🎞 Video playback in a resizable native window.
-- 📎 Basic document display with filenames where TDLib exposes them.
-- 🔔 Notification Center alerts, Dock unread badges, sound, and click-through to
-  the source chat.
-- 👤 Profile, settings, themes, language selector, diagnostics, and about panel.
-- 🔄 Manual update checks and quiet update-available badges against GitHub
-  Releases.
-- 📌 Pinned dialogs stay at the top of the chat list and can be pinned or
-  unpinned from the chat context menu.
-- 🧩 Native sticker display with WEBP, TGS, and animated WEBM/VP9 sticker
-  support on Mavericks; static picker thumbnails are decoded through a bounded
-  background cache rather than during AppKit layout.
-- 🎞 Inline GIF validation and decoding use a bounded background queue with
-  cancellable viewport delivery instead of blocking message-list updates.
-- 🔍 Chat search/navigation with a native search field.
-- 🔗 Received link-preview cards and composer controls for link previews.
-- 👥 Contacts browser with search, direct chat opening, and profile details
-  including presence, username, phone number, biography, and avatar.
-- 🧭 Private-chat, group, channel, secret-chat, archive, invite-link, member,
-  role, restriction, and channel-administration workflows.
-- 🗂 Telegram chat-folder creation, editing, drag ordering, shared-folder
-  import, multiple invite-link management, suggested chats, recommendations,
-  and server-reported limits on capable TDLib lanes.
-- 📥 Interrupted downloads restore after sign-in, with separate auto-download
-  controls for photos, videos, documents, and voice messages.
-- 🧹 Storage cleanup can target a media type and either all chats or the chat
-  currently open, while leaving cloud content and Downloads copies intact.
-- ⏩ Voice/audio and video playback support independent 1x, 1.5x, and 2x speeds.
-- 🔕 Per-chat server mute, sound, and preview synchronization.
-- ✨ Bold, italic, underline, strikethrough, spoiler, and monospace message
-  formatting.
-- ⏰ Silent, scheduled, and send-when-online messages with link-preview
-  controls.
-- 📍 Contacts, GIF animations, video notes, locations, live locations, venues,
-  dice, regular polls, and quizzes.
-- 🤖 Bot commands, inline results, callback buttons, reply keyboards, and
-  confirmed Login URLs.
-- 🔒 Privacy rules, blocked-user management, account inactivity TTL,
-  auto-delete controls, active sessions, and remote session termination.
-- 📥 A shared Download Manager with progress, retry, cancellation, Save As,
-  Finder reveal, and cache cleanup.
-- 🎮 An optional Retro Console Workshop module for user-supplied compatible
-  game files and cores.
-- 🧽 Storage usage view with cache cleanup.
-- 🧩 Optional Workshop modules that can be installed without increasing the
-  base application download.
-- 🧹 Build/release hygiene scripts for the old-Mac workflow.
-
-### ⚠️ Known Beta Gaps
-
-- Some sticker packs may still expose edge-case animation/layout bugs; please
-  report the sticker format and a screenshot if that happens.
-- The DMG must be HFS+-formatted for Mavericks and is not notarized.
-- A public drag-and-drop DMG is considered complete only when
-  `Telegraphica.app` already bundles a Mavericks-compatible
-  `Contents/Frameworks/libtdjson.dylib`.
-- DMGs without bundled TDLib are development images, not out-of-the-box
-  installers.
-- Release confidence requires the same unchanged app bundle to pass on Mountain
-  Lion and Mavericks; broader 10.10-10.13 reports remain welcome.
-- Text address search in the location picker is temporarily disabled after a
-  legacy MapKit lifecycle crash. Mavericks and newer retain map, pin, zoom, and
-  current-location selection; Mountain Lion has no native MapKit picker.
-- One-to-one audio and experimental video calls require OS X 10.9 or newer;
-  OS X 10.8 keeps the same app bundle with a clear unavailable state. Group
-  calls and screen sharing are not included.
-- Telegram Premium, Stars, payments, subscriptions, gifts, paid media, and
-  other purchase flows are intentionally not implemented.
-- The project is moving fast, so UI details and release packaging may change.
-
----
-
-## Download & Run
-
-Compiled beta builds live in:
-
-➡️ **[GitHub Releases](https://github.com/MiChiRose/telegraphica/releases)**
-
-### For Users
-
-1. Open the latest release page.
-2. Click **Assets** if the download list is collapsed.
-3. Download the unified Intel DMG:
-   `Telegraphica-v<VERSION>-macos10.8-10.13-x86_64.dmg`.
-4. Open the downloaded DMG.
-5. Drag **Telegraphica.app** into **Applications**.
-6. Launch Telegraphica and sign in with your Telegram phone number.
-
-If you are not sure which file to download, choose the file ending in
-**`.dmg`**.
-
-### For Developers / Troubleshooting
-
-| Asset | Best For | Notes |
-| --- | --- | --- |
-| `Telegraphica-v<VERSION>-macos10.8-10.13-x86_64.dmg` | OS X 10.8-10.13 installation | One Intel installer for the complete supported range. |
-| `Telegraphica-v<VERSION>-macos10.8-10.13-x86_64.app.zip` | Manual app bundle transfer | The same app bundle as the DMG. |
-| `.sha256` files | Checksum verification | You do not need these files to install Telegraphica. |
-
-### First Launch
-
-Because Telegraphica is distributed directly and is not notarized yet, macOS may
-warn on first launch.
-
-1. Download the `.dmg` file from the release assets.
-2. Open the DMG and drag **Telegraphica.app** into **Applications**.
-3. If macOS blocks the app, right-click / Control-click the app and choose
-   **Open**.
-4. Sign in with your phone number, Telegram code, and 2FA password if needed.
-
----
-
-## Legacy Build Guide
-
-Telegraphica is intentionally built around a conservative Objective-C lane:
-
-| Item | Target |
+| Download | Use it for |
 | --- | --- |
-| OS | OS X 10.8 through macOS 10.13 in one app bundle |
-| CPU | Intel `x86_64` |
-| UI | Cocoa / AppKit |
-| Language | Objective-C, non-ARC |
-| Telegram core | TDLib JSON API (`tdjson`) |
-| Preferred legacy toolchain | Xcode 5.1.1 for the 10.8 minimum; Xcode 6.2-compatible source |
+| [0.6.0 DMG installer](https://github.com/MiChiRose/telegraphica/releases/download/v0.6.0/Telegraphica-v0.6.0-macos10.8-10.13-x86_64.dmg) | Normal installation: drag Telegraphica into Applications. |
+| [0.6.0 application ZIP](https://github.com/MiChiRose/telegraphica/releases/download/v0.6.0/Telegraphica-v0.6.0-macos10.8-10.13-x86_64.app.zip) | Manual transfer of the same application bundle. |
+| [All releases and SHA-256 files](https://github.com/MiChiRose/telegraphica/releases) | Earlier versions, release notes and checksum verification. |
 
-Build the app:
+**Updating:** quit Telegraphica before replacing the application. Keep its
+Application Support folder; you do not need to delete your session or settings.
+Copy any important unsent text before restarting: draft restoration across an
+application restart is a known issue in 0.6.0.
+
+**First installation:** open the DMG, drag Telegraphica into Applications and
+launch it. The public build includes the connection bootstrap, so you do not
+need to obtain Telegram API credentials. Follow the phone/code/2FA flow, or use
+QR login where the loaded TDLib supports it.
+
+The application is distributed directly and is not notarized. If macOS blocks
+first launch, Control-click the app and choose **Open**.
+
+### Finding the next update
+
+While running, Telegraphica checks the update server once an hour. A new
+version adds an update indicator in Settings; background checks do not open a
+popup or install anything automatically. Use **Settings → Check for updates**
+to check immediately and see the download prompt.
+
+The update manifest and download proxy are served through the project's
+Cloudflare Worker; release packages are published on GitHub Releases.
+
+## What you can do
+
+### Conversations
+
+- Private chats, groups, channels, secret chats and forum topics.
+- Text and multiline messages, formatting, replies, forwarding and reactions.
+- Silent, scheduled and send-when-online messages where supported by TDLib.
+- Chat search and message search, with sender/date filters and result navigation.
+- Pinned chats, archives, typing indicators, unread markers and read receipts.
+- Telegram chat folders, editing and ordering; shared-folder and invite-link
+  workflows on capable TDLib runtimes.
+
+### Media and downloads
+
+- Photos with preview/captions, albums, image zoom and gallery navigation.
+- Voice-message recording, preview, sending and playback; video notes and video
+  playback in native windows.
+- Audio/video playback speeds and optional sequential voice playback.
+- WEBP, TGS and WEBM/VP9 stickers, GIFs and received link previews, subject to
+  runtime capabilities.
+- A download manager with progress, pause/resume, retry, cancel, Save As and
+  Finder reveal; interrupted downloads restore after sign-in.
+- Separate auto-download settings and media/chat-specific cache cleanup.
+
+### Accounts and chat tools
+
+- Contacts, profiles, presence, usernames, biographies and avatars.
+- Chat/member administration, invite links, roles and restrictions.
+- Privacy rules, blocked users, active sessions and auto-delete controls.
+- Bot commands, inline results, callback buttons, reply keyboards and confirmed
+  Login URLs.
+- Contacts, locations, venues, dice, polls and quizzes where supported.
+- One-to-one audio and experimental video calls on OS X 10.9 and newer.
+
+### On your Mac
+
+- Notification Center integration, Dock unread badges and click-through to chats.
+- Muted chats keep a local gray unread marker, without banners, sound or a
+  contribution to the overall unread/Dock count.
+- Classic themes, optional Aqua, Russian/Belarusian/English localization and
+  animation/economy settings.
+- Optional **Workshop** modules, including Retro Console for your own compatible
+  game files and cores, installed separately from the base app.
+
+Feature availability depends on the loaded TDLib and the operating system.
+See the [capability guide](docs/tdlib-capabilities.md) for the boundaries.
+
+## Compatibility and current limits
+
+| System | Status |
+| --- | --- |
+| OS X 10.8 Mountain Lion | Supported target; runtime-selected TDLib fallback and focused compatibility helpers. Calls and native MapKit picking are unavailable. |
+| OS X 10.9 Mavericks | Main development and hands-on testing platform. |
+| OS X 10.10–macOS 10.13 | Supported targets using the same Intel application. |
+| Newer macOS / Apple Silicon | Unofficial and outside regular testing. No native `arm64` build. |
+
+The **0.6.0** release was built and tested on real **OS X 10.9.5** using
+**Xcode 5.1.1**, with a shared **10.8 deployment target**. Automated checks cover
+Classic/Aqua, runtime capabilities, layouts, resource packaging and asynchronous
+ownership. Both TDLib runtimes ship in the same bundle.
+
+Physical execution of this release on 10.8 and 10.10–10.13 was unavailable.
+Binary/deployment checks and fallback tests are supporting evidence; they do not
+replace running the app on those systems. Compatibility reports are welcome.
+
+Known limits:
+
+- **A draft may not return to the composer after restarting.** Keep important
+  unsent text separately before updating or switching interfaces.
+- Some animated stickers and GIFs still have edge cases worth reporting.
+- Group calls and screen sharing are not included. Calls are unavailable on 10.8.
+- Text address search in the MapKit location picker is disabled after a legacy
+  lifecycle crash. On 10.9 and newer, map/pin/zoom/current-location picking remains.
+- Telegram purchases, Stars, subscriptions, gifts, paid media and other payment
+  flows are intentionally absent. Use the official Telegram application to
+  manage paid-only capabilities.
+
+[Compatibility matrix](docs/compatibility-matrix.md) ·
+[Release verification and limits](docs/releases/v0.6.0.md)
+
+## Why I started this
+
+I originally built Telegraphica for myself. While talking to a friend through
+Telegram Web on my old Mavericks MacBook, I noticed how hot and slow the machine
+became under the browser workload. A small native client seemed worth trying.
+
+After the first working version, encouragement from friends pushed me to make
+it public. I still do most of the development and hands-on testing on Mavericks.
+I like these machines, I like the systems they run, and I want them to remain
+useful for more than nostalgia.
+
+The goal is a practical messaging client with modest overhead. I do not claim
+measured CPU, temperature or battery improvements for 0.6.0.
+
+## Building from source
+
+| Component | Target |
+| --- | --- |
+| Platform | One application for OS X 10.8–macOS 10.13 |
+| Architecture | Intel `x86_64` |
+| UI / language | Cocoa/AppKit, Objective-C, manual reference counting |
+| Toolchain | Xcode 5.1.1; source also kept compatible with Xcode 6.2 |
+| Telegram core | TDLib JSON API, with bundled 10.8 and 10.9+ runtimes |
+
+Build with the two existing TDLib libraries:
 
 ```sh
+TELEGRAPHICA_TDJSON_PATH=/path/to/modern/libtdjson.dylib \
+TELEGRAPHICA_TDJSON_MOUNTAIN_LION_PATH=/path/to/fallback/libtdjson.dylib \
 ./build_legacy.sh
 ```
 
-Bundle a local TDLib JSON library into the app:
+A developer build needs its own local or remote app-configuration bootstrap.
+Public release downloads already include one. See the
+[bootstrap guide](docs/remote-tdlib-config.md) and
+[local configuration example](docs/local-tdlib-config.example.plist).
+
+For a complete public package, supply the verified call transport too:
 
 ```sh
-TELEGRAPHICA_TDJSON_PATH=/path/to/libtdjson.dylib ./build_legacy.sh
+TELEGRAPHICA_MODERN_CALL_TRANSPORT_PATH=/path/to/TelegraphicaCallTransport.dylib \
+./scripts/package_legacy_release_artifacts.sh \
+  --tdjson /path/to/modern/libtdjson.dylib \
+  --mountain-lion-tdjson /path/to/fallback/libtdjson.dylib
 ```
 
-Create a DMG from the built app:
+The pipeline creates one HFS+ DMG, the matching app ZIP and SHA-256 files in
+`dist/`. It checks both TDLib runtimes and refuses a public installer without
+them or a connection bootstrap. See the [release checklist](docs/release-checklist.md)
+and [old-Mac build guide](docs/mavericks-transfer.md) for the complete workflow.
+
+For source changes, run:
 
 ```sh
-./scripts/package_release_installer.sh
+./scripts/run_tests.sh
+python3 scripts/check_legacy_compat.py
 ```
 
-The installer packager refuses to create a public DMG unless the built app
-contains `Telegraphica.app/Contents/Frameworks/libtdjson.dylib`. A
-development-only TDLib-less image can be forced with
-`TELEGRAPHICA_ALLOW_TDLIBLESS_INSTALLER=1`, but that image should not be
-published as an end-user installer.
+Ordinary feature work does not require rebuilding TDLib. Runtime updates follow
+the [TDLib update and rollback guide](docs/tdlib-update-and-rollback.md).
 
-On the legacy Mac, build the complete release artifacts in one pass:
+## Local data and security
 
-```sh
-./scripts/package_legacy_release_artifacts.sh --tdjson /path/to/libtdjson.dylib
-```
+Sessions, databases and local settings belong in Application Support; secrets
+use the application's local configuration and Keychain helpers. They do not
+belong in this repository or in a release source archive.
 
-That command rebuilds Telegraphica, bundles TDLib, creates an HFS+ DMG, creates
-an app zip, and writes SHA256 files into `dist/`. These are the artifacts that
-should be uploaded to GitHub for an out-of-the-box Mavericks beta.
+Never commit or include in an issue report:
 
-The build script targets `MACOSX_DEPLOYMENT_TARGET=10.8`, builds `x86_64`,
-stamps `LSMinimumSystemVersion`, checks the resulting binary with `file`,
-`lipo`, and `otool`, then writes the unified release artifacts into `dist/`.
-Mountain Lion compatibility is selected from the running AppKit version rather
-than from the deployment target, so the same bundle keeps its full Mavericks
-and newer behavior.
+- Telegram `api_id` / `api_hash`, phone numbers, login codes or 2FA passwords;
+- session files, TDLib databases or Keychain encryption keys;
+- raw authorization responses or private conversation screenshots.
 
----
+Use the redacted diagnostics where possible, and review logs before sharing.
+Telegraphica is independent of Telegram and does not ship official Telegram
+logos or artwork. Third-party materials are documented in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-## TDLib
+## Development and feedback
 
-Telegraphica talks to Telegram through TDLib's C JSON API. The unified app keeps
-a verified OS X 10.8 fallback lane and a separate OS X 10.9+ lane; exact
-version, source revision, MTProto layer, binary hash, and exported ABI are
-recorded for every newly built candidate. See
-[`docs/tdlib-update-and-rollback.md`](docs/tdlib-update-and-rollback.md).
+The next priorities include draft restoration across restart, further Aqua
+polish, animated-media edge cases and broader testing on supported systems.
 
-Useful scripts:
+Useful references:
 
-```sh
-./scripts/build_tdlib_legacy.sh --archive /path/to/td-v1.8.0.tar.gz --openssl-root /opt/local
-./scripts/check_tdjson_legacy.sh /path/to/libtdjson.dylib
-```
+- [Product direction](PRODUCT.md)
+- [Architecture and modernization baseline](docs/technical-modernization-baseline.md)
+- [TDLib capabilities](docs/tdlib-capabilities.md)
+- [Security notes](docs/security.md)
+- [Source and release history](https://github.com/MiChiRose/telegraphica/releases)
 
-The app can load TDLib from:
+If something goes wrong, [open an issue](https://github.com/MiChiRose/telegraphica/issues)
+with the app version, macOS version, what happened and how to reproduce it.
+For news, follow [the Telegram channel](https://t.me/macos_telegraphica).
 
-- `Telegraphica.app/Contents/Frameworks/libtdjson.dylib`
-- a path bundled by `TELEGRAPHICA_TDJSON_PATH`
-- `/usr/local/lib/libtdjson.dylib`
-- `/opt/homebrew/lib/libtdjson.dylib`
-- `libtdjson.dylib` next to the current process
-
-More detail:
-
-- [`docs/mavericks-transfer.md`](docs/mavericks-transfer.md)
-- [`docs/feasibility.md`](docs/feasibility.md)
-- [`docs/security.md`](docs/security.md)
-- [`docs/compatibility-matrix.md`](docs/compatibility-matrix.md)
-- [`docs/release-checklist.md`](docs/release-checklist.md)
-
----
-
-## Local Credentials
-
-Telegram API credentials are read locally from:
-
-```text
-~/Library/Application Support/Telegraphica/tdlib-config.plist
-```
-
-Start from:
-
-```text
-docs/local-tdlib-config.example.plist
-```
-
-Copy that example outside the repository, edit the copy with values from
-`my.telegram.org`, and keep the real file local to your Mac.
-
-Public release builds fetch the Telegraphica TDLib app configuration
-automatically on first launch so people can sign in without manually entering
-Telegram API fields. Do not add plaintext release credentials to app resources
-or repository files.
-
-Never commit, upload, paste, or screenshot:
-
-- `api_id` / `api_hash`
-- phone numbers, login codes, or 2FA passwords
-- TDLib databases or session files
-- Keychain-backed encryption keys
-- raw TDLib authorization responses
-- private chat/message screenshots unless you intentionally want to share them
-
----
-
-## Project Layout
-
-```text
-Telegraphica.xcodeproj/        Xcode project kept Xcode 6.x-compatible
-Sources/                       Objective-C/AppKit source
-Sources/Core/                  TDLib boundary and chat/message models
-Sources/Services/              Logger and Keychain helpers
-Sources/UI/                    Legacy AppKit chat shell
-Sources/Resources/             App icons, localizations, bundled resources
-readme-assets/                 README artwork
-docs/                          Feasibility, security, Mavericks, release notes
-scripts/                       Build, TDLib, validation, release helpers
-build_legacy.sh                Unified OS X 10.8-10.13 / x86_64 build lane
-PRODUCT.md                     Product and design direction
-```
-
----
-
-## Engineering Notes
-
-- 🧱 **Native first:** no Electron, no web wrapper, no SwiftUI requirement.
-- 🕰 **Old-Xcode-safe:** avoids modern AppKit APIs that would break Xcode 5.1.1
-  or Mountain Lion.
-- 🔌 **Dynamic TDLib boundary:** the app can launch without vendoring TDLib.
-- 🔐 **Local data discipline:** credentials and sessions stay outside git.
-- 🧪 **HITL-driven:** Mavericks/Xcode 6.2 testing remains the source of truth.
-- 🧹 **Clean release artifacts:** public builds exclude `.git`, `dist`, build
-  outputs, TDLib source trees, credentials, and sessions.
-
----
-
-## Roadmap
-
-- See the current [feature coverage and priority audit](docs/feature-audit-2026-07.md).
-- See the [technical modernization baseline](docs/technical-modernization-baseline.md)
-  for capability, architecture, performance and test progress.
-- Improve edge-case animated sticker playback and GIF handling.
-- More complete document download and preview handling.
-- Deeper group/channel profiles and member-management views.
-- More polished skeuomorphic theme variants.
-- Safer automatic update flow for legacy Macs.
-- Optional all-in-one installer once the redistributable Mavericks TDLib lane is
-  finalized.
-
----
-
-## Compatibility & Security
-
-**Supported target:** OS X 10.8 through macOS 10.13 on Intel `x86_64`.
-
-The mainline build targets OS X 10.8-10.13 as one `x86_64` application. Newer
-Intel and Apple Silicon systems may work, including through Rosetta 2, but they
-are unofficial, are not regular release gates, and have no native `arm64`
-binary. General-purpose Rosetta support for ordinary Intel apps is available
-through macOS 27; continued operation after that version is not expected or
-guaranteed.
-
-**Security posture:**
-
-- public builds fetch Telegraphica app-level Telegram API configuration on first launch;
-- no bundled user credentials, phone numbers, login codes, or 2FA passwords;
-- no committed sessions or TDLib databases;
-- diagnostics are redacted where practical;
-- local secrets belong in Application Support and Keychain, not in source;
-- release archives are checked before publishing.
-
----
-
-## Issues & Feedback
-
-This is beta software. Bugs, UI notes, old-Mac build logs, and compatibility
-reports are welcome:
-
-- [GitHub Issues](../../issues)
-- [GitHub Releases](../../releases)
-
----
-
-<p align="center">
-  Made for the stubbornly useful old Macs that still deserve good software.
-</p>
+Made for the stubbornly useful old Macs that still deserve good software.
