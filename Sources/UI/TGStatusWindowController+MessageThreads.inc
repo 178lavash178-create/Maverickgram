@@ -40,7 +40,7 @@
         self.suppressChatSelectionHandling = NO;
         [self.composeChatButton setAction:@selector(createForumTopic:)];
         [self.composeChatButton setToolTip:TGLoc(@"forum.topic.create")];
-        [self.loadChatsButton setToolTip:@"Refresh topics"];
+        [self.loadChatsButton setToolTip:TGLoc(@"forum.refreshHint")];
         [self.chatsLabel setStringValue:[NSString stringWithFormat:@"%@ (%lu)",
             self.topicParentTitle ? self.topicParentTitle : @"Topics", (unsigned long)[self.forumTopicItems count]]];
     }

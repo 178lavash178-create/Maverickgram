@@ -81,26 +81,25 @@
 }
 
 - (void)refreshInterfaceDesignControls {
-    BOOL ru = [TGLanguageCode() isEqualToString:@"ru"];
-    [self.interfaceDesignLabel setStringValue:ru ? @"Интерфейс" : @"Interface"];
-    [self.interfaceDesignHint setStringValue:ru ? @"Смена дизайна потребует перезапуска. Классические темы сохраняются." : @"Changing design restarts the app. Your classic theme is preserved."];
+    [self.interfaceDesignLabel setStringValue:TGLoc(@"settings.section.interface")];
+    [self.interfaceDesignHint setStringValue:TGLoc(@"aqua.interface.changeHint")];
     [self.interfaceDesignLabel setTextColor:TGClassicCardInkColor()];
     [self.interfaceDesignHint setTextColor:TGClassicCardMutedInkColor()];
     [self.interfaceDesignPopUpButton removeAllItems];
-    [self.interfaceDesignPopUpButton addItemsWithTitles:[NSArray arrayWithObjects:ru ? @"Классический" : @"Classic", @"Aqua", nil]];
+    [self.interfaceDesignPopUpButton addItemsWithTitles:[NSArray arrayWithObjects:TGLoc(@"aqua.interface.classic"), @"Aqua", nil]];
     [self.interfaceDesignPopUpButton selectItemAtIndex:TGInterfaceDesignIsAqua() ? 1 : 0];
     [self.themePopUpButton setEnabled:!TGInterfaceDesignIsAqua()];
     [self.themeCategoryPopUpButton setEnabled:!TGInterfaceDesignIsAqua()];
     if (!TGInterfaceDesignIsAqua()) return;
-    [self.aquaFolderHeaderButton setTitle:[NSString stringWithFormat:@"%@ · %lu", ru ? @"ПАПКИ" : @"FOLDERS", (unsigned long)[self.drawerFolderButtons count]]];
+    [self.aquaFolderHeaderButton setTitle:[NSString stringWithFormat:@"%@ · %lu", TGLoc(@"aqua.folders.heading"), (unsigned long)[self.drawerFolderButtons count]]];
     [self.aquaFolderPresentationSettingsView refreshAppearance];
     [self.aquaFolderDrawer refreshLocalization];
     [self.aquaFolderHeaderButton setToolTip:TGLoc(TGAquaFoldersUseDrawer() ? @"aqua.folders.toggleDrawer" : @"aqua.folders.toggleInline")];
-    [self.aquaFolderEditButton setTitle:ru ? @"Изменить" : @"Edit"];
-    [self.aquaSearchButton setTitle:ru ? @"Поиск чатов" : @"Search chats"];
-    [self.aquaDownloadsButton setTitle:ru ? @"Загрузки" : @"Downloads"];
+    [self.aquaFolderEditButton setTitle:TGLoc(@"profile.edit.short")];
+    [self.aquaSearchButton setTitle:TGLoc(@"search.chats.title")];
+    [self.aquaDownloadsButton setTitle:TGLoc(@"downloads.title")];
     [self.workshopDrawerButton setTitle:TGLoc(@"workshop.title")];
-    [self.attachPhotoButton setTitle:ru ? @"Файл" : @"File"];
+    [self.attachPhotoButton setTitle:TGLoc(@"aqua.attachFile")];
     [self.sendMessageButton setTitle:TGLoc(@"send")];
 }
 
@@ -153,7 +152,7 @@
     BOOL showingChats = [self.activeSection isEqualToString:TGSectionChats];
     BOOL composerVisible = showingChats && !self.chatNavigationClosed && (!self.mediaCenterVisible || [self isAquaChatInfoPanelActive]) && ![self aquaChatInfoReplacesConversation];
     CGFloat footerHeight = TGAquaFooterHeight(composerVisible, [self.sendTextFieldBackgroundView frame]);
-    [self.aquaToolbarView setFrame:NSMakeRect(0, height-54, width, 54)];
+    [self.aquaToolbarView setFrame:NSMakeRect(0, height-TGAquaToolbarHeight(), width, TGAquaToolbarHeight())];
     CGFloat conversationX = NSMaxX(sidebar) + 6.0;
     [self.aquaFooterView setFrame:NSMakeRect(conversationX, 0, MAX(0, NSWidth([self.conversationPanelView frame])), footerHeight)];
     [self.aquaFooterView setDividerX:0];
@@ -166,10 +165,10 @@
     for (NSView *control in [NSArray arrayWithObjects:self.attachPhotoButton, self.botActionButton, self.sendTextFieldBackgroundView, self.sendTextField, self.stickerButton, self.voiceRecordButton, self.sendMessageButton, nil]) {
         [content addSubview:control positioned:NSWindowAbove relativeTo:nil];
     }
-    [self.accountBadgeView setFrame:NSMakeRect(12, height-44, 32, 34)];
+    [self.accountBadgeView setFrame:NSMakeRect(12, height-41, 32, 34)];
     [content addSubview:self.accountBadgeView positioned:NSWindowAbove relativeTo:nil];
     CGFloat searchWidth = MIN(200.0, floor(width*0.18));
-    [self.aquaSearchButton setFrame:NSMakeRect(54, height-42, searchWidth, 30)];
+    [self.aquaSearchButton setFrame:NSMakeRect(54, height-39, searchWidth, 30)];
     NSArray *order = [NSArray arrayWithObjects:[self.navigationButtons objectAtIndex:2], [self.navigationButtons objectAtIndex:0], [self.navigationButtons objectAtIndex:1], self.workshopDrawerButton, [self.navigationButtons objectAtIndex:3], nil];
     NSUInteger index = 0;
     for (NSButton *button in order) {
@@ -181,7 +180,7 @@
         [self.markAllChatsReadSpinner setFrame:NSMakeRect(NSMaxX(chatsFrame)-18, NSMidY(chatsFrame)-7, 14, 14)];
         [content addSubview:self.markAllChatsReadSpinner positioned:NSWindowAbove relativeTo:nil];
     }
-    [self.aquaDownloadsButton setFrame:NSMakeRect(width-124, height-42, 112, 30)];
+    [self.aquaDownloadsButton setFrame:NSMakeRect(width-124, height-39, 112, 30)];
     [self.aquaFolderEditButton setFrame:NSMakeRect(sidebarWidth-88, NSMaxY(sidebar)-30, 80, 26)];
     [self.aquaFolderDrawer setFolderButtons:self.drawerFolderButtons];
     BOOL external = [self aquaUsesExternalFolderDrawer];

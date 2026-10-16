@@ -76,7 +76,7 @@ int main(void) {
         NSRect previous=search;
         for (NSUInteger i=0;i<5;i++) {
             NSRect frame=TGAquaToolbarSectionFrame(width,700,i);
-            assert(NSMinX(frame)>=NSMaxX(previous)+5 && NSMinY(frame)==657);
+            assert(NSMinX(frame)>=NSMaxX(previous)+5 && NSMinY(frame)==660);
             assert(NSWidth(frame)==48 && NSHeight(frame)==32);
             assert(NSMaxX(frame)<width-124);
             previous=frame;
@@ -107,6 +107,23 @@ int main(void) {
         } else assert(fabs(g.titleY+8.5-center)<=0.5);
         assert(g.titleY+17<=NSMaxY(band) && g.titleY>=NSMinY(band));
     }
+    NSUInteger searchCases=0;
+    for(CGFloat w=260;w<=1100;w+=20) for(CGFloat h=340;h<=800;h+=30)
+    for(NSUInteger scope=0;scope<2;scope++) for(NSUInteger results=0;results<2;results++) {
+        NSRect area=NSMakeRect(13,29,w,h);
+        TGAquaSearchGeometry g=TGAquaSearchFrames(area,scope,results);
+        AssertContained(g.query,area); AssertContained(g.close,area); AssertContained(g.filter,area);
+        AssertContained(g.advanced,area); AssertContained(g.status,area); AssertContained(g.navigation,area);
+        AssertContained(g.results,area);
+        assert(NSMaxX(g.query)+5<=NSMinX(g.close));
+        assert(NSMaxX(g.filter)+5<=NSMinX(g.advanced));
+        assert(NSMaxY(g.navigation)+3<=NSMinY(g.results));
+        assert(NSMaxY(g.results)+3<=NSMinY(g.status));
+        assert(NSMaxY(g.status)+3<=NSMinY(g.filter));
+        if(!scope) { AssertContained(g.scope,area); assert(!NSIntersectsRect(g.scope,g.filter)); }
+        assert(g.height<=h && h-g.height>=166-0.01); searchCases++;
+    }
+    printf("Aqua compact search: %lu contained nonoverlapping layouts, conversation >=160pt after gap PASS\n",(unsigned long)searchCases);
     printf("Aqua conversation header: avatar, actions, single/title+typing groups centered PASS\n");
     printf("Aqua icon toolbar, forum header, reclaimed sidebar and composer-only footer PASS\n");
     printf("Aqua source list geometry: %lu cases plus count-change/collapse PASS\n",(unsigned long)count);

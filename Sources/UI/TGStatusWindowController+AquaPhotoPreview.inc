@@ -107,6 +107,7 @@
     return matches ? [[context retain] autorelease] : nil;
 }
 - (NSImage *)aquaMediaPosterForTransitionContext:(NSDictionary *)context {
+    if (!TGInterfaceAnimationsEnabledForView(self.messageTableView)) return nil;
     NSRect screen=[self aquaPhotoPreviewSourceScreenRectForContext:context];
     NSView *view=[context objectForKey:@"grid_image_view"];
     if (!view) view=self.messageTableView;
@@ -121,6 +122,7 @@
 - (void)closeAquaMediaViewer:(id)sender { [[sender window] performClose:sender]; }
 
 - (void)invalidateAquaPhotoPreview {
+    [self cancelMediaPreviewImageLoad];
     [self clearAquaPhotoGallery];
     self.mediaPreviewRequestGeneration = self.mediaPreviewRequestGeneration + 1;
     [self setAquaPhotoPreviewSourceContext:nil];

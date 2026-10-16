@@ -584,6 +584,13 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
         return;
     }
 
+    // Draw behind the unchanged bubble and ink; the matching row remains visible
+    // against custom wallpaper without recoloring message text or media.
+    if ([self isHighlighted]) {
+        [TGClassicNavigationHighlightedColor(0.24) set];
+        NSRectFillUsingOperation(NSInsetRect(cellFrame,0,1),NSCompositeSourceOver);
+    }
+
     CGFloat topAccessoryHeight = TGMessageTopAccessoryHeightForItem(item);
     if (topAccessoryHeight > 0.0) {
         TGDrawMessageTopAccessories(item, cellFrame, [controlView isFlipped]);

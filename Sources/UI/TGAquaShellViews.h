@@ -62,3 +62,8 @@ TGAquaSourceListGeometry TGAquaSourceListFrames(NSRect sidebar, CGFloat footerTo
 @property(nonatomic, assign) SEL action;
 @property(nonatomic, readonly) CGFloat dragDelta;
 @end
+
+// Compact chrome keeps full-size hit targets and returns space to the transcript.
+CGFloat TGAquaToolbarHeight(void);
+typedef struct { NSRect query, close, scope, filter, advanced, status, results, navigation; CGFloat height; } TGAquaSearchGeometry;
+TGAquaSearchGeometry TGAquaSearchFrames(NSRect available, BOOL hidesScope, BOOL hasResults);

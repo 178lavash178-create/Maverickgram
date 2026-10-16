@@ -6,6 +6,23 @@
 
 @implementation TGChatSearchResultsTableView
 
+- (void)keyDown:(NSEvent *)event {
+    NSUInteger modifiers=[event modifierFlags] & (NSCommandKeyMask|NSControlKeyMask|NSAlternateKeyMask|NSShiftKeyMask);
+    NSString *characters=[event charactersIgnoringModifiers];
+    unichar key=[characters length]==1 ? [characters characterAtIndex:0] : 0;
+    SEL action=NULL;
+    if(modifiers==0 && (key=='\r' || key=='\n' || key==3)) action=@selector(commitSearch:);
+    else if(modifiers==0 && key==27) action=@selector(closeSearch:);
+    else if((modifiers==0 || modifiers==NSShiftKeyMask) && (key=='\t' || key==NSBackTabCharacter)) action=@selector(focusSearchField:);
+    if(action && [[self target] respondsToSelector:action]) {
+        [self retain];
+        [[self target] performSelector:action withObject:self];
+        [self release];
+        return;
+    }
+    [super keyDown:event];
+}
+
 - (BOOL)isOpaque {
     return YES;
 }
@@ -116,6 +133,7 @@
     SEL _commitAction;
     SEL _closeAction;
     NSString *_statusText;
+    NSString *_resultsQuery;
     NSArray *_results;
     NSSearchField *_searchField;
     NSTextField *_titleField;
@@ -223,6 +241,8 @@
         [_scrollView setAutohidesScrollers:YES];
         [_scrollView setDocumentView:_tableView];
         [self addSubview:_scrollView];
+        [_searchField setNextKeyView:_tableView];
+        [_tableView setNextKeyView:_searchField];
 
         [self layoutPanelSubviews];
     }
@@ -231,6 +251,7 @@
 
 - (void)dealloc {
     [_statusText release];
+    [_resultsQuery release];
     [_results release];
     [_searchField release];
     [_titleField release];
@@ -380,18 +401,35 @@
 }
 
 - (void)setResults:(NSArray *)results {
-    /*
-     * The controller deliberately reuses one mutable result buffer. Keep a
-     * snapshot here and always reload: pointer equality does not mean that its
-     * contents (or row count) stayed unchanged between searches.
-     */
+    // Server additions for the same query must not replace a keyboard choice.
+    NSString *query=[self query];
+    BOOL sameQuery=(_resultsQuery && [_resultsQuery isEqualToString:query]);
+    TGSearchResultItem *selected=sameQuery ? [[self selectedResult] retain] : nil;
+    NSPoint origin=sameQuery ? [[_scrollView contentView] bounds].origin : NSZeroPoint;
     NSArray *snapshot = results ? [[NSArray alloc] initWithArray:results] : [[NSArray alloc] init];
-    [_results release];
-    _results = snapshot;
+    [_results release];_results=snapshot;
+    [_resultsQuery release];_resultsQuery=[query copy];
+    NSInteger selectedIndex=-1;
+    if(selected) {
+        NSUInteger index=0;
+        for(TGSearchResultItem *candidate in _results) {
+            if([candidate isKindOfClass:[TGSearchResultItem class]]) {
+                BOOL sameIdentity=([candidate chatID] && [[candidate chatID] isEqual:[selected chatID]] &&
+                    ((! [candidate messageThreadID] && ![selected messageThreadID]) || [[candidate messageThreadID] isEqual:[selected messageThreadID]]) &&
+                    ((! [candidate messageTopicKind] && ![selected messageTopicKind]) || [[candidate messageTopicKind] isEqual:[selected messageTopicKind]]));
+                if(candidate==selected || sameIdentity) { selectedIndex=(NSInteger)index;break; }
+            }
+            index++;
+        }
+    }
     [_tableView reloadData];
-    [_tableView deselectAll:self];
-    [[_scrollView contentView] scrollToPoint:NSZeroPoint];
+    [self setSelectedIndex:selectedIndex];
     [self updateResultsDocumentGeometry];
+    NSClipView *clip=[_scrollView contentView];
+    origin.y=MAX(0,MIN(origin.y,NSHeight([_tableView bounds])-NSHeight([clip bounds])));
+    [clip scrollToPoint:origin];[_scrollView reflectScrolledClipView:clip];
+    if(selectedIndex>=0) [_tableView scrollRowToVisible:selectedIndex];
+    [selected release];
 }
 
 - (TGSearchResultItem *)selectedResult {
@@ -433,8 +471,14 @@
 }
 
 - (BOOL)control:(NSControl *)control textView:(NSTextView *)textView doCommandBySelector:(SEL)commandSelector {
-    (void)control;
-    (void)textView;
+    if(control!=_searchField || [textView hasMarkedText]) return NO;
+    if(commandSelector==@selector(insertTab:) || commandSelector==@selector(insertBacktab:)) {
+        if([_results count]==0) return NO;
+        if([_tableView selectedRow]<0) [self setSelectedIndex:0];
+        [[self window] makeFirstResponder:_tableView];
+        [_tableView scrollRowToVisible:[_tableView selectedRow]];
+        return YES;
+    }
     if (commandSelector == @selector(cancelOperation:)) {
         [self closeSearch:self];
         return YES;
@@ -471,6 +515,13 @@
         [self sendAction:_commitAction];
     }
 }
+
+- (void)focusSearchField:(id)sender {
+    (void)sender;
+    [[self window] makeFirstResponder:_searchField];
+}
+
+- (void)cancelOperation:(id)sender { [self closeSearch:sender]; }
 
 - (void)closeSearch:(id)sender {
     (void)sender;

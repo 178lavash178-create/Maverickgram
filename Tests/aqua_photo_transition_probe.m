@@ -6,6 +6,14 @@
 
 NSString * const TGResourcePolicyDidChangeNotification = @"ProbePolicyChanged";
 static BOOL Animations = YES;
+static NSUInteger TransitionInitializations;
+typedef id (*TGTransitionInitIMP)(id,SEL,NSWindow *,NSView *,NSImage *,NSView *,id,NSDictionary *,BOOL,BOOL);
+static TGTransitionInitIMP OriginalTransitionInit;
+static id CountTransitionInit(id self,SEL selector,NSWindow *window,NSView *imageView,NSImage *image,
+    NSView *policyView,id source,NSDictionary *context,BOOL returns,BOOL circular) {
+    TransitionInitializations++;
+    return OriginalTransitionInit(self,selector,window,imageView,image,policyView,source,context,returns,circular);
+}
 BOOL TGInterfaceAnimationsEnabledForView(NSView *view) { return Animations && [[view window] isVisible]; }
 NSString *TGMediaItemContentType(NSDictionary *item) { return [item objectForKey:@"content_type"]; }
 NSNumber *TGMediaItemFullFileID(NSDictionary *item) { return [item objectForKey:@"full_file_id"]; }
@@ -71,6 +79,8 @@ BOOL TGInterfaceDesignIsAqua(void) { return YES; }
  * isolates the transition resolver and zoom path. */
 - (void)prepareAquaPhotoGalleryForMessage:(TGMessageItem *)item mediaItem:(NSDictionary *)media gridSender:(id)sender { (void)item;(void)media;(void)sender; }
 - (void)clearAquaPhotoGallery {}
+// The static-image worker has its own cancellation/generation probe.
+- (void)cancelMediaPreviewImageLoad {}
 #include "TGStatusWindowController+AquaPhotoPreview.inc"
 #include "TGStatusWindowController+MediaPreviewZoom.inc"
 - (void)dealloc {
@@ -237,8 +247,17 @@ int main(void) {
     Animations=NO;
     [[NSNotificationCenter defaultCenter] postNotificationName:TGResourcePolicyDidChangeNotification object:nil];
     assert([preview alphaValue]==1.0 && ImageWindows(source,preview)==before);
+    Method initializer=class_getInstanceMethod(NSClassFromString(@"TGAquaPhotoTransition"),@selector(initWithWindow:imageView:image:policyView:source:context:returns:circular:));
+    assert(initializer);OriginalTransitionInit=(TGTransitionInitIMP)method_getImplementation(initializer);
+    method_setImplementation(initializer,(IMP)CountTransitionInit);
+    NSUInteger suppressedResolutions=target->resolutions, suppressedInitializations=TransitionInitializations;
     TGAquaPhotoTransitionOpen(preview,image,anchor,target,context);
     assert([preview alphaValue]==1.0 && TGAquaPhotoTransitionShouldClose(preview));
+    assert(target->resolutions==suppressedResolutions && ImageWindows(source,preview)==before);
+    TGAquaMediaTransitionOpen(preview,image,picture,anchor,target,context,YES);
+    assert(target->resolutions==suppressedResolutions && TGAquaPhotoTransitionShouldClose(preview));
+    assert(TransitionInitializations==suppressedInitializations); /* zero motion owners/observers/timers admitted */
+    method_setImplementation(initializer,(IMP)OriginalTransitionInit);
     Animations=YES;
     TGAquaMediaTransitionOpen(preview,image,picture,anchor,target,context,YES);
     assert(ImageWindows(source,preview)==before+1); Spin();

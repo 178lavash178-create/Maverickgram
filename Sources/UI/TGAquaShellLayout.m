@@ -1,6 +1,8 @@
 #import "TGAquaShellViews.h"
 #include <math.h>
 
+CGFloat TGAquaToolbarHeight(void) { return 48.0; }
+
 CGFloat TGAquaFooterBaseHeight(void) { return 58.0; }
 
 CGFloat TGAquaFooterHeight(BOOL composerVisible, NSRect composerInputFrame) {
@@ -38,7 +40,7 @@ TGAquaSourceListGeometry TGAquaSourceListFrames(NSRect sidebar, CGFloat footerTo
 // Icons keep one consistent hit target across languages and available window widths.
 NSRect TGAquaToolbarSectionFrame(CGFloat width, CGFloat height, NSUInteger index) {
     CGFloat searchWidth = MIN(200.0, floor(width * 0.18));
-    return NSMakeRect(66.0 + searchWidth + index * 54.0, height - 43.0, 48.0, 32.0);
+    return NSMakeRect(66.0 + searchWidth + index * 54.0, height - 40.0, 48.0, 32.0);
 }
 
 TGAquaChatHeaderGeometry TGAquaChatHeaderFrames(NSRect header, BOOL forum) {
@@ -62,5 +64,29 @@ TGAquaConversationHeaderVerticalGeometry TGAquaConversationHeaderVerticalFrames(
     CGFloat textBottom = floor(center - (subtitle ? 33.0 : 17.0) / 2.0);
     g.titleY = textBottom + (subtitle ? 16.0 : 0.0);
     g.subtitleY = subtitle ? textBottom : floor(center - 7.0);
+    return g;
+}
+
+TGAquaSearchGeometry TGAquaSearchFrames(NSRect available, BOOL hidesScope, BOOL hasResults) {
+    TGAquaSearchGeometry g;
+    CGFloat x=NSMinX(available)+10, w=MAX(0,NSWidth(available)-20);
+    BOOL scopeRow=!hidesScope && w<360;
+    CGFloat chrome=138+(scopeRow ? 28 : 0);
+    CGFloat room=MAX(0,NSHeight(available)-166); // Always retain a usable conversation viewport.
+    CGFloat resultHeight=hasResults ? MIN(88,MAX(0,room-chrome)) : 0;
+    g.height=chrome+resultHeight;
+    CGFloat top=NSMaxY(available)-10;
+    g.query=NSMakeRect(x,top-26,MAX(0,w-40),24);
+    g.close=NSMakeRect(x+MAX(0,w-30),top-28,30,28);
+    CGFloat controls=top-56;
+    g.scope=hidesScope ? NSZeroRect : NSMakeRect(x,controls,MIN(132,w),26);
+    CGFloat filterX=x+(!hidesScope && !scopeRow ? 138 : 0);
+    if(scopeRow) controls-=28;
+    g.filter=NSMakeRect(filterX,controls,MIN(126,MAX(0,w-104)),26);
+    g.advanced=NSMakeRect(NSMaxX(g.filter)+6,controls,MIN(96,MAX(0,x+w-NSMaxX(g.filter)-6)),26);
+    CGFloat bottom=NSMaxY(available)-g.height;
+    g.navigation=NSMakeRect(x,bottom+6,w,28);
+    g.status=NSMakeRect(x,controls-22,w,18);
+    g.results=NSMakeRect(x,NSMaxY(g.navigation)+4,w,resultHeight);
     return g;
 }

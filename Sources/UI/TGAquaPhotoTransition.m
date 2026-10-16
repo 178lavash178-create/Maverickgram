@@ -216,6 +216,7 @@ void TGAquaPhotoTransitionOpen(NSWindow *window, NSImageView *imageView, NSView 
                               id<TGAquaPhotoTransitionSource> source, NSDictionary *context) {
     TGAquaPhotoTransitionClear(window);
     if (!window || !context) return;
+    if (!TGInterfaceAnimationsEnabledForView(policyView)) { [window setAlphaValue:1.0]; return; }
     TGAquaPhotoTransition *motion = [[[TGAquaPhotoTransition alloc] initWithWindow:window imageView:imageView image:[imageView image] policyView:policyView source:source context:context returns:YES circular:NO] autorelease];
     objc_setAssociatedObject(window, &TGPhotoTransitionKey, motion, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [motion open];
@@ -224,6 +225,7 @@ void TGAquaMediaTransitionOpen(NSWindow *window, NSView *destinationView, NSImag
                               NSView *policyView, id<TGAquaPhotoTransitionSource> source, NSDictionary *context, BOOL circular) {
     TGAquaPhotoTransitionClear(window);
     if (!window) return;
+    if (!TGInterfaceAnimationsEnabledForView(policyView)) { [window setAlphaValue:1.0]; return; }
     TGAquaPhotoTransition *motion=[[[TGAquaPhotoTransition alloc] initWithWindow:window imageView:destinationView image:poster policyView:policyView source:source context:context returns:NO circular:circular] autorelease];
     objc_setAssociatedObject(window,&TGPhotoTransitionKey,motion,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [motion open];

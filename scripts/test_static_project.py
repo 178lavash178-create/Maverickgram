@@ -80,6 +80,67 @@ def check_localization(errors):
             errors.append("%s: required UI localization key is missing: %s" % (rel, required))
 
 
+    # These were visible English tooltips in the Russian Aqua interface.
+    # Check both dictionary values and the actual production call sites, since
+    # adding an unused translation does not fix a hardcoded tooltip.
+    hint_keys = [
+        "profile.openHint", "chats.refreshHint", "chats.loadMoreHint", "forum.refreshHint",
+        "chat.backToChatsHint", "chat.backToChannelHint", "chat.selectHint",
+        "messages.reloadHint", "messages.loadOlderHint", "messages.latestHint", "messages.pinnedHint",
+        "reply.cancelHint", "folders.namedHint", "link.openHint", "media.preview.openHint",
+        "media.playback.playHint", "media.playback.pauseHint", "media.playback.toggleHint",
+        "media.viewer.zoomOutHint", "media.viewer.zoomInHint", "media.viewer.fitHint",
+        "aqua.interface.changeHint", "aqua.interface.classic", "aqua.folders.heading", "aqua.attachFile",
+        "menu.search", "menu.searchChat", "menu.searchGlobal", "media.audio", "media.poll",
+        "search.messages.previous",
+        "search.messages.next",
+        "search.messages.position",
+        "search.messages.positionMore",
+        "search.messages.returnLatest",
+        "search.messages.returnLatestHint",
+        "search.messages.prompt",
+        "search.messages.loading",
+        "search.messages.noResults",
+        "search.messages.found",
+        "search.messages.failed",
+    ]
+    for key in hint_keys:
+        for language in ["ru", "be", "en"]:
+            value = dictionaries[language].get(key, "")
+            if not value or (language != "en" and not re.search(u"[А-Яа-яЁёІіЎў]", value)):
+                errors.append("%s: %s hint `%s` must have an explicit translated value" % (rel, language, key))
+            if key == "folders.namedHint" and value.count("%@") != 1:
+                errors.append("%s: %s folder hint must preserve its name placeholder" % (rel, language))
+    search_formats = {
+        "search.messages.position": ["%@", "%@"],
+        "search.messages.positionMore": ["%@", "%@"],
+        "search.messages.found": ["%lu"],
+        "search.messages.failed": ["%@"],
+    }
+    for language in ["ru", "be", "en"]:
+        for key, expected_formats in search_formats.items():
+            value = dictionaries[language].get(key, "")
+            if re.findall(r"%@|%lu|%[a-zA-Z]", value) != expected_formats:
+                errors.append("%s: %s `%s` must preserve its typed placeholders" % (rel, language, key))
+            if key == "search.messages.positionMore" and not value.endswith("+"):
+                errors.append("%s: %s partial search count must keep its plus suffix" % (rel, language))
+    tooltip_sources = [
+        "TGStatusWindowController+TableForumFlow.inc",
+        "TGStatusWindowController+MediaWindows.inc",
+    ]
+    old_literals = ["Open media preview", "Play media", "Pause media", "Play or pause media",
+                    "Open link in default browser", "Zoom out", "Zoom in", "Fit media to window"]
+    for name in tooltip_sources:
+        source = read_text(os.path.join(ROOT, "Sources", "UI", name))
+        for literal in old_literals:
+            if '@"%s"' % literal in source:
+                errors.append("%s: user-facing hint must use localization: %s" % (name, literal))
+    table_source = read_text(os.path.join(ROOT, "Sources", "UI", tooltip_sources[0]))
+    for key in ["media.preview.openHint", "media.playback.playHint", "link.openHint"]:
+        if 'TGLoc(@"%s")' % key not in table_source:
+            errors.append("%s: transcript tooltip is missing localized route `%s`" % (tooltip_sources[0], key))
+
+
 def check_project_membership(errors):
     project_rel = os.path.join("Telegraphica.xcodeproj", "project.pbxproj")
     project_text = read_text(os.path.join(ROOT, project_rel))

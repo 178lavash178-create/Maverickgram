@@ -2324,7 +2324,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     if ([self.voiceRecorder isRecording]) {
         [self.voiceRecorder stop];
         self.voiceRecorder = nil;
-        [self.voiceRecordButton setToolTip:@"Record voice message"];
+        [self.voiceRecordButton setToolTip:TGLoc(@"composer.mediaMode.voice")];
         [self.statusField setStringValue:@"Voice recorded"];
         [self.voiceRecordingIndicatorField setStringValue:@""];
         [self.voiceRecordingIndicatorField setHidden:YES];

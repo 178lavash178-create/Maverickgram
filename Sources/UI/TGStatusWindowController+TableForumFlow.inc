@@ -74,12 +74,12 @@
         if (!TGMediaItemSupportsPreview(mediaItem)) {
             return nil;
         }
-        return TGMediaItemIsPlayable(mediaItem) ? @"Play media" : @"Open media preview";
+        return TGMediaItemIsPlayable(mediaItem) ? TGLoc(@"media.playback.playHint") : TGLoc(@"media.preview.openHint");
     }
     if (TGMessageItemIsNonVisualPlayableMedia((TGMessageItem *)item)) {
         NSRect bubbleRect = TGMessageBubbleRectForItem((TGMessageItem *)item, cellFrame, [self shouldShowGroupSenderDetailsForMessageItem:(TGMessageItem *)item]);
         if (!NSIsEmptyRect(bubbleRect) && NSPointInRect(mouseLocation, bubbleRect)) {
-            return @"Play media";
+            return TGLoc(@"media.playback.playHint");
         }
     }
     if (TGMessageItemIsNonVisualDocument((TGMessageItem *)item)) {
@@ -93,7 +93,7 @@
     NSURL *url = [self messageLinkURLForItem:(TGMessageItem *)item
                                  inCellFrame:cellFrame
                                      atPoint:mouseLocation];
-    return url ? @"Open link in default browser" : nil;
+    return url ? TGLoc(@"link.openHint") : nil;
 }
 
 - (NSDragOperation)tableView:(NSTableView *)tableView
@@ -208,6 +208,7 @@
             [messageItem setDocumentDownloadState:state];
         }
         [(TGMessageBubbleCell *)cell setMessageItem:messageItem];
+        [cell setHighlighted:(self.highlightedSearchMessageID && [[messageItem messageID] isEqual:self.highlightedSearchMessageID])];
         [(TGMessageBubbleCell *)cell setShowSenderDetails:[self shouldShowGroupSenderDetailsForMessageItem:messageItem]];
         if (messageItem) {
             TGMessageItem *representedMessageItem = messageItem;
@@ -357,6 +358,7 @@
 
 - (void)tableViewSelectionDidChange:(NSNotification *)notification {
     if ([notification object] == self.searchResultsTableView) {
+        [self updateInlineSearchNavigation];
         return;
     }
     if ([notification object] == self.activeSessionsTableView) {
@@ -812,7 +814,7 @@
     self.chatNavigationClosed = NO;
     self.suppressedForumTopicAutoOpenChatID = nil;
     if (!useTopBar) {
-        [self.loadChatsButton setToolTip:@"Refresh topics"];
+        [self.loadChatsButton setToolTip:TGLoc(@"forum.refreshHint")];
         [self.composeChatButton setAction:@selector(createForumTopic:)];
         [self.composeChatButton setToolTip:TGLoc(@"forum.topic.create")];
         self.chatsExhausted = YES;

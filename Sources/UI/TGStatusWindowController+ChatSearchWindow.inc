@@ -49,10 +49,13 @@
 
 - (void)closeChatSearchWindow:(id)sender {
     (void)sender;
+    self.chatSearchGeneration++;
+    BOOL restoreKeyWindow=[self.chatSearchWindow isKeyWindow];
     [NSObject cancelPreviousPerformRequestsWithTarget:self
                                              selector:@selector(updateChatSearchWindowResults)
                                                object:nil];
     [self.chatSearchWindow orderOut:self];
+    if(restoreKeyWindow && [NSApp isActive]) [[self window] makeKeyAndOrderFront:self];
     if ([self.sendTextField isEnabled]) {
         [[self window] makeFirstResponder:self.sendTextField];
     }
@@ -280,8 +283,7 @@
 }
 
 - (BOOL)control:(NSControl *)control textView:(NSTextView *)textView doChatSearchWindowCommandBySelector:(SEL)commandSelector {
-    (void)textView;
-    if (control != self.chatSearchWindowTextField) {
+    if ([textView hasMarkedText] || control != self.chatSearchWindowTextField) {
         return NO;
     }
     if (commandSelector == @selector(cancelOperation:)) {

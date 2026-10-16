@@ -117,7 +117,7 @@
         ? (TGDrawerButtonCell *)[self.drawerButton cell] : nil;
     [drawerCell setBackStyle:showProfile];
     [self.drawerButton setAction:(showProfile ? @selector(returnFromProfileToSettings:) : @selector(toggleDrawer:))];
-    [self.drawerButton setToolTip:(showProfile ? TGLoc(@"back") : @"Chat folders")];
+    [self.drawerButton setToolTip:(showProfile ? TGLoc(@"back") : TGLoc(@"folders.manage.title"))];
     [self.drawerButton setNeedsDisplay:YES];
     [self showView:self.drawerButton visible:(ready && !workshopModuleActive && (showProfile || !drawerHidden || (showChats && compactChatSidebar)))];
     [self showView:self.workshopDrawerButton visible:(ready && !drawerHidden && self.drawerOpen)];
@@ -185,6 +185,7 @@
     [self showView:self.searchStatusField visible:showSearchPanel];
     [self showView:self.searchResultsScrollView visible:showSearchPanel];
     [self showView:self.searchResultsTableView visible:showSearchPanel];
+    [[self inlineSearchNavigationView] setHidden:!showSearchPanel || !TGInterfaceDesignIsAqua()];
     BOOL showForumTabs = (showConversationContent &&
                           self.forumTopicsPresentedInTopBar &&
                           [self.forumTopicTabButtons count] > 0);
@@ -536,7 +537,7 @@
     CGFloat railWidth = drawerVisible ? 108.0 : 0.0;
     CGFloat railX = margin;
     CGFloat railY = margin;
-    CGFloat railHeight = height - (margin * 2.0) - (aqua ? 54.0 : 0.0);
+    CGFloat railHeight = height - (margin * 2.0) - (aqua ? TGAquaToolbarHeight() : 0.0);
     [self layoutAquaAudioPlayerForContentBounds:bounds];
     if (aqua && [self isAquaAudioPlayerVisible]) railHeight=MAX(0,railHeight-48.0);
     CGFloat railTop = railY + railHeight;
@@ -557,6 +558,7 @@
                        MIN([self maximumChatSidebarWidthForWindowWidth:width mainX:mainX margin:margin],
                            sidebarWidth));
 
+    if (aqua && width < 1000.0) sidebarWidth=MIN(sidebarWidth,MAX([self minimumChatSidebarWidth],floor(width*0.29)));
     CGFloat conversationX = mainX + sidebarWidth + panelGutter;
     CGFloat conversationWidth = width - conversationX - margin;
     if (conversationWidth < 320.0) {
@@ -954,7 +956,10 @@
     }
     BOOL showForumTabs = (self.forumTopicsPresentedInTopBar &&
                           [self.forumTopicTabButtons count] > 0);
-    if (self.searchPanelVisible) {
+    if (self.searchPanelVisible && ![self.searchPanelView isHidden]) {
+        if (aqua) {
+            messageTop = [self layoutAquaInlineSearchInRect:NSMakeRect(panelInsetX, messageBottom, panelWidth, MAX(0,messageTop-messageBottom))];
+        } else {
         BOOL hasSearchText = ([[self.searchTextField stringValue] length] > 0);
         BOOL hasSearchResults = ([self.searchResultItems count] > 0);
         BOOL stackedSearchControls = (panelWidth < 650.0);
@@ -1013,6 +1018,7 @@
             [searchColumn setWidth:NSWidth([[self.searchResultsScrollView contentView] bounds])];
         }
         messageTop = searchY - 6.0;
+        }
     }
     if (showForumTabs && !self.searchPanelVisible) {
         CGFloat tabsHeight = 40.0;
@@ -1701,6 +1707,7 @@
         [self.client setUserOpenedChatID:nil];
     }
     if ([notification object] == self.mediaPreviewWindow) {
+        [self cancelMediaPreviewImageLoad];
         [self clearAquaPhotoGallery];
         NSWindow *closingWindow = [(NSWindow *)[notification object] retain];
         TGAquaPhotoTransitionClear(closingWindow);
@@ -1754,7 +1761,7 @@
         if ([self.voiceRecorder isRecording]) {
             [self.voiceRecorder stop];
             self.voiceRecorder = nil;
-            [self.voiceRecordButton setToolTip:@"Record voice message"];
+            [self.voiceRecordButton setToolTip:TGLoc(@"composer.mediaMode.voice")];
             [self.statusField setStringValue:@"Voice recording cancelled"];
         }
         [self invalidateVoicePreviewTimer];

@@ -1,6 +1,7 @@
 #import "AppDelegate.h"
 #import "Services/TGLogger.h"
 #import "UI/TGStatusWindowController.h"
+#import "UI/TGLocalization.h"
 #include <stdlib.h>
 
 @implementation AppDelegate
@@ -98,6 +99,14 @@
     [editMenu addItem:[NSMenuItem separatorItem]];
     [editMenu addItem:[[[NSMenuItem alloc] initWithTitle:@"Select All" action:@selector(selectAll:) keyEquivalent:@"a"] autorelease]];
     [editMenuItem setSubmenu:editMenu];
+
+    NSMenuItem *searchMenuItem=[[[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@""] autorelease];
+    NSMenu *searchMenu=[[[NSMenu alloc] initWithTitle:TGLoc(@"menu.search")] autorelease];
+    [searchMenu addItem:[[[NSMenuItem alloc] initWithTitle:TGLoc(@"menu.searchChat")
+        action:@selector(openChatSearch:) keyEquivalent:@"f"] autorelease]];
+    [searchMenu addItem:[[[NSMenuItem alloc] initWithTitle:TGLoc(@"menu.searchGlobal")
+        action:@selector(openChatListSearch:) keyEquivalent:@"k"] autorelease]];
+    [searchMenuItem setSubmenu:searchMenu];[mainMenu addItem:searchMenuItem];
 
     [NSApp setMainMenu:mainMenu];
 }

@@ -383,6 +383,11 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 @property (nonatomic, retain) NSScrollView *forumTopicTabsScrollView;
 @property (nonatomic, retain) NSView *forumTopicTabsContentView;
 @property (nonatomic, retain) NSMutableArray *forumTopicTabButtons;
+- (NSView *)inlineSearchNavigationView;
+- (void)configureInlineSearchNavigation;
+- (void)updateInlineSearchNavigation;
+- (CGFloat)layoutAquaInlineSearchInRect:(NSRect)rect;
+- (void)cancelMediaPreviewImageLoad;
 @property (nonatomic, retain) TGGroupedCardView *searchPanelView;
 @property (nonatomic, retain) NSTextField *searchTextField;
 @property (nonatomic, retain) NSPopUpButton *searchScopePopUpButton;
@@ -2215,6 +2220,12 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.callsPlaceholderView refreshLocalizedText];
     [self refreshProfileDisplay];
     [self refreshAccessibilityDescriptions];
+    [[self.searchTextField cell] setPlaceholderString:TGLoc(@"search.messages.prompt")];
+    NSArray *scopeKeys=[NSArray arrayWithObjects:@"storage.scope.current",@"storage.scope.all",nil];
+    for(NSUInteger i=0;i<[scopeKeys count];i++) [[self.searchScopePopUpButton itemAtIndex:i] setTitle:TGLoc([scopeKeys objectAtIndex:i])];
+    NSArray *searchKeys=[NSArray arrayWithObjects:@"search.messages.filter.all",@"storage.type.photos",@"storage.type.videos",@"storage.type.documents",@"media.center.tab.links",@"media.center.tab.voice",@"media.audio",@"media.gif",@"search.messages.filter.videoNotes",@"stickers",@"media.center.tab.polls",nil];
+    for(NSUInteger i=0;i<[searchKeys count];i++) [[self.searchFilterPopUpButton itemAtIndex:i] setTitle:TGLoc([searchKeys objectAtIndex:i])];
+    [self updateInlineSearchNavigation];
     [self refreshInterfaceDesignControls];
 }
 
@@ -2490,7 +2501,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 }
 
 - (void)refreshSelectedChatHeaderDisplay {
-    NSString *title = ([self.selectedChatTitle length] > 0) ? self.selectedChatTitle : @"Select a chat";
+    NSString *title = ([self.selectedChatTitle length] > 0) ? self.selectedChatTitle : TGLoc(@"chat.selectHint");
     [self.selectedChatField setStringValue:title];
     NSString *typingText = @"";
     if (TGUserDefaultBoolWithDefault(TGTypingIndicatorsEnabledDefaultsKey, YES) &&
@@ -2507,7 +2518,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.typingIndicatorField setHidden:([typingText length] == 0)];
     [self.selectedChatAvatarView setDisplayName:title];
     [self.selectedChatAvatarView setAvatarLocalPath:self.selectedChatAvatarLocalPath];
-    [self.selectedChatProfileButton setToolTip:(self.selectedChatID ? TGLoc(TGInterfaceDesignIsAqua() ? @"profile.title" : @"media.center.title") : @"Select a chat")];
+    [self.selectedChatProfileButton setToolTip:(self.selectedChatID ? TGLoc(TGInterfaceDesignIsAqua() ? @"profile.title" : @"media.center.title") : TGLoc(@"chat.selectHint"))];
     BOOL canCall = (self.selectedChatID != nil &&
                     [self.selectedChatTypeSummary isEqualToString:@"Private"] &&
                     self.callCoordinator.transportAvailable);
@@ -2712,7 +2723,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.accountBadgeView setDisplayName:@"Telegraphica"];
     [self.accountBadgeView setTarget:self];
     [self.accountBadgeView setAction:@selector(openProfileFromDrawer:)];
-    [self.accountBadgeView setToolTip:@"Open profile"];
+    [self.accountBadgeView setToolTip:TGLoc(@"profile.openHint")];
     [self.accountBadgeView setAutoresizingMask:NSViewMaxXMargin | NSViewMinYMargin];
     [contentView addSubview:self.accountBadgeView];
 
@@ -2722,7 +2733,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.drawerButton setCell:drawerCell];
     [self.drawerButton setTitle:@""];
     [self.drawerButton setBordered:NO];
-    [self.drawerButton setToolTip:@"Chat folders"];
+    [self.drawerButton setToolTip:TGLoc(@"folders.manage.title")];
     [self.drawerButton setTarget:self];
     [self.drawerButton setAction:@selector(toggleDrawer:)];
     [self.drawerButton setAutoresizingMask:(NSViewMaxXMargin | NSViewMinYMargin)];
@@ -3048,7 +3059,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
     self.loginLogsButton = [[[NSButton alloc] initWithFrame:NSMakeRect(894, 20, 70, 28)] autorelease];
     [self.loginLogsButton setTitle:@"Logs"];
-    [self.loginLogsButton setToolTip:@"Open diagnostic logs"];
+    [self.loginLogsButton setToolTip:TGLoc(@"settings.logs")];
     [self.loginLogsButton setTarget:self];
     [self.loginLogsButton setAction:@selector(showLogsWindow:)];
     [self applyUtilityButtonStyle:self.loginLogsButton];
@@ -3080,7 +3091,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
     self.loadChatsButton = [[[NSButton alloc] initWithFrame:NSMakeRect(104, 332, 112, 32)] autorelease];
     [self.loadChatsButton setTitle:@"↻"];
-    [self.loadChatsButton setToolTip:@"Refresh chats"];
+    [self.loadChatsButton setToolTip:TGLoc(@"chats.refreshHint")];
     [self.loadChatsButton setTarget:self];
     [self.loadChatsButton setAction:@selector(loadChats:)];
     [self.loadChatsButton setEnabled:NO];
@@ -3090,7 +3101,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
     self.loadMoreChatsButton = [[[NSButton alloc] initWithFrame:NSMakeRect(224, 332, 80, 32)] autorelease];
     [self.loadMoreChatsButton setTitle:@"+"];
-    [self.loadMoreChatsButton setToolTip:@"Load more chats"];
+    [self.loadMoreChatsButton setToolTip:TGLoc(@"chats.loadMoreHint")];
     [self.loadMoreChatsButton setTarget:self];
     [self.loadMoreChatsButton setAction:@selector(loadMoreChats:)];
     [self.loadMoreChatsButton setEnabled:NO];
@@ -3161,7 +3172,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
     self.topicBackButton = [[[NSButton alloc] initWithFrame:NSMakeRect(24, 332, 32, 32)] autorelease];
     [self.topicBackButton setTitle:@"‹"];
-    [self.topicBackButton setToolTip:@"Back to chats"];
+    [self.topicBackButton setToolTip:TGLoc(@"chat.backToChatsHint")];
     [self.topicBackButton setTarget:self];
     [self.topicBackButton setAction:@selector(closeForumTopicList:)];
     [self.topicBackButton setEnabled:YES];
@@ -3172,7 +3183,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
     self.commentThreadBackButton = [[[NSButton alloc] initWithFrame:NSMakeRect(228, 192, 32, 32)] autorelease];
     [self.commentThreadBackButton setTitle:@"‹"];
-    [self.commentThreadBackButton setToolTip:@"Back to channel"];
+    [self.commentThreadBackButton setToolTip:TGLoc(@"chat.backToChannelHint")];
     [self.commentThreadBackButton setTarget:self];
     [self.commentThreadBackButton setAction:@selector(closeMessageCommentsThread:)];
     [self.commentThreadBackButton setEnabled:YES];
@@ -3231,7 +3242,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
     self.loadMessagesButton = [[[NSButton alloc] initWithFrame:NSMakeRect(116, 192, 136, 32)] autorelease];
     [self.loadMessagesButton setTitle:@"↻"];
-    [self.loadMessagesButton setToolTip:@"Reload messages"];
+    [self.loadMessagesButton setToolTip:TGLoc(@"messages.reloadHint")];
     [self.loadMessagesButton setTarget:self];
     [self.loadMessagesButton setAction:@selector(loadMessages:)];
     [self.loadMessagesButton setEnabled:NO];
@@ -3241,7 +3252,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
     self.loadOlderMessagesButton = [[[NSButton alloc] initWithFrame:NSMakeRect(264, 192, 112, 32)] autorelease];
     [self.loadOlderMessagesButton setTitle:@"↑"];
-    [self.loadOlderMessagesButton setToolTip:@"Load older messages"];
+    [self.loadOlderMessagesButton setToolTip:TGLoc(@"messages.loadOlderHint")];
     [self.loadOlderMessagesButton setTarget:self];
     [self.loadOlderMessagesButton setAction:@selector(loadOlderMessages:)];
     [self.loadOlderMessagesButton setEnabled:NO];
@@ -3260,7 +3271,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [contentView addSubview:self.conversationSearchButton];
 
     self.selectedChatField = [self labelWithFrame:NSMakeRect(264, 198, 472, 22)
-                                             text:@"Select a chat"
+                                             text:TGLoc(@"chat.selectHint")
                                              font:[NSFont systemFontOfSize:13.0]];
     [self applyPanelHeaderDetailStyle:self.selectedChatField];
     [[self.selectedChatField cell] setLineBreakMode:NSLineBreakByTruncatingTail];
@@ -3294,7 +3305,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [contentView addSubview:self.chatSafetyNoticeDetailField];
 
     self.selectedChatAvatarView = [[[TGProfileAvatarView alloc] initWithFrame:NSMakeRect(232, 194, 26, 26)] autorelease];
-    [self.selectedChatAvatarView setDisplayName:@"Select a chat"];
+    [self.selectedChatAvatarView setDisplayName:TGLoc(@"chat.selectHint")];
     [self.selectedChatAvatarView setHidden:YES];
     [contentView addSubview:self.selectedChatAvatarView];
 
@@ -3374,7 +3385,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
     self.messageJumpToNewestButton = [[[NSButton alloc] initWithFrame:NSMakeRect(0, 0, 34, 34)] autorelease];
     [self.messageJumpToNewestButton setTitle:@"jump-newest"];
-    [self.messageJumpToNewestButton setToolTip:@"Jump to latest messages"];
+    [self.messageJumpToNewestButton setToolTip:TGLoc(@"messages.latestHint")];
     [self.messageJumpToNewestButton setTarget:self];
     [self.messageJumpToNewestButton setAction:@selector(jumpToNewestMessages:)];
     [self.messageJumpToNewestButton setBordered:NO];
@@ -3443,7 +3454,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.pinnedMessageButton setTransparent:YES];
     [self.pinnedMessageButton setTarget:self];
     [self.pinnedMessageButton setAction:@selector(jumpToPinnedMessage:)];
-    [self.pinnedMessageButton setToolTip:@"Jump to pinned message"];
+    [self.pinnedMessageButton setToolTip:TGLoc(@"messages.pinnedHint")];
     [self.pinnedMessageButton setHidden:YES];
     [contentView addSubview:self.pinnedMessageButton];
 
@@ -3475,7 +3486,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.replyPanelCancelButton setImagePosition:NSNoImage];
     [self.replyPanelCancelButton setTarget:self];
     [self.replyPanelCancelButton setAction:@selector(cancelReplyTarget:)];
-    [self.replyPanelCancelButton setToolTip:@"Cancel reply"];
+    [self.replyPanelCancelButton setToolTip:TGLoc(@"reply.cancelHint")];
     [self.replyPanelCancelButton setHidden:YES];
     [contentView addSubview:self.replyPanelCancelButton];
 
@@ -3561,7 +3572,8 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
                                              selector:@selector(searchResultsScrollViewDidScroll:)
                                                  name:NSViewBoundsDidChangeNotification
                                                object:[self.searchResultsScrollView contentView]];
-    self.searchResultsTableView = [[[NSTableView alloc] initWithFrame:[[self.searchResultsScrollView contentView] bounds]] autorelease];
+    self.searchResultsTableView = [[[TGInlineSearchResultsTableView alloc] initWithFrame:[[self.searchResultsScrollView contentView] bounds]] autorelease];
+    [self.searchResultsTableView setNextKeyView:self.searchTextField];
     [self.searchResultsTableView setDataSource:self];
     [self.searchResultsTableView setDelegate:self];
     [self.searchResultsTableView setTarget:self];
@@ -3575,6 +3587,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.searchResultsTableView addTableColumn:searchColumn];
     [self.searchResultsScrollView setDocumentView:self.searchResultsTableView];
     [contentView addSubview:self.searchResultsScrollView];
+    [self configureInlineSearchNavigation];
 
     self.sendLabel = [self labelWithFrame:NSMakeRect(24, 58, 48, 22)
                                      text:@""
@@ -3590,7 +3603,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.attachPhotoButton setAction:@selector(attachPhoto:)];
     [self.attachPhotoButton setEnabled:NO];
     [self.attachPhotoButton setBordered:NO];
-    [self.attachPhotoButton setToolTip:@"Attach photo"];
+    [self.attachPhotoButton setToolTip:TGLoc(@"attach.photo")];
     [self.attachPhotoButton setAutoresizingMask:NSViewMaxYMargin];
     [contentView addSubview:self.attachPhotoButton];
 
@@ -3626,7 +3639,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.stickerButton setAction:@selector(showStickerPicker:)];
     [self.stickerButton setEnabled:NO];
     [self.stickerButton setBordered:NO];
-    [self.stickerButton setToolTip:@"Stickers"];
+    [self.stickerButton setToolTip:TGLoc(@"stickers")];
     [self.stickerButton setAutoresizingMask:NSViewMaxYMargin];
     [contentView addSubview:self.stickerButton];
 
@@ -3639,7 +3652,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.voiceRecordButton setAction:@selector(performComposerRecordingAction:)];
     [self.voiceRecordButton setEnabled:NO];
     [self.voiceRecordButton setBordered:NO];
-    [self.voiceRecordButton setToolTip:@"Record voice message"];
+    [self.voiceRecordButton setToolTip:TGLoc(@"composer.mediaMode.voice")];
     [self.voiceRecordButton setAutoresizingMask:NSViewMaxYMargin];
     [contentView addSubview:self.voiceRecordButton];
     [self configureComposerRecordingMenu];
@@ -3677,7 +3690,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.sendMessageButton setAction:@selector(sendMessage:)];
     [self.sendMessageButton setEnabled:NO];
     [self.sendMessageButton setBordered:NO];
-    [self.sendMessageButton setToolTip:@"Send message"];
+    [self.sendMessageButton setToolTip:TGLoc(@"send")];
     [self.sendMessageButton setAutoresizingMask:NSViewMaxYMargin];
     NSMenu *sendOptionsMenu = [[[NSMenu alloc] initWithTitle:TGLoc(@"composer.sendOptions")] autorelease];
     [sendOptionsMenu addItemWithTitle:TGLoc(@"composer.sendSilent")
@@ -4228,7 +4241,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
     self.settingsAppearanceButton = [[[NSButton alloc] initWithFrame:NSMakeRect(64, 328, 260, 40)] autorelease];
     [self.settingsAppearanceButton setTitle:@"Appearance"];
-    [self.settingsAppearanceButton setToolTip:@"Open appearance settings"];
+    [self.settingsAppearanceButton setToolTip:TGLoc(@"settings.appearance")];
     [self.settingsAppearanceButton setTarget:self];
     [self.settingsAppearanceButton setAction:@selector(showAppearanceWindow:)];
     [self applyUtilityButtonStyle:self.settingsAppearanceButton];
@@ -4237,7 +4250,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
     self.settingsLogsButton = [[[NSButton alloc] initWithFrame:NSMakeRect(64, 276, 260, 40)] autorelease];
     [self.settingsLogsButton setTitle:@"Diagnostic Logs"];
-    [self.settingsLogsButton setToolTip:@"Open diagnostic logs"];
+    [self.settingsLogsButton setToolTip:TGLoc(@"settings.logs")];
     [self.settingsLogsButton setTarget:self];
     [self.settingsLogsButton setAction:@selector(showLogsWindow:)];
     [self applyUtilityButtonStyle:self.settingsLogsButton];
@@ -4246,7 +4259,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
     self.settingsAboutButton = [[[NSButton alloc] initWithFrame:NSMakeRect(334, 276, 260, 40)] autorelease];
     [self.settingsAboutButton setTitle:@"About Telegraphica"];
-    [self.settingsAboutButton setToolTip:@"Open application information"];
+    [self.settingsAboutButton setToolTip:TGLoc(@"settings.about")];
     [self.settingsAboutButton setTarget:self];
     [self.settingsAboutButton setAction:@selector(showAboutWindow:)];
     [self applyUtilityButtonStyle:self.settingsAboutButton];
@@ -4564,7 +4577,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
         } else if ([filterID integerValue] == -1) {
             [folderButton setToolTip:TGLoc(@"drawer.all.tooltip")];
         } else {
-            [folderButton setToolTip:[NSString stringWithFormat:@"%@ folder", buttonTitle]];
+            [folderButton setToolTip:[NSString stringWithFormat:TGLoc(@"folders.namedHint"), buttonTitle]];
         }
         [folderButton setTarget:self];
         [folderButton setAction:@selector(folderFilterChanged:)];
@@ -4952,6 +4965,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
 #include "TGStatusWindowController+ChatSearchWindow.inc"
 
+#include "TGStatusWindowController+InlineSearchPresentation.inc"
 #include "TGStatusWindowController+SearchNavigation.inc"
 
 #include "TGStatusWindowController+BotComposer.inc"
@@ -4974,6 +4988,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 }
 
 - (void)dealloc {
+    [self cancelMediaPreviewImageLoad];
     [_mainWindowFramePersistence release];
     _mainWindowFramePersistence = nil;
     [_navigationPositionStore release];

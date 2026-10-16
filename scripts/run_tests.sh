@@ -556,6 +556,9 @@ HOME="$TEST_HOME" "$BUILD_DIR/aqua-folder-drawer-probe"
 
 
 echo "== Local window state, gallery and playback updates =="
+"$PYTHON_BIN" Tests/inline_search_navigation_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$PYTHON_BIN" Tests/gallery_image_routing_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+TELEGRAPHICA_TEST_SDK="$SDK_NAME" scripts/run_gallery_image_benchmark.sh
 "$PYTHON_BIN" Tests/navigation_continuity_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/window_frame_persistence_probe.m Sources/UI/TGWindowFramePersistence.m -framework Cocoa -o "$BUILD_DIR/window-frame-persistence-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/window-frame-persistence-probe"
