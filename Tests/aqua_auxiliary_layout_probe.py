@@ -104,6 +104,7 @@ int main(int argc,const char **argv) {
             [panel setFrameSize:NSMakeSize([width doubleValue],460)];
             for(NSString *key in [NSArray arrayWithObjects:@"titleField",@"searchField",@"statusField",@"scrollView",nil])
                 Require(NSContainsRect([panel bounds],[[panel valueForKey:key] frame]),"search controls fit narrow window");
+            Require([TGLoc(@"downloads.short") sizeWithAttributes:[NSDictionary dictionaryWithObject:[NSFont boldSystemFontOfSize:13] forKey:NSFontAttributeName]].width+24<=112,"localized toolbar download caption fits full button");
             if(aqua) Require([[panel searchField] isBezeled] && [[[panel searchField] cell] searchButtonCell]!=nil && [[[panel searchField] cell] cancelButtonCell]!=nil,"Aqua uses native search and clear affordances");
             layouts++;
         }

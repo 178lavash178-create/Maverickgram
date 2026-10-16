@@ -97,7 +97,7 @@
     [self.aquaFolderHeaderButton setToolTip:TGLoc(TGAquaFoldersUseDrawer() ? @"aqua.folders.toggleDrawer" : @"aqua.folders.toggleInline")];
     [self.aquaFolderEditButton setTitle:TGLoc(@"profile.edit.short")];
     [self.aquaSearchButton setTitle:TGLoc(@"search.chats.title")];
-    [self.aquaDownloadsButton setTitle:TGLoc(@"downloads.title")];
+    [self.aquaDownloadsButton setTitle:TGLoc(@"downloads.short")];
     [self.workshopDrawerButton setTitle:TGLoc(@"workshop.title")];
     [self.attachPhotoButton setTitle:TGLoc(@"aqua.attachFile")];
     [self.sendMessageButton setTitle:TGLoc(@"send")];
