@@ -13,12 +13,18 @@ with open(os.path.join(ROOT, 'Sources/UI/TGStatusWindowController+AquaAudioPlaye
 methods = []
 for signature, next_signature in [
     ('- (void)layoutAquaAudioPlayerForContentBounds:', '- (void)presentAquaAudioPlayer'),
+    ('- (void)presentAquaAudioPlayer', '- (void)detachAquaAudioPlayerAnimated:'),
     ('- (void)detachAquaAudioPlayerAnimated:', '- (void)closeAquaAudioPlayer:')]:
     start = controller.index(signature)
     end = controller.index(next_signature, start)
     methods.append(controller[start:end])
+with open(os.path.join(ROOT, 'Sources/UI/TGAquaShellViews.m'), 'rb') as handle:
+    cells = handle.read().decode('utf-8')
+cell_start = cells.index('@implementation TGAquaUtilityButtonCell')
+cell_end = cells.index('\n@end', cell_start) + len('\n@end')
 with open(os.path.join(ROOT, 'Tests/aqua_audio_routing_probe.m'), 'rb') as handle:
     harness = handle.read().decode('utf-8').replace('__PRODUCTION_AUDIO_METHODS__', '\n'.join(methods))
+    harness = harness.replace('__PRODUCTION_UTILITY_CELL__', cells[cell_start:cell_end])
 folder = tempfile.mkdtemp(prefix='telegraphica-aqua-audio-routing-')
 try:
     source = os.path.join(folder, 'audio-routing.m')

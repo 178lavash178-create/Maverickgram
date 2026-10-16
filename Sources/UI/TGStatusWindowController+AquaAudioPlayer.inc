@@ -20,13 +20,13 @@ static NSDictionary *TGMediaCenterFirstMediaDictionaryForItem(TGMessageItem *ite
         [[[self window] contentView] addSubview:self.aquaAudioPlayerView positioned:NSWindowBelow relativeTo:self.aquaToolbarView];
         NSButton *next=[[[NSButton alloc] initWithFrame:NSZeroRect] autorelease];
         TGAquaUtilityButtonCell *nextCell=[[[TGAquaUtilityButtonCell alloc] initTextCell:@""] autorelease];
-        [nextCell setIconAssetName:@"next"]; [next setCell:nextCell]; [next setBordered:NO];
+        [nextCell setIconAssetName:@"next"]; [nextCell setIconOnly:YES]; [next setCell:nextCell]; [next setBordered:NO];
         [next setTarget:self]; [next setAction:@selector(aquaAudioNext:)];
         [next setToolTip:TGLoc(@"media.playback.next")];
         self.aquaAudioNextButton=next; [[self.aquaAudioPlayerView surface] addSubview:next];
         NSButton *close=[[[NSButton alloc] initWithFrame:NSZeroRect] autorelease];
         TGAquaUtilityButtonCell *closeCell=[[[TGAquaUtilityButtonCell alloc] initTextCell:@""] autorelease];
-        [closeCell setIconAssetName:@"cross"]; [close setCell:closeCell]; [close setBordered:NO];
+        [closeCell setIconAssetName:@"cross"]; [closeCell setIconOnly:YES]; [close setCell:closeCell]; [close setBordered:NO];
         [close setTarget:self]; [close setAction:@selector(closeAquaAudioPlayer:)];
         [close setToolTip:TGLoc(@"media.playback.close")];
         self.aquaAudioCloseButton=close; [[self.aquaAudioPlayerView surface] addSubview:close];
