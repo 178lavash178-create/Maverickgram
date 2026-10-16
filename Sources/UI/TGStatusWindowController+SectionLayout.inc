@@ -135,7 +135,7 @@
     [self showView:self.messagesLabel visible:NO];
     BOOL showClosedChatPlaceholder = (showChats && self.chatNavigationClosed);
     BOOL showMediaCenter = (showChats && !showClosedChatPlaceholder && self.mediaCenterVisible);
-    BOOL showConversationContent = (showChats && !showClosedChatPlaceholder && !showMediaCenter);
+    BOOL showConversationContent = (showChats && !showClosedChatPlaceholder && !showMediaCenter && ![self aquaChatInfoReplacesConversation]);
     [self showView:self.mediaCenterPanelView visible:showMediaCenter];
     [self showView:self.loadMessagesButton visible:showConversationContent];
     [self showView:self.loadOlderMessagesButton visible:NO];
@@ -146,7 +146,7 @@
     [self showView:self.selectedChatVideoCallButton visible:showSelectedChatCall];
     [self showView:self.mediaCenterButton visible:NO];
     [self.mediaCenterButton setEnabled:NO];
-    BOOL showCommentThreadBack = (showChats &&
+    BOOL showCommentThreadBack = (showChats && ![self aquaChatInfoReplacesConversation] &&
                                   !showClosedChatPlaceholder &&
                                   [self.selectedMessageTopicKind isEqualToString:@"thread"] &&
                                   [self.selectedMessageThreadID respondsToSelector:@selector(longLongValue)]);
@@ -361,6 +361,7 @@
     [self showView:self.checkButton visible:NO];
     [self refreshUpdateAvailabilityBadge];
     [self updateAquaShellVisibility];
+    [self updateAquaChatInfoPanelVisibility];
     [self updateSectionTransitionPresentation];
     [self synchronizeUserOpenedChat];
     if ([self conversationAllowsAutomaticRead]) {
@@ -513,6 +514,13 @@
 }
 
 - (void)layoutContentView {
+    CGFloat previousTranscriptWidth=NSWidth([self.messageScrollView frame]);
+    NSClipView *transcriptClip=[self.messageScrollView contentView];
+    NSPoint transcriptOrigin=[transcriptClip bounds].origin;
+    NSInteger transcriptAnchor=[self.messageTableView rowAtPoint:transcriptOrigin];
+    CGFloat transcriptOffset=transcriptAnchor>=0 ? transcriptOrigin.y-NSMinY([self.messageTableView rectOfRow:transcriptAnchor]) : 0;
+    CGFloat previousTranscriptEnd=MAX(0,NSHeight([self.messageTableView frame])-NSHeight([transcriptClip bounds]));
+    BOOL transcriptAtEnd=transcriptOrigin.y>=previousTranscriptEnd-2.0;
     NSView *contentView = [[self window] contentView];
     NSRect bounds = [contentView bounds];
     CGFloat width = NSWidth(bounds);
@@ -529,6 +537,8 @@
     CGFloat railX = margin;
     CGFloat railY = margin;
     CGFloat railHeight = height - (margin * 2.0) - (aqua ? 54.0 : 0.0);
+    [self layoutAquaAudioPlayerForContentBounds:bounds];
+    if (aqua && [self isAquaAudioPlayerVisible]) railHeight=MAX(0,railHeight-48.0);
     CGFloat railTop = railY + railHeight;
     CGFloat mainX = drawerConsumesLayout ? (railX + railWidth + railGutter) : margin;
     CGFloat mainY = margin;
@@ -537,7 +547,7 @@
     CGFloat mainTop = mainY + mainHeight;
     CGFloat sidebarWidth = self.chatSidebarPreferredWidth > 0.0 ? self.chatSidebarPreferredWidth : 292.0;
 
-    if (railHeight < 520.0) {
+    if (!aqua && railHeight < 520.0) {
         railHeight = 520.0;
         railTop = railY + railHeight;
         mainHeight = railHeight;
@@ -561,6 +571,8 @@
     if (mainWidth < 420.0) {
         mainWidth = 420.0;
     }
+    TGAquaChatInfoGeometry chatInfoGeometry = TGAquaChatInfoFrames(NSMakeRect(conversationX,mainY,conversationWidth,mainHeight), [self isAquaChatInfoPanelActive]);
+    conversationWidth = NSWidth(chatInfoGeometry.conversation);
 
     [self.topPanelView setFrame:NSMakeRect(railX, railY, railWidth, railHeight)];
     [self.sidebarPanelView setFrame:NSMakeRect(mainX, mainY, sidebarWidth, mainHeight)];
@@ -1595,6 +1607,17 @@
     [self applyPointingHandCursorToButtonsInView:contentView];
     [self layoutMediaCenterWindowSubviews];
     [self layoutAquaShell];
+    [self updateAquaChatInfoPanelVisibility];
+    // A profile sidebar changes actual text wrapping without a window resize.
+    // Recompute row heights while keeping the same message at the same offset.
+    if (aqua && previousTranscriptWidth>0 && fabs(previousTranscriptWidth-NSWidth([self.messageScrollView frame]))>0.5 && [self.messageTableView numberOfRows]>0) {
+        [self.messageTableView reloadData];
+        CGFloat end=MAX(0,NSHeight([self.messageTableView frame])-NSHeight([transcriptClip bounds]));
+        CGFloat y=transcriptAtEnd ? end : transcriptOrigin.y;
+        if (!transcriptAtEnd && transcriptAnchor>=0 && transcriptAnchor<[self.messageTableView numberOfRows]) y=NSMinY([self.messageTableView rectOfRow:transcriptAnchor])+transcriptOffset;
+        [transcriptClip scrollToPoint:NSMakePoint(0,MAX(0,MIN(end,y)))];
+        [self.messageScrollView reflectScrolledClipView:transcriptClip];
+    }
 }
 
 - (void)windowDidResize:(NSNotification *)notification {
@@ -1670,12 +1693,15 @@
 
 - (void)windowWillClose:(NSNotification *)notification {
     if ([notification object] == [self window]) {
+        [self invalidateAquaPhotoPreview]; [self.mediaPreviewWindow close];
+        [self invalidateAquaChatInfoPanel];
         [self.aquaFolderDrawer setVisible:NO];
         [self invalidateAutomaticReadRequests];
         [self.client setUserOpenedChatID:nil];
     }
     if ([notification object] == self.mediaPreviewWindow) {
         NSWindow *closingWindow = [(NSWindow *)[notification object] retain];
+        TGAquaPhotoTransitionClear(closingWindow);
         self.mediaPreviewRequestGeneration = self.mediaPreviewRequestGeneration + 1;
         self.mediaPreviewPath = nil;
         self.mediaPreviewZoomScale = 1.0;

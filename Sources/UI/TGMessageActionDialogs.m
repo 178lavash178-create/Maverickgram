@@ -1,3 +1,4 @@
+#import "TGDialogPresentation.h"
 #import "TGMessageActionDialogs.h"
 #import "TGLocalization.h"
 #import "TGLocationPickerWindowController.h"
@@ -57,7 +58,7 @@
         [fields addObject:field];
     }
     [alert setAccessoryView:accessory];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, nil) != NSAlertFirstButtonReturn) {
         return nil;
     }
 
@@ -68,10 +69,11 @@
     NSString *phone = [[(NSTextField *)[fields objectAtIndex:2] stringValue]
                        stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     if ([firstName length] == 0 || [phone length] == 0) {
-        NSRunAlertPanel(TGLoc(@"share.contact.failed"),
-                        @"%@",
-                        TGLoc(@"ok"), nil, nil,
-                        TGLoc(@"share.contact.error.required"));
+        NSAlert *validationAlert = [[[NSAlert alloc] init] autorelease];
+        [validationAlert setMessageText:TGLoc(@"share.contact.failed")];
+        [validationAlert setInformativeText:TGLoc(@"share.contact.error.required")];
+        [validationAlert addButtonWithTitle:TGLoc(@"ok")];
+        TGRunAlert(validationAlert, nil);
         return nil;
     }
     return [NSDictionary dictionaryWithObjectsAndKeys:
@@ -116,7 +118,7 @@
         [[popup lastItem] setRepresentedObject:[periods objectAtIndex:index]];
     }
     [alert setAccessoryView:popup];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, nil) != NSAlertFirstButtonReturn) {
         return nil;
     }
     [values setObject:[[popup selectedItem] representedObject] forKey:@"live_period"];
@@ -148,7 +150,7 @@
     [scrollView setDocumentView:textView];
     [alert setAccessoryView:scrollView];
 
-    NSInteger result = [alert runModal];
+    NSInteger result = TGRunAlert(alert, nil);
     if (result != NSAlertFirstButtonReturn) {
         return nil;
     }
@@ -175,7 +177,7 @@
     }
     [alert addButtonWithTitle:TGLoc(@"cancel")];
 
-    NSInteger result = [alert runModal];
+    NSInteger result = TGRunAlert(alert, nil);
     NSInteger buttonIndex = result - NSAlertFirstButtonReturn;
     if (buttonIndex < 0) {
         return TGMessageDeleteChoiceCancel;
@@ -202,7 +204,7 @@
     [alert setInformativeText:TGLoc(@"message.delete.hint")];
     [alert addButtonWithTitle:TGLoc(@"message.delete.action")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    return ([alert runModal] == NSAlertFirstButtonReturn);
+    return (TGRunAlert(alert, nil) == NSAlertFirstButtonReturn);
 }
 
 @end

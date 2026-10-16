@@ -1,3 +1,4 @@
+#import "TGDialogPresentation.h"
 #import "TGConversationCreationPrompt.h"
 
 #import "TGLocalization.h"
@@ -34,7 +35,7 @@
     }
     [alert setAccessoryView:accessory];
 
-    while ([alert runModal] == NSAlertFirstButtonReturn) {
+    while (TGRunAlert(alert, nil) == NSAlertFirstButtonReturn) {
         NSString *safeTitle = [[titleField stringValue] stringByTrimmingCharactersInSet:
                                [NSCharacterSet whitespaceAndNewlineCharacterSet]];
         NSString *safeDescription = descriptionField

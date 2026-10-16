@@ -160,7 +160,7 @@
             [alert setInformativeText:([typeName rangeOfString:@"WebApp"].location != NSNotFound)
                 ? TGLoc(@"bot.webApp.officialOnly") : TGLoc(@"bot.personalData.manualOnly")];
             [alert addButtonWithTitle:TGLoc(@"ok")];
-            [alert runModal];
+            TGRunAlert(alert, self.window);
         }
         return;
     }

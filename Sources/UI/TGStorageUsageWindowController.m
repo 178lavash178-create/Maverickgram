@@ -1,3 +1,4 @@
+#import "TGDialogPresentation.h"
 #import "TGStorageUsageWindowController.h"
 #import "TGUtilityWindowLifetime.h"
 
@@ -616,7 +617,7 @@ static NSColor *TGStorageRowSeparatorColor(void) {
     [alert setInformativeText:[NSString stringWithFormat:TGLoc(@"storage.confirm.filteredMessage"), typeTitle, scopeTitle]];
     [alert addButtonWithTitle:TGLoc(@"storage.clearSelected")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    NSInteger result = [alert runModal];
+    NSInteger result = TGRunAlert(alert, [self window]);
     if (result != NSAlertFirstButtonReturn) {
         return;
     }

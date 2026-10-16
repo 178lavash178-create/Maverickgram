@@ -1,3 +1,4 @@
+#import "TGDialogPresentation.h"
 #import "TGChatInfoWindowController.h"
 
 #import "../Core/TGTDLibClient+ChatMembers.h"
@@ -659,7 +660,7 @@ static NSImage *TGSecretChatKeyImage(NSData *keyHashData) {
         [alert setInformativeText:[member objectForKey:@"display_name"]];
         [alert addButtonWithTitle:TGLoc(@"chat.role.banned")];
         [alert addButtonWithTitle:TGLoc(@"cancel")];
-        if ([alert runModal] != NSAlertFirstButtonReturn) {
+        if (TGRunAlert(alert, [self window]) != NSAlertFirstButtonReturn) {
             return;
         }
     }
@@ -704,7 +705,7 @@ static NSImage *TGSecretChatKeyImage(NSData *keyHashData) {
     [alert setInformativeText:TGLoc(@"secretChat.closeConfirmBody")];
     [alert addButtonWithTitle:TGLoc(@"secretChat.close")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, [self window]) != NSAlertFirstButtonReturn) {
         return;
     }
     [self setLoading:YES status:TGLoc(@"secretChat.closing")];
@@ -738,7 +739,7 @@ static NSImage *TGSecretChatKeyImage(NSData *keyHashData) {
     [alert setInformativeText:TGLoc(@"secretChat.deleteConfirmBody")];
     [alert addButtonWithTitle:TGLoc(@"secretChat.deleteHistory")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, [self window]) != NSAlertFirstButtonReturn) {
         return;
     }
     [self setLoading:YES status:TGLoc(@"secretChat.deleting")];

@@ -1421,6 +1421,7 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
         [self.mediaCenterStatusField setStringValue:TGLoc(@"media.center.previewUnavailable")];
         return;
     }
+    [self prepareAquaPhotoPreviewForMessage:item mediaItem:mediaItem gridSender:sender];
     [self openMediaPreviewForMediaItem:mediaItem];
     [self closeMediaCenterInlinePreview:nil];
 }
@@ -1938,6 +1939,7 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
                                                         name:AVPlayerItemDidPlayToEndTimeNotification
                                                       object:outgoingItem];
     }
+    [self detachAquaAudioPlayerAnimated:NO];
     [self.mediaPlaybackPlayer pause];
     [self.mediaPlaybackLayer removeFromSuperlayer];
     self.mediaPlaybackPlayer = nil;
@@ -2006,7 +2008,7 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
     [alert setMessageText:@"Voice message cannot be played yet"];
     [alert setInformativeText:message];
     [alert addButtonWithTitle:@"OK"];
-    [alert runModal];
+    TGRunAlert(alert,[self window]);
     return NO;
 }
 
@@ -2044,8 +2046,12 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
     self.mediaPlaybackPlaying = YES;
     [self updateMediaPlaybackButton];
     [self.mediaPlaybackWindow setTitle:([title length] > 0 ? title : @"Media")];
-    [self.mediaPlaybackWindow center];
-    [self.mediaPlaybackWindow makeKeyAndOrderFront:nil];
+    if (TGInterfaceDesignIsAqua() && audioOnly && [self.currentAuthState isEqualToString:@"ready"]) {
+        [self presentAquaAudioPlayer];
+    } else {
+        [self.mediaPlaybackWindow center];
+        [self.mediaPlaybackWindow makeKeyAndOrderFront:nil];
+    }
     [self layoutMediaPlaybackLayer];
     [self updateMediaPlaybackTimelineWithCurrentTime:0.0 duration:[self currentMediaPlaybackDuration]];
     NSTimeInterval resumePosition = [self rememberedMediaPlaybackPosition];
@@ -2204,6 +2210,8 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
 }
 
 - (void)openPlayableMediaForMediaItem:(NSDictionary *)mediaItem {
+    [self invalidateAquaPhotoPreview];
+    [self cancelMediaPlaybackPreparation];
     if (![mediaItem isKindOfClass:[NSDictionary class]]) {
         return;
     }
@@ -2230,6 +2238,7 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
     NSNumber *fileIDCopy = [fileID retain];
     NSString *titleCopy = [[self titleForMediaItem:mediaItem] copy];
     BOOL videoNote = [[mediaItem objectForKey:@"content_type"] isEqualToString:@"messageVideoNote"];
+    NSUInteger playbackGeneration=self.mediaPlaybackPreparationGeneration;
     TGTDLibClient *client = [self.client retain];
     [self.statusField setStringValue:@"Loading media..."];
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
@@ -2238,6 +2247,9 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
         NSString *downloadedPath = [[client downloadedLocalPathForFileID:fileIDCopy timeout:12.0 error:&downloadError] copy];
         NSString *downloadErrorMessage = [[downloadError localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
+            if (client!=self.client || playbackGeneration!=self.mediaPlaybackPreparationGeneration || ![self.currentAuthState isEqualToString:@"ready"]) {
+                [downloadedPath release]; [downloadErrorMessage release]; [fileIDCopy release]; [titleCopy release]; [client release]; return;
+            }
             if ([downloadedPath length] > 0) {
                 [self setOfflineModeActive:NO reason:nil];
                 [self.statusField setStringValue:@"Connected"];
@@ -2270,6 +2282,8 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
     if (![item isKindOfClass:[TGMessageItem class]] || ![item isPlayableMediaMessage]) {
         return;
     }
+    [self invalidateAquaPhotoPreview];
+    [self cancelMediaPlaybackPreparation];
     self.mediaPlaybackSourceMessageItem = TGMessageItemIsAudioOnlyPlayableMedia(item) ? item : nil;
 
     NSDictionary *media = TGMediaCenterFirstMediaDictionaryForItem(item);
@@ -2313,6 +2327,7 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
 
     NSNumber *fileIDCopy = [fileID retain];
     NSString *titleCopy = [TGPlayableMediaTitleForMessageItem(item) copy];
+    NSUInteger playbackGeneration=self.mediaPlaybackPreparationGeneration;
     TGTDLibClient *client = [self.client retain];
     [self.statusField setStringValue:@"Loading media..."];
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
@@ -2321,6 +2336,9 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
         NSString *downloadedPath = [[client downloadedLocalPathForFileID:fileIDCopy timeout:12.0 error:&downloadError] copy];
         NSString *downloadErrorMessage = [[downloadError localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
+            if (client!=self.client || playbackGeneration!=self.mediaPlaybackPreparationGeneration || ![self.currentAuthState isEqualToString:@"ready"]) {
+                [downloadedPath release]; [downloadErrorMessage release]; [fileIDCopy release]; [titleCopy release]; [client release]; return;
+            }
             if ([downloadedPath length] > 0) {
                 NSNumber *duration = [item mediaDuration];
                 NSDictionary *media = TGMediaCenterFirstMediaDictionaryForItem(item);
@@ -2455,6 +2473,13 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
 }
 
 - (void)ensureMediaPreviewWindow {
+    /* Closing defers destruction until AppKit leaves its close callback. A
+     * second click can arrive first; retire that detached window now so the
+     * deferred callback cannot tear down a newly reopened viewer. */
+    if (self.mediaPreviewWindow && ![self.mediaPreviewWindow isVisible] &&
+        [self.mediaPreviewWindow delegate] != self) {
+        [self tearDownClosedMediaPreviewWindow:self.mediaPreviewWindow];
+    }
     if (self.mediaPreviewWindow) {
         return;
     }
@@ -2654,6 +2679,7 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
     }
 
     [self ensureMediaPreviewWindow];
+    TGAquaPhotoTransitionClear(self.mediaPreviewWindow);
     self.mediaPreviewPath = path;
     self.mediaPreviewMinimumZoomScale = 0.0;
     [self.mediaPreviewImageView setImage:image];
@@ -2667,8 +2693,17 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
     [self resizeMediaPreviewWindowForImage:image];
     [self fitMediaPreview:nil];
     [self.mediaPreviewWindow center];
+    BOOL showPhotoMotion = !likelyAnimated && TGInterfaceDesignIsAqua() &&
+                           [self aquaPhotoPreviewSourceContext] != nil;
+    if (showPhotoMotion && TGInterfaceAnimationsEnabledForView(self.messageTableView))
+        [self.mediaPreviewWindow setAlphaValue:0.0];
     [self.mediaPreviewWindow makeKeyAndOrderFront:nil];
     [self.mediaPreviewWindow makeFirstResponder:self.mediaPreviewImageView];
+    if (showPhotoMotion) {
+        TGAquaPhotoTransitionOpen(self.mediaPreviewWindow, self.mediaPreviewImageView,
+                                 self.messageTableView, (id<TGAquaPhotoTransitionSource>)self,
+                                 [self aquaPhotoPreviewSourceContext]);
+    }
     return YES;
 }
 
@@ -2683,13 +2718,16 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
     if (!TGMediaItemSupportsPreview(mediaItem)) {
         return;
     }
+    NSUInteger requestGeneration = self.mediaPreviewRequestGeneration + 1;
+    self.mediaPreviewRequestGeneration = requestGeneration;
     if (TGMediaItemIsPlayable(mediaItem)) {
+        [self setAquaPhotoPreviewSourceContext:nil];
         [self openPlayableMediaForMediaItem:mediaItem];
         return;
     }
 
-    NSUInteger requestGeneration = self.mediaPreviewRequestGeneration + 1;
-    self.mediaPreviewRequestGeneration = requestGeneration;
+    NSDictionary *selectionContext = [self mediaPreviewSelectionContext];
+    if (!TGAquaPhotoTransitionIsStaticPhoto(mediaItem)) [self setAquaPhotoPreviewSourceContext:nil];
     BOOL preferAnimated = TGMediaItemIsAnimation(mediaItem);
     NSString *fullPath = TGMediaItemFullLocalPath(mediaItem);
     if ([fullPath length] > 0 && [[NSFileManager defaultManager] fileExistsAtPath:fullPath]) {
@@ -2723,7 +2761,8 @@ static BOOL TGMediaPlaybackMimeLooksUnsupportedOnMavericks(NSString *mimeType, B
         NSString *downloadedPath = [[client downloadedLocalPathForFileID:fileIDCopy timeout:12.0 error:&downloadError] copy];
         NSString *fallback = [fallbackPathCopy copy];
         dispatch_async(dispatch_get_main_queue(), ^{
-            if (requestGeneration != self.mediaPreviewRequestGeneration) {
+            if (requestGeneration != self.mediaPreviewRequestGeneration ||
+                client != self.client || ![self mediaPreviewSelectionContextIsCurrent:selectionContext]) {
                 [downloadedPath release];
                 [fallback release];
                 [fileIDCopy release];

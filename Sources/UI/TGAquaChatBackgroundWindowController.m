@@ -1,3 +1,4 @@
+#import "TGDialogPresentation.h"
 #import "TGAquaChatBackgroundWindowController.h"
 #import "TGAquaChatBackground.h"
 #import "TGAquaAppearance.h"
@@ -304,7 +305,7 @@ static NSString *TGAquaBackgroundPresetTitle(NSDictionary *preset) {
 
 - (void)showError:(NSError *)error title:(NSString *)title {
     NSAlert *alert = [[[NSAlert alloc] init] autorelease]; [alert setMessageText:title];
-    [alert setInformativeText:[error localizedDescription] ? [error localizedDescription] : TGLoc(@"aqua.background.errorGeneric")]; [alert runModal];
+    [alert setInformativeText:[error localizedDescription] ? [error localizedDescription] : TGLoc(@"aqua.background.errorGeneric")]; TGRunAlert(alert, [self window]);
 }
 - (void)chooseImage:(id)sender {
     (void)sender;
@@ -314,7 +315,7 @@ static NSString *TGAquaBackgroundPresetTitle(NSDictionary *preset) {
     @try {
         NSOpenPanel *panel = [NSOpenPanel openPanel]; [panel setAllowedFileTypes:[NSArray arrayWithObjects:@"png",@"jpg",@"jpeg",nil]];
         [panel setCanChooseFiles:YES]; [panel setCanChooseDirectories:NO]; [panel setAllowsMultipleSelection:NO];
-        NSInteger result = [panel runModal];
+        NSInteger result = TGRunFilePanel(panel, [self window]);
         if (result!=NSOKButton || ![[self window] isVisible]) return;
         NSError *error = nil;
         NSDictionary *configuration = [[TGAquaChatBackgroundStore sharedStore] importImageAtURL:[panel URL] error:&error];

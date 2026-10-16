@@ -180,7 +180,7 @@
     [alert setInformativeText:TGLoc(@"chat.leaveConfirm")];
     [alert addButtonWithTitle:TGLoc(@"chat.leave")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, self.window) != NSAlertFirstButtonReturn) {
         return;
     }
 
@@ -235,7 +235,7 @@
     [alert setInformativeText:TGLoc(@"chat.clearHistoryConfirm")];
     [alert addButtonWithTitle:TGLoc(@"chat.clearHistory")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, self.window) != NSAlertFirstButtonReturn) {
         return;
     }
 
@@ -303,7 +303,7 @@
     [alert setInformativeText:TGLoc(@"chat.deleteConfirm")];
     [alert addButtonWithTitle:TGLoc(@"chat.delete")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, self.window) != NSAlertFirstButtonReturn) {
         return;
     }
 

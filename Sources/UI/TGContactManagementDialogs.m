@@ -1,3 +1,4 @@
+#import "TGDialogPresentation.h"
 #import "TGContactManagementDialogs.h"
 
 #import "TGLocalization.h"
@@ -51,7 +52,7 @@
     [accessory addSubview:sharePhoneButton];
     [alert setAccessoryView:accessory];
 
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, nil) != NSAlertFirstButtonReturn) {
         return nil;
     }
 
@@ -59,10 +60,11 @@
     NSString *lastName = [self trimmedStringFromField:[fields objectAtIndex:1]];
     NSString *phoneNumber = [self trimmedStringFromField:[fields objectAtIndex:2]];
     if ([firstName length] == 0 || [phoneNumber length] == 0) {
-        NSRunAlertPanel(TGLoc(@"contacts.add.failed"),
-                        @"%@",
-                        TGLoc(@"ok"), nil, nil,
-                        TGLoc(@"share.contact.error.required"));
+        NSAlert *validationAlert = [[[NSAlert alloc] init] autorelease];
+        [validationAlert setMessageText:TGLoc(@"contacts.add.failed")];
+        [validationAlert setInformativeText:TGLoc(@"share.contact.error.required")];
+        [validationAlert addButtonWithTitle:TGLoc(@"ok")];
+        TGRunAlert(validationAlert, nil);
         return nil;
     }
 
@@ -88,15 +90,16 @@
     [accessory addSubview:phoneField];
     [alert setAccessoryView:accessory];
 
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, nil) != NSAlertFirstButtonReturn) {
         return nil;
     }
     NSString *phoneNumber = [self trimmedStringFromField:phoneField];
     if ([phoneNumber length] == 0) {
-        NSRunAlertPanel(TGLoc(@"contacts.invite.failed"),
-                        @"%@",
-                        TGLoc(@"ok"), nil, nil,
-                        TGLoc(@"contacts.invite.phoneRequired"));
+        NSAlert *validationAlert = [[[NSAlert alloc] init] autorelease];
+        [validationAlert setMessageText:TGLoc(@"contacts.invite.failed")];
+        [validationAlert setInformativeText:TGLoc(@"contacts.invite.phoneRequired")];
+        [validationAlert addButtonWithTitle:TGLoc(@"ok")];
+        TGRunAlert(validationAlert, nil);
         return nil;
     }
     return phoneNumber;
@@ -109,7 +112,7 @@
     [alert setInformativeText:[NSString stringWithFormat:TGLoc(@"contacts.remove.hint"), safeName]];
     [alert addButtonWithTitle:TGLoc(@"contacts.remove.action")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    return ([alert runModal] == NSAlertFirstButtonReturn);
+    return (TGRunAlert(alert, nil) == NSAlertFirstButtonReturn);
 }
 
 @end

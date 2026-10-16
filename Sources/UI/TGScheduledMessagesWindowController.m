@@ -1,3 +1,4 @@
+#import "TGDialogPresentation.h"
 #import "TGScheduledMessagesWindowController.h"
 
 #import "../Core/TGTDLibClient+ScheduledMessages.h"
@@ -325,7 +326,7 @@
     [alert setMessageText:TGLoc(@"scheduled.sendNowConfirm")];
     [alert addButtonWithTitle:TGLoc(@"scheduled.sendNow")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] == NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, [self window]) == NSAlertFirstButtonReturn) {
         [self runScheduleMutationWithDate:nil whenOnline:NO];
     }
 }
@@ -359,7 +360,7 @@
     [alert setMessageText:TGLoc(@"scheduled.deleteConfirm")];
     [alert addButtonWithTitle:TGLoc(@"delete")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, [self window]) != NSAlertFirstButtonReturn) {
         return;
     }
     [self setLoading:YES status:TGLoc(@"scheduled.saving")];

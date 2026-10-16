@@ -1,3 +1,4 @@
+#import "TGDialogPresentation.h"
 #import "TGChatLifecycleWindowController.h"
 
 #import "../Core/TGTDLibClient.h"
@@ -555,7 +556,7 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
     [alert setInformativeText:TGLoc(@"create.secretInfo")];
     [alert addButtonWithTitle:TGLoc(@"create.confirm")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, [self window]) != NSAlertFirstButtonReturn) {
         [userID release];
         [title release];
         return;
@@ -665,7 +666,7 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
                 : TGLoc(@"contacts.joinConfirm"))];
             [alert addButtonWithTitle:TGLoc(@"contacts.join")];
             [alert addButtonWithTitle:TGLoc(@"cancel")];
-            if ([alert runModal] != NSAlertFirstButtonReturn) {
+            if (TGRunAlert(alert, [self window]) != NSAlertFirstButtonReturn) {
                 [controller setLoading:NO];
                 [controller.statusField setStringValue:TGLoc(@"contacts.joinCancelled")];
                 [summary release];

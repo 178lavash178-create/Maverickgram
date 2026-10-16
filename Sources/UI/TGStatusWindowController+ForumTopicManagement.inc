@@ -21,7 +21,7 @@ static NSString * const TGForumTopicOperationDelete = @"delete";
     [[nameField cell] setPlaceholderString:TGLoc(@"forum.topic.namePlaceholder")];
     [alert setAccessoryView:nameField];
     [[alert window] setInitialFirstResponder:nameField];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, self.window) != NSAlertFirstButtonReturn) {
         return nil;
     }
     return [[nameField stringValue] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
@@ -105,7 +105,7 @@ static NSString * const TGForumTopicOperationDelete = @"delete";
                     [alert setMessageText:TGLoc(@"forum.topic.failed")];
                     [alert setInformativeText:errorMessage];
                     [alert addButtonWithTitle:TGLoc(@"close")];
-                    [alert runModal];
+                    TGRunAlert(alert, self.window);
                 }
             }
             [client release];
@@ -181,7 +181,7 @@ static NSString * const TGForumTopicOperationDelete = @"delete";
     [alert setInformativeText:TGLoc(@"forum.topic.deleteConfirm")];
     [alert addButtonWithTitle:TGLoc(@"forum.topic.delete")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, self.window) != NSAlertFirstButtonReturn) {
         return;
     }
     [self performForumTopicOperation:TGForumTopicOperationDelete item:item name:nil];

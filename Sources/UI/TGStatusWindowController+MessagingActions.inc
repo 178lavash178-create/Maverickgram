@@ -205,7 +205,7 @@
         [[popup lastItem] setRepresentedObject:destination];
     }
     [alert setAccessoryView:popup];
-    NSInteger result = [alert runModal];
+    NSInteger result = TGRunAlert(alert, self.window);
     if (result != NSAlertFirstButtonReturn) {
         return;
     }

@@ -23,6 +23,11 @@
 #import "TGMessageViewersWindowController.h"
 #import "TGNotificationSettingsWindowController.h"
 #import "TGAnimationSupport.h"
+#import "TGAquaAudioPlayerView.h"
+#import "TGAquaChatInfoPanel.h"
+#import "TGAquaPhotoTransition.h"
+#import "TGDialogPresentation.h"
+#import <objc/runtime.h>
 #import "TGSectionTransition.h"
 #import "TGConversationVisibility.h"
 #import "TGKeyboardInputSupport.h"
@@ -670,6 +675,12 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 @property (nonatomic, retain) NSButton *mediaPreviewZoomOutButton;
 @property (nonatomic, retain) NSButton *mediaPreviewFitButton;
 @property (nonatomic, retain) NSButton *mediaPreviewZoomInButton;
+@property (nonatomic, retain) TGAquaChatInfoPanel *aquaChatInfoPanel;
+@property (nonatomic, retain) NSNumber *aquaChatInfoChatID;
+@property (nonatomic, assign) NSUInteger aquaChatInfoRequestGeneration;
+@property (nonatomic, retain) TGAquaAudioPlayerView *aquaAudioPlayerView;
+@property (nonatomic, retain) NSButton *aquaAudioNextButton;
+@property (nonatomic, retain) NSButton *aquaAudioCloseButton;
 @property (nonatomic, retain) NSWindow *mediaPlaybackWindow;
 @property (nonatomic, retain) NSView *mediaPlaybackContainerView;
 @property (nonatomic, retain) NSTextField *mediaPlaybackTitleField;
@@ -824,6 +835,26 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 @property (nonatomic, retain) TGTranscriptMotionController *transcriptMotionController;
 @property (nonatomic, retain) TGSectionTransitionController *sectionTransitionController;
 @property (nonatomic, retain) NSMutableSet *pendingArrivalMessageIDs;
+- (BOOL)isAquaAudioPlayerVisible;
+- (void)layoutAquaAudioPlayerForContentBounds:(NSRect)bounds;
+- (void)presentAquaAudioPlayer;
+- (void)detachAquaAudioPlayerAnimated:(BOOL)animated;
+- (void)closeAquaAudioPlayer:(id)sender;
+- (BOOL)isAquaChatInfoPanelActive;
+- (BOOL)aquaChatInfoReplacesConversation;
+- (void)invalidateAquaChatInfoPanel;
+- (void)updateAquaChatInfoPanelVisibility;
+- (void)openAquaChatInfo:(id)sender;
+- (void)closeAquaChatInfo:(id)sender;
+- (void)aquaChatInfoPanelDidClose:(id)sender;
+- (void)openAquaChatInfoMedia:(id)sender;
+- (void)openAquaChatInfoDetails:(id)sender;
+- (NSDictionary *)aquaPhotoPreviewSourceContext;
+- (NSDictionary *)mediaPreviewSelectionContext;
+- (BOOL)mediaPreviewSelectionContextIsCurrent:(NSDictionary *)context;
+- (void)prepareAquaPhotoPreviewForMessage:(TGMessageItem *)item mediaItem:(NSDictionary *)mediaItem gridSender:(id)sender;
+- (NSRect)aquaPhotoPreviewSourceScreenRectForContext:(NSDictionary *)context;
+- (void)invalidateAquaPhotoPreview;
 - (void)rememberLiveArrivalFromSummary:(NSDictionary *)summary;
 - (void)animatePendingLiveArrivals:(BOOL)nearNewest;
 - (BOOL)animateConfirmedRemovalWithID:(NSNumber *)messageID chatID:(NSNumber *)chatID;
@@ -1248,6 +1279,12 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 @synthesize mediaPreviewZoomOutButton = _mediaPreviewZoomOutButton;
 @synthesize mediaPreviewFitButton = _mediaPreviewFitButton;
 @synthesize mediaPreviewZoomInButton = _mediaPreviewZoomInButton;
+@synthesize aquaChatInfoPanel = _aquaChatInfoPanel;
+@synthesize aquaChatInfoChatID = _aquaChatInfoChatID;
+@synthesize aquaChatInfoRequestGeneration = _aquaChatInfoRequestGeneration;
+@synthesize aquaAudioPlayerView = _aquaAudioPlayerView;
+@synthesize aquaAudioNextButton = _aquaAudioNextButton;
+@synthesize aquaAudioCloseButton = _aquaAudioCloseButton;
 @synthesize mediaPlaybackWindow = _mediaPlaybackWindow;
 @synthesize mediaPlaybackContainerView = _mediaPlaybackContainerView;
 @synthesize mediaPlaybackTitleField = _mediaPlaybackTitleField;
@@ -1433,6 +1470,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
         [self.pendingArrivalMessageIDs removeAllObjects];
     }
     if (_selectedChatID != chatID) {
+        if (![_selectedChatID isEqual:chatID]) { [self invalidateAquaPhotoPreview]; [self invalidateAquaChatInfoPanel]; }
         [_selectedChatID release];
         _selectedChatID = [chatID retain];
     }
@@ -1442,6 +1480,11 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
 - (void)setProfileUserID:(NSNumber *)userID {
     if (_profileUserID != userID) {
+        [self invalidateAquaPhotoPreview]; [self.mediaPreviewWindow close];
+        [self invalidateAquaChatInfoPanel];
+        [self cancelMediaPlaybackPreparation];
+        if (self.mediaPlaybackPlayer) [self resetMediaPlaybackState];
+        self.mediaPlaybackSourceMessageItem=nil;
         [_profileUserID release];
         _profileUserID = [userID retain];
     }
@@ -1461,6 +1504,10 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
         [self.sectionTransitionController reset];
     }
     if ([_currentAuthState isEqualToString:@"ready"] && ![state isEqualToString:@"ready"]) {
+        [self invalidateAquaPhotoPreview]; [self.mediaPreviewWindow close];
+        [self invalidateAquaChatInfoPanel];
+        [self cancelMediaPlaybackPreparation];
+        if (self.mediaPlaybackPlayer) [self resetMediaPlaybackState];
         [self clearClosedChatSuggestionsForSessionChange];
         [self.mediaCenterSaveRequests removeAllObjects];
         [self.mediaCenterDownloadingFileIDs removeAllObjects];
@@ -1481,6 +1528,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     }
     if (![_selectedMessageThreadID isEqual:threadID]) [self invalidateAutomaticReadRequests];
     if (_selectedMessageThreadID != threadID) {
+        if (![_selectedMessageThreadID isEqual:threadID]) { [self invalidateAquaPhotoPreview]; [self invalidateAquaChatInfoPanel]; }
         [_selectedMessageThreadID release];
         _selectedMessageThreadID = [threadID retain];
     }
@@ -1489,6 +1537,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 - (void)setSelectedMessageTopicKind:(NSString *)topicKind {
     if (![_selectedMessageTopicKind isEqual:topicKind]) [self invalidateAutomaticReadRequests];
     if (_selectedMessageTopicKind != topicKind) {
+        if (![_selectedMessageTopicKind isEqual:topicKind]) { [self invalidateAquaPhotoPreview]; [self invalidateAquaChatInfoPanel]; }
         [_selectedMessageTopicKind release];
         _selectedMessageTopicKind = [topicKind copy];
     }
@@ -1497,6 +1546,8 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 - (void)setActiveSection:(NSString *)section {
     BOOL sectionChanged = ![_activeSection isEqualToString:section];
     if (sectionChanged) {
+        [self invalidateAquaPhotoPreview];
+        [self invalidateAquaChatInfoPanel];
         [self invalidateAutomaticReadRequests];
         [self.sectionTransitionController cancelAnimation];
     }
@@ -1526,6 +1577,11 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
         // token that permanently blocks lookups on the replacement client.
         [self.notificationChatInfoByChatID removeAllObjects];
         [_client setUserOpenedChatID:nil];
+        [self invalidateAquaPhotoPreview]; [self.mediaPreviewWindow close];
+        [self invalidateAquaChatInfoPanel];
+        [self cancelMediaPlaybackPreparation];
+        if (self.mediaPlaybackPlayer) [self resetMediaPlaybackState];
+        self.mediaPlaybackSourceMessageItem=nil;
         [_client release];
         _client = [client retain];
     }
@@ -3204,7 +3260,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.selectedChatProfileButton setTransparent:YES];
     [self.selectedChatProfileButton setTarget:self];
     [self.selectedChatProfileButton setAction:@selector(openSelectedChatProfile:)];
-    [self.selectedChatProfileButton setToolTip:TGLoc(@"media.center.title")];
+    [self.selectedChatProfileButton setToolTip:TGLoc(TGInterfaceDesignIsAqua() ? @"profile.title" : @"media.center.title")];
     [self.selectedChatProfileButton setHidden:YES];
     [contentView addSubview:self.selectedChatProfileButton];
 
@@ -4806,8 +4862,11 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     }
 }
 
+#include "TGStatusWindowController+AquaAudioPlayer.inc"
+#include "TGStatusWindowController+AquaPhotoPreview.inc"
 #include "TGStatusWindowController+MediaWindows.inc"
 
+#include "TGStatusWindowController+AquaChatInfo.inc"
 #include "TGStatusWindowController+UtilityWindows.inc"
 
 #include "TGStatusWindowController+Notifications.inc"
@@ -5306,8 +5365,18 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [_appearanceWindow close];
     [_activeSessionsWindow close];
     [[_messageViewersWindowController window] close];
+    [self invalidateAquaPhotoPreview];
+    [_aquaChatInfoPanel setTarget:nil];
+    [_aquaChatInfoPanel hideImmediately];
+    [_aquaChatInfoPanel release];
+    [_aquaChatInfoChatID release];
     [_mediaPreviewWindow setDelegate:nil];
     [_mediaPreviewWindow close];
+    [_aquaAudioPlayerView setLayoutTarget:nil];
+    [_aquaAudioPlayerView cancelAnimation];
+    [_aquaAudioPlayerView release];
+    [_aquaAudioNextButton release];
+    [_aquaAudioCloseButton release];
     [_mediaPlaybackWindow setDelegate:nil];
     [_mediaPlaybackPreparationCancellationToken cancel];
     [_mediaPlaybackPreparationQueue cancelAllOperations];

@@ -229,7 +229,7 @@ static NSString *TGSearchFilterIdentifierForIndex(NSInteger index) {
     [alert addButtonWithTitle:TGLoc(@"apply")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
     [alert addButtonWithTitle:TGLoc(@"search.messages.reset")];
-    NSInteger result = [alert runModal];
+    NSInteger result = TGRunAlert(alert, self.window);
     if (result == NSAlertThirdButtonReturn) {
         self.searchSenderQuery = nil;
         self.searchDateRangeIndex = 0;

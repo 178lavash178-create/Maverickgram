@@ -1,3 +1,4 @@
+#import "TGDialogPresentation.h"
 #import "TGDatePickerDialog.h"
 #import "TGLocalization.h"
 
@@ -24,7 +25,7 @@
     [alert setAccessoryView:accessory];
     [alert addButtonWithTitle:actionTitle ? actionTitle : @"OK"];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, nil) != NSAlertFirstButtonReturn) {
         return nil;
     }
     return [[[picker dateValue] retain] autorelease];

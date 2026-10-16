@@ -545,6 +545,7 @@
                                         inCellFrame:cellFrame
                                             atPoint:tablePoint];
     if (mediaItem) {
+        [self prepareAquaPhotoPreviewForMessage:(TGMessageItem *)item mediaItem:mediaItem gridSender:nil];
         [self openMediaPreviewForMediaItem:mediaItem];
         return;
     }

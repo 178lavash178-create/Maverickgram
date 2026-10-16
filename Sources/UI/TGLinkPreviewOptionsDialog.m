@@ -1,3 +1,4 @@
+#import "TGDialogPresentation.h"
 #import "TGLinkPreviewOptionsDialog.h"
 #import "TGLocalization.h"
 
@@ -56,7 +57,7 @@
     [alert setAccessoryView:accessory];
     [alert addButtonWithTitle:TGLoc(@"composer.linkPreview.send")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, nil) != NSAlertFirstButtonReturn) {
         return nil;
     }
 

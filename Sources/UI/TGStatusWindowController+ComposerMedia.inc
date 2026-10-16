@@ -446,7 +446,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         [alert setInformativeText:([safeDescriptors count] > 1 ? [NSString stringWithFormat:@"%@. Sending may take a while.", TGSummarizeAttachmentDescriptors(safeDescriptors)] : [NSString stringWithFormat:@"%@ is %@. Sending may take a while.", descriptor.fileName, [descriptor readableSize]])];
         [alert addButtonWithTitle:TGLoc(@"send")];
         [alert addButtonWithTitle:TGLoc(@"cancel")];
-        if ([alert runModal] != NSAlertFirstButtonReturn) {
+        if (TGRunAlert(alert, self.window) != NSAlertFirstButtonReturn) {
             return;
         }
     }
@@ -1441,7 +1441,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [alert setInformativeText:[NSString stringWithFormat:@"Remove %@ from your installed sticker sets?", setTitle]];
     [alert addButtonWithTitle:@"Remove"];
     [alert addButtonWithTitle:@"Cancel"];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, self.window) != NSAlertFirstButtonReturn) {
         [setID release];
         return;
     }
@@ -2651,7 +2651,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [panel setCanChooseDirectories:NO];
     [panel setAllowsMultipleSelection:YES];
     [panel setAllowedFileTypes:[TGAttachmentDescriptor supportedOpenPanelTypes]];
-    NSInteger result = [panel runModal];
+    NSInteger result = TGRunFilePanel(panel, self.window);
     if (result != NSOKButton) {
         [self requestComposerRefocus];
         return;
@@ -2764,7 +2764,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [accessory addSubview:errorField];
     [alert setAccessoryView:accessory];
 
-    NSInteger result = [alert runModal];
+    NSInteger result = TGRunAlert(alert, self.window);
     if (result != NSAlertFirstButtonReturn) {
         [self requestComposerRefocus];
         return;
@@ -3032,7 +3032,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [panel setAllowsMultipleSelection:NO];
     [panel setAllowedFileTypes:[NSArray arrayWithObjects:@"mp4", @"m4v", @"mov", nil]];
     [panel setTitle:TGLoc(@"share.videoNote.title")];
-    if ([panel runModal] != NSFileHandlingPanelOKButton || [[panel URLs] count] == 0) {
+    if (TGRunFilePanel(panel, self.window) != NSFileHandlingPanelOKButton || [[panel URLs] count] == 0) {
         [self requestComposerRefocus];
         return;
     }
@@ -3653,7 +3653,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [alert setInformativeText:warning];
     [alert addButtonWithTitle:TGLoc(@"message.retrySend")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, self.window) != NSAlertFirstButtonReturn) {
         return;
     }
 

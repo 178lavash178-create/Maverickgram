@@ -169,6 +169,10 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
         NSBeep();
         return;
     }
+    if (TGInterfaceDesignIsAqua()) {
+        [self openAquaChatInfo:sender];
+        return;
+    }
     if ([self.selectedChatTypeSummary isEqualToString:@"Secret"]) {
         [[self.chatInfoWindowController window] close];
         self.chatInfoWindowController = [[[TGChatInfoWindowController alloc]
@@ -313,7 +317,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
                                [selectedItem title] ? [selectedItem title] : TGLoc(@"settings.sessions.unknownDevice")]];
     [alert addButtonWithTitle:TGLoc(@"settings.sessions.terminate")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, self.window) != NSAlertFirstButtonReturn) {
         return;
     }
 
@@ -990,7 +994,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
     [alert addButtonWithTitle:TGLoc(@"about.channel.open.browser")];
     [alert addButtonWithTitle:TGLoc(@"common.cancel")];
 
-    NSInteger result = [alert runModal];
+    NSInteger result = TGRunAlert(alert, self.window);
     if (result == NSAlertSecondButtonReturn) {
         [self.aboutWindow orderOut:nil];
         [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:TGChannelURLString]];
@@ -1044,7 +1048,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
                 [fallback setInformativeText:TGLoc(@"about.channel.open.browserFallback")];
                 [fallback addButtonWithTitle:TGLoc(@"about.channel.open.browser")];
                 [fallback addButtonWithTitle:TGLoc(@"common.cancel")];
-                if ([fallback runModal] == NSAlertFirstButtonReturn) {
+                if (TGRunAlert(fallback, self.window) == NSAlertFirstButtonReturn) {
                     [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:TGChannelURLString]];
                 }
             }

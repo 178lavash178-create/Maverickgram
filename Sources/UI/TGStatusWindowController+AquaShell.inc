@@ -107,7 +107,7 @@
     NSError *error = nil;
     if (!TGRequestInterfaceDesignChange(identifier, [self window], &error)) {
         [self.interfaceDesignPopUpButton selectItemAtIndex:TGInterfaceDesignIsAqua() ? 1 : 0];
-        if (error) [[NSAlert alertWithError:error] runModal];
+        if (error) TGRunAlert([NSAlert alertWithError:error], self.window);
     }
 }
 
@@ -124,7 +124,7 @@
     BOOL ready = [self.currentAuthState isEqualToString:@"ready"];
     BOOL chats = ready && [self.activeSection isEqualToString:TGSectionChats];
     for (NSView *view in [NSArray arrayWithObjects:self.aquaToolbarView, self.aquaSearchButton, self.aquaDownloadsButton, self.workshopDrawerButton, nil]) [view setHidden:!ready];
-    [self.aquaFooterView setHidden:(!chats || self.chatNavigationClosed || self.mediaCenterVisible)];
+    [self.aquaFooterView setHidden:(!chats || self.chatNavigationClosed || self.mediaCenterVisible || [self aquaChatInfoReplacesConversation])];
     for (NSButton *button in self.navigationButtons) [button setHidden:!ready];
     [self.aquaFolderHeaderButton setHidden:!chats];
     [self.aquaFolderEditButton setHidden:(!chats || [self aquaUsesExternalFolderDrawer])];
@@ -148,11 +148,11 @@
     NSRect sidebar = [self.sidebarPanelView frame];
     CGFloat sidebarWidth = NSWidth(sidebar);
     BOOL showingChats = [self.activeSection isEqualToString:TGSectionChats];
-    BOOL composerVisible = showingChats && !self.chatNavigationClosed && !self.mediaCenterVisible;
+    BOOL composerVisible = showingChats && !self.chatNavigationClosed && !self.mediaCenterVisible && ![self aquaChatInfoReplacesConversation];
     CGFloat footerHeight = TGAquaFooterHeight(composerVisible, [self.sendTextFieldBackgroundView frame]);
     [self.aquaToolbarView setFrame:NSMakeRect(0, height-54, width, 54)];
     CGFloat conversationX = NSMaxX(sidebar) + 6.0;
-    [self.aquaFooterView setFrame:NSMakeRect(conversationX, 0, MAX(0, width-conversationX), footerHeight)];
+    [self.aquaFooterView setFrame:NSMakeRect(conversationX, 0, MAX(0, NSWidth([self.conversationPanelView frame])), footerHeight)];
     [self.aquaFooterView setDividerX:0];
     // Chrome is behind the live controls, not an overlay over the composer.
     [content addSubview:self.aquaFooterView positioned:NSWindowAbove relativeTo:nil];

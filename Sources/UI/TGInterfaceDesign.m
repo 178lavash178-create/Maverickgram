@@ -1,3 +1,4 @@
+#import "TGDialogPresentation.h"
 #import "TGInterfaceDesign.h"
 #import "TGLocalization.h"
 #include <unistd.h>
@@ -193,7 +194,7 @@ BOOL TGRequestInterfaceDesignChange(NSString *identifier, NSWindow *parentWindow
     [alert addButtonWithTitle:TGInterfaceText(@"Нет",@"Не",@"No")];
     [[[alert buttons] objectAtIndex:1] setKeyEquivalent:@"\e"];
     if (parentWindow) { [parentWindow makeKeyAndOrderFront:nil]; }
-    if ([alert runModal]!=NSAlertFirstButtonReturn) { return NO; }
+    if (TGRunAlert(alert, parentWindow)!=NSAlertFirstButtonReturn) { return NO; }
     TGInterfaceRestartRequest *request=[[[TGInterfaceRestartRequest alloc] initWithIdentifier:identifier] autorelease];
     if (![request prepareForBundlePath:[[NSBundle mainBundle] bundlePath] error:error]) { return NO; }
     if (![request stagePreference:error]) { [request disarm]; return NO; }

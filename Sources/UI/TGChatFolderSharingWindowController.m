@@ -1,3 +1,4 @@
+#import "TGDialogPresentation.h"
 #import "TGChatFolderSharingWindowController.h"
 
 #import "../Core/TGTDLibClient+ChatFolders.h"
@@ -371,7 +372,7 @@
     [[field cell] setPlaceholderString:TGLoc(@"folders.links.name.placeholder")];
     [alert setAccessoryView:field];
     [[alert window] makeFirstResponder:field];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, [self window]) != NSAlertFirstButtonReturn) {
         return nil;
     }
     return [[field stringValue] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
@@ -457,7 +458,7 @@
     [alert setInformativeText:TGLoc(@"folders.links.delete.text")];
     [alert addButtonWithTitle:TGLoc(@"delete")];
     [alert addButtonWithTitle:TGLoc(@"cancel")];
-    if ([alert runModal] != NSAlertFirstButtonReturn) {
+    if (TGRunAlert(alert, [self window]) != NSAlertFirstButtonReturn) {
         return;
     }
     TGTDLibClient *client = self.client;
