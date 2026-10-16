@@ -1,3 +1,5 @@
+#import "TGChatListSelectionAppearance.h"
+
 @interface TGChatSearchResultsTableView : NSTableView
 @end
 
@@ -22,7 +24,12 @@
     NSRect rowRect = NSInsetRect([self rectOfRow:row], 4.0, 3.0);
     if (NSIntersectsRect(rowRect, clipRect)) {
         NSBezierPath *rowPath = [NSBezierPath bezierPathWithRoundedRect:rowRect xRadius:7.0 yRadius:7.0];
-        TGThemeDrawGroupedCardInPath(rowPath, rowRect, [self isFlipped]);
+        if (TGInterfaceDesignIsAqua() && [[self selectedRowIndexes] containsIndex:(NSUInteger)row]) {
+            [TGListSelectionBackground() set];
+            [rowPath fill];
+        } else {
+            TGThemeDrawGroupedCardInPath(rowPath, rowRect, [self isFlipped]);
+        }
         [TGClassicTableGridColor() set];
         [rowPath setLineWidth:1.0];
         [rowPath stroke];
@@ -40,7 +47,7 @@
         return;
     }
     NSBezierPath *selectedPath = [NSBezierPath bezierPathWithRoundedRect:rowRect xRadius:7.0 yRadius:7.0];
-    [TGClassicSelectedRowColor() set];
+    [TGListSelectionBackground() set];
     [selectedPath fill];
     [TGClassicNavigationSelectedStrokeColor(0.62) set];
     [selectedPath setLineWidth:1.0];
@@ -63,6 +70,13 @@
     }
 
     BOOL selected = [self isHighlighted];
+    if (TGInterfaceDesignIsAqua() && [controlView isKindOfClass:[NSTableView class]]) {
+        // This table owns its rounded highlight and disables native selection
+        // drawing, so AppKit does not reliably highlight its data cell.
+        NSTableView *table = (NSTableView *)controlView;
+        NSInteger row = [table rowAtPoint:NSMakePoint(NSMidX(cellFrame), NSMidY(cellFrame))];
+        selected = row >= 0 && [[table selectedRowIndexes] containsIndex:(NSUInteger)row];
+    }
     BOOL flipped = [controlView isFlipped];
     NSRect avatarRect = NSMakeRect(NSMinX(cellFrame) + 9.0,
                                    NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 34.0) / 2.0),
@@ -73,8 +87,8 @@
 
     CGFloat textX = NSMaxX(avatarRect) + 11.0;
     CGFloat textWidth = MAX(40.0, NSMaxX(cellFrame) - textX - 12.0);
-    NSColor *titleColor = selected ? TGClassicHeaderTextColor(1.0) : TGClassicCardInkColor();
-    NSColor *detailColor = selected ? TGClassicHeaderDetailTextColor(0.95) : TGClassicCardMutedInkColor();
+    NSColor *titleColor = selected ? (TGInterfaceDesignIsAqua() ? TGListSelectionForeground() : TGClassicHeaderTextColor(1.0)) : TGClassicCardInkColor();
+    NSColor *detailColor = selected ? (TGInterfaceDesignIsAqua() ? TGListSelectionForeground() : TGClassicHeaderDetailTextColor(0.95)) : TGClassicCardMutedInkColor();
     NSDictionary *titleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                      [NSFont boldSystemFontOfSize:12.5], NSFontAttributeName,
                                      titleColor, NSForegroundColorAttributeName,

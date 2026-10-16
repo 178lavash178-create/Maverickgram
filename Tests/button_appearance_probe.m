@@ -142,9 +142,21 @@ static void CheckCell(NSString *theme, Class cellClass, NSString *title, TGButto
 int main(int argc, const char **argv) {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     BOOL aquaSecondaryOnly=(argc>1 && strcmp(argv[1],"--aqua-secondary")==0);
-    if (aquaSecondaryOnly) [[NSUserDefaults standardUserDefaults] setVolatileDomain:[NSDictionary dictionaryWithObject:@"aqua" forKey:TGInterfaceDesignDefaultsKey] forName:NSArgumentDomain];
+    BOOL aquaControlsOnly=(argc>1 && strcmp(argv[1],"--aqua-controls")==0);
+    if (aquaSecondaryOnly || aquaControlsOnly) [[NSUserDefaults standardUserDefaults] setVolatileDomain:[NSDictionary dictionaryWithObject:@"aqua" forKey:TGInterfaceDesignDefaultsKey] forName:NSArgumentDomain];
     if (!TGIconAssetImageNamed(@"chat")) { fprintf(stderr, "Bundle must contain the approved Resources/Icons assets.\n"); return 2; }
     IconRects = [[NSMutableArray alloc] init];
+    if (aquaControlsOnly) {
+        TGSetActiveThemeIdentifier(TGThemeIdentifierVKBlue);
+        for(NSUInteger highlighted=0;highlighted<2;highlighted++) for(NSUInteger enabled=0;enabled<2;enabled++) for(NSUInteger flipped=0;flipped<2;flipped++) {
+            CheckCell(@"aqua",[TGPrimaryTextButtonCell class],@"Continue",TGButtonSurfaceEnamel,NSMakeSize(120,32),YES,highlighted,enabled,flipped,NO);
+            CheckCell(@"aqua",[TGSecondaryTextButtonCell class],@"Edit profile",TGButtonSurfaceSecondary,NSMakeSize(120,32),NO,highlighted,enabled,flipped,NO);
+            CheckCell(@"aqua",[TGHeaderIconButtonCell class],@"search",TGButtonSurfaceEnamel,NSMakeSize(32,32),YES,highlighted,enabled,flipped,NO);
+            CheckCell(@"aqua",[TGMediaPlaybackButtonCell class],@"play",TGButtonSurfaceEnamel,NSMakeSize(32,32),YES,highlighted,enabled,flipped,NO);
+        }
+        printf("Aqua shared controls: %lu actual primary/secondary/header/playback renders, normal/pressed/disabled,both orientations; minimum contrast %.2f,%lu failures.\n",(unsigned long)checks,worstSurface,(unsigned long)failures);
+        [IconRects release];[pool drain];return failures?1:0;
+    }
     if (aquaSecondaryOnly) {
         TGSetActiveThemeIdentifier(TGThemeIdentifierVKBlue);
         for(NSUInteger highlighted=0;highlighted<2;highlighted++) for(NSUInteger enabled=0;enabled<2;enabled++) for(NSUInteger flipped=0;flipped<2;flipped++) {

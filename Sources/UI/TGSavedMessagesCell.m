@@ -1,3 +1,4 @@
+#import "TGChatListSelectionAppearance.h"
 #import "TGSavedMessagesCell.h"
 #import "TGTheme.h"
 #import "TGThemeContrast.h"
@@ -32,10 +33,10 @@ static NSMutableSet *TGSavedMessagesPendingImagePaths(void) {
     NSString *imagePath = [[row objectForKey:@"image_path"] isKindOfClass:[NSString class]]
         ? [row objectForKey:@"image_path"] : nil;
     BOOL highlighted = [self isHighlighted];
-    NSColor *surface = highlighted ? TGClassicSelectedRowColor() : TGClassicTablePaperColor();
+    NSColor *surface = highlighted ? TGListSelectionBackground() : TGClassicTablePaperColor();
     [surface set]; NSRectFill(cellFrame);
-    NSColor *titleColor = TGThemeReadableInk(highlighted ? TGClassicSelectedRowTextColor() : TGClassicInkColor(), surface, 4.5);
-    NSColor *detailColor = TGThemeReadableInk(highlighted ? TGClassicSelectedRowTextColor() : TGClassicMutedInkColor(), surface, 4.5);
+    NSColor *titleColor = TGThemeReadableInk(highlighted ? TGListSelectionForeground() : TGClassicInkColor(), surface, 4.5);
+    NSColor *detailColor = TGThemeReadableInk(highlighted ? TGListSelectionForeground() : TGClassicMutedInkColor(), surface, 4.5);
 
     NSMutableParagraphStyle *singleLine = [[[NSMutableParagraphStyle alloc] init] autorelease];
     [singleLine setLineBreakMode:NSLineBreakByTruncatingTail];

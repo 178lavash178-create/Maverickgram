@@ -35,7 +35,7 @@
     if (self.iconOnly) {
         BOOL hasBadge = [self.badgeText length] > 0;
         CGFloat iconX = floor(NSMidX(frame) - 10.0);
-        TGDrawTemplateIconAsset(self.iconAssetName ? self.iconAssetName : @"settings", NSMakeRect(iconX, floor(NSMidY(frame)-10),20,20), ink, [self isEnabled] ? 1 : 0.55, [view isFlipped]);
+        TGDrawTemplateIconAsset(self.iconAssetName ? self.iconAssetName : @"settings", NSMakeRect(iconX, floor(NSMidY(frame)-10),20,20), ink, 1.0, [view isFlipped]);
         if (hasBadge) {
             NSDictionary *badgeAttrs = [NSDictionary dictionaryWithObjectsAndKeys:[NSFont boldSystemFontOfSize:10], NSFontAttributeName, [NSColor whiteColor], NSForegroundColorAttributeName, nil];
             NSString *badgeText = [self.badgeText length] > 3 ? @"99+" : self.badgeText;
@@ -90,8 +90,21 @@
         CGFloat groupWidth = imageSide+6.0+titleWidth;
         CGFloat groupX = floor(NSMidX(titleRect)-groupWidth/2.0);
         NSRect imageRect = NSMakeRect(groupX, floor(NSMidY(rect)-imageSide/2.0), imageSide, imageSide);
-        [image drawInRect:imageRect fromRect:NSZeroRect operation:NSCompositeSourceOver
-                 fraction:[self isEnabled] ? 1.0 : 0.55 respectFlipped:[view isFlipped] hints:nil];
+        // Only explicit monochrome templates follow the label's state ink.
+        // Callers keep full-color artwork by leaving AppKit's template flag off.
+        BOOL templateImage=[image isTemplate];
+        if (templateImage) {
+            [NSGraphicsContext saveGraphicsState];
+            CGContextRef context=(CGContextRef)[[NSGraphicsContext currentContext] graphicsPort];
+            CGContextBeginTransparencyLayer(context,NULL);
+            [image drawInRect:imageRect fromRect:NSZeroRect operation:NSCompositeSourceOver
+                     fraction:1.0 respectFlipped:[view isFlipped] hints:nil];
+            [ink set];NSRectFillUsingOperation(imageRect,NSCompositeSourceIn);
+            CGContextEndTransparencyLayer(context);[NSGraphicsContext restoreGraphicsState];
+        } else {
+            [image drawInRect:imageRect fromRect:NSZeroRect operation:NSCompositeSourceOver
+                     fraction:[self isEnabled] ? 1.0 : 0.55 respectFlipped:[view isFlipped] hints:nil];
+        }
         titleRect.origin.x = groupX+imageSide+6.0;
         titleRect.size.width = titleWidth;
     }

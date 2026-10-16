@@ -2,11 +2,17 @@
 #import "TGInterfaceDesign.h"
 #import "TGTheme.h"
 
-// Scope this finish to chat rows: folders and other selected controls retain
-// their own approved material. The cobalt stays dark enough for white text.
-static inline NSColor *TGChatListSelectionBackground(void) {
+// Explicit blue list selections pair their surface with opaque white text in
+// Aqua. Keep other controls and all Classic materials on their existing path.
+static inline NSColor *TGListSelectionBackground(void) {
     return TGInterfaceDesignIsAqua() ? TGColorFromHex(0x2D73C4) : TGClassicSelectedRowColor();
 }
-static inline NSColor *TGChatListSelectionForeground(void) {
+static inline NSColor *TGListSelectionForeground(void) {
     return TGInterfaceDesignIsAqua() ? [NSColor whiteColor] : TGClassicSelectedRowTextColor();
+}
+static inline NSColor *TGChatListSelectionBackground(void) {
+    return TGListSelectionBackground();
+}
+static inline NSColor *TGChatListSelectionForeground(void) {
+    return TGListSelectionForeground();
 }

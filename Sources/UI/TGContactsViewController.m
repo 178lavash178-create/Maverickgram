@@ -1,3 +1,4 @@
+#import "TGChatListSelectionAppearance.h"
 #import "TGContactsViewController.h"
 
 #import "../Core/TGTDLibClient.h"
@@ -44,9 +45,9 @@ static NSString *TGContactsSubtitle(NSDictionary *contact) {
 
     BOOL highlighted = [self isHighlighted];
     BOOL flipped = [controlView isFlipped];
-    if (highlighted) { [TGClassicSelectedRowColor() set]; NSRectFill(cellFrame); }
-    NSColor *ink = highlighted ? TGClassicSelectedRowTextColor() : TGClassicCardInkColor();
-    NSColor *muted = highlighted ? TGClassicSelectedRowTextColor() : TGClassicCardMutedInkColor();
+    if (highlighted) { [TGListSelectionBackground() set]; NSRectFill(cellFrame); }
+    NSColor *ink = highlighted ? TGListSelectionForeground() : TGClassicCardInkColor();
+    NSColor *muted = highlighted ? TGListSelectionForeground() : TGClassicCardMutedInkColor();
     NSRect avatarRect = NSMakeRect(NSMinX(cellFrame) + 10.0,
                                    NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 34.0) / 2.0),
                                    34.0,

@@ -71,7 +71,9 @@
         [title release];
     }
     [self installAquaTextCellOnButton:self.attachPhotoButton accented:NO];
-    [self.attachPhotoButton setImage:TGIconAssetImageNamed(@"attach")];
+    NSImage *attachmentTemplate=[[TGIconAssetImageNamed(@"attach") copy] autorelease];
+    [attachmentTemplate setTemplate:YES];
+    [self.attachPhotoButton setImage:attachmentTemplate];
     [self installAquaTextCellOnButton:self.sendMessageButton accented:YES];
     [(TGPanelView *)self.settingsPanelView setHeaderHidden:YES];
     [self.chatScrollSurfaceView setSquareEdges:YES];

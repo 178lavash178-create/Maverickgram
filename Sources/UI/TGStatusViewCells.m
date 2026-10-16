@@ -489,7 +489,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
     if ([dateTitle length] > 0) {
         NSDictionary *dateAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                         [NSFont boldSystemFontOfSize:11.5], NSFontAttributeName,
-                                        TGClassicSelectedRowTextColor(), NSForegroundColorAttributeName,
+                                        TGListSelectionForeground(), NSForegroundColorAttributeName,
                                         nil];
         NSSize titleSize = [dateTitle sizeWithAttributes:dateAttributes];
         CGFloat pillWidth = MIN(NSWidth(cellFrame) - 28.0, MAX(82.0, ceil(titleSize.width) + 24.0));
@@ -500,7 +500,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
         NSBezierPath *pillPath = [NSBezierPath bezierPathWithRoundedRect:pillRect
                                                                  xRadius:11.5
                                                                  yRadius:11.5];
-        [TGClassicSelectedRowColor() set];
+        [TGListSelectionBackground() set];
         [pillPath fill];
         NSRect textRect = NSMakeRect(NSMinX(pillRect) + 10.0,
                                      NSMidY(pillRect) - floor(titleSize.height / 2.0) - 1.0,

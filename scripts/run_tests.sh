@@ -104,6 +104,7 @@ BUTTON_PLIST
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/button_appearance_probe.m Sources/UI/TGStatusButtonCells.m Sources/UI/TGLocalization.m Sources/UI/TGTheme.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGAquaAppearance.m Sources/UI/TGVisualWorldThemeSpec.m -framework Cocoa -o "$BUTTON_APP/Contents/MacOS/button-probe"
 HOME="$TEST_HOME" "$BUTTON_APP/Contents/MacOS/button-probe"
 HOME="$TEST_HOME" "$BUTTON_APP/Contents/MacOS/button-probe" --aqua-secondary
+HOME="$TEST_HOME" "$BUTTON_APP/Contents/MacOS/button-probe" --aqua-controls
 
 echo "== Asynchronous animated image loader =="
 "$CLANG" "${COMPILE_FLAGS[@]}" \
@@ -591,3 +592,9 @@ HOME="$TEST_HOME" "$AUXILIARY_APP/Contents/MacOS/probe" aqua
 HOME="$TEST_HOME" "$AUXILIARY_APP/Contents/MacOS/probe" classic
 
 "$PYTHON_BIN" Tests/aqua_chat_row_selection_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+
+# Paired foregrounds on actual Aqua selection/pressed/disabled backgrounds.
+"$PYTHON_BIN" Tests/aqua_avatar_contrast_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$PYTHON_BIN" Tests/aqua_list_selection_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_control_foreground_probe.m Sources/UI/TGAquaShellViews.m Sources/UI/TGStatusButtonCells.m Sources/UI/TGButtonAppearance.m Sources/UI/TGIconDrawing.m Sources/UI/TGTheme.m Sources/UI/TGAquaAppearance.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGLocalization.m -framework Cocoa -o "$AUXILIARY_APP/Contents/MacOS/probe"
+HOME="$TEST_HOME" "$AUXILIARY_APP/Contents/MacOS/probe"

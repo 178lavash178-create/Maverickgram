@@ -1,3 +1,4 @@
+#import "TGChatListSelectionAppearance.h"
 @interface TGChatFolderListCell : TGRepresentedObjectCell
 @end
 
@@ -12,9 +13,9 @@
     }
 
     BOOL highlighted = [self isHighlighted];
-    NSColor *surface=highlighted ? TGClassicSelectedRowColor() : TGClassicTablePaperColor();
+    NSColor *surface=highlighted ? TGListSelectionBackground() : TGClassicTablePaperColor();
     [surface setFill]; NSRectFill(cellFrame);
-    NSColor *titleColor=TGThemeReadableInk(highlighted ? TGClassicSelectedRowTextColor() : TGClassicCardInkColor(),surface,4.5);
+    NSColor *titleColor=TGThemeReadableInk(highlighted ? TGListSelectionForeground() : TGClassicCardInkColor(),surface,4.5);
     NSColor *detailColor=TGThemeReadableInk(highlighted ? titleColor : TGClassicCardMutedInkColor(),surface,4.5);
     NSRect iconRect = NSMakeRect(NSMinX(cellFrame) + 8.0,
                                  NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 18.0) / 2.0),
@@ -63,9 +64,9 @@
         return;
     }
     BOOL highlighted = [self isHighlighted];
-    NSColor *surface=highlighted ? TGClassicSelectedRowColor() : TGClassicTablePaperColor();
+    NSColor *surface=highlighted ? TGListSelectionBackground() : TGClassicTablePaperColor();
     [surface setFill]; NSRectFill(cellFrame);
-    NSColor *titleColor=TGThemeReadableInk(highlighted ? TGClassicSelectedRowTextColor() : TGClassicCardInkColor(),surface,4.5);
+    NSColor *titleColor=TGThemeReadableInk(highlighted ? TGListSelectionForeground() : TGClassicCardInkColor(),surface,4.5);
     NSColor *detailColor=TGThemeReadableInk(highlighted ? titleColor : TGClassicCardMutedInkColor(),surface,4.5);
     NSRect avatarRect = NSMakeRect(NSMinX(cellFrame) + 5.0,
                                    NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 28.0) / 2.0),

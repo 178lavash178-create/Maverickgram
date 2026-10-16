@@ -120,12 +120,18 @@ void TGDrawAvatarImageInRect(NSImage *image, NSString *title, NSRect rect, BOOL 
         TGDrawImageInRect(image, rect, drawingInFlippedView);
         [NSGraphicsContext restoreGraphicsState];
     } else {
-        [(selected ? TGClassicSelectedRowTextColor() : TGAvatarColorForTitle(title)) set];
+        BOOL aqua=TGInterfaceDesignIsAqua();
+        /* Selecting a row must not replace an avatar's colored identity with
+         * selected text white: its initials would become white on white. */
+        NSColor *avatarFill=(aqua || !selected) ? TGAvatarColorForTitle(title) : TGClassicSelectedRowTextColor();
+        NSColor *initialInk=[NSColor colorWithCalibratedWhite:1.0 alpha:0.96];
+        if (aqua) initialInk=TGThemeReadableInk(initialInk,avatarFill,4.5);
+        [avatarFill set];
         [avatarPath fill];
         NSString *initials = TGInitialsForTitle(title);
         NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                     [NSFont boldSystemFontOfSize:10.0], NSFontAttributeName,
-                                    [NSColor colorWithCalibratedWhite:1.0 alpha:0.96], NSForegroundColorAttributeName,
+                                    initialInk, NSForegroundColorAttributeName,
                                     nil];
         NSSize textSize = [initials sizeWithAttributes:attributes];
         NSRect textRect = NSMakeRect(NSMidX(rect) - floor(textSize.width / 2.0),
