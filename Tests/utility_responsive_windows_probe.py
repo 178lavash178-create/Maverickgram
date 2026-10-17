@@ -77,6 +77,16 @@ int main(int argc,const char **argv){NSAutoreleasePool *p=[[NSAutoreleasePool al
      for(NSString *kind in [NSArray arrayWithObjects:@"supergroup",@"secret",nil]){
       [info setValue:[NSDictionary dictionaryWithObjectsAndKeys:kind,@"kind",@"Synthetic group",@"title",@"Synthetic description",@"description",[NSDictionary dictionaryWithObject:@"01234567 89ABCDEF 01234567 89ABCDEF 01234567 89ABCDEF 01234567 89ABCDEF" forKey:@"key_fingerprint"],@"secret_chat",nil] forKey:@"chatSummary"];
       [info renderSummary];[info updateControls];CheckRoot([w contentView]);
+      if([kind isEqual:@"supergroup"]){
+       NSPopUpButton *role=V(info,@"rolePopUpButton");NSMenuItem *item=[role itemAtIndex:1];NSString *original=[[item title] copy];
+       // A real wider native menu label exercises the same intrinsic sizing
+       // difference seen on Mavericks (163 pt versus the former fixed154).
+       [item setTitle:@"Synthetic administrator role"];[role selectItemAtIndex:1];[info renderSummary];
+       CGFloat nativeWidth=[[role cell] cellSize].width;Require(nativeWidth>154,"native stress label exceeds the former fixed role width");
+       Require(NSWidth([role frame])>=nativeWidth,"production role layout follows actual native popup intrinsic width");
+       Require(NSMinX([V(info,@"applyRoleButton") frame])==[width doubleValue]-150&&fabs(NSMaxX([role frame])+8-NSMinX([V(info,@"applyRoleButton") frame]))<1,"wider role popup keeps the Apply column fixed with an eight point gap");
+       CheckRoot([w contentView]);[item setTitle:original];[original release];[role selectItemAtIndex:0];[info layoutResponsiveViews];
+      }
      }
     }else CheckRoot([w contentView]);
     const char *preview=getenv("TG_UTILITY_RESPONSIVE_PREVIEW_DIR");

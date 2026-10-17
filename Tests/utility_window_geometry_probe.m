@@ -4,6 +4,10 @@
 #include "../Sources/UI/TGUtilityWindowGeometry.inc"
 #include <stdio.h>
 static NSUInteger checks;
+@interface TGFlippedGeometryRoot : NSView @end
+@implementation TGFlippedGeometryRoot
+- (BOOL)isFlipped {return YES;}
+@end
 static void Require(BOOL condition,const char *message) {
     checks++; if(!condition){fprintf(stderr,"Utility geometry: %s\n",message);exit(1);}
 }
@@ -13,7 +17,7 @@ static NSWindow *Window(BOOL resizable,BOOL flipped) {
         backing:NSBackingStoreBuffered defer:NO] autorelease];
     [window setReleasedWhenClosed:NO];
     if(resizable)[window setMinSize:NSMakeSize(650,550)];
-    (void)flipped;
+    if(flipped)[window setContentView:[[[TGFlippedGeometryRoot alloc] initWithFrame:[[window contentView] bounds]] autorelease]];
     [[window contentView] setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
     NSButton *last=[[[NSButton alloc] initWithFrame:NSMakeRect(580,8,100,28)] autorelease];
     [last setTitle:@"Last action"];[[window contentView] addSubview:last];
@@ -29,8 +33,8 @@ int main(void) {
         Require(NSWidth(result)>0&&NSHeight(result)>0,"fit keeps positive dimensions");
         Require(NSEqualRects(result,TGUtilityWindowFrameFittingVisibleFrame(result,screen)),"fit is idempotent");
     }
-    for(NSUInteger resizing=0;resizing<2;resizing++) {
-        NSWindow *window=Window(resizing,NO);NSView *natural=[[window contentView] retain];
+    for(NSUInteger resizing=0;resizing<2;resizing++)for(NSUInteger flipped=0;flipped<2;flipped++) {
+        NSWindow *window=Window(resizing,flipped);NSView *natural=[[window contentView] retain];
         NSSize size=[natural bounds].size;NSUInteger mask=[natural autoresizingMask];
         NSRect small=NSMakeRect(-800,30,480,360),large=NSMakeRect(0,30,1440,1000);
         for(NSUInteger cycle=0;cycle<3;cycle++) {
@@ -40,6 +44,7 @@ int main(void) {
             Require(TGUtilityWindowContentView(window)==natural,"controller obtains original natural root");
             Require(NSEqualSizes([natural bounds].size,size),"small screen never compresses fixed-form content");
             NSScrollView *scroll=(NSScrollView *)[window contentView];
+            Require(fabs(NSMinY([[scroll contentView] bounds])-(flipped?0:MAX(0,NSHeight([natural bounds])-NSHeight([[scroll contentView] bounds]))))<1,"natural document opens at its top edge");
             NSView *last=[[natural subviews] lastObject];[last scrollRectToVisible:[last bounds]];
             Require(NSIntersectsRect([[scroll contentView] bounds],[last frame]),"trailing action remains reachable by scrolling");
             TGFitUtilityWindowToVisibleFrame(window,small);

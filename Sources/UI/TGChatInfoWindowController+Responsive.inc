@@ -6,13 +6,16 @@
     // control when the user narrows the window.
     [self.membersLabel setFrame:NSMakeRect(38,h-218,w-76,18)];
     [TGUtilityResponsiveView(self.responsiveLayout,@"autoDeleteLabel") setFrame:NSMakeRect(38,h-250,128,18)];
-    [self.autoDeletePopUpButton setFrame:NSMakeRect(174,h-256,152,28)];
-    [self.applyAutoDeleteButton setFrame:NSMakeRect(338,h-256,MIN(158,w-372),28)];
+    CGFloat timerWidth=MAX(152,ceil([[self.autoDeletePopUpButton cell] cellSize].width));
+    CGFloat timerActionX=174+timerWidth+12;
+    [self.autoDeletePopUpButton setFrame:NSMakeRect(174,h-256,timerWidth,28)];
+    [self.applyAutoDeleteButton setFrame:NSMakeRect(timerActionX,h-256,MIN(158,w-34-timerActionX),28)];
     [self.memberScrollView setFrame:NSMakeRect(34,190,w-68,MAX(36,h-454))];
     CGFloat contactWidth=MAX(160,w-278);
     [self.contactPopUpButton setFrame:NSMakeRect(34,150,contactWidth,28)];
     [self.addButton setFrame:NSMakeRect(46+contactWidth,150,104,28)];
-    [self.rolePopUpButton setFrame:NSMakeRect(w-312,112,154,28)];
+    CGFloat roleWidth=MAX(154,ceil([[self.rolePopUpButton cell] cellSize].width));
+    [self.rolePopUpButton setFrame:NSMakeRect(w-158-roleWidth,112,roleWidth,28)];
     [self.applyRoleButton setFrame:NSMakeRect(w-150,112,116,28)];
     CGFloat secretTextWidth=w-224;
     [self.secretStateField setFrame:NSMakeRect(190,h-292,secretTextWidth,22)];

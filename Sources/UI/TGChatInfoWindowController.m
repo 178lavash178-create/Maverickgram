@@ -569,6 +569,9 @@ static NSImage *TGSecretChatKeyImage(NSData *keyHashData) {
         [[self.contactPopUpButton lastItem] setRepresentedObject:[contact objectForKey:@"user_id"]];
     }
     [self updateControls];
+    // AppKit's native popup title/indicator metrics differ across supported
+    // systems. Measure after rebuilding the group/secret timer menu.
+    [self layoutResponsiveViews];
 }
 
 - (void)reloadChatInfo {
