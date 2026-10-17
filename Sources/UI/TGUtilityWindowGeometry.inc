@@ -76,8 +76,12 @@ void TGFitUtilityWindowToVisibleFrame(NSWindow *window, NSRect visibleFrame) {
         [viewport setDrawsBackground:YES]; [viewport setBackgroundColor:[NSColor windowBackgroundColor]];
         viewport.originalAutoresizingMask = [root autoresizingMask];
         [root retain];
-        [root setAutoresizingMask:NSViewNotSizable]; [viewport setDocumentView:root];
-        [window setContentView:viewport]; [root setFrameSize:naturalSize];
+        [root setAutoresizingMask:NSViewNotSizable];
+        // Older AppKit removes its previous content view from its superview
+        // during replacement. Install the viewport before adopting that view
+        // as its document, or10.9 detaches the document we just attached.
+        [window setContentView:viewport]; [viewport setDocumentView:root];
+        [root setFrameSize:naturalSize];
         [root release];
     }
     if (!overflow && [root isKindOfClass:[TGUtilityOverflowScrollView class]]) {
