@@ -6,6 +6,22 @@
     [field setTextColor:[NSColor colorWithCalibratedWhite:0.18 alpha:1]];[field setStringValue:TGLoc(key)];
     return field;
 }
+- (void)setAquaStorageTotalText:(NSString *)totalText {
+    NSString *heading=[[NSString stringWithFormat:TGLoc(@"storage.total"),@""]
+        stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    // Explicit hierarchy avoids leaving the unit orphaned on a third line.
+    NSString *value=[totalText stringByReplacingOccurrencesOfString:@" " withString:@"\u00a0"];
+    CGFloat available=MAX(1,NSWidth([self.subtitleField bounds])-4),pointSize=15;
+    while(pointSize>10 && [value sizeWithAttributes:[NSDictionary dictionaryWithObject:
+          [NSFont boldSystemFontOfSize:pointSize] forKey:NSFontAttributeName]].width>available) pointSize-=0.5;
+    NSColor *ink=[self.subtitleField textColor];
+    NSDictionary *valueAttributes=[NSDictionary dictionaryWithObjectsAndKeys:
+        [NSFont boldSystemFontOfSize:pointSize],NSFontAttributeName,ink,NSForegroundColorAttributeName,nil];
+    NSMutableAttributedString *text=[[[NSMutableAttributedString alloc]
+        initWithString:[NSString stringWithFormat:@"%@\n%@",heading,value] attributes:valueAttributes] autorelease];
+    [text addAttribute:NSFontAttributeName value:[NSFont systemFontOfSize:11] range:NSMakeRange(0,[heading length])];
+    [self.subtitleField setAttributedStringValue:text];
+}
 - (void)applyAquaStorageCell:(NSButtonCell *)cell toButton:(NSButton *)button {
     [cell setButtonType:NSMomentaryPushInButton];[cell setTarget:[button target]];
     [cell setAction:[button action]];[cell setEnabled:[button isEnabled]];

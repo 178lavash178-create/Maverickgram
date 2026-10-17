@@ -255,6 +255,7 @@ static NSColor *TGStorageRowSeparatorColor(void) {
 @property (nonatomic, retain) NSArray *aquaSectionFields;
 - (void)configureAquaStorageViews;
 - (void)layoutAquaStorageViews;
+- (void)setAquaStorageTotalText:(NSString *)totalText;
 @property (nonatomic, retain) NSTextField *titleField;
 @property (nonatomic, retain) NSTextField *subtitleField;
 @property (nonatomic, retain) TGStoragePieChartView *chartView;
@@ -558,7 +559,8 @@ static NSColor *TGStorageRowSeparatorColor(void) {
     if (self.aquaRowsView) [self.hintField setToolTip:[self.hintField stringValue]];
     NSString *totalText = [[self class] displayStringForBytes:total];
     [self.chartView setCenterText:(TGInterfaceDesignIsAqua() ? @"" : totalText)];
-    [self.subtitleField setStringValue:[NSString stringWithFormat:TGLoc(@"storage.total"), totalText]];
+    if (TGInterfaceDesignIsAqua()) [self setAquaStorageTotalText:totalText];
+    else [self.subtitleField setStringValue:[NSString stringWithFormat:TGLoc(@"storage.total"), totalText]];
 
     NSArray *values = [NSArray arrayWithObjects:
                        [NSNumber numberWithLongLong:files],
