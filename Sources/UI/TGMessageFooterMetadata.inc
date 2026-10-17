@@ -35,7 +35,7 @@ static void TGDrawMessageFooterIndicators(TGMessageItem *item, NSRect timeRect, 
     if ([views length]) {
         NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys:TGChatMessageMetaFont(),NSFontAttributeName,ink,NSForegroundColorAttributeName,nil];
         CGFloat width = ceil([views sizeWithAttributes:attributes].width);
-        [views drawInRect:NSMakeRect(NSMinX(remaining)-width-7.0,NSMinY(timeRect),width,NSHeight(timeRect)) withAttributes:attributes];
+        [views drawInRect:NSMakeRect(NSMinX(remaining)-width-7.0,NSMinY(remaining),width,NSHeight(remaining)) withAttributes:attributes];
     }
 }
 

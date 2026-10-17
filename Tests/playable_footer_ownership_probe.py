@@ -19,6 +19,10 @@ harness=r'''
 #import "TGAccessibilitySupport.h"
 #import "TGTranscriptMotion.h"
 static NSMutableArray *PaintedStrings,*PaintedFrames;
+static NSBitmapImageRep *ViewerInkMask;
+static NSString *ViewerInkLabel;
+static CGAffineTransform ViewerInkTransform;
+static BOOL CapturingViewerInk;
 @interface NSString (TGSingleFooterProbe)
 - (void)tgSingleFooterDrawInRect:(NSRect)rect withAttributes:(NSDictionary *)attributes;
 @end
@@ -26,6 +30,19 @@ static NSMutableArray *PaintedStrings,*PaintedFrames;
 - (void)tgSingleFooterDrawInRect:(NSRect)rect withAttributes:(NSDictionary *)attributes {
  if(PaintedStrings){[PaintedStrings addObject:self];[PaintedFrames addObject:[NSValue valueWithRect:rect]];}
  [self tgSingleFooterDrawInRect:rect withAttributes:attributes];
+ if(ViewerInkMask && !CapturingViewerInk && [self isEqual:ViewerInkLabel]) {
+  CapturingViewerInk=YES;
+  NSGraphicsContext *originalContext=[NSGraphicsContext currentContext];
+  ViewerInkTransform=CGContextGetCTM((CGContextRef)[originalContext graphicsPort]);
+  [NSGraphicsContext saveGraphicsState];
+  NSGraphicsContext *maskContext=[NSGraphicsContext graphicsContextWithBitmapImageRep:ViewerInkMask];
+  CGContextConcatCTM((CGContextRef)[maskContext graphicsPort],ViewerInkTransform);
+  [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithGraphicsPort:[maskContext graphicsPort] flipped:[originalContext isFlipped]]];
+  // Paint the exact production call into a transparent mask as well, allowing
+  // ink bounds to distinguish the upper count line from the timestamp line.
+  [self tgSingleFooterDrawInRect:rect withAttributes:attributes];
+  [NSGraphicsContext restoreGraphicsState];CapturingViewerInk=NO;
+ }
 }
 @end
 void TGAccessibilityConfigureContent(id element,NSString *text){(void)element;(void)text;}
@@ -59,6 +76,8 @@ int main(int argc,const char **argv){NSSetUncaughtExceptionHandler(UnexpectedExc
   FooterHost *host=[[[FooterHost alloc] initWithFrame:NSMakeRect(0,0,cellWidth,800)] autorelease];host.flipped=flipped;
   NSBitmapImageRep *bitmap=[[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:cellWidth pixelsHigh:800 bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSCalibratedRGBColorSpace bytesPerRow:0 bitsPerPixel:0] autorelease];
   memset([bitmap bitmapData],0,[bitmap bytesPerRow]*800);
+  ViewerInkMask=[[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:cellWidth pixelsHigh:800 bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSCalibratedRGBColorSpace bytesPerRow:0 bitsPerPixel:0] autorelease];
+  memset([ViewerInkMask bitmapData],0,[ViewerInkMask bytesPerRow]*800);ViewerInkLabel=[NSString stringWithFormat:TGLoc(@"message.views.format"),@"3"];
   [NSGraphicsContext saveGraphicsState];NSGraphicsContext *context=[NSGraphicsContext graphicsContextWithBitmapImageRep:bitmap];[NSGraphicsContext setCurrentContext:context];
   NSAffineTransform *transform=[NSAffineTransform transform];if(flipped){[transform translateXBy:0 yBy:800];[transform scaleXBy:1 yBy:-1];}[transform concat];[NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithGraphicsPort:[context graphicsPort] flipped:flipped]];
   // Warm the one-time font/asset metric before measuring footer ownership.
@@ -74,6 +93,21 @@ int main(int argc,const char **argv){NSSetUncaughtExceptionHandler(UnexpectedExc
    if(!NSContainsRect(container,painted))fprintf(stderr,"paint bounds %s level%ld width%.0f blocks%lu reaction%lu flip%lu: %s in %s\n",[type UTF8String],(long)level,cellWidth,(unsigned long)blocks,(unsigned long)reaction,(unsigned long)flipped,[NSStringFromRect(painted) UTF8String],[NSStringFromRect(container) UTF8String]);
    Require(NSContainsRect(container,painted),@"actual timestamp/readership paint stays within computed cell at minimum width and larger text sizes");
   }
+  CGFloat metadataWidth=reaction?(blocks?MAX(40.0,cellWidth-86.0):NSWidth(container)-20.0):NSWidth(container)-24.0;
+  CGFloat wrappedHeight=TGMessageFooterWrappedHeightForItem(item,metadataWidth);
+  if(wrappedHeight>0.0) {
+   NSRect timePaint=[[PaintedFrames objectAtIndex:[PaintedStrings indexOfObject:TGShortTimeStringFromDateValue(item.date)]] rectValue];
+   NSRect viewPaint=[[PaintedFrames objectAtIndex:[PaintedStrings indexOfObject:ViewerInkLabel]] rectValue];
+   NSRect upperLine=viewPaint;upperLine.origin.y=NSMinY(timePaint)+(flipped?-wrappedHeight:wrappedHeight);
+   NSRect expected=NSRectFromCGRect(CGRectApplyAffineTransform(NSRectToCGRect(upperLine),ViewerInkTransform));
+   expected.origin.y=800-NSMaxY(expected); // NSBitmapImageRep rows start at the top.
+   NSInteger minX=cellWidth,minY=800,maxX=-1,maxY=-1;const unsigned char *mask=[ViewerInkMask bitmapData];NSInteger stride=[ViewerInkMask bytesPerRow];NSInteger alphaIndex=([ViewerInkMask bitmapFormat]&NSAlphaFirstBitmapFormat)?0:3;
+   for(NSInteger y=0;y<800;y++)for(NSInteger x=0;x<(NSInteger)cellWidth;x++)if(mask[y*stride+x*4+alphaIndex]>=64){minX=MIN(minX,x);maxX=MAX(maxX,x);minY=MIN(minY,y);maxY=MAX(maxY,y);}
+   NSRect inkRect=NSMakeRect(minX,minY,maxX-minX+1,maxY-minY+1);
+   Require(maxX>=minX && maxY>=minY,@"wrapped views produce actual nonempty font ink");
+   if(!NSContainsRect(NSInsetRect(expected,-1,-1),inkRect))fprintf(stderr,"wrapped mask %s level%ld width%.0f blocks%lu reaction%lu flip%lu time%s views%s expected%s ink%s\n",[type UTF8String],(long)level,cellWidth,(unsigned long)blocks,(unsigned long)reaction,(unsigned long)flipped,[NSStringFromRect(timePaint) UTF8String],[NSStringFromRect(viewPaint) UTF8String],[NSStringFromRect(expected) UTF8String],[NSStringFromRect(inkRect) UTF8String]);
+   Require(NSContainsRect(NSInsetRect(expected,-1,-1),inkRect),@"actual views ink is on the reserved upper count line, not on timestamp/pin line");
+  }
   if(TGMessageItemIsNonVisualPlayableMedia(item)) {
    NSUInteger timeIndex=[PaintedStrings indexOfObject:TGShortTimeStringFromDateValue(item.date)];NSRect timePaint=[[PaintedFrames objectAtIndex:timeIndex] rectValue];
    NSRect pinAndTime=timePaint;pinAndTime.origin.x-=16;pinAndTime.size.width+=16+TGOutgoingStatusDotsWidthForItem(item)+5;
@@ -85,7 +119,7 @@ int main(int argc,const char **argv){NSSetUncaughtExceptionHandler(UnexpectedExc
   }
   NSUInteger ink=0;const unsigned char *pixels=[bitmap bitmapData];for(NSUInteger i=3;i<[bitmap bytesPerRow]*800;i+=4)if(pixels[i]>64)ink++;
   Require(ink>100,@"complete production cell and playback content produce a real nonempty raster");
-  [PaintedStrings removeAllObjects];[PaintedFrames removeAllObjects];[casePool drain];
+  [PaintedStrings removeAllObjects];[PaintedFrames removeAllObjects];ViewerInkMask=nil;ViewerInkLabel=nil;[casePool drain];
  }
  [PaintedStrings release];[PaintedFrames release];PaintedStrings=nil;PaintedFrames=nil;method_exchangeImplementations(original,traced);
  printf("Playable footer ownership %s PASS: %lu actual cell/media timestamp/readership paint-count and raster checks.\n",aqua?"Aqua":"Classic",(unsigned long)checks);[pool drain];return 0;}
