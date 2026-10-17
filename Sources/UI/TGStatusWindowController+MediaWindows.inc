@@ -821,7 +821,8 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
         TGGroupedCardView *tile = [[[TGGroupedCardView alloc] initWithFrame:NSMakeRect(tileX, tileY, tileWidth, tileHeight)] autorelease];
         [self.mediaCenterResultsView addSubview:tile];
 
-        NSRect previewRect = NSMakeRect(8.0, 8.0, tileWidth - 16.0, 86.0);
+        BOOL imageFirst = TGInterfaceDesignIsAqua();
+        NSRect previewRect = NSMakeRect(8.0, 8.0, tileWidth - 16.0, imageFirst ? tileHeight - 16.0 : 86.0);
         [self ensureMediaCenterHighQualityThumbnailForItem:item];
         NSImage *thumbnail = [self mediaCenterThumbnailForItem:item];
         if (thumbnail) {
@@ -829,10 +830,10 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
             [imageView setImage:thumbnail];
             [imageView setImageScaling:NSImageScaleProportionallyUpOrDown];
             [imageView setImageFrameStyle:NSImageFrameNone];
-            if (TGInterfaceDesignIsAqua()) [imageView setAutoresizingMask:NSViewWidthSizable];
+            if (TGInterfaceDesignIsAqua()) [imageView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
             [tile addSubview:imageView];
         } else {
-            NSTextField *typeField = [self labelWithFrame:NSMakeRect(10.0, 32.0, tileWidth - 20.0, 24.0)
+            NSTextField *typeField = [self labelWithFrame:NSMakeRect(10.0, imageFirst ? floor(NSMidY(previewRect) - 12.0) : 32.0, tileWidth - 20.0, 24.0)
                                                      text:TGMediaCenterTypeTitleForItem(item)
                                                      font:[NSFont boldSystemFontOfSize:13.0]];
             [typeField setAlignment:NSCenterTextAlignment];
@@ -841,27 +842,29 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
         }
         [self addMediaCenterThumbnailSpinnerForItem:item toView:tile frame:previewRect];
 
-        NSString *titleText = TGMediaCenterTitleForItem(item);
-        NSTextField *title = [self labelWithFrame:NSMakeRect(8.0, 99.0, tileWidth - 16.0, 18.0)
-                                             text:titleText
-                                             font:[NSFont boldSystemFontOfSize:11.0]];
-        [[title cell] setLineBreakMode:NSLineBreakByTruncatingTail];
-        if (TGInterfaceDesignIsAqua()) [title setAutoresizingMask:NSViewWidthSizable];
-        [tile addSubview:title];
+        NSString *details = [NSString stringWithFormat:@"%@ · %@", TGMediaCenterReadableSize(TGMediaCenterSizeForItem(item)), TGMediaCenterDateStringForItem(item)];
+        if (!imageFirst) {
+            NSString *titleText = TGMediaCenterTitleForItem(item);
+            NSTextField *title = [self labelWithFrame:NSMakeRect(8.0, 99.0, tileWidth - 16.0, 18.0)
+                                                 text:titleText
+                                                 font:[NSFont boldSystemFontOfSize:11.0]];
+            [[title cell] setLineBreakMode:NSLineBreakByTruncatingTail];
+            if (TGInterfaceDesignIsAqua()) [title setAutoresizingMask:NSViewWidthSizable];
+            [tile addSubview:title];
 
-        NSString *details = [NSString stringWithFormat:@"%@ · %@",
-                             TGMediaCenterReadableSize(TGMediaCenterSizeForItem(item)),
-                             TGMediaCenterDateStringForItem(item)];
-        NSTextField *subtitle = [self labelWithFrame:NSMakeRect(8.0, 116.0, tileWidth - 16.0, 16.0)
-                                                text:details
-                                                font:[NSFont systemFontOfSize:10.0]];
-        [[subtitle cell] setLineBreakMode:NSLineBreakByTruncatingTail];
-        [self applyMutedLabelStyle:subtitle];
-        if (TGInterfaceDesignIsAqua()) [subtitle setAutoresizingMask:NSViewWidthSizable];
-        [tile addSubview:subtitle];
+            NSTextField *subtitle = [self labelWithFrame:NSMakeRect(8.0, 116.0, tileWidth - 16.0, 16.0)
+                                                    text:details
+                                                    font:[NSFont systemFontOfSize:10.0]];
+            [[subtitle cell] setLineBreakMode:NSLineBreakByTruncatingTail];
+            [self applyMutedLabelStyle:subtitle];
+            if (TGInterfaceDesignIsAqua()) [subtitle setAutoresizingMask:NSViewWidthSizable];
+            [tile addSubview:subtitle];
+        }
 
         NSButton *button = [[[TGPointingHandButton alloc] initWithFrame:[tile bounds]] autorelease];
         [button setTitle:@""];
+        [button setToolTip:[NSString stringWithFormat:@"%@\n%@", TGMediaCenterTitleForItem(item), details]];
+        TGAccessibilityConfigureContent(button, [NSString stringWithFormat:@"%@. %@", TGMediaCenterTypeTitleForItem(item), details]);
         [button setBordered:NO];
         [button setTransparent:YES];
         [button setTarget:self];

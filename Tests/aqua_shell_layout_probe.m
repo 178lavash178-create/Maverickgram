@@ -94,10 +94,9 @@ int main(void) {
         NSRect area=NSMakeRect(0,200,width,36);
         TGAquaChatHeaderGeometry header=TGAquaChatHeaderFrames(area,forum);
         AssertContained(header.title,area); AssertContained(header.compose,area);
-        AssertContained(header.search,area); AssertContained(header.refresh,area);
+        assert(NSEqualRects(header.search,NSZeroRect)); AssertContained(header.refresh,area);
         assert(NSMaxX(header.title)+8<=NSMinX(header.compose));
-        assert(NSMaxX(header.compose)+6==NSMinX(header.search));
-        assert(NSMaxX(header.search)+6==NSMinX(header.refresh));
+        assert(NSMaxX(header.compose)+6==NSMinX(header.refresh));
         if(forum) {
             AssertContained(header.back,area);
             assert(NSMinX(header.back)==8 && NSMaxX(header.back)+8==NSMinX(header.title));

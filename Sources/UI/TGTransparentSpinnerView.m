@@ -176,13 +176,14 @@
     NSInteger index = 0;
 
     for (index = 0; index < count; index++) {
-        NSInteger age = (index - self.animationStep + count) % count;
+        NSInteger age = (self.animationStep - index + count) % count;
         CGFloat alpha = 1.0 - ((CGFloat)age / (CGFloat)count);
         if (alpha < 0.16) {
             alpha = 0.16;
         }
         CGFloat angle = ((CGFloat)index / (CGFloat)count) * 2.0 * (CGFloat)M_PI;
-        CGFloat sinValue = sin(angle);
+        // Increasing steps travel clockwise in screen coordinates on either host orientation.
+        CGFloat sinValue = ([self isFlipped] ? 1.0 : -1.0) * sin(angle);
         CGFloat cosValue = cos(angle);
         NSPoint start = NSMakePoint(center.x + (cosValue * innerRadius), center.y + (sinValue * innerRadius));
         NSPoint end = NSMakePoint(center.x + (cosValue * radius), center.y + (sinValue * radius));

@@ -212,9 +212,16 @@ int main(void) {
      if([button action]==@selector(previousAquaPhoto:))previous=button;
      if([button action]==@selector(nextAquaPhoto:))next=button;
      if([button action]==@selector(toggleAquaPhotoFullscreen:))fullscreen=button;
-    } else if([child isKindOfClass:[NSTextField class]] && ![child isHidden]) counter=(NSTextField *)child;
+    } else if([child isKindOfClass:[NSTextField class]] && ![child isHidden] && header!=[viewer footerView]) counter=(NSTextField *)child;
    }
    assert(previous && next && fullscreen && counter);checks++;
+   [viewer setMediaTitle:@"photo.jpg" detail:@"2 KB · 17.10.2026"];
+   NSUInteger metadataCount=0;
+   for(NSView *child in [[viewer footerView] subviews]) if([child isKindOfClass:[NSTextField class]]) {
+    assert(![child isHidden] && NSMaxX([child frame])<NSMinX([owner.mediaPreviewFitButton frame]));
+    assert([(NSTextField *)child textColor]); metadataCount++;
+   }
+   assert(metadataCount==2);checks+=3;
    assert([(TGAquaMediaControlCell *)[previous cell] mirrored] && ![(TGAquaMediaControlCell *)[next cell] mirrored]);checks++;
    [viewer setGalleryIndex:2 count:12];assert([[counter stringValue] isEqual:@"3 / 12"] && [previous isEnabled] && [next isEnabled]);checks++;
    [viewer setGalleryIndex:0 count:12];assert(![previous isEnabled] && [next isEnabled]);checks++;

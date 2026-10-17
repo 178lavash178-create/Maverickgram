@@ -14,3 +14,5 @@ NSDictionary *TGMessageInteractionUpdateSummary(NSDictionary *update, NSDictiona
 BOOL TGApplyMessageInteractionSummaryToItem(TGMessageItem *item, NSDictionary *summary);
 // Search schema fallbacks must prove they returned the requested topic.
 BOOL TGMessageThreadHistoryResponseIsScoped(NSDictionary *response, NSNumber *chatID, NSNumber *threadID, NSString *topicKind);
+
+NSNumber *TGMessageViewCountFromObject(NSDictionary *object);

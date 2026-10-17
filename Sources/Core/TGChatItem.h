@@ -23,6 +23,7 @@
 @property (nonatomic, retain) NSNumber *parentChatID;
 @property (nonatomic, retain) NSNumber *messageThreadID;
 @property (nonatomic, copy) NSString *messageTopicKind;
+@property (nonatomic, copy) NSDictionary *forumTopicActionPermissions;
 
 - (instancetype)initWithChatID:(NSNumber *)chatID
                          title:(NSString *)title

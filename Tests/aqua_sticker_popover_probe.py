@@ -29,6 +29,7 @@ harness=r'''
 #import "TGStatusViewCells.h"
 #import "TGStickerPickerLayout.h"
 #import "TGMessageThumbnailPrefetcher.h"
+#import "TGWindowEventObserver.h"
 #include <assert.h>
 #include <math.h>
 static BOOL Aqua;
@@ -36,6 +37,7 @@ static NSString * const TGSectionChats=@"chats";
 static NSMutableArray *Workers,*Mains;
 static NSUInteger GridRebuilds,RecentLoads,SetLoads,Refreshes,Refocuses,DetailCount;
 static BOOL Busy;
+static NSUInteger HostResizes,HostMoves,HostCloses;
 BOOL TGInterfaceDesignIsAqua(void) { return Aqua; }
 BOOL TGInterfaceAnimationsEnabledForView(NSView *view) { (void)view;return NO; }
 NSString *TGLoc(NSString *key) { return key; }
@@ -110,7 +112,12 @@ __PROPERTIES__
 #define TGTDLibClient MockStickerClient
 @implementation StickerOwner
 __SYNTHESIS__
+- (NSDictionary *)aquaChatSearchState { return nil; }
+- (void)finishAquaChatSearchDismissal {}
 - (NSWindow *)window { return self.hostWindow; }
+- (void)windowDidResize:(NSNotification *)notification { if([notification object]==self.hostWindow)HostResizes++; }
+- (void)windowDidMove:(NSNotification *)notification { if([notification object]==self.hostWindow)HostMoves++; }
+- (void)windowWillClose:(NSNotification *)notification { if([notification object]==self.hostWindow)HostCloses++; }
 - (NSTextField *)labelWithFrame:(NSRect)frame text:(NSString *)text font:(NSFont *)font { NSTextField *field=[[[NSTextField alloc] initWithFrame:frame] autorelease];[field setStringValue:text];[field setFont:font];return field; }
 - (void)applyMutedLabelStyle:(id)view {(void)view;}
 - (void)applyComposerTextFieldStyle:(id)view {(void)view;}
@@ -145,7 +152,7 @@ __LOAD_METHOD__
 @end
 static StickerOwner *Owner(Class ownerClass) {
  StickerOwner *owner=[[[ownerClass alloc] init] autorelease];owner.client=[[[MockStickerClient alloc] init] autorelease];owner.profileUserID=@1;owner.selectedChatID=@7;owner.selectedMessageThreadID=@11;owner.activeSection=TGSectionChats;owner.currentAuthState=@"ready";
- NSRect visible=[[NSScreen mainScreen] visibleFrame];owner.hostWindow=[[[NSWindow alloc] initWithContentRect:NSMakeRect(NSMinX(visible)+30,NSMinY(visible)+30,760,620) styleMask:NSTitledWindowMask|NSClosableWindowMask backing:NSBackingStoreBuffered defer:NO] autorelease];[owner.hostWindow setReleasedWhenClosed:NO];
+ NSRect visible=[[NSScreen mainScreen] visibleFrame];owner.hostWindow=[[[NSWindow alloc] initWithContentRect:NSMakeRect(NSMinX(visible)+30,NSMinY(visible)+30,760,620) styleMask:NSTitledWindowMask|NSClosableWindowMask backing:NSBackingStoreBuffered defer:NO] autorelease];[owner.hostWindow setReleasedWhenClosed:NO];[owner.hostWindow setDelegate:owner];
  owner.conversationPanelView=[[[NSView alloc] initWithFrame:NSMakeRect(240,0,520,570)] autorelease];[[owner.hostWindow contentView] addSubview:owner.conversationPanelView];
  owner.stickerButton=[[[NSButton alloc] initWithFrame:NSMakeRect(650,12,36,30)] autorelease];[[owner.hostWindow contentView] addSubview:owner.stickerButton];[owner.stickerButton setEnabled:YES];
  owner.statusField=[[[NSTextField alloc] initWithFrame:NSZeroRect] autorelease];[owner.hostWindow orderFront:nil];return owner;
@@ -199,7 +206,17 @@ int main(void) {
  [owner sendStickerFromPickerButton:tile];assert([Workers count]==0 && client->sends==1);checks++;
  [owner showStickerPicker:nil];[owner rebuildStickerPickerGrid];tile=[[owner.stickerPickerContentView subviews] objectAtIndex:0];[owner sendStickerFromPickerButton:tile];Flush(Workers);NSString *status=[[owner.statusField stringValue] copy];owner.profileUserID=@2;Flush(Mains);assert([[owner.statusField stringValue] isEqual:status] && Refocuses==1);[status release];checks++;
  [owner invalidateStickerPickerPresentation];assert([owner.stickerPickerItems count]==0 && [owner.stickerPickerStickerSets count]==0 && !owner.stickerPickerSelectedSetID);checks++;
- [owner disposeAquaStickerPicker];assert(![owner aquaStickerPresentationState]);checks++;[[NSNotificationCenter defaultCenter] postNotificationName:NSWindowDidResizeNotification object:owner.hostWindow];
+ /* Each native dismissal must retire only the popover's observer identity,
+  * preserving NSWindow's automatic delegate registrations. */
+ for(NSUInteger cycle=0;cycle<12;cycle++) {
+  [owner showStickerPicker:nil];assert([Popover(owner) isShown]);[owner closeAquaStickerPicker];
+  NSUInteger before=HostResizes;NSSize size=[[owner.hostWindow contentView] bounds].size;
+  [owner.hostWindow setContentSize:NSMakeSize(size.width==760 ? 780:760,size.height)];
+  assert(HostResizes==before+1);checks++;
+  before=HostMoves;[[NSNotificationCenter defaultCenter] postNotificationName:NSWindowDidMoveNotification object:owner.hostWindow];assert(HostMoves==before+1);checks++;
+ }
+ [owner disposeAquaStickerPicker];assert(![owner aquaStickerPresentationState]);checks++;
+ NSUInteger beforeClose=HostCloses;[[NSNotificationCenter defaultCenter] postNotificationName:NSWindowWillCloseNotification object:owner.hostWindow];assert(HostCloses==beforeClose+1);checks++;[[NSNotificationCenter defaultCenter] postNotificationName:NSWindowDidResizeNotification object:owner.hostWindow];
  StickerOwner *pending=Owner([StickerLoadOwner class]);[pending showStickerPicker:nil];assert([Workers count]==1);[pending closeAquaStickerPicker];[pending showStickerPicker:nil];assert([Workers count]==2);checks++;
  void (^oldLoad)(void)=[[[Workers objectAtIndex:0] retain] autorelease];[Workers removeObjectAtIndex:0];oldLoad();Flush(Mains);assert([pending.stickerPickerItems count]==0);checks++;
  Flush(Workers);Flush(Mains);assert([pending.stickerPickerItems count]==1);checks++;
@@ -213,6 +230,6 @@ folder=tempfile.mkdtemp(prefix='telegraphica-sticker-popover-')
 try:
     path=os.path.join(folder,'probe.m');binary=os.path.join(folder,'probe')
     with open(path,'wb') as handle:handle.write(harness.encode('utf-8'))
-    subprocess.check_call(sys.argv[1:]+[path,'-I'+os.path.join(ROOT,'Sources/UI'),'-I'+os.path.join(ROOT,'Sources/Media'),'-framework','Cocoa','-o',binary])
+    subprocess.check_call(sys.argv[1:]+[path,os.path.join(ROOT,'Sources/UI/TGWindowEventObserver.m'),'-I'+os.path.join(ROOT,'Sources/UI'),'-I'+os.path.join(ROOT,'Sources/Media'),'-framework','Cocoa','-o',binary])
     subprocess.check_call([binary])
 finally:shutil.rmtree(folder)

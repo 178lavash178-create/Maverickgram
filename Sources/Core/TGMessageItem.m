@@ -73,6 +73,8 @@ static NSString *TGReactionSummaryByMergingSummaries(NSString *leftSummary, NSSt
 @synthesize failedToSend = _failedToSend;
 @synthesize outgoingRead = _outgoingRead;
 @synthesize pinned = _pinned;
+@synthesize messageViewCount = _messageViewCount;
+@synthesize messageViewerCount = _messageViewerCount;
 @synthesize preview = _preview;
 @synthesize contentType = _contentType;
 @synthesize mediaLocalPath = _mediaLocalPath;
@@ -429,6 +431,8 @@ static NSString *TGReactionSummaryByMergingSummaries(NSString *leftSummary, NSSt
     [copy setFailedToSend:_failedToSend];
     [copy setOutgoingRead:_outgoingRead];
     [copy setPinned:_pinned];
+    [copy setMessageViewCount:_messageViewCount];
+    [copy setMessageViewerCount:_messageViewerCount];
     [copy setContentType:_contentType];
     [copy setMediaLocalPath:_mediaLocalPath];
     [copy setMediaWidth:_mediaWidth];
@@ -546,6 +550,8 @@ static NSString *TGReactionSummaryByMergingSummaries(NSString *leftSummary, NSSt
     [_formattedEntities release];
     [_messageThreadReplyCount release];
     [_commentThreadMessageID release];
+    [_messageViewCount release];
+    [_messageViewerCount release];
     [_retryMessageThreadID release];
     [_retryMessageTopicKind release];
     [_retryText release];

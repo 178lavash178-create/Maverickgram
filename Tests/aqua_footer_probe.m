@@ -6,6 +6,7 @@
 #import "TGThemeContrast.h"
 #import "TGIconAssets.h"
 #import "TGInterfaceDesign.h"
+#import "TGLocalization.h"
 #import "TGReactionChipLayout.h"
 #include <math.h>
 
@@ -174,6 +175,47 @@ static void CheckCommentPresentation(void) {
     }
     TGSetChatMessageTextSizeLevel(TGChatMessageTextSizeNormal);
 }
+static void CheckFooterIndicators(void) {
+    TGMessageItem *item=[[[TGMessageItem alloc] initWithChatID:@1 messageID:@2 date:@1720000000 outgoing:YES preview:@"Pinned body must remain completely free of footer flags."] autorelease];
+    [item setContentType:@"messageText"];
+    Require(TGMessageFooterIndicatorsWidthForItem(item)==0,@"unknown viewer count creates no artificial zero");
+    [item setMessageViewCount:@0];
+    Require(TGMessageFooterIndicatorsWidthForItem(item)==0,@"zero channel aggregate is not invented group readership");
+    [item setMessageViewerCount:@0];
+    Require(TGMessageFooterIndicatorsWidthForItem(item)>0,@"confirmed zero group viewers remain visible");
+    [item setMessageViewerCount:nil];
+    for(NSString *theme in TGThemeIdentifiers()) {
+        TGSetActiveThemeIdentifier(theme);
+        for(NSNumber *value in [NSArray arrayWithObjects:@1,@27,@9999999999LL,nil]) {
+            [item setMessageViewCount:value];[item setPinned:YES];[item setMessageThreadReplyCount:@99];
+            Require(TGMessageFooterIndicatorsWidthForItem(item)>TGMessageReplyIndicatorWidthForItem(item)+16,@"count, pin and replies each reserve width");
+            for(NSNumber *flip in [NSArray arrayWithObjects:@NO,@YES,nil]) {
+                NSRect bubble=TGMessageBubbleRectForItem(item,NSMakeRect(0,0,640,1000),NO);
+                NSRect time=NSMakeRect(NSMaxX(bubble)-80,NSMaxY(bubble)-22,50,14);
+                NSRect indicators=TGMessageFooterIndicatorsRectForTimeRect(item,time);
+                Require(NSContainsRect(bubble,indicators)&&NSMaxX(indicators)==NSMinX(time),@"pin/views/replies fit beside time, never over text");
+                [item setReactionSummary:@"❤️ 1  👍 99"];
+                CGFloat h=TGMessageReactionFooterHeight(item,280);
+                NSRect band=NSMakeRect(0,0,280,h);NSRect reactionTime=TGMessageReactionTimeRect(item,band,[flip boolValue]);
+                NSRect all=NSUnionRect(reactionTime,TGMessageFooterIndicatorsRectForTimeRect(item,reactionTime));
+                all.size.width+=TGOutgoingStatusDotsWidthForItem(item)+5;
+                Require(!NSIsEmptyRect(reactionTime)&&NSContainsRect(band,all),@"reaction footer reserves complete pin/views/replies/time/checks unit");
+                [item setReactionSummary:nil];
+            }
+        }
+    }
+    [item setPinned:NO]; [item setMessageThreadReplyCount:nil]; [item setMessageViewCount:nil];
+    [item setReactionSummary:@"❤️ 1  👍 1"];
+    BOOL countForcesWrap=NO;
+    for (CGFloat width=160;width<=420;width+=1) {
+        [item setMessageViewerCount:nil]; CGFloat without=TGMessageReactionFooterHeight(item,width);
+        [item setMessageViewerCount:@3]; CGFloat with=TGMessageReactionFooterHeight(item,width);
+        if (with>without+1) { countForcesWrap=YES; break; }
+    }
+    Require(countForcesWrap,@"restoring a cached readership count can force a genuine production footer wrap and needs row-height invalidation");
+    TGSetActiveThemeIdentifier(@"vk-blue");
+}
+
 int main(int argc,const char **argv) {
     NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];
     BOOL aqua=argc>1 && strcmp(argv[1],"aqua")==0;
@@ -182,6 +224,9 @@ int main(int argc,const char **argv) {
     TGSetChatMessagesAsBlocksEnabled(NO);
     CheckReactionsBelowBodyAcrossThemes();
     CheckCommentPresentation();
+    NSString *originalLanguage=[[TGLanguageCode() copy] autorelease];
+    for(NSString *language in [NSArray arrayWithObjects:@"ru",@"be",@"en",nil]) {TGSetLanguageCode(language);CheckFooterIndicators();}
+    TGSetLanguageCode(originalLanguage);
     for(NSNumber *outgoing in [NSArray arrayWithObjects:@NO,@YES,nil]) {
         TGMessageItem *item=[[[TGMessageItem alloc] initWithChatID:@1 messageID:@2 date:@1720000000 outgoing:[outgoing boolValue] preview:@"Hi"] autorelease];
         [item setContentType:@"messageText"];

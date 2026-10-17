@@ -284,9 +284,8 @@
         NSNumber *chatID = [self.selectedChatID retain];
         self.messageItemsRepresentFocusedContext = NO;
         self.olderMessagesExhausted = NO;
-        self.messageLoadingIndicatorVisible = YES;
-        [self.messageLoadingSpinner startAnimation:self];
-        [self updateVisibleSection];
+        // The reload owns spinner start and completion, including a queued
+        // refresh when another background request is still in flight.
         [self reloadMessagesForChatID:chatID interactive:NO];
         [chatID release];
         return;
@@ -556,6 +555,7 @@
             [self scrollMessagesToNewestIfAvailable];
         }
         [self performSelector:@selector(scheduleVisibleMessageItemsRead) withObject:nil afterDelay:0.15];
+        [self performSelector:@selector(refreshVisibleMessageViewCounts) withObject:nil afterDelay:0.15];
         return;
     }
 
@@ -577,6 +577,9 @@
         NSNumber *existingIndex = messageID ? [messageIndexesByID objectForKey:messageID] : nil;
         if (existingIndex) {
             TGMessageItem *existingItem = [mergedItems objectAtIndex:[existingIndex unsignedIntegerValue]];
+            // A background history refresh must not discard a lazily fetched
+            // read count or cause a new per-message viewer request.
+            if (![item messageViewerCount]) [item setMessageViewerCount:[existingItem messageViewerCount]];
             NSString *oldReactionSummary = [existingItem reactionSummary] ? [existingItem reactionSummary] : @"";
             NSString *newReactionSummary = [item reactionSummary] ? [item reactionSummary] : @"";
             if (![oldReactionSummary isEqualToString:newReactionSummary]) {
@@ -871,6 +874,7 @@
     [self refreshMediaLoadingSpinnerOverlays];
     [self updateMessageJumpToNewestButtonVisibility];
     [self scheduleVisibleMessageItemsRead];
+    [self refreshVisibleMessageViewCounts];
 
     if (![self.currentAuthState isEqualToString:@"ready"] ||
         !self.selectedChatID ||
@@ -1426,7 +1430,7 @@
                                      [lastReadInboxMessageIDCopy respondsToSelector:@selector(longLongValue)] &&
                                      [lastReadInboxMessageIDCopy longLongValue] > 0);
     NSUInteger unreadCount = self.selectedChatUnreadCount;
-    BOOL shouldShowMessageLoading = (interactive || [self.messageItems count] == 0);
+    BOOL shouldShowMessageLoading = (interactive || navigationForceNewest || [self.messageItems count] == 0);
     NSUInteger messageLoadingGeneration = 0;
     if (shouldShowMessageLoading) {
         messageLoadingGeneration = self.messageLoadingGeneration + 1;

@@ -139,10 +139,9 @@ static NSSize TGAquaStickerPopoverSize(NSSize conversation, NSSize screen, CGFlo
     else [self.stickerPickerStatusField setStringValue:TGLoc(@"stickers.sets.empty")];
 }
 - (void)removeAquaStickerHostObservers {
-    NSMutableDictionary *state=[self aquaStickerPresentationState];NSWindow *window=[state objectForKey:@"host_window"];
-    if (!window) return;
-    NSArray *names=[NSArray arrayWithObjects:NSWindowDidResizeNotification,NSWindowDidMoveNotification,NSWindowWillCloseNotification,NSWindowWillMiniaturizeNotification,NSWindowWillEnterFullScreenNotification,NSWindowDidChangeScreenNotification,nil];
-    for (NSString *name in names) [[NSNotificationCenter defaultCenter] removeObserver:self name:name object:window];
+    NSMutableDictionary *state=[self aquaStickerPresentationState];
+    [(TGWindowEventObserver *)[state objectForKey:@"host_observer"] invalidate];
+    [state removeObjectForKey:@"host_observer"];
     [state removeObjectForKey:@"host_window"];
 }
 - (void)finishAquaStickerPickerDismissal {
@@ -159,9 +158,12 @@ static NSSize TGAquaStickerPopoverSize(NSSize conversation, NSSize screen, CGFlo
     [self scheduleInlineMediaPlaybackRefresh];
 }
 - (void)popoverWillClose:(NSNotification *)notification {
+    if ([notification object]==[[self aquaChatSearchState] objectForKey:@"popover"]) [self finishAquaChatSearchDismissal];
     if ([notification object]==[[self aquaStickerPresentationState] objectForKey:@"popover"]) [self finishAquaStickerPickerDismissal];
 }
 - (void)popoverDidClose:(NSNotification *)notification {
+    NSPopover *searchPopover=[[self aquaChatSearchState] objectForKey:@"popover"];
+    if ([notification object]==searchPopover && ![searchPopover isShown]) [self finishAquaChatSearchDismissal];
     NSPopover *popover=[[self aquaStickerPresentationState] objectForKey:@"popover"];
     /* A late completion of an animated dismissal cannot retire a newly
      * reopened presentation of the same native popover. */
@@ -190,7 +192,8 @@ static NSSize TGAquaStickerPopoverSize(NSSize conversation, NSSize screen, CGFlo
     [self layoutAquaStickerPickerForSize:size];
     [state setObject:[self aquaStickerSelectionContext] forKey:@"context"];[state setObject:window forKey:@"host_window"];
     NSArray *names=[NSArray arrayWithObjects:NSWindowDidResizeNotification,NSWindowDidMoveNotification,NSWindowWillCloseNotification,NSWindowWillMiniaturizeNotification,NSWindowWillEnterFullScreenNotification,NSWindowDidChangeScreenNotification,nil];
-    for (NSString *name in names) [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(aquaStickerHostWindowDidChange:) name:name object:window];
+    TGWindowEventObserver *observer=[[[TGWindowEventObserver alloc] initWithWindow:window names:names target:self action:@selector(aquaStickerHostWindowDidChange:)] autorelease];
+    if (observer) [state setObject:observer forKey:@"host_observer"];
     [popover setAnimates:TGInterfaceAnimationsEnabledForView(anchor)];
     @try { [popover showRelativeToRect:[anchor bounds] ofView:anchor preferredEdge:[anchor isFlipped] ? NSMinYEdge : NSMaxYEdge]; }
     @catch (NSException *exception) { (void)exception;[self closeAquaStickerPicker];return NO; }

@@ -11,6 +11,40 @@
 
 @implementation TGTDLibClient (MessageThreads)
 
+- (NSNumber *)messageViewerCountForChatID:(NSNumber *)chatID messageID:(NSNumber *)messageID timeout:(NSTimeInterval)timeout {
+    if ([chatID longLongValue] == 0 || [messageID longLongValue] <= 0) return nil;
+    if (![[self currentAuthorizationStatePreparingIfNeededWithTimeout:timeout error:NULL] isEqualToString:@"ready"]) return nil;
+    NSDictionary *target = [NSDictionary dictionaryWithObjectsAndKeys:chatID,@"chat_id",messageID,@"message_id",nil];
+    NSMutableDictionary *request = [NSMutableDictionary dictionaryWithDictionary:target];
+    [request setObject:@"getMessageProperties" forKey:@"@type"];
+    NSDictionary *properties = [self sendTDLibRequestAndWaitForExtra:request extraPrefix:@"telegraphica-view-count-properties" timeout:timeout errorCode:149 error:NULL];
+    id capability = [properties objectForKey:@"can_get_viewers"];
+    if (!capability) {
+        // Older TDLib exposes capabilities on the message itself.
+        [request setObject:@"getMessage" forKey:@"@type"];
+        NSDictionary *message = [self sendTDLibRequestAndWaitForExtra:request extraPrefix:@"telegraphica-view-count-message" timeout:timeout errorCode:149 error:NULL];
+        capability = [message objectForKey:@"can_get_viewers"];
+    }
+    if (![capability isKindOfClass:[NSNumber class]] || ![capability boolValue]) return nil;
+    [request setObject:@"getMessageViewers" forKey:@"@type"];
+    NSDictionary *response = [self sendTDLibRequestAndWaitForExtra:request extraPrefix:@"telegraphica-view-count" timeout:timeout errorCode:149 error:NULL];
+    // Modern TDLib supplies viewer records; the 1.8.0 fallback returns Users.
+    // Count the actual unique IDs in either list, never an approximate total.
+    NSString *responseType = [response objectForKey:@"@type"];
+    id viewers = nil;
+    BOOL legacyUsers = [@"users" isEqual:responseType];
+    if ([@"messageViewers" isEqual:responseType]) viewers = [response objectForKey:@"viewers"];
+    else if (legacyUsers) viewers = [response objectForKey:@"user_ids"];
+    if (![viewers isKindOfClass:[NSArray class]]) return nil;
+    NSMutableSet *unique = [NSMutableSet set];
+    for (id viewer in viewers) {
+        id user = (!legacyUsers && [viewer isKindOfClass:[NSDictionary class]]) ? [viewer objectForKey:@"user_id"] : viewer;
+        if (![user isKindOfClass:[NSNumber class]] || [user longLongValue] <= 0) return nil;
+        [unique addObject:user];
+    }
+    return [NSNumber numberWithUnsignedInteger:[unique count]];
+}
+
 - (NSDictionary *)resolveMessageThreadForChatID:(NSNumber *)chatID messageID:(NSNumber *)messageID timeout:(NSTimeInterval)timeout error:(NSError **)error {
     if (![chatID respondsToSelector:@selector(longLongValue)] || [chatID longLongValue] == 0 ||
         ![messageID respondsToSelector:@selector(longLongValue)] || [messageID longLongValue] <= 0) {

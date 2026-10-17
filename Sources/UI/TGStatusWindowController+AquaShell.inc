@@ -53,7 +53,7 @@
     [settings setTarget:self];[settings setTag:3];[[account menu] addItem:settings];
     objc_setAssociatedObject(self,@selector(aquaToolbarAccountButton),account,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [self.aquaToolbarView addSubview:account];
-    NSSearchField *search=[[[NSSearchField alloc] initWithFrame:NSZeroRect] autorelease];
+    NSSearchField *search=[[[TGAquaSearchAnchorField alloc] initWithFrame:NSZeroRect] autorelease];
     [search setTarget:self];[search setAction:@selector(commitAquaToolbarSearch:)];
     [search setFont:[NSFont systemFontOfSize:12]];
     [[search cell] setSendsWholeSearchString:YES];[[search cell] setSendsSearchStringImmediately:NO];
@@ -75,11 +75,11 @@
 - (void)commitAquaToolbarSearch:(id)sender {
     if(![self.currentAuthState isEqualToString:@"ready"]) return;
     NSString *query=[[[sender stringValue] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] copy];
+    [self openChatSearchWindow:sender];
     if([query length]) {
-        [self openChatSearchWindow:sender];
         TGChatSearchPanelView *panel=[self chatSearchPanelView];[panel setQuery:query];
         [self updateChatSearchWindowResults];
-        [self.chatSearchWindow makeFirstResponder:[panel searchField]];
+        [[panel window] makeFirstResponder:[panel searchField]];
         NSTextView *editor=(NSTextView *)[[panel searchField] currentEditor];
         [editor setSelectedRange:NSMakeRange([query length],0)];[sender setStringValue:@""];
     }
