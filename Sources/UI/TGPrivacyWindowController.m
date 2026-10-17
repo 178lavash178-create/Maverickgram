@@ -152,6 +152,18 @@
     [[popup lastItem] setRepresentedObject:value];
 }
 
+- (void)configurePrivacyRuleChoices {
+    [self.rulePopUpButton removeAllItems];
+    [self addPopupItem:TGLoc(@"privacy.rule.everybody") value:@"everybody" toPopup:self.rulePopUpButton];
+    [self addPopupItem:TGLoc(@"privacy.rule.contacts") value:@"contacts" toPopup:self.rulePopUpButton];
+    [self addPopupItem:TGLoc(@"privacy.rule.nobody") value:@"nobody" toPopup:self.rulePopUpButton];
+    [self addPopupItem:TGLoc(@"privacy.rule.custom") value:nil toPopup:self.rulePopUpButton];
+    [[self.rulePopUpButton lastItem] setEnabled:NO];
+    [[self.rulePopUpButton menu] setAutoenablesItems:NO];
+    [self.rulePopUpButton setTarget:self];
+    [self.rulePopUpButton setAction:@selector(ruleChoiceChanged:)];
+}
+
 - (void)buildViews {
     TGUtilityWindowView *root = [[[TGUtilityWindowView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease];
     [root setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
@@ -209,9 +221,7 @@
     [root addSubview:self.settingPopUpButton];
 
     self.rulePopUpButton = [[[NSPopUpButton alloc] initWithFrame:NSMakeRect(246, 560, 106, 28) pullsDown:NO] autorelease];
-    [self addPopupItem:TGLoc(@"privacy.rule.everybody") value:@"everybody" toPopup:self.rulePopUpButton];
-    [self addPopupItem:TGLoc(@"privacy.rule.contacts") value:@"contacts" toPopup:self.rulePopUpButton];
-    [self addPopupItem:TGLoc(@"privacy.rule.nobody") value:@"nobody" toPopup:self.rulePopUpButton];
+    [self configurePrivacyRuleChoices];
     [self.rulePopUpButton setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
     [root addSubview:self.rulePopUpButton];
 
@@ -477,9 +487,10 @@
     (void)sender;
     NSDictionary *summary = [self privacySummaryForSelectedSetting];
     NSString *rule = [summary objectForKey:@"rule"];
+    [self.rulePopUpButton selectItemAtIndex:-1];
     if ([rule isEqualToString:@"custom"]) {
         [self.ruleHintField setStringValue:TGLoc(@"privacy.rules.custom")];
-        [self.rulePopUpButton selectItemAtIndex:-1];
+        [self.rulePopUpButton selectItemAtIndex:3];
     } else {
         [self.ruleHintField setStringValue:TGLoc(@"privacy.rules.help")];
         NSArray *items = [self.rulePopUpButton itemArray];
@@ -520,12 +531,24 @@
     [self updateControls];
 }
 
+- (BOOL)canApplySelectedPrivacyRule {
+    NSString *rule=[[self.rulePopUpButton selectedItem] representedObject];
+    BOOL valid=[rule isKindOfClass:[NSString class]] &&
+        ([rule isEqualToString:@"everybody"] || [rule isEqualToString:@"contacts"] || [rule isEqualToString:@"nobody"]);
+    return !self.loading && [self privacySummaryForSelectedSetting]!=nil && valid;
+}
+
+- (void)ruleChoiceChanged:(id)sender {
+    (void)sender;
+    [self updateControls];
+}
+
 - (void)updateControls {
     BOOL enabled = !self.loading;
     [self.refreshButton setEnabled:enabled];
     [self.settingPopUpButton setEnabled:enabled];
-    [self.rulePopUpButton setEnabled:enabled];
-    [self.applyRuleButton setEnabled:(enabled && [self.rulePopUpButton selectedItem] != nil)];
+    [self.rulePopUpButton setEnabled:(enabled && [self privacySummaryForSelectedSetting]!=nil)];
+    [self.applyRuleButton setEnabled:[self canApplySelectedPrivacyRule]];
     [self.accountTTLPopUpButton setEnabled:enabled];
     [self.autoDeletePopUpButton setEnabled:enabled];
     [self.applyRetentionButton setEnabled:enabled];
@@ -605,6 +628,7 @@
 
 - (void)applyRulePressed:(id)sender {
     (void)sender;
+    if (![self canApplySelectedPrivacyRule]) return;
     NSString *setting = [[[self.settingPopUpButton selectedItem] representedObject] copy];
     NSString *rule = [[[self.rulePopUpButton selectedItem] representedObject] copy];
     TGTDLibClient *client = [self.client retain];
