@@ -89,6 +89,17 @@ int main(int argc,const char **argv){NSAutoreleasePool *p=[[NSAutoreleasePool al
       }
      }
     }else CheckRoot([w contentView]);
+    if(c==admin&&[width integerValue]==600){
+     NSButton *approval=V(admin,@"joinRequestButton");NSPopUpButton *expiry=V(admin,@"expirationPopUpButton");NSString *original=[[approval title] copy];
+     CGFloat initialWidth=NSWidth([approval frame]);NSMutableString *stress=[NSMutableString stringWithString:original];
+     // Use actual native title metrics to reproduce an SDK/font combination
+     // just wider than the former fixed eight-point-gap allocation.
+     CGFloat required=0;for(NSUInteger n=0;n<80;n++){[stress appendString:@" "];[approval setTitle:stress];required=ceil([[approval title] sizeWithAttributes:[NSDictionary dictionaryWithObject:[approval font] forKey:NSFontAttributeName]].width+24);if(required>initialWidth)break;}
+     Require(required>initialWidth,"native approval stress title exceeds its original allocation");[admin layoutResponsiveViews];
+     Require(NSWidth([approval frame])>=required,"approval row measures text and reallocates spacing without clipping");
+     CGFloat gap=NSMinX([approval frame])-NSMaxX([expiry frame]);Require(gap>=4&&gap<8,"compact parameter row keeps a measured four-to-eight point control gap");
+     CheckRoot([w contentView]);[approval setTitle:original];[original release];[admin layoutResponsiveViews];
+    }
     const char *preview=getenv("TG_UTILITY_RESPONSIVE_PREVIEW_DIR");
     if(preview&&aqua&&[lang isEqual:@"ru"]&&[width integerValue]==600){NSView *root=[w contentView];NSBitmapImageRep *bitmap=[root bitmapImageRepForCachingDisplayInRect:[root bounds]];[root cacheDisplayInRect:[root bounds] toBitmapImageRep:bitmap];NSString *path=[[NSString stringWithUTF8String:preview] stringByAppendingPathComponent:[NSStringFromClass([c class]) stringByAppendingString:@".png"]];[[bitmap representationUsingType:NSPNGFileType properties:[NSDictionary dictionary]] writeToFile:path atomically:YES];}
     // Native tables must track the real viewport after narrowing and widening.

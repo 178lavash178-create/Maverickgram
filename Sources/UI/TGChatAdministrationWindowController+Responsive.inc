@@ -19,7 +19,9 @@
         CGFloat expiryWidth=MAX(96,ceil([[self.expirationPopUpButton cell] cellSize].width));
         [self.expirationPopUpButton setFrame:NSMakeRect(34,h-286+lift,expiryWidth,28)];
         [self.memberLimitField setFrame:NSMakeRect(34,h-248+lift,column,24)];
-        [self.joinRequestButton setFrame:NSMakeRect(42+expiryWidth,h-282+lift,column-expiryWidth-8,22)];
+        CGFloat approvalWidth=MAX(TGUtilityResponsiveButtonWidth(self.joinRequestButton,24),ceil([[self.joinRequestButton cell] cellSize].width));
+        CGFloat parameterGap=MAX(4,MIN(8,column-expiryWidth-approvalWidth));
+        [self.joinRequestButton setFrame:NSMakeRect(34+expiryWidth+parameterGap,h-282+lift,column-expiryWidth-parameterGap,22)];
         NSArray *buttons=[NSArray arrayWithObjects:self.createLinkButton,self.copyLinkButton,self.revokeLinkButton,nil];
         for(NSUInteger i=0;i<3;i++)[[buttons objectAtIndex:i] setFrame:NSMakeRect(34+(i%2)*(half+8),h-318+lift-(i/2)*36,half,28)];
         [[self.requestsTableView enclosingScrollView] setFrame:NSMakeRect(rightX,h-318+lift,column,214-lift)];
