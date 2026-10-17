@@ -1299,6 +1299,14 @@
 
         dispatch_async(dispatch_get_main_queue(), ^{
             self.forumTopicRefreshInFlight = NO;
+            // Discovery is complete even when the next message reload queues
+            // behind another request or reuses cached rows without a spinner.
+            // End only this owner before handing off to a possible new owner.
+            if (self.messageLoadingGeneration == topicLoadingGeneration) {
+                self.messageLoadingIndicatorVisible = NO;
+                [self.messageLoadingSpinner stopAnimation:self];
+                [self updateVisibleSection];
+            }
             BOOL topicAutoOpenSuppressed = ([self isForumTopicAutoOpenSuppressedForChatID:chatIDCopy] ||
                                             self.forumTopicNavigationGeneration != forumNavigationGeneration ||
                                             self.chatNavigationClosed);
@@ -1314,10 +1322,6 @@
                     [self appendDetail:[NSString stringWithFormat:@"Forum topics: %@", topicErrorMessage]];
                 }
                 [self reloadMessagesForChatID:chatIDCopy interactive:NO];
-            } else if (self.messageLoadingGeneration == topicLoadingGeneration) {
-                self.messageLoadingIndicatorVisible = NO;
-                [self.messageLoadingSpinner stopAnimation:self];
-                [self updateVisibleSection];
             }
             [topics release];
             [topicErrorMessage release];
