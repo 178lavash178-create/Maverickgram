@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Actual chat-row renderer: stable trailing columns and non-overlapping titles."""
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import os, shutil, subprocess, sys, tempfile
 ROOT=os.path.abspath(os.path.join(os.path.dirname(__file__),os.pardir))
 base_path=os.path.join(ROOT,'Tests/aqua_chat_row_selection_probe.py')
