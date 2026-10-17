@@ -20,8 +20,19 @@
         [self.expirationPopUpButton setFrame:NSMakeRect(34,h-286+lift,expiryWidth,28)];
         [self.memberLimitField setFrame:NSMakeRect(34,h-248+lift,column,24)];
         CGFloat approvalWidth=MAX(TGUtilityResponsiveButtonWidth(self.joinRequestButton,24),ceil([[self.joinRequestButton cell] cellSize].width));
-        CGFloat parameterGap=MAX(4,MIN(8,column-expiryWidth-approvalWidth));
-        [self.joinRequestButton setFrame:NSMakeRect(34+expiryWidth+parameterGap,h-282+lift,column-expiryWidth-parameterGap,22)];
+        BOOL stackParameters=expiryWidth+approvalWidth+4>column;
+        if(stackParameters){
+            // Old AppKit popup indicators can need substantially more room.
+            // Give each parameter a full row instead of squeezing text/gaps.
+            [[self.linksTableView enclosingScrollView] setFrame:NSMakeRect(34,h-160+lift,column,MAX(32,56-lift))];
+            [self.linkNameField setFrame:NSMakeRect(34,h-192+lift,column,24)];
+            [self.memberLimitField setFrame:NSMakeRect(34,h-224+lift,column,24)];
+            [self.expirationPopUpButton setFrame:NSMakeRect(34,h-256+lift,expiryWidth,28)];
+            [self.joinRequestButton setFrame:NSMakeRect(34,h-286+lift,column,22)];
+        }else{
+            CGFloat parameterGap=MAX(4,MIN(8,column-expiryWidth-approvalWidth));
+            [self.joinRequestButton setFrame:NSMakeRect(34+expiryWidth+parameterGap,h-282+lift,column-expiryWidth-parameterGap,22)];
+        }
         NSArray *buttons=[NSArray arrayWithObjects:self.createLinkButton,self.copyLinkButton,self.revokeLinkButton,nil];
         for(NSUInteger i=0;i<3;i++)[[buttons objectAtIndex:i] setFrame:NSMakeRect(34+(i%2)*(half+8),h-318+lift-(i/2)*36,half,28)];
         [[self.requestsTableView enclosingScrollView] setFrame:NSMakeRect(rightX,h-318+lift,column,214-lift)];

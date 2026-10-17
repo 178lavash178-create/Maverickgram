@@ -91,14 +91,34 @@ int main(int argc,const char **argv){NSAutoreleasePool *p=[[NSAutoreleasePool al
     }else CheckRoot([w contentView]);
     if(c==admin&&[width integerValue]==600){
      NSButton *approval=V(admin,@"joinRequestButton");NSPopUpButton *expiry=V(admin,@"expirationPopUpButton");NSString *original=[[approval title] copy];
+     BOOL initiallyStacked=NSMinY([approval frame])<NSMinY([expiry frame])-20;
+     Require(NSWidth([approval frame])>=[[approval cell] cellSize].width,"original approval label fits its real native checkbox indicator");
+     if(!initiallyStacked){
      CGFloat initialWidth=NSWidth([approval frame]);NSMutableString *stress=[NSMutableString stringWithString:original];
      // Use actual native title metrics to reproduce an SDK/font combination
      // just wider than the former fixed eight-point-gap allocation.
      CGFloat required=0;for(NSUInteger n=0;n<80;n++){[stress appendString:@" "];[approval setTitle:stress];required=ceil([[approval title] sizeWithAttributes:[NSDictionary dictionaryWithObject:[approval font] forKey:NSFontAttributeName]].width+24);if(required>initialWidth)break;}
      Require(required>initialWidth,"native approval stress title exceeds its original allocation");[admin layoutResponsiveViews];
      Require(NSWidth([approval frame])>=required,"approval row measures text and reallocates spacing without clipping");
-     CGFloat gap=NSMinX([approval frame])-NSMaxX([expiry frame]);Require(gap>=4&&gap<8,"compact parameter row keeps a measured four-to-eight point control gap");
-     CheckRoot([w contentView]);[approval setTitle:original];[original release];[admin layoutResponsiveViews];
+     BOOL stacked=NSMinY([approval frame])<NSMinY([expiry frame])-20;
+     if(stacked){Require(NSMaxY([approval frame])+4<=NSMinY([expiry frame]),"stacked approval row clears the native expiry popup");}
+     else{CGFloat gap=NSMinX([approval frame])-NSMaxX([expiry frame]);Require(gap>=4&&gap<8,"compact parameter row keeps a measured four-to-eight point control gap");}
+     CheckRoot([w contentView]);
+     }
+     [approval setTitle:original];[original release];[admin layoutResponsiveViews];
+     // Increase a real native menu label enough to cover older AppKit's
+     // larger popup chrome and force the full-width parameter-row fallback.
+     NSMenuItem *expiryItem=[expiry itemAtIndex:0];NSString *expiryTitle=[[expiryItem title] copy];NSMutableString *wideExpiry=[NSMutableString stringWithString:expiryTitle];
+     CGFloat baseExpiry=NSWidth([expiry frame]);CGFloat column=NSWidth([V(admin,@"linkNameField") frame]);
+     CGFloat approvalNeed=MAX(ceil([[approval cell] cellSize].width),ceil([[approval title] sizeWithAttributes:[NSDictionary dictionaryWithObject:[approval font] forKey:NSFontAttributeName]].width+24));
+     CGFloat target=MAX(baseExpiry+15,column-approvalNeed-4+1);
+     for(NSUInteger n=0;n<120&&[[expiry cell] cellSize].width<target;n++){[wideExpiry appendString:@" "];[expiryItem setTitle:wideExpiry];}
+     [admin layoutResponsiveViews];
+     Require([[expiry cell] cellSize].width>=target,"real popup stress includes larger legacy intrinsic chrome metrics");
+     Require(NSMinX([approval frame])==NSMinX([V(admin,@"linkNameField") frame])&&NSWidth([approval frame])==column,"oversized parameter pair reflows approval to full-column row");
+     Require(NSMaxY([approval frame])+4<=NSMinY([expiry frame]),"stacked parameters keep independent vertical hit targets");
+     Require(NSHeight([[V(admin,@"linksTableView") enclosingScrollView] frame])>=32,"stacking retains at least one complete invite row");
+     CheckRoot([w contentView]);[expiryItem setTitle:expiryTitle];[expiryTitle release];[admin layoutResponsiveViews];
     }
     const char *preview=getenv("TG_UTILITY_RESPONSIVE_PREVIEW_DIR");
     if(preview&&aqua&&[lang isEqual:@"ru"]&&[width integerValue]==600){NSView *root=[w contentView];NSBitmapImageRep *bitmap=[root bitmapImageRepForCachingDisplayInRect:[root bounds]];[root cacheDisplayInRect:[root bounds] toBitmapImageRep:bitmap];NSString *path=[[NSString stringWithUTF8String:preview] stringByAppendingPathComponent:[NSStringFromClass([c class]) stringByAppendingString:@".png"]];[[bitmap representationUsingType:NSPNGFileType properties:[NSDictionary dictionary]] writeToFile:path atomically:YES];}
