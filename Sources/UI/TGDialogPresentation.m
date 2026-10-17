@@ -1,5 +1,8 @@
 #import "TGDialogPresentation.h"
 #import "TGInterfaceDesign.h"
+#import <objc/runtime.h>
+
+#include "TGUtilityWindowGeometry.inc"
 
 // Synchronous callers must not outlive their alert, owner window or delegate
 // while AppKit dispatches network callbacks and window-close notifications.

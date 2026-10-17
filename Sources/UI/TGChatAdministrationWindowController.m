@@ -1,3 +1,5 @@
+#import "TGDialogPresentation.h"
+#import "TGUtilityResponsiveLayout.h"
 #import "TGChatAdministrationWindowController.h"
 
 #import "../Core/TGTDLibClient+Administration.h"
@@ -9,6 +11,8 @@
 #import "TGThemeTextField.h"
 
 @interface TGChatAdministrationWindowController () <NSTableViewDataSource, NSTableViewDelegate>
+@property (nonatomic, retain) NSDictionary *responsiveLayout;
+- (void)layoutResponsiveViews;
 @property (nonatomic, retain) TGTDLibClient *client;
 @property (nonatomic, retain) NSNumber *chatID;
 @property (nonatomic, copy) NSString *chatTitle;
@@ -38,6 +42,7 @@
 
 @implementation TGChatAdministrationWindowController
 
+@synthesize responsiveLayout = _responsiveLayout;
 @synthesize client = _client;
 @synthesize chatID = _chatID;
 @synthesize chatTitle = _chatTitle;
@@ -81,12 +86,16 @@
         [[self window] setMinSize:NSMakeSize(820.0, 600.0)];
         [[self window] setMaxSize:NSMakeSize(1100.0, 820.0)];
         [[self window] setReleasedWhenClosed:NO];
+        [[self window] setDelegate:(id)self];
         [self buildViews];
+        TGFitUtilityWindowToVisibleScreen([self window]);
     }
     return self;
 }
 
 - (void)dealloc {
+    [[self window] setDelegate:nil];
+    [_responsiveLayout release];
     [_client release];
     [_chatID release];
     [_chatTitle release];
@@ -303,6 +312,8 @@
     [self.spinner setDisplayedWhenStopped:NO];
     [self.spinner setAutoresizingMask:(NSViewMinXMargin | NSViewMaxYMargin)];
     [root addSubview:self.spinner];
+    self.responsiveLayout=TGUtilityCaptureResponsiveLayout(root,[NSDictionary dictionaryWithObjectsAndKeys:title,@"title",linksCard,@"linksCard",linksTitle,@"linksTitle",requestsCard,@"requestsCard",requestsTitle,@"requestsTitle",eventsCard,@"eventsCard",eventsTitle,@"eventsTitle",slowLabel,@"slowLabel",nil]);
+    [self layoutResponsiveViews];
     [self updateControls];
 }
 
@@ -545,5 +556,7 @@
         return success;
     }];
 }
+
+#include "TGChatAdministrationWindowController+Responsive.inc"
 
 @end

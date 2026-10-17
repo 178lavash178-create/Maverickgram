@@ -135,6 +135,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
         self.downloadManagerWindowController = [[[TGDownloadManagerWindowController alloc] init] autorelease];
     }
     [[self.downloadManagerWindowController window] center];
+    TGFitUtilityWindowToVisibleScreen([self.downloadManagerWindowController window]);
     [self.downloadManagerWindowController showWindow:self];
     [[self.downloadManagerWindowController window] makeKeyAndOrderFront:self];
     [self.downloadManagerWindowController reloadDownloads];
@@ -150,6 +151,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
         self.privacyWindowController = [[[TGPrivacyWindowController alloc] initWithClient:self.client] autorelease];
     }
     [[self.privacyWindowController window] center];
+    TGFitUtilityWindowToVisibleScreen([self.privacyWindowController window]);
     [self.privacyWindowController showWindow:self];
     [[self.privacyWindowController window] makeKeyAndOrderFront:self];
     [self.privacyWindowController reloadPrivacy];
@@ -185,6 +187,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
                                           chatID:self.selectedChatID
                                           title:self.selectedChatTitle] autorelease];
         [[self.chatInfoWindowController window] center];
+        TGFitUtilityWindowToVisibleScreen([self.chatInfoWindowController window]);
         [self.chatInfoWindowController showWindow:self];
         [[self.chatInfoWindowController window] makeKeyAndOrderFront:self];
         [self.chatInfoWindowController reloadChatInfo];
@@ -539,6 +542,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
     [self.activeSessionsRefreshButton setTitle:TGLoc(@"settings.sessions.refresh")];
     [self.activeSessionsTerminateButton setTitle:TGLoc(@"settings.sessions.terminate")];
     [self.activeSessionsWindow center];
+    TGFitUtilityWindowToVisibleScreen(self.activeSessionsWindow);
     [self.activeSessionsWindow makeKeyAndOrderFront:nil];
     [self reloadActiveSessions:nil];
 }
@@ -575,6 +579,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
     NSWindow *profileEditWindow = [self.profileEditWindowController window];
     [profileEditWindow center];
     [NSApp activateIgnoringOtherApps:YES];
+    TGFitUtilityWindowToVisibleScreen(profileEditWindow);
     [profileEditWindow makeKeyAndOrderFront:self];
     [[TGLogger sharedLogger] log:@"Profile editor presented."];
 }
@@ -687,6 +692,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
         [[self.aquaChatBackgroundWindowController window] close];
         self.aquaChatBackgroundWindowController = [[[TGAquaChatBackgroundWindowController alloc]
             initWithAccountID:self.profileUserID chatID:self.selectedChatID chatTitle:self.selectedChatTitle] autorelease];
+        TGFitUtilityWindowToVisibleScreen([self.aquaChatBackgroundWindowController window]);
         [self.aquaChatBackgroundWindowController showWindow:self];
         [[self.aquaChatBackgroundWindowController window] makeKeyAndOrderFront:self];
         return;
@@ -749,6 +755,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
 
     [self selectThemePopUpItemForIdentifier:TGCurrentThemeIdentifier()];
     [self.appearanceWindow center];
+    TGFitUtilityWindowToVisibleScreen(self.appearanceWindow);
     [self.appearanceWindow makeKeyAndOrderFront:nil];
 }
 
@@ -757,6 +764,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
         self.storageUsageWindowController = [[[TGStorageUsageWindowController alloc] initWithClient:self.client] autorelease];
     }
     [self.storageUsageWindowController setSelectedChatID:self.selectedChatID title:self.selectedChatTitle];
+    TGFitUtilityWindowToVisibleScreen([self.storageUsageWindowController window]);
     [self.storageUsageWindowController showWindow:sender];
 }
 
@@ -860,6 +868,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
     NSRange endRange = NSMakeRange([[self.logsWindowDetailsView string] length], 0);
     [self.logsWindowDetailsView scrollRangeToVisible:endRange];
     [self.logsWindow center];
+    TGFitUtilityWindowToVisibleScreen(self.logsWindow);
     [self.logsWindow makeKeyAndOrderFront:nil];
 }
 
@@ -979,6 +988,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
     }
 
     [self.aboutWindow center];
+    TGFitUtilityWindowToVisibleScreen(self.aboutWindow);
     [self.aboutWindow makeKeyAndOrderFront:nil];
 }
 

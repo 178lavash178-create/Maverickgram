@@ -1,3 +1,4 @@
+#import "TGUtilityResponsiveLayout.h"
 #import "TGDialogPresentation.h"
 #import "TGChatFolderSharingWindowController.h"
 
@@ -9,6 +10,8 @@
 #import "TGThemeTextField.h"
 
 @interface TGChatFolderSharingWindowController ()
+@property (nonatomic, retain) NSDictionary *responsiveLayout;
+- (void)layoutResponsiveViews;
 @property (nonatomic, retain) TGTDLibClient *client;
 @property (nonatomic, retain) NSDictionary *folderDefinition;
 @property (nonatomic, copy) NSArray *inviteLinks;
@@ -34,6 +37,7 @@
 
 @implementation TGChatFolderSharingWindowController
 
+@synthesize responsiveLayout = _responsiveLayout;
 @synthesize client = _client;
 @synthesize folderDefinition = _folderDefinition;
 @synthesize inviteLinks = _inviteLinks;
@@ -74,11 +78,14 @@
         [[self window] setReleasedWhenClosed:NO];
         [[self window] setDelegate:self];
         [self buildViews];
+        TGFitUtilityWindowToVisibleScreen([self window]);
     }
     return self;
 }
 
 - (void)dealloc {
+    [[self window] setDelegate:nil];
+    [_responsiveLayout release];
     [[self window] setDelegate:nil];
     [_client release];
     [_folderDefinition release];
@@ -240,6 +247,8 @@
     [self.spinner setControlSize:NSSmallControlSize];
     [self.spinner setDisplayedWhenStopped:NO];
     [root addSubview:self.spinner];
+    self.responsiveLayout=TGUtilityCaptureResponsiveLayout(root,[NSDictionary dictionaryWithObjectsAndKeys:title,@"title",subtitle,@"subtitle",refresh,@"refresh",linksLabel,@"linksLabel",recommendedLabel,@"recommendedLabel",nil]);
+    [self layoutResponsiveViews];
     [self updateControlStates];
 }
 
@@ -511,5 +520,7 @@
     self.requestGeneration++;
     self.loading = NO;
 }
+
+#include "TGChatFolderSharingWindowController+Responsive.inc"
 
 @end

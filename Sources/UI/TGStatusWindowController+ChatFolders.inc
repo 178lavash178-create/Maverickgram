@@ -9,6 +9,7 @@
         [self.chatFolderManagementWindowController setDelegate:self];
     }
     [[self.chatFolderManagementWindowController window] center];
+    TGFitUtilityWindowToVisibleScreen([self.chatFolderManagementWindowController window]);
     [self.chatFolderManagementWindowController showWindow:self];
     [[self.chatFolderManagementWindowController window] makeKeyAndOrderFront:self];
     [NSApp activateIgnoringOtherApps:YES];

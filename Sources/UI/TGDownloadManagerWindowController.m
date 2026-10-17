@@ -1,3 +1,4 @@
+#import "TGDialogPresentation.h"
 #import "TGDownloadManagerWindowController.h"
 
 #import "../Media/TGMediaFileActions.h"
@@ -293,7 +294,7 @@
 - (void)showWindow:(id)sender {
     [self closeCompactPopover];
     [self refreshPresentation];
-    [super showWindow:sender];
+    TGFitUtilityWindowToVisibleScreen([self window]); [super showWindow:sender];
 }
 
 - (void)reloadDownloads {

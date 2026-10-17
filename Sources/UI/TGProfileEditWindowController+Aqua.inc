@@ -19,28 +19,28 @@ static NSButton *TGProfileEditAquaButton(NSString *title, NSRect frame, BOOL pri
     [button setTarget:target]; [button setAction:action]; return button;
 }
 - (void)buildAquaProfileEditor {
-    TGAquaUtilityWindowView *content = [[[TGAquaUtilityWindowView alloc] initWithFrame:NSMakeRect(0,0,500,540)] autorelease];
-    [content setHeaderHeight:56.0]; [content setFooterHeight:64.0];
+    TGAquaUtilityWindowView *content = [[[TGAquaUtilityWindowView alloc] initWithFrame:NSMakeRect(0,0,500,500)] autorelease];
+    [content setHeaderHeight:52.0]; [content setFooterHeight:54.0];
     [[self window] setContentView:content];
-    NSTextField *heading = TGProfileEditAquaLabel(TGLoc(@"profile.edit.title"),NSMakeRect(24,502,452,24));
-    [heading setFont:[NSFont boldSystemFontOfSize:16.0]]; [content addSubview:heading];
+    NSTextField *heading = TGProfileEditAquaLabel(TGLoc(@"profile.edit.title"),NSMakeRect(24,466,452,20));
+    [heading setFont:[NSFont boldSystemFontOfSize:14.0]]; [content addSubview:heading];
 
-    _avatarView = [[TGProfileAvatarView alloc] initWithFrame:NSMakeRect(24,382,72,72)];
+    _avatarView = [[TGProfileAvatarView alloc] initWithFrame:NSMakeRect(24,360,72,72)];
     [content addSubview:_avatarView];
-    [content addSubview:TGProfileEditAquaLabel(TGLoc(@"profile.edit.photo"),NSMakeRect(116,425,360,18))];
-    _photoButton = [TGProfileEditAquaButton(TGLoc(@"profile.edit.photo.choose"),NSMakeRect(116,389,190,28),NO,self,@selector(chooseProfilePhoto:)) retain];
+    [content addSubview:TGProfileEditAquaLabel(TGLoc(@"profile.edit.photo"),NSMakeRect(116,404,360,18))];
+    _photoButton = [TGProfileEditAquaButton(TGLoc(@"profile.edit.photo.choose"),NSMakeRect(116,367,190,28),NO,self,@selector(chooseProfilePhoto:)) retain];
     [content addSubview:_photoButton];
 
-    [content addSubview:TGProfileEditAquaLabel(TGLoc(@"profile.edit.firstName"),NSMakeRect(24,350,218,18))];
-    [content addSubview:TGProfileEditAquaLabel(TGLoc(@"profile.edit.lastName"),NSMakeRect(258,350,218,18))];
-    _firstNameField = [TGProfileEditAquaInput(NSMakeRect(24,317,218,28)) retain];
-    _lastNameField = [TGProfileEditAquaInput(NSMakeRect(258,317,218,28)) retain];
+    [content addSubview:TGProfileEditAquaLabel(TGLoc(@"profile.edit.firstName"),NSMakeRect(24,330,218,18))];
+    [content addSubview:TGProfileEditAquaLabel(TGLoc(@"profile.edit.lastName"),NSMakeRect(258,330,218,18))];
+    _firstNameField = [TGProfileEditAquaInput(NSMakeRect(24,300,218,26)) retain];
+    _lastNameField = [TGProfileEditAquaInput(NSMakeRect(258,300,218,26)) retain];
     [content addSubview:_firstNameField]; [content addSubview:_lastNameField];
-    [content addSubview:TGProfileEditAquaLabel(TGLoc(@"profile.edit.username"),NSMakeRect(24,286,452,18))];
-    _usernameField = [TGProfileEditAquaInput(NSMakeRect(24,253,452,28)) retain];
+    [content addSubview:TGProfileEditAquaLabel(TGLoc(@"profile.edit.username"),NSMakeRect(24,276,452,18))];
+    _usernameField = [TGProfileEditAquaInput(NSMakeRect(24,246,452,26)) retain];
     [[_usernameField cell] setPlaceholderString:@"username"]; [content addSubview:_usernameField];
-    [content addSubview:TGProfileEditAquaLabel(TGLoc(@"profile.edit.bio"),NSMakeRect(24,220,452,18))];
-    _bioScrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(24,119,452,96)];
+    [content addSubview:TGProfileEditAquaLabel(TGLoc(@"profile.edit.bio"),NSMakeRect(24,222,452,18))];
+    _bioScrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(24,118,452,100)];
     [_bioScrollView setBorderType:NSBezelBorder]; [_bioScrollView setHasVerticalScroller:YES];
     [_bioScrollView setHasHorizontalScroller:NO]; [_bioScrollView setAutohidesScrollers:YES];
     [_bioScrollView setDrawsBackground:YES]; [_bioScrollView setBackgroundColor:[NSColor whiteColor]];
@@ -57,13 +57,13 @@ static NSButton *TGProfileEditAquaButton(NSString *title, NSRect frame, BOOL pri
     [_bioTextView setAutoresizingMask:NSViewWidthSizable];
     [_bioScrollView setDocumentView:_bioTextView]; [content addSubview:_bioScrollView];
 
-    _errorField = [TGProfileEditAquaLabel(@"",NSMakeRect(24,76,452,36)) retain];
+    _errorField = [TGProfileEditAquaLabel(@"",NSMakeRect(24,72,452,36)) retain];
     [_errorField setFont:[NSFont systemFontOfSize:11.0]];
     [_errorField setTextColor:[NSColor colorWithCalibratedRed:0.62 green:0.12 blue:0.10 alpha:1.0]];
     [[_errorField cell] setUsesSingleLineMode:NO]; [[_errorField cell] setWraps:YES];
     [[_errorField cell] setScrollable:NO]; [_errorField setHidden:YES]; [content addSubview:_errorField];
-    _cancelButton = [TGProfileEditAquaButton(TGLoc(@"cancel"),NSMakeRect(246,18,110,28),NO,self,@selector(cancelProfileEdit:)) retain];
-    _saveButton = [TGProfileEditAquaButton(TGLoc(@"save"),NSMakeRect(366,18,110,28),YES,self,@selector(saveProfile:)) retain];
+    _cancelButton = [TGProfileEditAquaButton(TGLoc(@"cancel"),NSMakeRect(246,13,110,28),NO,self,@selector(cancelProfileEdit:)) retain];
+    _saveButton = [TGProfileEditAquaButton(TGLoc(@"save"),NSMakeRect(366,13,110,28),YES,self,@selector(saveProfile:)) retain];
     [_cancelButton setKeyEquivalent:@"\033"]; [_saveButton setKeyEquivalent:@"\r"];
     [content addSubview:_cancelButton]; [content addSubview:_saveButton];
     [_photoButton setNextKeyView:_firstNameField]; [_firstNameField setNextKeyView:_lastNameField];

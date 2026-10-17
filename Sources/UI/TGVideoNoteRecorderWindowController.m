@@ -1,3 +1,4 @@
+#import "TGDialogPresentation.h"
 #import "TGVideoNoteRecorderWindowController.h"
 
 #import <AVFoundation/AVFoundation.h>
@@ -448,10 +449,12 @@ static NSTimeInterval const TGVideoNoteMaximumDuration = 60.0;
     [self showStartingControls];
     if (![self configureCaptureSession]) {
         [[self window] center];
-        [[self window] makeKeyAndOrderFront:nil];
+        TGFitUtilityWindowToVisibleScreen([self window]);
+    [[self window] makeKeyAndOrderFront:nil];
         return;
     }
     [[self window] center];
+    TGFitUtilityWindowToVisibleScreen([self window]);
     [[self window] makeKeyAndOrderFront:nil];
     [self startCaptureSessionAndRecordForGeneration:self.presentationGeneration];
 }

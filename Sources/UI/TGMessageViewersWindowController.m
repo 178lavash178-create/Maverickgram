@@ -6,6 +6,10 @@
 #import "TGTheme.h"
 #import "TGThemeContrast.h"
 #import "TGStatusViewCells.h"
+#import "TGMessageLayoutSupport.h"
+#import "TGDialogPresentation.h"
+
+#include "TGMessageViewersWindowController+Avatar.inc"
 
 @interface TGMessageViewersWindowController ()
 @property (nonatomic, retain) NSTextField *titleField;
@@ -81,7 +85,7 @@
     }
 
     self.titleField = [self labelWithFrame:TGInterfaceDesignIsAqua()?NSMakeRect(14, 292, 332, 20):NSMakeRect(24, 294, 372, 24)
-                                      font:[NSFont boldSystemFontOfSize:TGInterfaceDesignIsAqua()?13.0:18.0]
+                                      font:[NSFont boldSystemFontOfSize:TGInterfaceDesignIsAqua()?14.0:18.0]
                                      color:TGInterfaceDesignIsAqua()?TGClassicHeaderTextColor(1):[NSColor colorWithCalibratedWhite:0.08 alpha:1.0]];
     [self.titleField setAlignment:TGInterfaceDesignIsAqua()?NSLeftTextAlignment:NSCenterTextAlignment];
     [self.titleField setStringValue:TGLoc(@"message.viewers.title")];
@@ -112,7 +116,8 @@
     NSWindow *parent = [view window];
     if (TGInterfaceDesignIsAqua() && parent && !NSIsEmptyRect(rect)) {
         NSRect anchor = [parent convertRectToScreen:[view convertRect:rect toView:nil]];
-        NSRect visible = [[parent screen] visibleFrame];
+        NSScreen *screen=[parent screen] ? [parent screen] : [NSScreen mainScreen];
+        NSRect visible = [screen visibleFrame];
         NSRect frame = [[self window] frame];
         CGFloat x = NSMaxX(anchor) + 8.0;
         if (x + NSWidth(frame) > NSMaxX(visible)-8.0) x = NSMinX(anchor)-NSWidth(frame)-8.0;
@@ -120,6 +125,7 @@
         CGFloat y = MAX(NSMinY(visible)+8.0,MIN(NSMaxY(anchor)-NSHeight(frame),NSMaxY(visible)-NSHeight(frame)-8.0));
         [[self window] setFrameOrigin:NSMakePoint(x,y)];
     } else [[self window] center];
+    TGFitUtilityWindowToVisibleScreen([self window]);
     [self showWindow:nil];
     [[self window] makeKeyAndOrderFront:nil];
 }
@@ -145,8 +151,9 @@
                                          font:[NSFont systemFontOfSize:13.0]
                                         color:TGInterfaceDesignIsAqua()?TGThemeSurfaceInkColor(color,TGThemeSurfaceCard,4.5):color];
     [label setAlignment:NSCenterTextAlignment];
-    if (TGInterfaceDesignIsAqua()) { [[label cell] setWraps:YES]; [[label cell] setLineBreakMode:NSLineBreakByWordWrapping]; }
+    if (TGInterfaceDesignIsAqua()) { [[label cell] setWraps:YES]; [[label cell] setUsesSingleLineMode:NO]; [[label cell] setLineBreakMode:NSLineBreakByWordWrapping]; }
     [label setStringValue:([message length] > 0 ? message : TGLoc(@"message.viewers.noData"))];
+    [label setToolTip:[label stringValue]];
     [self.contentView addSubview:label];
 }
 
@@ -188,7 +195,11 @@
         NSView *row = [[[NSView alloc] initWithFrame:NSMakeRect(0, y, width, rowHeight)] autorelease];
 
         NSString *avatarPath = [summary objectForKey:@"avatar_local_path"];
-        NSImageView *avatarView = [[[NSImageView alloc] initWithFrame:aqua?NSMakeRect(14,10,32,32):NSMakeRect(10, 7, 32, 32)] autorelease];
+        NSString *displayName = [summary objectForKey:@"display_name"];
+        NSString *nameText=[displayName length]>0?displayName:TGLoc(@"message.viewers.unknown");
+        Class avatarClass=aqua?[TGMessageViewerAvatarView class]:[NSImageView class];
+        NSImageView *avatarView = [[[avatarClass alloc] initWithFrame:aqua?NSMakeRect(14,10,32,32):NSMakeRect(10, 7, 32, 32)] autorelease];
+        if(aqua)[(TGMessageViewerAvatarView *)avatarView setDisplayName:nameText];
         if ([avatarPath length] > 0) {
             NSImage *avatar = TGMediaCachedThumbnailFromFile(avatarPath, 64);
             if (avatar) {
@@ -208,11 +219,12 @@
         [avatarView setImageScaling:NSImageScaleProportionallyUpOrDown];
         [row addSubview:avatarView];
 
-        NSTextField *name = [self labelWithFrame:aqua?NSMakeRect(58,27,284,18):NSMakeRect(54, 16, 220, 18)
+        id viewDate = [summary objectForKey:@"view_date"];
+        BOOL hasViewDate=[viewDate respondsToSelector:@selector(integerValue)] && [viewDate integerValue]>0;
+        NSTextField *name = [self labelWithFrame:aqua?NSMakeRect(58,hasViewDate?27:17,284,18):NSMakeRect(54, 16, 220, 18)
                                             font:[NSFont boldSystemFontOfSize:13.0]
                                            color:TGInterfaceDesignIsAqua()?TGClassicCardInkColor():[NSColor colorWithCalibratedWhite:0.12 alpha:1.0]];
-        NSString *displayName = [summary objectForKey:@"display_name"];
-        [name setStringValue:([displayName length] > 0 ? displayName : TGLoc(@"message.viewers.unknown"))];
+        [name setStringValue:nameText];
         [name setToolTip:[name stringValue]];
         [row addSubview:name];
 
@@ -222,7 +234,7 @@
                 [name setFrameSize:NSMakeSize(246,18)];
                 [name setToolTip:[name stringValue]];
             }
-            NSTextField *reaction = [self labelWithFrame:aqua?NSMakeRect(312,18,30,24):NSMakeRect(246, 14, 28, 22)
+            NSTextField *reaction = [self labelWithFrame:aqua?NSMakeRect(312,14,30,24):NSMakeRect(246, 14, 28, 22)
                                                      font:[NSFont systemFontOfSize:16.0]
                                                     color:TGInterfaceDesignIsAqua()?TGClassicCardInkColor():[NSColor colorWithCalibratedWhite:0.18 alpha:1.0]];
             [reaction setAlignment:NSCenterTextAlignment];
@@ -230,8 +242,7 @@
             [row addSubview:reaction];
         }
 
-        id viewDate = [summary objectForKey:@"view_date"];
-        if ([viewDate respondsToSelector:@selector(integerValue)] && [viewDate integerValue] > 0) {
+        if (hasViewDate) {
             NSDate *date = [NSDate dateWithTimeIntervalSince1970:[viewDate integerValue]];
             NSDateFormatter *formatter = [[[NSDateFormatter alloc] init] autorelease];
             [formatter setDateStyle:NSDateFormatterNoStyle];

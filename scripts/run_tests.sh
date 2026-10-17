@@ -593,6 +593,9 @@ HOME="$TEST_HOME" "$BUILD_DIR/playback-timeline-updates-probe"
 "$PYTHON_BIN" Tests/aqua_profile_edit_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 "$PYTHON_BIN" Tests/aqua_privacy_storage_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 "$PYTHON_BIN" Tests/aqua_readers_location_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$PYTHON_BIN" Tests/utility_responsive_windows_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/utility_window_geometry_probe.m -framework Cocoa -o "$BUILD_DIR/utility-window-geometry-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/utility-window-geometry-probe"
 
 echo "== Aqua native presentation lifecycles =="
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/dialog_sheet_probe.m Sources/UI/TGDialogPresentation.m -framework Cocoa -o "$BUILD_DIR/dialog-sheet-probe"
@@ -627,7 +630,8 @@ cp -R Sources/Resources/Textures "$AUXILIARY_APP/Contents/Resources/Textures"
 cat > "$AUXILIARY_APP/Contents/Info.plist" <<'AUX_PLIST'
 <?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict><key>CFBundleExecutable</key><string>probe</string><key>CFBundleIdentifier</key><string>local.telegraphica.auxiliary-probe</string></dict></plist>
 AUX_PLIST
-"$CLANG" "${COMPILE_FLAGS[@]}" -I"$ROOT_DIR/Sources/UI" -I"$ROOT_DIR/Sources/Services" -I"$ROOT_DIR/Sources/Media" Tests/aqua_auxiliary_surfaces_probe.m Sources/UI/TGDownloadManagerPresentation.m Sources/UI/TGDownloadManagerWindowController.m Sources/UI/TGDownloadCompactPopover.m Sources/UI/TGAnimationSupport.m Sources/Services/TGResourcePolicy.m Sources/UI/TGAquaShellViews.m Sources/UI/TGLocalization.m Sources/UI/TGTheme.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGAquaAppearance.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGStatusButtonCells.m Sources/UI/TGButtonAppearance.m Sources/UI/TGIconAssets.m Sources/UI/TGIconDrawing.m Sources/UI/TGDownloadProgressWindowController.m Sources/UI/TGMessageViewersWindowController.m -framework Cocoa -framework CoreGraphics -framework QuartzCore -o "$AUXILIARY_APP/Contents/MacOS/probe"
+"$PYTHON_BIN" Tests/avatar_drawing_probe_support.py "$AUXILIARY_APP/AvatarSupport.m"
+"$CLANG" "${COMPILE_FLAGS[@]}" -I"$ROOT_DIR/Sources/UI" -I"$ROOT_DIR/Sources/Services" -I"$ROOT_DIR/Sources/Media" Tests/aqua_auxiliary_surfaces_probe.m "$AUXILIARY_APP/AvatarSupport.m" Sources/UI/TGDownloadManagerPresentation.m Sources/UI/TGDownloadManagerWindowController.m Sources/UI/TGDownloadCompactPopover.m Sources/UI/TGAnimationSupport.m Sources/Services/TGResourcePolicy.m Sources/UI/TGAquaShellViews.m Sources/UI/TGLocalization.m Sources/UI/TGTheme.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGAquaAppearance.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGStatusButtonCells.m Sources/UI/TGButtonAppearance.m Sources/UI/TGIconAssets.m Sources/UI/TGIconDrawing.m Sources/UI/TGDownloadProgressWindowController.m Sources/UI/TGMessageViewersWindowController.m -framework Cocoa -framework CoreGraphics -framework QuartzCore -o "$AUXILIARY_APP/Contents/MacOS/probe"
 HOME="$TEST_HOME" "$AUXILIARY_APP/Contents/MacOS/probe" aqua
 HOME="$TEST_HOME" "$AUXILIARY_APP/Contents/MacOS/probe" classic
 

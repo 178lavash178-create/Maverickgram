@@ -81,8 +81,20 @@ int main(int argc,const char **argv){NSAutoreleasePool *pool=[[NSAutoreleasePool
   }
   NSView *content=[[editor window] contentView];Require(NSWidth([content bounds])==(aqua?500:470),"Classic and Aqua keep their separate production geometries");
   if(aqua){
-   Require([content isKindOfClass:[TGAquaUtilityWindowView class]],"Aqua uses shared utility material");Require([(TGAquaUtilityWindowView *)content headerHeight]==56&&[(TGAquaUtilityWindowView *)content footerHeight]==64,"profile header and footer have reserved rails");
+   Require([content isKindOfClass:[TGAquaUtilityWindowView class]],"Aqua uses shared utility material");Require([(TGAquaUtilityWindowView *)content headerHeight]==52&&[(TGAquaUtilityWindowView *)content footerHeight]==54,"profile header and footer have reserved rails");
    NSTextView *bio=Field(editor,@"bioTextView");NSScrollView *scroll=Field(editor,@"bioScrollView");
+   Require(NSHeight([content bounds])==500,"Aqua form uses compact 500 pt content height");
+   NSTextField *heading=nil;for(NSView *v in [content subviews])if([v isKindOfClass:[NSTextField class]]&&[[(NSTextField *)v stringValue] isEqual:TGLoc(@"profile.edit.title")])heading=(NSTextField *)v;
+   Require(heading&&[[heading font] pointSize]==14&&NSEqualRects([heading frame],NSMakeRect(24,466,452,20)),"profile title shares 14 pt type and optical placement within the standard 52 pt utility header");
+   NSRect avatarFrame=[Field(editor,@"avatarView") frame],firstFrame=[Field(editor,@"firstNameField") frame],lastFrame=[Field(editor,@"lastNameField") frame],userFrame=[Field(editor,@"usernameField") frame];
+   Require(NSEqualRects(avatarFrame,NSMakeRect(24,360,72,72)),"actual avatar remains 72 pt with 16 pt clear space below header");
+   Require(NSHeight(firstFrame)==26&&NSHeight(lastFrame)==26&&NSHeight(userFrame)==26&&NSMinY(firstFrame)==NSMinY(lastFrame),"all native name/username input frames share height and baseline");
+   Require(NSMinY(firstFrame)-NSMinY(userFrame)==54,"name and username rows keep a consistent compact vertical rhythm");
+   Require(NSHeight([scroll frame])==100&&NSMinY([scroll frame])==118,"biography keeps a real 100 pt multiline viewport in the compact form");
+   NSRect cancelFrame=[Field(editor,@"cancelButton") frame],saveFrame=[Field(editor,@"saveButton") frame],errorFrame=[Field(editor,@"errorField") frame];
+   Require(NSMinY(cancelFrame)==13&&NSMinY(saveFrame)==13&&NSHeight(saveFrame)==28,"save and cancel sit vertically centered in the standard 54 pt footer");
+   Require(NSHeight(errorFrame)>=32&&NSMinY(errorFrame)>54&&NSMaxY(errorFrame)<NSMinY([scroll frame]),"two-line validation has separate clear space between biography and footer");
+   Require([Field(editor,@"photoButton") nextKeyView]==Field(editor,@"firstNameField")&&[Field(editor,@"firstNameField") nextKeyView]==Field(editor,@"lastNameField")&&[Field(editor,@"lastNameField") nextKeyView]==Field(editor,@"usernameField")&&[Field(editor,@"usernameField") nextKeyView]==bio&&[bio nextKeyView]==Field(editor,@"cancelButton"),"keyboard traversal follows the visible compact form in reading order");
    Require([bio isKindOfClass:[NSTextView class]]&&[scroll documentView]==bio,"bio is a genuine multiline native document with scroll ownership");
    Require(![bio isRichText]&&[bio isVerticallyResizable]&&! [bio isHorizontallyResizable]&&[scroll hasVerticalScroller]&&! [scroll hasHorizontalScroller],"bio wraps and scrolls vertically without rich text or horizontal scrolling");
    Require([[bio string] isEqual:@"  Line one\nLine two\nThird line  "],"configuration preserves all bio newlines and surrounding text before save");
@@ -103,7 +115,7 @@ int main(int argc,const char **argv){NSAutoreleasePool *pool=[[NSAutoreleasePool
    [editor configureWithFirstName:@"  Alice  " lastName:@"  Example  " username:@"  @synthetic_user  " bio:@"  Line one\nLine two\nThird line  "];
    Require(NSMinX([Field(editor,@"firstNameField") frame])==NSMinX([Field(editor,@"usernameField") frame])&&NSMaxX([Field(editor,@"lastNameField") frame])==NSMaxX([scroll frame]),"name, username and bio edges align");
    CheckLabels(content);NSBitmapImageRep *bitmap=Render(content);Require(bitmap!=nil,"actual production Aqua form and material produce a native raster");
-   NSColor *body=[[bitmap colorAtX:(NSInteger)(490*[bitmap pixelsWide]/500.0) y:(NSInteger)(270*[bitmap pixelsHigh]/540.0)] colorUsingColorSpaceName:NSCalibratedRGBColorSpace];Require([body redComponent]>.97&&[body greenComponent]>.97&&[body blueComponent]>.97,"Aqua body is white instead of full-window metal");
+   NSColor *body=[[bitmap colorAtX:(NSInteger)(490*[bitmap pixelsWide]/500.0) y:(NSInteger)(270*[bitmap pixelsHigh]/NSHeight([content bounds]))] colorUsingColorSpaceName:NSCalibratedRGBColorSpace];Require([body redComponent]>.97&&[body greenComponent]>.97&&[body blueComponent]>.97,"Aqua body is white instead of full-window metal");
    const char *preview=getenv("TG_PROFILE_PROBE_PREVIEW_DIR");if(preview&&[language isEqual:@"ru"]){NSString *file=[[NSString stringWithUTF8String:preview] stringByAppendingPathComponent:@"aqua-profile-editor.png"];[[bitmap representationUsingType:NSPNGFileType properties:[NSDictionary dictionary]] writeToFile:file atomically:YES];}
    [editor showErrorMessage:@"Synthetic server error: correct the profile and retry."];Require(![Field(editor,@"errorField") isHidden],"error appears inline");Require(!NSIntersectsRect([Field(editor,@"errorField") frame],[Field(editor,@"saveButton") frame]),"inline error stays above save/cancel rail");[editor showErrorMessage:nil];Require([Field(editor,@"errorField") isHidden],"cleared inline error leaves no stale text");
   }else{

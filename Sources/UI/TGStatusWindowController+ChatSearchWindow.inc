@@ -48,6 +48,7 @@
     [panelView setNeedsDisplay:YES];
     if (TGInterfaceDesignIsAqua()) { [self showAquaChatSearchPanel];return; }
     [self.chatSearchWindow center];
+    TGFitUtilityWindowToVisibleScreen(self.chatSearchWindow);
     [self.chatSearchWindow makeKeyAndOrderFront:self];
     [self.chatSearchWindow orderFrontRegardless];
     [panelView displayIfNeeded];

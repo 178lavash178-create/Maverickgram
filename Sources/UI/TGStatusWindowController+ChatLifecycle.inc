@@ -15,6 +15,7 @@
     }
     TGChatLifecycleWindowController *controller = [self preparedChatLifecycleWindowController];
     [[controller window] center];
+    TGFitUtilityWindowToVisibleScreen([controller window]);
     [controller showWindow:self];
     [[controller window] makeKeyAndOrderFront:self];
     [controller refreshContacts];

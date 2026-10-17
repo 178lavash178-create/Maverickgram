@@ -362,6 +362,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [self.photoSendSendButton setEnabled:YES];
     [self resetAttachmentQueueItemsForDescriptors:safeDescriptors];
     [self.photoSendPreviewWindow center];
+    TGFitUtilityWindowToVisibleScreen(self.photoSendPreviewWindow);
     [self.photoSendPreviewWindow makeKeyAndOrderFront:nil];
     [[self.photoSendPreviewWindow contentView] setNeedsDisplay:YES];
 }
@@ -3200,6 +3201,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
                                                                                                    chatID:self.selectedChatID
                                                                                                     title:self.selectedChatTitle] autorelease];
     [[self.scheduledMessagesWindowController window] center];
+    TGFitUtilityWindowToVisibleScreen([self.scheduledMessagesWindowController window]);
     [self.scheduledMessagesWindowController showWindow:self];
     [[self.scheduledMessagesWindowController window] makeKeyAndOrderFront:self];
     [self.scheduledMessagesWindowController reloadMessages];
