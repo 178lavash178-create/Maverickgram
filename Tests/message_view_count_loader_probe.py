@@ -7,6 +7,11 @@ root=os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
 with open(os.path.join(root,'Sources/UI/TGStatusWindowController+MessageViewCounts.inc'),'rb') as f:
     implementation=f.read().decode('utf-8')
 props=[('id','client','retain'),('NSNumber *','profileUserID','retain'),('NSNumber *','selectedChatID','retain'),('NSNumber *','selectedMessageThreadID','retain'),('NSString *','selectedMessageTopicKind','copy'),('NSString *','selectedChatTypeSummary','copy'),('NSMutableArray *','messageItems','retain'),('id','messageTableView','retain'),('id','messageScrollView','retain'),('NSUInteger','automaticReadGeneration','assign'),('BOOL','visible','assign')]
+with open(os.path.join(root,'Sources/UI/TGStatusWindowController+MessageDataFlow.inc'),'rb') as f:
+    flow=f.read().decode('utf-8')
+apply_begin=flow.index('- (void)applyRecentMessageItems:')
+apply_method=flow[apply_begin:flow.index('\n- (NSUInteger)appendOlderMessageItems:',apply_begin)]
+props += [('id','transcriptMotionController','retain'),('id','pendingArrivalMessageIDs','retain'),('id','inlineMediaPlaybackCoordinator','retain'),('BOOL','forceMessageScrollToNewest','assign'),('BOOL','olderMessagesExhausted','assign'),('BOOL','autoOlderMessagesLoadArmed','assign'),('BOOL','initialUnreadPositionPending','assign')]
 harness=r'''
 #import <Cocoa/Cocoa.h>
 #import <objc/runtime.h>
@@ -37,6 +42,7 @@ static void One(NSMutableArray *queue) {Require([queue count]>0,"queued async op
 - (void)dealloc {[_lastHeightRows release];[_heightHook release];[super dealloc];}
 - (NSRange)rowsInRect:(NSRect)rect {(void)rect;return self.rows;}
 - (void)setNeedsDisplay:(BOOL)yes {(void)yes;}
+- (void)reloadData {}
 - (void)noteHeightOfRowsWithIndexesChanged:(NSIndexSet *)rows {Require([rows count]<=20,"only actually changed visible message heights are invalidated");self.lastHeightRows=rows;self.heightUpdates++;if(self.heightHook){dispatch_block_t hook=[self.heightHook copy];self.heightHook=nil;hook();[hook release];}}
 - (id)contentView {return self;}
 - (NSRect)bounds {return NSMakeRect(0,0,600,500);}
@@ -52,6 +58,22 @@ __PROPS__
 __SYNTH__
 - (void)dealloc {__RELEASES__[super dealloc];}
 - (BOOL)conversationAllowsAutomaticRead {return self.visible;}
+- (NSArray *)messageItemsInDisplayOrderFromItems:(NSArray *)items {return items;}
+- (NSArray *)deduplicatedMessageItemsFromItems:(NSArray *)items {return items;}
+- (BOOL)isMessageHistoryNearBottom {return NO;}
+- (BOOL)restoreNavigationTranscriptIfPending {return NO;}
+- (void)refreshMessageHistorySeparators {}
+- (void)updateOutgoingReadStateForVisibleMessages {}
+- (void)markVisiblePinnedMessagesFromPinnedItems {}
+- (void)refreshMediaLoadingSpinnerOverlays {}
+- (void)refreshBotReplyMarkupFromMessages {}
+- (void)scrollMessagesToNewestIfAvailable {}
+- (void)scrollMessagesToInitialUnreadIfAvailable {}
+- (void)scheduleVisibleMessageItemsRead {}
+- (void)updateMessageJumpToNewestButtonVisibility {}
+- (void)animatePendingLiveArrivals:(BOOL)near {(void)near;}
+- (void)beginReactionAnimationForMessageItem:(id)item fromSummary:(id)old toSummary:(id)new {(void)item;(void)old;(void)new;}
+__APPLY_METHOD__
 #define dispatch_async Queue
 __IMPLEMENTATION__
 #undef dispatch_async
@@ -101,9 +123,21 @@ int main(void){NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];Workers=
  Drain();
  Require(client.calls==before+1 && [[client.requestedIDs lastObject] isEqual:@200],"height-callback replacement discards old target and requests only new visible message");
  Require([[[p.messageItems lastObject] messageViewerCount] isEqual:@4],"new row gets count after reentrant replacement without stale model access");
+ // A real quiet-history merge must trigger a TTL check even when the viewport
+ // never moves. Execute the entire production merge, with no scroll callbacks.
+ for(NSString *key in [[[cache allKeys] copy] autorelease]){NSDictionary *entry=[cache objectForKey:key];[cache setObject:[NSDictionary dictionaryWithObjectsAndKeys:[entry objectForKey:@"value"],@"value",[NSNumber numberWithDouble:[NSDate timeIntervalSinceReferenceDate]-61],@"at",nil] forKey:key];}
+ client.answer=@7;before=client.calls;
+ [p applyRecentMessageItems:[NSArray arrayWithObject:Item(200)] preservingOlderItems:YES];
+ Require(![Workers count],"quiet merge defers its visible-cache refresh until AppKit settles");
+ [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:.20]];
+ Require([Workers count]==1,"stationary quiet merge schedules actual expired-cache lookup without scrolling");Drain();
+ Require(client.calls==before+1 && [[[p.messageItems lastObject] messageViewerCount] isEqual:@7],"stationary group footer acquires fresh reader count after TTL");
+ before=client.calls;[p applyRecentMessageItems:[NSArray arrayWithObject:Item(200)] preservingOlderItems:YES];
+ [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:.20]];
+ Require(![Workers count] && client.calls==before,"repeated quiet merges within TTL perform no extra per-message polling");
  printf("View-count loader PASS: %lu production ownership/cache/scope checks.\n",(unsigned long)checks);[Workers release];[Completions release];[pool drain];return 0;}
 '''
-replacements={'__IVARS__':'\n'.join(' %s _%s;'%(t,n) for t,n,a in props),'__PROPS__':'\n'.join('@property(nonatomic,%s) %s %s;'%(a,t,n) for t,n,a in props),'__SYNTH__':'\n'.join('@synthesize %s=_%s;'%(n,n) for t,n,a in props),'__RELEASES__':''.join('[_%s release];'%n for t,n,a in props if a!='assign'),'__IMPLEMENTATION__':implementation}
+replacements={'__IVARS__':'\n'.join(' %s _%s;'%(t,n) for t,n,a in props),'__PROPS__':'\n'.join('@property(nonatomic,%s) %s %s;'%(a,t,n) for t,n,a in props),'__SYNTH__':'\n'.join('@synthesize %s=_%s;'%(n,n) for t,n,a in props),'__RELEASES__':''.join('[_%s release];'%n for t,n,a in props if a!='assign'),'__IMPLEMENTATION__':implementation,'__APPLY_METHOD__':apply_method}
 for token,value in replacements.items():harness=harness.replace(token,value)
 folder=tempfile.mkdtemp(prefix='telegraphica-viewer-count-')
 try:

@@ -759,7 +759,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
             }
             playableRect.size.height -= contextHeaderHeight;
         }
-        playableRect = TGMessageContentRectByRemovingFooter(playableRect, commentBarHeight + reactionBandHeight, flipped);
+        playableRect = TGMessageContentRectByRemovingFooter(playableRect, commentBarHeight + reactionBandHeight + TGMessageContentFooterReservation(item,MAX(1.0,NSWidth(bubbleRect)-24.0)), flipped);
         TGDrawPlayableMediaContentForItem(item, playableRect, flipped);
     }
 
@@ -777,7 +777,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
             }
             documentRect.size.height -= contextHeaderHeight;
         }
-        documentRect = TGMessageContentRectByRemovingFooter(documentRect, commentBarHeight + reactionBandHeight, flipped);
+        documentRect = TGMessageContentRectByRemovingFooter(documentRect, commentBarHeight + reactionBandHeight + TGMessageContentFooterReservation(item,MAX(1.0,NSWidth(bubbleRect)-24.0)), flipped);
         TGDrawDocumentContentForItem(item, documentRect, outgoing, flipped);
     }
 
@@ -795,7 +795,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
             }
             pollRect.size.height -= contextHeaderHeight;
         }
-        pollRect = TGMessageContentRectByRemovingFooter(pollRect, commentBarHeight + reactionBandHeight, flipped);
+        pollRect = TGMessageContentRectByRemovingFooter(pollRect, commentBarHeight + reactionBandHeight + TGMessageContentFooterReservation(item,MAX(1.0,NSWidth(bubbleRect)-24.0)), flipped);
         TGDrawPollContentForItem(item, pollRect, outgoing, flipped);
     }
 
@@ -813,7 +813,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
             }
             callRect.size.height -= contextHeaderHeight;
         }
-        callRect = TGMessageContentRectByRemovingFooter(callRect, commentBarHeight + reactionBandHeight, flipped);
+        callRect = TGMessageContentRectByRemovingFooter(callRect, commentBarHeight + reactionBandHeight + TGMessageContentFooterReservation(item,MAX(1.0,NSWidth(bubbleRect)-24.0)), flipped);
         TGDrawCallContentForItem(item, callRect, outgoing, flipped);
     }
 
@@ -903,7 +903,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
                                      timeSize.width,
                                      metaHeight);
         if (inlineMetadata) { timeRect = TGMessageInlineTimeRectForItem(item, bubbleRect, flipped); }
-        TGDrawMessageFooterIndicatorsForTimeRect(item,timeRect,flipped);
+        TGDrawMessageFooterIndicatorsInWidth(item,timeRect,MAX(1.0,NSWidth(bubbleRect)-24.0),flipped);
         [timeString drawInRect:timeRect withAttributes:timeAttributes];
         TGDrawOutgoingStatusDotsForItem(item, timeRect, [controlView isFlipped]);
     }
@@ -921,7 +921,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
         TGDrawReactionChipsForItem(item, chipsBand, [controlView isFlipped]);
         NSRect reactionTime = TGMessageReactionTimeRect(item, band, [controlView isFlipped]);
         if (!NSIsEmptyRect(reactionTime)) {
-            TGDrawMessageFooterIndicatorsForTimeRect(item,reactionTime,flipped);
+            TGDrawMessageFooterIndicatorsInWidth(item,reactionTime,NSWidth(band),flipped);
             [timeString drawInRect:reactionTime withAttributes:timeAttributes];
             TGDrawOutgoingStatusDotsForItem(item, reactionTime, [controlView isFlipped]);
         }
@@ -988,15 +988,18 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
                                  flipped ? (NSMinY(rowRect) + 8.0) : (NSMaxY(rowRect) - metaHeight - 6.0),
                                  timeSize.width,
                                  metaHeight);
+    CGFloat metadataWidth = MAX(1.0,NSWidth(rowRect)-24.0);
+    BOOL wrappedMetadata = TGMessageFooterWrappedHeightForItem(item,metadataWidth)>0.0;
+    if (wrappedMetadata) timeRect.origin.y = flipped ? NSMaxY(rowRect)-metaHeight-4.0 : NSMinY(rowRect)+4.0;
     if ([timeString length] > 0 && TGReactionChipsMinimumWidthForItem(item) <= 0.0) {
-        TGDrawMessageFooterIndicatorsForTimeRect(item,timeRect,flipped);
+        TGDrawMessageFooterIndicatorsInWidth(item,timeRect,metadataWidth,flipped);
         [timeString drawInRect:timeRect withAttributes:timeAttributes];
         TGDrawOutgoingStatusDotsForItem(item, timeRect, flipped);
     }
 
     CGFloat textX = NSMaxX(iconRect) + 10.0;
     CGFloat textRight = NSMinX(timeRect) - TGMessageFooterIndicatorsWidthForItem(item) - 10.0;
-    if ([timeString length] == 0) {
+    if ([timeString length] == 0 || wrappedMetadata) {
         textRight = NSMaxX(rowRect) - 12.0;
     }
     CGFloat maximumTextRight = NSMaxX(rowRect) - 12.0;
@@ -1153,7 +1156,7 @@ static void TGDrawMessageTopAccessories(TGMessageItem *item,
         TGDrawReactionChipsForItem(item, chipsBand, flipped);
         NSRect reactionTime = TGMessageReactionTimeRect(item, band, flipped);
         if (!NSIsEmptyRect(reactionTime)) {
-            TGDrawMessageFooterIndicatorsForTimeRect(item,reactionTime,flipped);
+            TGDrawMessageFooterIndicatorsInWidth(item,reactionTime,NSWidth(band),flipped);
             [timeString drawInRect:reactionTime withAttributes:timeAttributes];
             TGDrawOutgoingStatusDotsForItem(item, reactionTime, flipped);
         }

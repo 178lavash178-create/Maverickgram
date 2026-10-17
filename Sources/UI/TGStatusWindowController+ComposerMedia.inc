@@ -36,28 +36,28 @@ static NSString *TGSummarizeAttachmentDescriptors(NSArray *descriptors) {
             totalSize += descriptor.fileSize;
         }
     }
-    NSString *countText = [NSString stringWithFormat:@"%lu file%@", (unsigned long)[descriptors count], ([descriptors count] == 1 ? @"" : @"s")];
+    NSString *countText = [NSString stringWithFormat:TGLoc(@"attachment.preview.count"), (unsigned long)[descriptors count]];
     return [NSString stringWithFormat:@"%@ • %@", countText, TGResourcePolicyReadableSize((long long)totalSize)];
 }
 
 static NSString *TGAttachmentBatchProgressText(NSUInteger index, NSUInteger count) {
-    return [NSString stringWithFormat:@"Sending %lu of %lu...", (unsigned long)index, (unsigned long)count];
+    return [NSString stringWithFormat:TGLoc(@"attachment.send.batch"), (unsigned long)index, (unsigned long)count];
 }
 
 static NSString *TGAttachmentQueueStateText(TGFileTransferStateKind state) {
     switch (state) {
         case TGFileTransferStatePreparing:
-            return @"Ready";
+            return TGLoc(@"attachment.ready");
         case TGFileTransferStateSending:
-            return @"Sending";
+            return TGLoc(@"sending");
         case TGFileTransferStateSucceeded:
-            return @"Sent";
+            return TGLoc(@"share.extra.sent");
         case TGFileTransferStateFailed:
-            return @"Failed";
+            return TGLoc(@"downloads.state.failed");
         case TGFileTransferStateCancelled:
-            return @"Cancelled";
+            return TGLoc(@"downloads.state.cancelled");
     }
-    return @"Ready";
+    return TGLoc(@"attachment.ready");
 }
 
 static NSArray *TGAttachmentQueueItemsFromDescriptors(NSArray *descriptors) {
@@ -69,7 +69,7 @@ static NSArray *TGAttachmentQueueItemsFromDescriptors(NSArray *descriptors) {
             [items addObject:[TGAttachmentQueueItem itemWithDescriptor:(TGAttachmentDescriptor *)descriptor
                                                                  index:index
                                                                  state:TGFileTransferStatePreparing
-                                                               message:@"Ready"]];
+                                                               message:TGLoc(@"attachment.ready")]];
         }
     }
     return items;
@@ -253,7 +253,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
         CGFloat stateX = sizeX - stateWidth - 8.0;
         CGFloat nameWidth = MAX(90.0, stateX - 16.0);
         NSTextField *nameField = [self labelWithFrame:NSMakeRect(8.0, y + 4.0, nameWidth, 16.0)
-                                                 text:([descriptor.fileName length] > 0 ? descriptor.fileName : @"File")
+                                                 text:([descriptor.fileName length] > 0 ? descriptor.fileName : TGLoc(@"media.document"))
                                                  font:[NSFont systemFontOfSize:11.0]];
         [[nameField cell] setLineBreakMode:NSLineBreakByTruncatingMiddle];
         [queueView addSubview:nameField];
@@ -334,8 +334,8 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     }
     if (hasLargeDescriptor) {
         NSAlert *alert = [[[NSAlert alloc] init] autorelease];
-        [alert setMessageText:([safeDescriptors count] > 1 ? @"Send large files?" : @"Send large file?")];
-        [alert setInformativeText:([safeDescriptors count] > 1 ? [NSString stringWithFormat:@"%@. Sending may take a while.", TGSummarizeAttachmentDescriptors(safeDescriptors)] : [NSString stringWithFormat:@"%@ is %@. Sending may take a while.", descriptor.fileName, [descriptor readableSize]])];
+        [alert setMessageText:TGLoc(@"attachment.large.title")];
+        [alert setInformativeText:[NSString stringWithFormat:TGLoc(@"attachment.large.message"), TGSummarizeAttachmentDescriptors(safeDescriptors)]];
         [alert addButtonWithTitle:TGLoc(@"send")];
         [alert addButtonWithTitle:TGLoc(@"cancel")];
         if (TGRunAlert(alert, self.window) != NSAlertFirstButtonReturn) {
@@ -346,14 +346,14 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [self ensurePhotoSendPreviewWindow];
     self.pendingAttachmentDescriptor = descriptor;
     self.pendingAttachmentDescriptors = safeDescriptors;
-    self.pendingAttachmentTransferState = [TGFileTransferState stateWithState:TGFileTransferStatePreparing progressKnown:NO progress:0.0 message:@"Ready to send"];
+    self.pendingAttachmentTransferState = [TGFileTransferState stateWithState:TGFileTransferStatePreparing progressKnown:NO progress:0.0 message:TGLoc(@"attachment.ready")];
     self.pendingAttachmentCancelRequested = NO;
     self.pendingPhotoSendPath = descriptor.path;
     self.pendingPhotoSendChatID = self.selectedChatID;
     self.pendingPhotoSendThreadID = self.selectedMessageThreadID;
     self.pendingPhotoSendTopicKind = self.selectedMessageTopicKind;
-    [self.photoSendPreviewWindow setTitle:([safeDescriptors count] > 1 ? @"Send media" : [NSString stringWithFormat:@"Send %@", [descriptor.typeLabel lowercaseString]])];
-    [self.photoSendTitleField setStringValue:[NSString stringWithFormat:@"%lu media", (unsigned long)[safeDescriptors count]]];
+    [self.photoSendPreviewWindow setTitle:TGLoc(@"attachment.preview.title")];
+    [self.photoSendTitleField setStringValue:[NSString stringWithFormat:TGLoc(@"attachment.preview.count"), (unsigned long)[safeDescriptors count]]];
     [self.photoSendPreviewImageView setImage:[self previewImageForAttachmentDescriptors:safeDescriptors]];
     [self resetAttachmentCaption];
     [self.photoSendErrorField setStringValue:@""];
@@ -396,7 +396,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     (void)sender;
     if (self.controlsBusy && self.photoSendPreviewWindow && [self.photoSendPreviewWindow isVisible]) {
         self.pendingAttachmentCancelRequested = YES;
-        [self.photoSendErrorField setStringValue:@"Cancelling after the current file..."];
+        [self.photoSendErrorField setStringValue:TGLoc(@"attachment.send.cancelling")];
         [self.photoSendErrorField setHidden:NO];
         [self appendDetail:@"Attachment queue: cancellation requested."];
         return;
@@ -428,7 +428,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     NSString *photoCaption = [safeCaption copy];
     NSNumber *replyToMessageID = [[self composerReplyToMessageIDForChatID:chatID] retain];
     [self setControlsBusy:YES];
-    [self.statusField setStringValue:@"Sending photo..."];
+    [self.statusField setStringValue:TGLoc(@"sending")];
     [self appendDetail:(messageThreadID ? @"Submitting topic photo message to TDLib..." : @"Submitting photo message to TDLib...")];
     [[TGLogger sharedLogger] log:@"TDLib photo message send requested."];
 
@@ -457,7 +457,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
             BOOL selectionStillCurrent = (self.selectedChatID && [self.selectedChatID longLongValue] == [chatID longLongValue] && sameThread && sameTopicKind);
             if (sendSucceeded) {
                 [self setOfflineModeActive:NO reason:nil];
-                [self.statusField setStringValue:@"Photo sent"];
+                [self.statusField setStringValue:TGLoc(@"share.extra.sent")];
                 [self appendDetail:@"TDLib send: photo message accepted by TDLib."];
                 [[TGLogger sharedLogger] log:@"TDLib photo message send accepted."];
                 self.pendingPhotoSendPath = nil;
@@ -484,11 +484,11 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
                     }
                 }
             } else {
-                NSString *message = ([sendErrorMessage length] > 0) ? sendErrorMessage : @"Photo send was not confirmed.";
+                NSString *message = ([sendErrorMessage length] > 0) ? sendErrorMessage : TGLoc(@"attachment.send.unconfirmed");
                 if (TGStatusErrorLooksOffline(message)) {
-                    [self setOfflineModeActive:YES reason:@"Network appears unavailable. Photo was not retried automatically to avoid duplicate sends."];
+                    [self setOfflineModeActive:YES reason:TGLoc(@"attachment.send.offline")];
                 } else {
-                    [self.statusField setStringValue:@"Photo send failed"];
+                    [self.statusField setStringValue:TGLoc(@"message.sendFailed")];
                 }
                 [self appendDetail:[NSString stringWithFormat:@"TDLib send: %@", message]];
                 [[TGLogger sharedLogger] log:@"TDLib photo message send failed."];
@@ -567,9 +567,9 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     NSString *attachmentCaption = [safeCaption copy];
     NSNumber *replyToMessageID = [[self composerReplyToMessageIDForChatID:chatID] retain];
     [self setControlsBusy:YES];
-    [self.statusField setStringValue:[NSString stringWithFormat:@"Sending %@...", [descriptorCopy.typeLabel lowercaseString]]];
-    self.pendingAttachmentTransferState = [TGFileTransferState stateWithState:TGFileTransferStateSending progressKnown:NO progress:0.0 message:@"Sending"];
-    [self setAttachmentQueueItemAtIndex:0 state:TGFileTransferStateSending message:@"Sending"];
+    [self.statusField setStringValue:TGLoc(@"sending")];
+    self.pendingAttachmentTransferState = [TGFileTransferState stateWithState:TGFileTransferStateSending progressKnown:NO progress:0.0 message:TGLoc(@"sending")];
+    [self setAttachmentQueueItemAtIndex:0 state:TGFileTransferStateSending message:TGLoc(@"sending")];
     [self appendDetail:[NSString stringWithFormat:@"Submitting %@ to TDLib: %@", [descriptorCopy.typeLabel lowercaseString], descriptorCopy.fileName]];
 
     TGTDLibClient *client = [self.client retain];
@@ -622,9 +622,9 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
                                   (self.selectedMessageTopicKind && messageTopicKind && [self.selectedMessageTopicKind isEqualToString:messageTopicKind]));
             BOOL selectionStillCurrent = (self.selectedChatID && [self.selectedChatID longLongValue] == [chatID longLongValue] && sameThread && sameTopicKind);
             if ([summary length] > 0) {
-                self.pendingAttachmentTransferState = [TGFileTransferState stateWithState:TGFileTransferStateSucceeded progressKnown:NO progress:1.0 message:@"Sent"];
-                [self setAttachmentQueueItemAtIndex:0 state:TGFileTransferStateSucceeded message:@"Sent"];
-                [self.statusField setStringValue:@"File sent"];
+                self.pendingAttachmentTransferState = [TGFileTransferState stateWithState:TGFileTransferStateSucceeded progressKnown:NO progress:1.0 message:TGLoc(@"share.extra.sent")];
+                [self setAttachmentQueueItemAtIndex:0 state:TGFileTransferStateSucceeded message:TGLoc(@"share.extra.sent")];
+                [self.statusField setStringValue:TGLoc(@"share.extra.sent")];
                 [self appendDetail:@"TDLib send: file message accepted by TDLib."];
                 self.pendingPhotoSendPath = nil;
                 self.pendingAttachmentDescriptor = nil;
@@ -654,13 +654,13 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
                     [self performSelector:@selector(refreshSelectedMessagesAfterMediaSend) withObject:nil afterDelay:1.25];
                 }
             } else {
-                NSString *message = ([errorMessage length] > 0) ? errorMessage : @"File send was not confirmed.";
+                NSString *message = ([errorMessage length] > 0) ? errorMessage : TGLoc(@"attachment.send.unconfirmed");
                 self.pendingAttachmentTransferState = [TGFileTransferState stateWithState:TGFileTransferStateFailed progressKnown:NO progress:0.0 message:message];
                 [self setAttachmentQueueItemAtIndex:0 state:TGFileTransferStateFailed message:message];
-                [self.statusField setStringValue:@"File send failed"];
+                [self.statusField setStringValue:TGLoc(@"message.sendFailed")];
                 [self appendDetail:[NSString stringWithFormat:@"TDLib send: %@", message]];
                 if (self.photoSendPreviewWindow && [self.photoSendPreviewWindow isVisible]) {
-                    [self.photoSendSendButton setTitle:@"Retry failed"];
+                    [self.photoSendSendButton setTitle:TGLoc(@"downloads.retry")];
                     [self.photoSendSendButton setEnabled:YES];
                     [self.photoSendErrorField setStringValue:message];
                     [self.photoSendErrorField setHidden:NO];
@@ -700,8 +700,8 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
                                   (unsigned long)[descriptorCopies count],
                                   sendAsAlbum ? @"yes" : @"no"]];
     [self setControlsBusy:YES];
-    [self.statusField setStringValue:(sendAsAlbum ? @"Sending media album..." : TGAttachmentBatchProgressText(1, [descriptorCopies count]))];
-    self.pendingAttachmentTransferState = [TGFileTransferState stateWithState:TGFileTransferStateSending progressKnown:NO progress:0.0 message:@"Sending"];
+    [self.statusField setStringValue:(sendAsAlbum ? TGLoc(@"attachment.send.album") : TGAttachmentBatchProgressText(1, [descriptorCopies count]))];
+    self.pendingAttachmentTransferState = [TGFileTransferState stateWithState:TGFileTransferStateSending progressKnown:NO progress:0.0 message:TGLoc(@"sending")];
     [self appendDetail:[NSString stringWithFormat:@"Submitting %lu attachment(s) to TDLib%@...",
                         (unsigned long)[descriptorCopies count],
                         sendAsAlbum ? @" as a media album" : @""]];
@@ -717,7 +717,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
             dispatch_async(dispatch_get_main_queue(), ^{
                 NSUInteger albumIndex = 0;
                 for (albumIndex = 0; albumIndex < [descriptorCopies count]; albumIndex++) {
-                    [self setAttachmentQueueItemAtIndex:albumIndex state:TGFileTransferStateSending message:@"Sending album"];
+                    [self setAttachmentQueueItemAtIndex:albumIndex state:TGFileTransferStateSending message:TGLoc(@"attachment.send.album")];
                 }
             });
             NSArray *albumItems = TGAttachmentMediaAlbumItemsFromDescriptors(descriptorCopies);
@@ -734,11 +734,11 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
                 dispatch_async(dispatch_get_main_queue(), ^{
                     NSUInteger albumIndex = 0;
                     for (albumIndex = 0; albumIndex < [descriptorCopies count]; albumIndex++) {
-                        [self setAttachmentQueueItemAtIndex:albumIndex state:TGFileTransferStateSucceeded message:@"Sent"];
+                        [self setAttachmentQueueItemAtIndex:albumIndex state:TGFileTransferStateSucceeded message:TGLoc(@"share.extra.sent")];
                     }
                 });
             } else {
-                NSString *rawErrorMessage = ([[sendError localizedDescription] length] > 0 ? [sendError localizedDescription] : @"Media album send was not confirmed.");
+                NSString *rawErrorMessage = ([[sendError localizedDescription] length] > 0 ? [sendError localizedDescription] : TGLoc(@"attachment.send.unconfirmed"));
                 firstErrorMessage = [rawErrorMessage copy];
                 dispatch_async(dispatch_get_main_queue(), ^{
                     NSUInteger albumIndex = 0;
@@ -756,7 +756,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
                     dispatch_async(dispatch_get_main_queue(), ^{
                         NSUInteger cancelIndex = index;
                         for (cancelIndex = index; cancelIndex < [descriptorCopies count]; cancelIndex++) {
-                            [self setAttachmentQueueItemAtIndex:cancelIndex state:TGFileTransferStateCancelled message:@"Cancelled"];
+                            [self setAttachmentQueueItemAtIndex:cancelIndex state:TGFileTransferStateCancelled message:TGLoc(@"downloads.state.cancelled")];
                         }
                     });
                     break;
@@ -766,7 +766,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
                 NSError *sendError = nil;
                 NSString *summary = nil;
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    [self setAttachmentQueueItemAtIndex:index state:TGFileTransferStateSending message:@"Sending"];
+                    [self setAttachmentQueueItemAtIndex:index state:TGFileTransferStateSending message:TGLoc(@"sending")];
                     [self.statusField setStringValue:TGAttachmentBatchProgressText(index + 1, [descriptorCopies count])];
                 });
                 if (descriptor.kind == TGAttachmentKindPhoto) {
@@ -819,10 +819,10 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
                     sentCount++;
                     [summary release];
                     dispatch_async(dispatch_get_main_queue(), ^{
-                        [self setAttachmentQueueItemAtIndex:index state:TGFileTransferStateSucceeded message:@"Sent"];
+                        [self setAttachmentQueueItemAtIndex:index state:TGFileTransferStateSucceeded message:TGLoc(@"share.extra.sent")];
                     });
                 } else {
-                    NSString *rawErrorMessage = ([[sendError localizedDescription] length] > 0 ? [sendError localizedDescription] : @"Attachment send was not confirmed.");
+                    NSString *rawErrorMessage = ([[sendError localizedDescription] length] > 0 ? [sendError localizedDescription] : TGLoc(@"attachment.send.unconfirmed"));
                     firstErrorMessage = [rawErrorMessage copy];
                     [summary release];
                     dispatch_async(dispatch_get_main_queue(), ^{
@@ -840,8 +840,8 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
                                   (self.selectedMessageTopicKind && messageTopicKind && [self.selectedMessageTopicKind isEqualToString:messageTopicKind]));
             BOOL selectionStillCurrent = (self.selectedChatID && [self.selectedChatID longLongValue] == [chatID longLongValue] && sameThread && sameTopicKind);
             if (sentCount == [descriptorCopies count]) {
-                self.pendingAttachmentTransferState = [TGFileTransferState stateWithState:TGFileTransferStateSucceeded progressKnown:NO progress:1.0 message:@"Sent"];
-                [self.statusField setStringValue:(sendAsAlbum ? @"Media album sent" : @"Media sent")];
+                self.pendingAttachmentTransferState = [TGFileTransferState stateWithState:TGFileTransferStateSucceeded progressKnown:NO progress:1.0 message:TGLoc(@"share.extra.sent")];
+                [self.statusField setStringValue:TGLoc(@"share.extra.sent")];
                 [self appendDetail:[NSString stringWithFormat:@"TDLib send: %lu attachment(s) accepted by TDLib%@.",
                                     (unsigned long)sentCount,
                                     sendAsAlbum ? @" as an album" : @""]];
@@ -873,12 +873,12 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
                     [self performSelector:@selector(refreshSelectedMessagesAfterMediaSend) withObject:nil afterDelay:1.25];
                 }
             } else {
-                NSString *message = cancelled ? @"Attachment queue cancelled." : (([firstErrorMessage length] > 0) ? firstErrorMessage : @"Attachment send was not confirmed.");
+                NSString *message = cancelled ? TGLoc(@"attachment.send.cancelled") : (([firstErrorMessage length] > 0) ? firstErrorMessage : TGLoc(@"attachment.send.unconfirmed"));
                 self.pendingAttachmentTransferState = [TGFileTransferState stateWithState:(cancelled ? TGFileTransferStateCancelled : TGFileTransferStateFailed) progressKnown:NO progress:0.0 message:message];
-                [self.statusField setStringValue:(cancelled ? @"Media send cancelled" : @"Media send failed")];
+                [self.statusField setStringValue:(cancelled ? TGLoc(@"attachment.send.cancelled") : TGLoc(@"message.sendFailed"))];
                 [self appendDetail:[NSString stringWithFormat:@"TDLib send: sent %lu of %lu; %@", (unsigned long)sentCount, (unsigned long)[descriptorCopies count], message]];
                 NSUInteger failedCount = TGAttachmentQueueFailedCount(self.pendingAttachmentQueueItems);
-                [self.photoSendSendButton setTitle:(failedCount > 0 ? @"Retry failed" : TGLoc(@"send"))];
+                [self.photoSendSendButton setTitle:(failedCount > 0 ? TGLoc(@"downloads.retry") : TGLoc(@"send"))];
                 [self.photoSendSendButton setEnabled:(failedCount > 0)];
                 [self.photoSendErrorField setStringValue:message];
                 [self.photoSendErrorField setHidden:NO];
@@ -923,7 +923,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     }
     NSString *effectivePath = [path length] > 0 ? path : [descriptor path];
     if (![effectivePath length] || ![chatID respondsToSelector:@selector(longLongValue)]) {
-        [self.photoSendErrorField setStringValue:@"Attachment target is no longer available."];
+        [self.photoSendErrorField setStringValue:TGLoc(@"attachment.send.targetUnavailable")];
         [self.photoSendErrorField setHidden:NO];
     } else {
         [self.photoSendErrorField setStringValue:@""];

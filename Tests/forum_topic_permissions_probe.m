@@ -49,6 +49,8 @@ int main(void){NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];
     NSDictionary *legacy=[NSDictionary dictionaryWithObject:[NSDictionary dictionaryWithObjectsAndKeys:@"chatMemberStatusAdministrator",@"@type",@YES,@"can_manage_topics",nil] forKey:@"status"];
     Check(Allowed(legacy,nil,@66,@"rename"),"legacy flat administrator fields remain supported");
     ForumClient *client=[[[ForumClient alloc] init] autorelease];client.status=[creator objectForKey:@"status"];client.topicInfo=[NSDictionary dictionaryWithObject:@66 forKey:@"forum_topic_id"];
+    NSDictionary *serverContext=[client forumTopicRightsForChatID:@(-100) timeout:1];
+    Check([[TGForumTopicActionPermissions(serverContext,nil,@66) objectForKey:@"supergroup_id"] isEqual:@30],"actual rights lookup preserves server group identity for later role updates");
     Check([client renameForumTopicInChatID:@(-100) topicID:@66 name:@"New name" timeout:1 error:NULL],"actual mutation revalidates fresh rights");
     Check(MutationCount(client)==1,"permitted rename dispatches one mutation");NSDictionary *last=[client.requests lastObject];Check([[last objectForKey:@"forum_topic_id"] isEqual:@66]&&[[last objectForKey:@"message_thread_id"] isEqual:@66],"modern and legacy mutation keep exact topic target");
     client.status=[Context(@"chatMemberStatusMember",nil) objectForKey:@"status"];[client.requests removeAllObjects];

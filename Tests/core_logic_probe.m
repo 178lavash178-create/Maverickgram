@@ -750,6 +750,13 @@ static void TGTestDeliveryStatusPresentation(void) {
                     TGSetChatMessageTextSizeLevel([fontLevel integerValue]);
                     CGFloat lineHeight = ceil([TGChatMessageMetaFont() ascender] - [TGChatMessageMetaFont() descender]) + 2.0;
                     NSRect time = NSMakeRect(4.0, 4.0, 30.0, lineHeight);
+                    // The production renderer calibrates font/approved-asset ink
+                    // in an offscreen context once per geometry. Warm that work
+                    // outside the trace of the two visible receipt glyphs.
+                    NSMutableArray *warmTrace = TGStatusAssetTrace;
+                    TGStatusAssetTrace = nil;
+                    TGDrawOutgoingStatusDotsForItem(item, time, flip);
+                    TGStatusAssetTrace = warmTrace;
                     NSUInteger state = 0;
                     CGFloat width = TGOutgoingStatusDotsWidthForItem(item);
                     for (state = 0; state < 3; state++) {
@@ -847,6 +854,9 @@ static void TGTestCompactMessageGeometry(void) {
                 NSRect body = TGMessageInlineTextRectForItem(item, bubble, [flip boolValue]);
                 NSRect time = TGMessageInlineTimeRectForItem(item, bubble, [flip boolValue]);
                 TGAssertTrue(NSContainsRect(bubble, body) && NSContainsRect(bubble, time), @"body and complete 12/24-hour time fit both coordinate orientations");
+                // Keep cold offscreen calibration out of the visible-asset
+                // bounds audit; the real receipt raster probe checks its ink.
+                TGDrawOutgoingStatusDotsForItem(item, time, [flip boolValue]);
                 TGStatusAssetTrace = [[NSMutableArray alloc] init];
                 TGDrawOutgoingStatusDotsForItem(item, time, [flip boolValue]);
                 for (NSDictionary *asset in TGStatusAssetTrace) {

@@ -72,6 +72,12 @@
     NSMutableDictionary *request = [NSMutableDictionary dictionary];
     [request setObject:@"viewMessages" forKey:@"@type"];
     [request setObject:chatID forKey:@"chat_id"];
+    // Older tdjson parsers ignore unknown source and accept missing thread as
+    // zero. Scope the first request too; a successful reply won't use fallback.
+    NSNumber *safeThreadID = [NSNumber numberWithLongLong:0];
+    if ([messageThreadID respondsToSelector:@selector(longLongValue)] && [messageThreadID longLongValue] > 0)
+        safeThreadID = [NSNumber numberWithLongLong:[messageThreadID longLongValue]];
+    [request setObject:safeThreadID forKey:@"message_thread_id"];
     [request setObject:safeMessageIDs forKey:@"message_ids"];
     [request setObject:[NSDictionary dictionaryWithObject:@"messageSourceChatHistory" forKey:@"@type"] forKey:@"source"];
     [request setObject:[NSNumber numberWithBool:forceRead] forKey:@"force_read"];
@@ -86,11 +92,6 @@
     if (!response) {
         NSMutableDictionary *legacyRequest = [NSMutableDictionary dictionaryWithDictionary:request];
         [legacyRequest removeObjectForKey:@"source"];
-        NSNumber *safeThreadID = [NSNumber numberWithLongLong:0];
-        if ([messageThreadID respondsToSelector:@selector(longLongValue)] && [messageThreadID longLongValue] > 0) {
-            safeThreadID = [NSNumber numberWithLongLong:[messageThreadID longLongValue]];
-        }
-        [legacyRequest setObject:safeThreadID forKey:@"message_thread_id"];
         if (!forceRead && ![[self userOpenedChatSelectionGenerationForChatID:chatID] isEqualToNumber:generation]) return NO;
         NSError *legacySchemaError = nil;
         response = [self sendTDLibRequestAndWaitForExtra:legacyRequest

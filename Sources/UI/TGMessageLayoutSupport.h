@@ -65,6 +65,10 @@ NSRect TGPollOptionRectForItem(TGMessageItem *item, NSRect bubbleRect, NSUIntege
 NSInteger TGPollOptionIndexForPoint(TGMessageItem *item, NSRect bubbleRect, NSPoint point, BOOL flipped);
 NSRect TGPollConfirmRectForItem(TGMessageItem *item, NSRect bubbleRect, BOOL flipped);
 BOOL TGPollPointIsInConfirmRect(TGMessageItem *item, NSRect bubbleRect, NSPoint point, BOOL flipped);
+CGFloat TGMessageContentFooterReservation(TGMessageItem *item, CGFloat innerWidth);
+CGFloat TGMessageFooterWrappedHeightForItem(TGMessageItem *item, CGFloat innerWidth);
+NSRect TGMessageFooterIndicatorsRectInWidth(TGMessageItem *item, NSRect timeRect, CGFloat innerWidth, BOOL flipped);
+void TGDrawMessageFooterIndicatorsInWidth(TGMessageItem *item, NSRect timeRect, CGFloat innerWidth, BOOL flipped);
 CGFloat TGMessageReactionFooterHeight(TGMessageItem *item, CGFloat innerWidth);
 CGFloat TGMessageReactionContentWidth(TGMessageItem *item, CGFloat innerWidth);
 NSRect TGMessageReactionTimeRect(TGMessageItem *item, NSRect bandRect, BOOL flipped);

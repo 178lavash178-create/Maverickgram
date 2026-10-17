@@ -12,6 +12,7 @@
     TGChatOpenState *_state;
     NSMutableArray *_requests;
     BOOL _useLegacy;
+    BOOL _permissiveLegacy;
     BOOL _closeDuringAuthorization;
     BOOL _reselectDuringAuthorization;
     BOOL _closeBeforeFallback;
@@ -21,6 +22,7 @@
     NSUInteger _authorizationCalls;
 }
 @property (nonatomic, assign) BOOL useLegacy;
+@property (nonatomic, assign) BOOL permissiveLegacy;
 @property (nonatomic, assign) BOOL closeDuringAuthorization;
 @property (nonatomic, assign) BOOL reselectDuringAuthorization;
 @property (nonatomic, assign) BOOL closeBeforeFallback;
@@ -32,6 +34,7 @@
 @end
 
 @implementation AutomaticReadProbeClient
+@synthesize permissiveLegacy = _permissiveLegacy;
 @synthesize useLegacy = _useLegacy, closeDuringAuthorization = _closeDuringAuthorization;
 @synthesize reselectDuringAuthorization = _reselectDuringAuthorization;
 @synthesize closeBeforeFallback = _closeBeforeFallback, ready = _ready;
@@ -74,6 +77,14 @@
     timeout:(NSTimeInterval)timeout errorCode:(NSInteger)errorCode error:(NSError **)error {
     (void)prefix; (void)timeout; (void)errorCode;
     [_requests addObject:[[request copy] autorelease]];
+    if (_permissiveLegacy) {
+        // The real legacy JSON decoder ignores source and accepts an omitted
+        // numeric thread as zero rather than rejecting the whole request.
+        if ([[request objectForKey:@"message_thread_id"] longLongValue] != 7) {
+            fprintf(stderr,"FAIL: permissive legacy decoder would read thread zero instead of topic7\n");exit(1);
+        }
+        return [NSDictionary dictionaryWithObject:@"ok" forKey:@"@type"];
+    }
     if (_useLegacy && [request objectForKey:@"source"]) {
         if (_closeBeforeFallback) [_state setDesiredChatID:nil];
         if (error) *error = [self errorWithDescription:@"synthetic schema error" code:400];
@@ -130,6 +141,14 @@ int main(void) {
     Check([[request objectForKey:@"@type"] isEqual:@"viewMessages"] &&
           ![[request objectForKey:@"force_read"] boolValue] && [request objectForKey:@"source"] &&
           [[request objectForKey:@"message_ids"] count] == 3, "automatic current-schema request never forces a closed read");
+
+    client = Client(); client.permissiveLegacy = YES; [client setUserOpenedChatID:@1];
+    Check(Automatic(client, &error) && [[client requests] count] == 1,
+          "permissive legacy decoder accepts the first correctly scoped automatic request");
+    client = Client(); client.permissiveLegacy = YES;
+    Check([client markMessagesAsReadForChatID:@1 messageThreadID:@7 messageTopicKind:@"forum"
+        messageIDs:[NSArray arrayWithObject:@501] timeout:4 error:&error] && [[client requests] count] == 1,
+          "explicit topic read remains scoped even when legacy returns success without fallback");
 
     client = Client(); client.acknowledgeOpen = NO; [client setUserOpenedChatID:@1];
     Check(!Automatic(client, &error) && [[client requests] count] == 0 && [client authorizationCalls] == 0,

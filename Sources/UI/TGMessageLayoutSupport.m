@@ -1955,25 +1955,27 @@ static CGFloat TGMessageReactionMetadataWidth(TGMessageItem *item) {
 }
 
 CGFloat TGMessageReactionContentWidth(TGMessageItem *item, CGFloat innerWidth) {
-    return TGInterfaceDesignIsAqua() ? MAX(1.0, innerWidth) : MAX(1.0, innerWidth - TGMessageReactionMetadataWidth(item));
+    return (TGInterfaceDesignIsAqua() || TGMessageFooterWrappedHeightForItem(item,innerWidth)>0.0)
+        ? MAX(1.0, innerWidth) : MAX(1.0, innerWidth - TGMessageReactionMetadataWidth(item));
 }
 
-static BOOL TGAquaReactionNeedsMetadataRow(TGMessageItem *item, CGFloat innerWidth) {
-    if (!TGInterfaceDesignIsAqua()) { return NO; }
-    NSArray *layout = TGReactionChipLayoutForItem(item, innerWidth);
+static BOOL TGReactionNeedsMetadataRow(TGMessageItem *item, CGFloat innerWidth) {
+    BOOL wrapped = TGMessageFooterWrappedHeightForItem(item,innerWidth)>0.0;
+    if (!TGInterfaceDesignIsAqua() && !wrapped) { return NO; }
+    NSArray *layout = TGReactionChipLayoutForItem(item, TGMessageReactionContentWidth(item,innerWidth));
     if ([layout count] == 0 || TGMessageReactionMetadataWidth(item) <= 0.0) { return NO; }
     NSRect last = [[[layout lastObject] objectForKey:@"frame"] rectValue];
-    return NSMaxX(last) + TGMessageReactionMetadataWidth(item) > innerWidth;
+    return wrapped || NSMaxX(last) + TGMessageReactionMetadataWidth(item) > innerWidth;
 }
 
 CGFloat TGMessageReactionFooterHeight(TGMessageItem *item, CGFloat innerWidth) {
     CGFloat contentWidth = TGMessageReactionContentWidth(item, innerWidth);
     CGFloat height = TGReactionChipsHeightForItem(item, contentWidth);
-    if (TGAquaReactionNeedsMetadataRow(item, innerWidth)) {
+    if (TGReactionNeedsMetadataRow(item, innerWidth)) {
         NSArray *layout = TGReactionChipLayoutForItem(item, contentWidth);
         CGFloat fullHeight = NSMaxY([[[layout lastObject] objectForKey:@"frame"] rectValue]) + 6.0;
         // Reserve the extra line proportionally during insertion/removal too.
-        height += 28.0 * MIN(1.0, height / MAX(1.0, fullHeight));
+        height += (28.0 + TGMessageFooterWrappedHeightForItem(item,innerWidth)) * MIN(1.0, height / MAX(1.0, fullHeight));
     }
     return height;
 }
@@ -1984,7 +1986,7 @@ NSRect TGMessageReactionTimeRect(TGMessageItem *item, NSRect bandRect, BOOL flip
     if ([time length] == 0 || [layout count] == 0 || NSHeight(bandRect) <= 0.0) { return NSZeroRect; }
     NSSize timeSize = [time sizeWithAttributes:[NSDictionary dictionaryWithObject:TGChatMessageMetaFont() forKey:NSFontAttributeName]];
     NSRect lastChip = [[[layout lastObject] objectForKey:@"frame"] rectValue];
-    if (TGAquaReactionNeedsMetadataRow(item, NSWidth(bandRect))) { lastChip.origin.y += 28.0; }
+    if (TGReactionNeedsMetadataRow(item, NSWidth(bandRect))) { lastChip.origin.y += 28.0 + TGMessageFooterWrappedHeightForItem(item,NSWidth(bandRect)); }
     CGFloat centerY = flipped ? NSMinY(bandRect) + 2.0 + NSMidY(lastChip)
                              : NSMaxY(bandRect) - 2.0 - NSMidY(lastChip);
     CGFloat statusWidth = TGOutgoingStatusDotsWidthForItem(item);
@@ -1993,7 +1995,7 @@ NSRect TGMessageReactionTimeRect(TGMessageItem *item, NSRect bandRect, BOOL flip
     // A growing/shrinking reaction band can be shorter than its final wrapped
     // chip layout. Keep metadata out of the body and neighbouring message until
     // its complete line fits; reaction chips already clip to the current band.
-    NSRect metadataRect = NSUnionRect(timeRect, TGMessageFooterIndicatorsRectForTimeRect(item,timeRect));
+    NSRect metadataRect = NSUnionRect(timeRect, TGMessageFooterIndicatorsRectInWidth(item,timeRect,NSWidth(bandRect),flipped));
     if (TGMessageFooterIndicatorsWidthForItem(item) <= 0.0) metadataRect = timeRect;
     return NSContainsRect(bandRect, metadataRect) ? timeRect : NSZeroRect;
 }
@@ -2269,6 +2271,9 @@ CGFloat TGMessageBubbleHeightForItem(TGMessageItem *item, CGFloat availableWidth
         if (TGMessageItemShowsCommentBar(item)) {
             rowHeight += MAX(24.0, TGMessageCommentTitleLineHeight() + 8.0);
         }
+        CGFloat wrappedMetadata = TGMessageFooterWrappedHeightForItem(item,MAX(1.0,availableWidth-36.0));
+        if (TGReactionChipsMinimumWidthForItem(item)<=0.0 && wrappedMetadata>0.0)
+            rowHeight += wrappedMetadata + MAX(12.0,ceil([TGChatMessageMetaFont() boundingRectForFont].size.height)+2.0);
         rowHeight += TGReactionBandHeightForMessageItemWidth(item, MAX(60.0, availableWidth - 66.0));
         if (rowHeight < 44.0) {
             rowHeight = 44.0;
@@ -2376,9 +2381,10 @@ NSRect TGMessageBubbleRectForItem(TGMessageItem *item, NSRect cellFrame, BOOL sh
             [NSDictionary dictionaryWithObject:TGChatMessageBoldSecondaryFont() forKey:NSFontAttributeName]].width) + 62.0;
         bubbleWidth = MAX(bubbleWidth, MIN(maximumBubbleWidth,commentWidth));
     }
+    CGFloat footerWidth = 0.0;
     if (separateMetadataFooter && [timeString length] > 0) {
         NSSize timeSize = [timeString sizeWithAttributes:timeAttributes];
-        CGFloat footerWidth = ceil(timeSize.width) + TGOutgoingStatusDotsWidthForItem(item) + TGMessageFooterIndicatorsWidthForItem(item) + 29.0;
+        footerWidth = ceil(timeSize.width) + TGOutgoingStatusDotsWidthForItem(item) + TGMessageFooterIndicatorsWidthForItem(item) + 29.0;
         if (footerWidth > bubbleWidth) {
             bubbleWidth = footerWidth;
         }
@@ -2389,9 +2395,11 @@ NSRect TGMessageBubbleRectForItem(TGMessageItem *item, NSRect cellFrame, BOOL sh
     if (bubbleWidth < 96.0) {
         bubbleWidth = 96.0;
     }
-    if (bubbleWidth > maximumBubbleWidth) {
-        bubbleWidth = maximumBubbleWidth;
-    }
+    // Metadata can exceed the decorative body cap before wrapping. Keep the
+    // actual side/avatar gutters; body and media measurement remain unchanged.
+    CGFloat physicalMaximum = MAX(1.0,NSWidth(cellFrame)-2.0*sidePadding-avatarGutter);
+    CGFloat metadataMaximum = MAX(maximumBubbleWidth,MIN(physicalMaximum,footerWidth));
+    bubbleWidth = MIN(bubbleWidth,MIN(physicalMaximum,metadataMaximum));
 
     CGFloat senderHeaderHeight = TGMessageSenderHeaderHeightForItem(item, showSenderDetails);
     CGFloat contextHeaderHeight = TGMessageContextHeaderHeightForItem(item);
@@ -2428,6 +2436,7 @@ NSRect TGMessageBubbleRectForItem(TGMessageItem *item, NSRect cellFrame, BOOL sh
     } else if (bubbleHeight < 42.0) {
         bubbleHeight = 42.0;
     }
+    bubbleHeight += TGMessageContentFooterReservation(item,MAX(1.0,bubbleWidth-24.0));
     bubbleHeight += TGReactionBandHeightForMessageItemWidth(item, bubbleWidth);
     bubbleHeight += TGMessageCommentBarHeightForItem(item);
 

@@ -20,14 +20,14 @@ NSRect TGMessageFooterIndicatorsRectForTimeRect(TGMessageItem *item, NSRect time
     return width > 0.0 && !NSIsEmptyRect(timeRect)
         ? NSMakeRect(NSMinX(timeRect)-width,NSMinY(timeRect),width,NSHeight(timeRect)) : NSZeroRect;
 }
-void TGDrawMessageFooterIndicatorsForTimeRect(TGMessageItem *item, NSRect timeRect, BOOL flipped) {
+static void TGDrawMessageFooterIndicators(TGMessageItem *item, NSRect timeRect, NSRect countAnchor, BOOL wrapped, BOOL flipped) {
     if (NSIsEmptyRect(timeRect)) return;
     NSColor *ink = TGMessageMetadataInkColor(item,flipped);
-    NSRect remaining = timeRect;
+    NSRect remaining = countAnchor;
     if ([item isPinned]) {
-        NSRect pin = NSMakeRect(NSMinX(remaining)-16.0,floor(NSMidY(timeRect)-6.0),12.0,12.0);
+        NSRect pin = NSMakeRect(NSMinX(timeRect)-16.0,floor(NSMidY(timeRect)-6.0),12.0,12.0);
         TGDrawTemplateIconAsset(@"flag-triangle",pin,ink,1.0,flipped);
-        remaining.origin.x -= 16.0;
+        if (!wrapped) remaining.origin.x -= 16.0;
     }
     TGDrawMessageReplyIndicatorForTimeRect(item,remaining,flipped);
     remaining.origin.x -= TGMessageReplyIndicatorWidthForItem(item);
@@ -35,8 +35,60 @@ void TGDrawMessageFooterIndicatorsForTimeRect(TGMessageItem *item, NSRect timeRe
     if ([views length]) {
         NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys:TGChatMessageMetaFont(),NSFontAttributeName,ink,NSForegroundColorAttributeName,nil];
         CGFloat width = ceil([views sizeWithAttributes:attributes].width);
-        [views drawInRect:NSMakeRect(NSMinX(remaining)-width-7.0,NSMinY(timeRect),width,NSHeight(timeRect)) withAttributes:attributes];
+        [views drawInRect:NSMakeRect(NSMinX(remaining)-width-7.0,NSMinY(remaining),width,NSHeight(remaining)) withAttributes:attributes];
     }
+}
+
+
+void TGDrawMessageFooterIndicatorsForTimeRect(TGMessageItem *item, NSRect timeRect, BOOL flipped) {
+    TGDrawMessageFooterIndicators(item,timeRect,timeRect,NO,flipped);
+}
+// Timestamp, original receipts and pin stay together on the final line. Only
+// passive view/reply counts wrap above when the physical viewport requires it.
+CGFloat TGMessageFooterWrappedHeightForItem(TGMessageItem *item, CGFloat innerWidth) {
+    CGFloat indicators = TGMessageFooterIndicatorsWidthForItem(item);
+    NSString *time = TGShortTimeStringFromDateValue([item date]);
+    if (indicators <= ([item isPinned] ? 16.0 : 0.0) || ![time length]) return 0.0;
+    NSSize size = [time sizeWithAttributes:[NSDictionary dictionaryWithObject:TGChatMessageMetaFont() forKey:NSFontAttributeName]];
+    CGFloat status = TGOutgoingStatusDotsWidthForItem(item);
+    CGFloat width = ceil(size.width) + status + (status > 0.0 ? 5.0 : 0.0) + indicators + 2.0;
+    return width > innerWidth ? MAX(12.0,ceil(size.height)+2.0)+4.0 : 0.0;
+}
+CGFloat TGMessageContentFooterReservation(TGMessageItem *item, CGFloat innerWidth) {
+    if (TGReactionChipsMinimumWidthForItem(item)>0.0) return 0.0;
+    CGFloat extra = TGMessageFooterWrappedHeightForItem(item,innerWidth);
+    // Fixed-height controls must not center their content in added metadata.
+    // Give their passive footer a separate region even when it fits one line.
+    if (TGMessageFooterIndicatorsWidthForItem(item)>0.0 &&
+        (TGMessageItemIsNonVisualPlayableMedia(item) || TGMessageItemIsNonVisualDocument(item) ||
+         TGMessageItemIsPollContent(item) || TGMessageItemIsCallContent(item))) {
+        NSString *time = TGShortTimeStringFromDateValue([item date]);
+        NSSize size = [time sizeWithAttributes:[NSDictionary dictionaryWithObject:TGChatMessageMetaFont() forKey:NSFontAttributeName]];
+        if ([time length]) extra += MAX(12.0,ceil(size.height)+2.0)+4.0;
+    }
+    return extra;
+}
+static NSRect TGMessageFooterCountAnchor(TGMessageItem *item, NSRect timeRect, CGFloat innerWidth, BOOL flipped) {
+    CGFloat extra = TGMessageFooterWrappedHeightForItem(item,innerWidth);
+    if (extra > 0.0 && !NSIsEmptyRect(timeRect)) {
+        CGFloat status = TGOutgoingStatusDotsWidthForItem(item);
+        timeRect.origin.x = NSMaxX(timeRect)+status+(status > 0.0 ? 5.0 : 0.0);
+        timeRect.origin.y += flipped ? -extra : extra;
+    }
+    return timeRect;
+}
+NSRect TGMessageFooterIndicatorsRectInWidth(TGMessageItem *item, NSRect timeRect, CGFloat innerWidth, BOOL flipped) {
+    if (TGMessageFooterWrappedHeightForItem(item,innerWidth)<=0.0)
+        return TGMessageFooterIndicatorsRectForTimeRect(item,timeRect);
+    NSRect anchor = TGMessageFooterCountAnchor(item,timeRect,innerWidth,flipped);
+    CGFloat countWidth = TGMessageFooterIndicatorsWidthForItem(item)-([item isPinned]?16.0:0.0);
+    NSRect counts = NSMakeRect(NSMinX(anchor)-countWidth,NSMinY(anchor),countWidth,NSHeight(anchor));
+    NSRect pin = [item isPinned] ? NSMakeRect(NSMinX(timeRect)-16.0,NSMinY(timeRect),16.0,NSHeight(timeRect)) : NSZeroRect;
+    return NSIsEmptyRect(pin) ? counts : NSUnionRect(counts,pin);
+}
+void TGDrawMessageFooterIndicatorsInWidth(TGMessageItem *item, NSRect timeRect, CGFloat innerWidth, BOOL flipped) {
+    BOOL wrapped = TGMessageFooterWrappedHeightForItem(item,innerWidth)>0.0;
+    TGDrawMessageFooterIndicators(item,timeRect,TGMessageFooterCountAnchor(item,timeRect,innerWidth,flipped),wrapped,flipped);
 }
 
 // AppKit font metrics and PNG sampling differ on Mavericks and newer systems.

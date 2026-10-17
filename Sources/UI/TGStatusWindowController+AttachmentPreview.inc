@@ -8,7 +8,7 @@
                                                     styleMask:(NSTitledWindowMask | NSClosableWindowMask)
                                                       backing:NSBackingStoreBuffered
                                                         defer:NO] autorelease];
-    [window setTitle:@"Send photo"];
+    [window setTitle:TGLoc(@"attachment.preview.title")];
     [window setReleasedWhenClosed:NO];
 
     TGUtilityWindowView *contentView = [[[TGUtilityWindowView alloc] initWithFrame:frame] autorelease];
@@ -23,7 +23,7 @@
     [contentView addSubview:previewCard];
 
     NSTextField *titleField = [self labelWithFrame:NSMakeRect(24, 562, 472, 24)
-                                              text:@"1 media"
+                                              text:[NSString stringWithFormat:TGLoc(@"attachment.preview.count"), (unsigned long)1]
                                               font:[NSFont boldSystemFontOfSize:16.0]];
     [titleField setAlignment:NSCenterTextAlignment];
     [titleField setTextColor:TGThemeSurfaceInkColor(TGClassicHeaderTextColor(1.0), TGThemeSurfaceWindow, 4.5)];

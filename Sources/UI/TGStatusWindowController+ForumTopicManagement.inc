@@ -14,9 +14,51 @@ static NSString * const TGForumTopicOperationDelete = @"delete";
         [self.forumTopicItems indexOfObjectIdenticalTo:item] != NSNotFound;
 }
 
+// Main-thread role updates override old asynchronously loaded topic snapshots.
+// The bounded cache contains capabilities only and is scoped to client/account.
+static char TGForumTopicRoleCacheKey;
+- (NSMutableDictionary *)forumTopicRoleContexts {
+    NSMutableDictionary *state=objc_getAssociatedObject(self,&TGForumTopicRoleCacheKey);
+    id account=self.profileUserID ? (id)self.profileUserID : (id)[NSNull null];
+    if ([state objectForKey:@"client"]!=self.client || ![[state objectForKey:@"account"] isEqual:account]) {
+        state=[NSMutableDictionary dictionaryWithObjectsAndKeys:account,@"account",[NSMutableDictionary dictionary],@"roles",nil];
+        if (self.client) [state setObject:self.client forKey:@"client"];
+        objc_setAssociatedObject(self,&TGForumTopicRoleCacheKey,state,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+    return [state objectForKey:@"roles"];
+}
+- (void)refreshForumTopicItemRightsFromCache:(TGChatItem *)item {
+    if (![self forumTopicItemIsCurrent:item]) return;
+    NSDictionary *permissions=[item forumTopicActionPermissions];
+    id groupID=[permissions objectForKey:@"supergroup_id"];
+    NSDictionary *context=groupID ? [[self forumTopicRoleContexts] objectForKey:groupID] : nil;
+    if (!context) return;
+    NSDictionary *topic=[NSDictionary dictionaryWithObjectsAndKeys:
+        [NSNumber numberWithBool:TGForumPermissionFlag(permissions,@"topic_is_outgoing")],@"is_outgoing",
+        [NSNumber numberWithBool:TGForumPermissionFlag(permissions,@"topic_is_general")],@"is_general",nil];
+    [item setForumTopicActionPermissions:TGForumTopicActionPermissions(context,topic,[item messageThreadID])];
+}
+- (void)applyForumTopicRightsUpdateSummary:(NSDictionary *)summary {
+    if (![self.currentAuthState isEqualToString:@"ready"] || !self.client ||
+        ![[summary objectForKey:@"kind"] isEqual:@"forum_topic_rights"]) return;
+    id groupID=[summary objectForKey:@"supergroup_id"];
+    if (![groupID respondsToSelector:@selector(longLongValue)] || [groupID longLongValue]<=0) return;
+    NSMutableDictionary *contexts=[self forumTopicRoleContexts];
+    if ([contexts count]>=64 && ![contexts objectForKey:groupID]) {
+        // Preserve the displayed group's revocation even during unrelated updates.
+        id activeID=[self.forumTopicItems count] ? [[[self.forumTopicItems objectAtIndex:0] forumTopicActionPermissions] objectForKey:@"supergroup_id"] : nil;
+        id active=activeID ? [[contexts objectForKey:activeID] retain] : nil;
+        [contexts removeAllObjects];
+        if (active) { [contexts setObject:active forKey:activeID];[active release]; }
+    }
+    [contexts setObject:summary forKey:groupID];
+    for (TGChatItem *item in self.forumTopicItems) [self refreshForumTopicItemRightsFromCache:item];
+}
 - (BOOL)forumTopicItem:(TGChatItem *)item allowsOperation:(NSString *)operation {
+    if (![self forumTopicItemIsCurrent:item]) return NO;
+    [self refreshForumTopicItemRightsFromCache:item];
     id flag = [[item forumTopicActionPermissions] objectForKey:operation];
-    return [self forumTopicItemIsCurrent:item] && [flag respondsToSelector:@selector(boolValue)] && [flag boolValue];
+    return [flag respondsToSelector:@selector(boolValue)] && [flag boolValue];
 }
 
 - (void)markForumTopicReadFromMenu:(id)sender {

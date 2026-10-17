@@ -963,6 +963,8 @@ static BOOL TGTDLibSendErrorLooksLikeSchemaMismatch(NSError *error) {
 }
 
 - (NSDictionary *)safeUpdateSummaryForObject:(NSDictionary *)dictionary {
+    NSDictionary *forumRightsSummary = TGForumTopicRightsUpdateSummary(dictionary);
+    if (forumRightsSummary) return forumRightsSummary;
     NSDictionary *readSummary = TGNotificationReadSummaryFromUpdate(dictionary);
     if (readSummary) { return readSummary; }
     NSDictionary *clockSummary = TGNotificationClockSummaryFromUpdate(dictionary);
