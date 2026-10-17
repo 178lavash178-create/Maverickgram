@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from __future__ import print_function
 import os,shutil,subprocess,sys,tempfile
 root=os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))

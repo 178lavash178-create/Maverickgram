@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """Execute production utility constructors/layouts and local state, no TDLib calls."""
 from __future__ import print_function, unicode_literals
 import os,re,shutil,subprocess,sys,tempfile
