@@ -1,0 +1,121 @@
+#!/usr/bin/env python
+"""Production topic menus/read actions and folder routing, isolated from accounts."""
+from __future__ import print_function
+import os,sys,subprocess,tempfile,shutil
+root=os.path.abspath(os.path.join(os.path.dirname(__file__),os.pardir))
+def read(path):
+    with open(os.path.join(root,path),'rb') as f:return f.read().decode('utf-8')
+controller=read('Sources/UI/TGStatusWindowController.m')
+a=controller.index('- (void)folderFilterChanged:');b=controller.index('\n- (void)toggleDrawer:',a)
+folder=controller[a:b]
+forum=read('Sources/UI/TGStatusWindowController+ForumTopicManagement.inc')
+section=read('Sources/UI/TGStatusWindowController+SectionLayout.inc')
+def bool_method(source,name,method,extra=''):
+    a=source.index('    BOOL '+name+' = ');b=source.index(';',a)+1
+    return '- (BOOL)'+method+' {'+extra+source[a:b]+'return '+name+';}'
+header=bool_method(controller,'canCall','headerCanCall')+bool_method(section,'showSelectedChatCall','headerShowsCall','BOOL showConversationContent=YES;')+bool_method(section,'layoutSelectedChatCall','headerReservesCallWidth')
+harness=r'''
+#import <Cocoa/Cocoa.h>
+#import <dispatch/dispatch.h>
+#import "TGChatItem.h"
+#import "TGMessageItem.h"
+#import "TGTDLibClient+ForumTopics.h"
+static NSString *TGSectionChats=@"chats",*TGSectionWorkshop=@"workshop";
+static NSUInteger Checks;
+static void Check(BOOL value,const char *reason){Checks++;if(!value){fprintf(stderr,"Forum actions: %s\n",reason);exit(1);}}
+NSString *TGLoc(NSString *key){return key;}
+static NSInteger TGRunAlert(NSAlert *alert,NSWindow *window){(void)alert;(void)window;return NSAlertSecondButtonReturn;}
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wincomplete-implementation"
+@implementation TGTDLibClient
+@end
+#pragma clang diagnostic pop
+@interface TopicClient:TGTDLibClient
+@property(nonatomic) NSUInteger historyCalls,readCalls,invalidations;
+@property(nonatomic) BOOL transportAvailable;
+@property(nonatomic,retain) NSNumber *historyThread,*readThread,*readChat;
+@property(nonatomic,copy) NSString *historyKind,*readKind;
+@property(nonatomic,copy) NSArray *readIDs;
+@property(nonatomic,copy) void(^beforeHistory)(void);
+@end
+@implementation TopicClient
+@synthesize transportAvailable,historyCalls,readCalls,invalidations,historyThread,readThread,readChat,historyKind,readKind,readIDs,beforeHistory;
+- (NSArray *)recentMessagePreviewItemsForChatID:(NSNumber *)chatID messageThreadID:(NSNumber *)thread messageTopicKind:(NSString *)kind limit:(NSUInteger)limit timeout:(NSTimeInterval)timeout error:(NSError **)error {
+ (void)limit;(void)timeout;(void)error;self.historyCalls++;self.historyThread=thread;self.historyKind=kind;
+ if(beforeHistory)dispatch_sync(dispatch_get_main_queue(),beforeHistory);
+ TGMessageItem *message=[[[TGMessageItem alloc] initWithChatID:chatID messageID:@99 date:@0 outgoing:NO preview:@"fixture"] autorelease];return [NSArray arrayWithObject:message];
+}
+- (BOOL)markMessagesAsReadForChatID:(NSNumber *)chatID messageThreadID:(NSNumber *)thread messageTopicKind:(NSString *)kind messageIDs:(NSArray *)ids timeout:(NSTimeInterval)timeout error:(NSError **)error{
+ (void)timeout;(void)error;self.readCalls++;self.readChat=chatID;self.readThread=thread;self.readKind=kind;self.readIDs=ids;return YES;
+}
+- (void)invalidateMainChatListExhaustion { self.invalidations++; }
+- (void)dealloc{[historyThread release];[readThread release];[readChat release];[historyKind release];[readKind release];[readIDs release];[beforeHistory release];[super dealloc];}
+@end
+@interface TopicRoot:NSObject
+@property(nonatomic,retain) TopicClient *client,*callCoordinator;
+@property(nonatomic,retain) NSNumber *selectedChatID,*profileUserID;
+@property(nonatomic,copy) NSString *selectedChatTypeSummary;
+@property(nonatomic) BOOL mediaCenterVisible;
+@property(nonatomic,copy) NSString *currentAuthState,*activeSection,*selectedMessageTopicKind;
+@property(nonatomic,retain) NSNumber *topicParentChatID,*selectedChatFilterID,*selectedMessageThreadID,*suppressedForumTopicAutoOpenChatID;
+@property(nonatomic,copy) NSArray *forumTopicItems;
+@property(nonatomic) BOOL showingForumTopicList,forumTopicsPresentedInTopBar,forumTopicMutationInFlight,showingArchivedChats,chatNavigationClosed,chatsExhausted,autoChatListLoadArmed,autoChatListRefreshArmed;
+@property(nonatomic) NSUInteger forumTopicNavigationGeneration,chatPreviewLimit,reloads,readClears;
+@property(nonatomic,retain) NSTextField *statusField;
+@property(nonatomic,retain) NSWindow *window;
+@property(nonatomic,retain) id workshopCoordinator;
+@end
+@implementation TopicRoot
+@synthesize callCoordinator,selectedChatID,profileUserID,selectedChatTypeSummary,mediaCenterVisible,client,currentAuthState,activeSection,selectedMessageTopicKind,topicParentChatID,selectedChatFilterID,selectedMessageThreadID,suppressedForumTopicAutoOpenChatID,forumTopicItems,showingForumTopicList,forumTopicsPresentedInTopBar,forumTopicMutationInFlight,showingArchivedChats,chatNavigationClosed,chatsExhausted,autoChatListLoadArmed,autoChatListRefreshArmed,forumTopicNavigationGeneration,chatPreviewLimit,reloads,readClears,statusField,window,workshopCoordinator;
+- (id)init{if((self=[super init])){self.currentAuthState=@"ready";self.activeSection=TGSectionChats;self.client=[[[TopicClient alloc] init] autorelease];self.statusField=[[[NSTextField alloc] init] autorelease];}return self;}
+- (void)dealloc{[callCoordinator release];[selectedChatID release];[profileUserID release];[selectedChatTypeSummary release];[client release];[currentAuthState release];[activeSection release];[selectedMessageTopicKind release];[topicParentChatID release];[selectedChatFilterID release];[selectedMessageThreadID release];[suppressedForumTopicAutoOpenChatID release];[forumTopicItems release];[statusField release];[window release];[workshopCoordinator release];[super dealloc];}
+- (void)appendDetail:(NSString *)text{(void)text;}
+- (void)openNewChatWindow:(id)sender{(void)sender;}
+- (void)reloadCurrentForumTopicListInteractive:(BOOL)interactive{(void)interactive;}
+- (void)recordReadNotificationMessageIDs:(NSArray *)ids chatID:(NSNumber *)chatID{Check([ids count]>0 && [chatID isEqual:self.topicParentChatID],"read notification state remains bound to the requested topic messages");}
+- (void)clearUnreadCountForChatID:(NSNumber *)chatID messageThreadID:(NSNumber *)thread{Check([chatID isEqual:self.topicParentChatID],"only current parent unread count changes");Check([thread longLongValue]>0,"General uses topic 1, never chat-wide zero");self.readClears++;}
+- (BOOL)isAquaChatInfoPanelActive{return NO;}
+__HEADER__
+- (void)refreshChatListTitle{}
+- (void)updateDrawerFolderButtonStates{}
+- (void)captureNavigationContinuity{}
+- (void)armNavigationChatListRestore{}
+- (NSUInteger)navigationChatListRestoreLimit{return 40;}
+- (void)clearForumTopicListState{self.showingForumTopicList=NO;self.forumTopicsPresentedInTopBar=NO;self.forumTopicItems=nil;self.topicParentChatID=nil;}
+- (void)reloadChatsInteractive:(BOOL)interactive preserveSelection:(BOOL)preserve requestedLimit:(NSUInteger)limit{Check(interactive&&!preserve&&limit==40,"folder reload uses correct navigation request");self.reloads++;}
+__FORUM__
+__FOLDER__
+@end
+static BOOL MenuHas(NSMenu *menu,SEL selector){for(NSMenuItem *item in [menu itemArray])if([item action]==selector)return YES;return NO;}
+static TGChatItem *Topic(NSNumber *thread){TGChatItem *item=[[[TGChatItem alloc] initWithChatID:@(-100) title:@"Topic" typeSummary:@"Forum topic" unreadCount:@9] autorelease];item.forumTopic=YES;item.parentChatID=@(-100);item.messageThreadID=thread;item.messageTopicKind=@"forum";return item;}
+static void Spin(void){NSDate *until=[NSDate dateWithTimeIntervalSinceNow:.3];while([until timeIntervalSinceNow]>0)[[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:.005]];}
+int main(void){NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];[NSApplication sharedApplication];
+ TopicRoot *p=[[[TopicRoot alloc] init] autorelease];TGChatItem *item=Topic(@66);p.topicParentChatID=item.parentChatID;p.forumTopicItems=[NSArray arrayWithObject:item];p.showingForumTopicList=YES;
+ NSMenu *menu=[[[NSMenu alloc] initWithTitle:@"test"] autorelease];[p populateForumTopicContextMenu:menu forItem:item];Check([menu numberOfItems]==1&&MenuHas(menu,@selector(markForumTopicReadFromMenu:)),"non-admin only sees read action");
+ item.forumTopicActionPermissions=[NSDictionary dictionaryWithObjectsAndKeys:@YES,@"rename",@YES,@"close",nil];[menu removeAllItems];[p populateForumTopicContextMenu:menu forItem:item];Check(MenuHas(menu,@selector(renameForumTopicFromMenu:))&&MenuHas(menu,@selector(toggleForumTopicClosedFromMenu:)),"documented own-topic permissions appear");Check(!MenuHas(menu,@selector(deleteForumTopicFromMenu:))&&!MenuHas(menu,@selector(toggleForumTopicPinnedFromMenu:)),"ownership does not invent destructive rights");
+ NSMenuItem *sender=[[[NSMenuItem alloc] init] autorelease];[sender setRepresentedObject:item];
+ for(NSNumber *thread in [NSArray arrayWithObjects:@66,@1,nil]){item.messageThreadID=thread;NSUInteger before=p.client.readCalls;[p markForumTopicReadFromMenu:sender];Spin();Check(p.client.readCalls==before+1,"one explicit topic read sends one receipt");Check([p.client.historyThread isEqual:thread]&&[p.client.readThread isEqual:thread]&&[p.client.readKind isEqual:@"forum"],"read remains scoped to requested topic including General");Check([p.client.readChat isEqual:@(-100)]&&[p.client.readIDs isEqual:[NSArray arrayWithObject:@99]],"only returned topic message IDs reach receipt");}
+ item.messageThreadID=@66;item.messageTopicKind=@"forum_legacy";[p markForumTopicReadFromMenu:sender];Spin();Check([p.client.readKind isEqual:@"forum_legacy"],"legacy topic identity retained");
+ NSUInteger before=p.client.readCalls;p.client.beforeHistory=^{p.forumTopicNavigationGeneration++;};[p markForumTopicReadFromMenu:sender];Spin();Check(p.client.readCalls==before,"navigation changed during history fetch cannot mark anything read");p.client.beforeHistory=nil;
+ p.forumTopicItems=nil;[menu removeAllItems];[p populateForumTopicContextMenu:menu forItem:item];Check([menu numberOfItems]==0,"missing current topic array never accepts stale item");p.forumTopicItems=[NSArray arrayWithObject:item];
+ p.currentAuthState=@"closed";[p markForumTopicReadFromMenu:sender];Spin();Check(p.client.readCalls==before,"signed-out context ignores old menu");p.currentAuthState=@"ready";
+ for(NSUInteger mode=0;mode<5;mode++){p.showingForumTopicList=mode==0;p.forumTopicsPresentedInTopBar=mode==1;p.chatNavigationClosed=mode==2;p.activeSection=mode==3?@"settings":TGSectionChats;p.topicParentChatID=@(-100);p.selectedMessageThreadID=@66;p.selectedMessageTopicKind=@"forum";p.selectedChatFilterID=nil;NSUInteger previous=p.reloads;NSButton *button=[[[NSButton alloc] init] autorelease];[button setTag:-1];[p folderFilterChanged:button];Check(p.reloads==previous+(mode<4?1:0),"same All chats filter exits topics, closed chat or non-chat section");if(mode<4)Check(!p.showingForumTopicList&&!p.forumTopicsPresentedInTopBar&&!p.chatNavigationClosed&&!p.selectedMessageThreadID&&!p.selectedMessageTopicKind&&[p.activeSection isEqual:TGSectionChats],"folder exit removes stale thread and section state");}
+ p.selectedChatFilterID=@7;NSButton *all=[[[NSButton alloc] init] autorelease];[all setTag:-1];NSUInteger previous=p.reloads;[p folderFilterChanged:all];Check(p.reloads==previous+1&&!p.selectedChatFilterID&&!p.showingArchivedChats,"custom folder returns to All chats");
+ p.callCoordinator=p.client;p.callCoordinator.transportAvailable=YES;p.activeSection=TGSectionChats;p.mediaCenterVisible=NO;p.profileUserID=@10;
+ for(NSUInteger identity=0;identity<4;identity++){
+    p.selectedChatID=identity==0?nil:(identity==1?@10:@20);p.selectedChatTypeSummary=identity==3?@"Supergroup":@"Private";
+    BOOL expected=identity==2;Check([p headerCanCall]==expected,"Saved Messages and absent or group chat cannot enable calls");
+    Check([p headerShowsCall]==expected,"Saved Messages never display audio/video buttons");
+    Check([p headerReservesCallWidth]==expected,"hidden self-call buttons do not reserve title width");
+ }
+ printf("Forum actions: %lu production menu, read context, General and folder navigation checks PASS.\n",(unsigned long)Checks);[pool drain];return 0;}
+'''
+build=tempfile.mkdtemp(prefix='telegraphica-forum-actions-')
+try:
+ path=os.path.join(build,'probe.m')
+ with open(path,'wb') as f:f.write(harness.replace('__FORUM__',forum).replace('__FOLDER__',folder).replace('__HEADER__',header).encode('utf-8'))
+ clang=os.environ.get('CLANG') or subprocess.check_output(['xcrun','--find','clang']).decode('utf-8').strip()
+ sdk=subprocess.check_output(['xcrun','--show-sdk-path']).decode('utf-8').strip()
+ command=[clang,'-isysroot',sdk,'-fblocks','-fno-objc-arc','-Wno-deprecated-declarations','-Wno-shadow-ivar','-Wno-objc-method-access','-arch',os.environ.get('TELEGRAPHICA_TEST_ARCH','x86_64'),'-mmacosx-version-min='+os.environ.get('TELEGRAPHICA_TEST_DEPLOYMENT_TARGET','10.8'),'-I'+os.path.join(root,'Sources/Core'),path,os.path.join(root,'Sources/Core/TGChatItem.m'),os.path.join(root,'Sources/Core/TGMessageItem.m'),'-framework','Cocoa','-o',os.path.join(build,'probe')]
+ subprocess.check_call(command);subprocess.check_call([os.path.join(build,'probe')])
+finally:shutil.rmtree(build)

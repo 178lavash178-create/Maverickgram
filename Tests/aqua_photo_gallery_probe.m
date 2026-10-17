@@ -18,9 +18,17 @@ BOOL TGInterfaceDesignIsAqua(void) { return YES; }
 BOOL TGAquaPhotoTransitionIsStaticPhoto(NSDictionary *media) { return [[media objectForKey:@"content_type"] isEqual:@"messagePhoto"]; }
 NSNumber *TGMediaItemFullFileID(NSDictionary *media) { return [media objectForKey:@"file"]; }
 static NSComparisonResult TGMediaCenterCompareItems(TGMessageItem *a,TGMessageItem *b,NSInteger order) { return order ? [[b messageID] compare:[a messageID]] : [[a messageID] compare:[b messageID]]; }
+NSString *TGLoc(NSString *key) { (void)key;return @"Photo"; }
+NSString *TGLanguageCode(void) {return @"ru";}
+NSString *TGMediaItemFullLocalPath(NSDictionary *media) { return [media objectForKey:@"full_local_path"]; }
+NSString *TGMediaItemLocalPath(NSDictionary *media) { return [media objectForKey:@"local_path"]; }
+static unsigned long long TGMediaCenterFileSizeAtPath(NSString *path) {return [path isEqual:@"/synthetic/second.jpg"] ? 8192:0;}
+static NSString *TGMediaCenterReadableSize(unsigned long long value) { return [NSString stringWithFormat:@"%llu KB",value/1024]; }
+static NSString *TGMediaCenterDateStringForItem(TGMessageItem *item) { (void)item;return @"17.10.2026"; }
 void TGAquaPhotoTransitionClear(NSWindow *window) { (void)window; }
 @implementation TGAquaMediaViewerView
 - (void)setGalleryIndex:(NSUInteger)index count:(NSUInteger)count { (void)index;(void)count; }
+- (void)setMediaTitle:(NSString *)title detail:(NSString *)detail { (void)title;(void)detail; }
 @end
 @interface GalleryWindow : NSObject { id _delegate;BOOL _visible;NSUInteger _fullscreen; }
 @property(nonatomic,assign) id delegate;
@@ -66,7 +74,7 @@ void TGAquaPhotoTransitionClear(NSWindow *window) { (void)window; }
 - (void)dealloc { [_mediaPreviewWindow release];[_mediaPreviewImageView release];[_messageItems release];[_mediaCenterItems release];[_mediaCenterSortPopUpButton release];[_selectedChatID release];[_selection release];[_opened release];[_source release];[super dealloc]; }
 @end
 
-static NSDictionary *Photo(NSInteger file) { return [NSDictionary dictionaryWithObjectsAndKeys:@"messagePhoto",@"content_type",[NSNumber numberWithInteger:file],@"file",nil]; }
+static NSDictionary *Photo(NSInteger file) { return [NSDictionary dictionaryWithObjectsAndKeys:@"messagePhoto",@"content_type",[NSNumber numberWithInteger:file],@"file",[NSString stringWithFormat:@"photo-%ld.jpg",(long)file],@"file_name",[NSNumber numberWithInteger:file*1024],@"file_size",nil]; }
 static TGMessageItem *Message(NSInteger chat,NSInteger message,NSArray *media) {
  TGMessageItem *item=[[[TGMessageItem alloc] init] autorelease];item.chatID=[NSNumber numberWithInteger:chat];item.messageID=[NSNumber numberWithInteger:message];item.mediaItems=media;return item;
 }
@@ -75,7 +83,8 @@ int main(void) {
  GalleryOwner *owner=[[[GalleryOwner alloc] init] autorelease];GalleryWindow *window=[[[GalleryWindow alloc] init] autorelease];
  window.delegate=owner;window.visible=YES;owner.mediaPreviewWindow=(id)window;owner.selectedChatID=@7;
  owner.selection=[NSDictionary dictionaryWithObjectsAndKeys:@1,@"account",@7,@"chat",@11,@"thread",@"chats",@"section",nil];
- TGMessageItem *first=Message(7,1,[NSArray arrayWithObjects:Photo(10),Photo(11),nil]);
+ NSMutableDictionary *albumSecond=[[Photo(11) mutableCopy] autorelease];
+ TGMessageItem *first=Message(7,1,[NSArray arrayWithObjects:Photo(10),albumSecond,nil]);
  TGMessageItem *second=Message(7,2,[NSArray arrayWithObjects:[NSDictionary dictionaryWithObject:@"messageVideo" forKey:@"content_type"],Photo(12),nil]);
  TGMessageItem *foreign=Message(8,3,[NSArray arrayWithObject:Photo(13)]);
  owner.messageItems=[NSArray arrayWithObjects:first,second,foreign,nil];
@@ -83,6 +92,26 @@ int main(void) {
  assert([owner aquaPhotoGalleryIsCurrent]);checks++;
  assert([[[owner aquaPhotoGallery] objectForKey:@"entries"] count]==3);checks++;
  assert([[[owner aquaPhotoGallery] objectForKey:@"index"] unsignedIntegerValue]==1);checks++;
+ NSDictionary *entry=[[[owner aquaPhotoGallery] objectForKey:@"entries"] objectAtIndex:1];
+ assert([[entry objectForKey:@"title"] isEqual:@"photo-11.jpg"]);checks++;
+ assert([[entry objectForKey:@"detail"] isEqual:@"11 KB · 17.10.2026"]);checks++;
+ NSDictionary *albumFirst=[[[owner aquaPhotoGallery] objectForKey:@"entries"] objectAtIndex:0];
+ assert([[albumFirst objectForKey:@"title"] isEqual:@"photo-10.jpg"] && [[albumFirst objectForKey:@"detail"] isEqual:@"10 KB · 17.10.2026"]);checks++;
+ assert(![[entry objectForKey:@"detail"] isEqual:[albumFirst objectForKey:@"detail"]]);checks++;
+ NSDictionary *fallback=[owner aquaPhotoGalleryMetadataForMedia:[NSDictionary dictionaryWithObject:@"/synthetic/second.jpg" forKey:@"full_local_path"] message:first];
+ assert([[fallback objectForKey:@"title"] isEqual:@"second.jpg"]&&[[fallback objectForKey:@"detail"] isEqual:@"8 KB · 17.10.2026"]);checks++;
+ fallback=[owner aquaPhotoGalleryMetadataForMedia:[NSDictionary dictionary] message:first];
+ assert([[fallback objectForKey:@"title"] isEqual:@"Photo"]&&[[fallback objectForKey:@"detail"] isEqual:@"17.10.2026"]);checks++;
+ NSMutableDictionary *changing=[[Photo(11) mutableCopy] autorelease];
+ [changing setObject:@640 forKey:@"width"];[changing setObject:@480 forKey:@"height"];
+ fallback=[owner aquaPhotoGalleryMetadataForMedia:changing message:first];
+ assert([[fallback objectForKey:@"detail"] isEqual:@"11 KB · 640 × 480 · 17.10.2026"]);checks++;
+ [albumSecond setObject:@"later.jpg" forKey:@"file_name"];[albumSecond setObject:@99999 forKey:@"file_size"];
+ assert([[entry objectForKey:@"title"] isEqual:@"photo-11.jpg"]&&[[entry objectForKey:@"detail"] isEqual:@"11 KB · 17.10.2026"]);checks++;
+ [changing setObject:[NSNumber numberWithDouble:1] forKey:@"date"];
+ fallback=[owner aquaPhotoGalleryMetadataForMedia:changing message:first];
+ assert([[fallback objectForKey:@"detail"] rangeOfString:@"17.10.2026"].location==NSNotFound);checks++;
+ assert([[fallback objectForKey:@"detail"] hasPrefix:@"11 KB · 640 × 480 · "]);checks++;
  [owner nextAquaPhoto:nil];assert([owner.opened isEqual:Photo(12)]);checks++;
  [owner nextAquaPhoto:nil];assert([[[owner aquaPhotoGallery] objectForKey:@"index"] unsignedIntegerValue]==2);checks++;
  [owner previousAquaPhoto:nil];[owner previousAquaPhoto:nil];[owner previousAquaPhoto:nil];assert([owner.opened isEqual:Photo(10)]);checks++;

@@ -10,6 +10,9 @@
 @property (nonatomic, assign) BOOL failedToSend;
 @property (nonatomic, assign) BOOL outgoingRead;
 @property (nonatomic, assign, getter=isPinned) BOOL pinned;
+// Server-supplied aggregate, never inferred from outgoing delivery checks.
+@property (nonatomic, retain) NSNumber *messageViewCount;
+@property (nonatomic, retain) NSNumber *messageViewerCount;
 @property (nonatomic, copy) NSString *preview;
 @property (nonatomic, copy) NSString *contentType;
 @property (nonatomic, copy) NSString *mediaLocalPath;

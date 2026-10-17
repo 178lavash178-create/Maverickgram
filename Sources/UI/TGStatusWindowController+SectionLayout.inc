@@ -64,6 +64,9 @@
         section = TGSectionChats;
         self.activeSection = TGSectionChats;
     }
+    NSDictionary *chatSearchContext=[[self aquaChatSearchState] objectForKey:@"context"];
+    if (TGInterfaceDesignIsAqua() && chatSearchContext && ![self aquaChatSearchContextIsCurrent:chatSearchContext]) [self invalidateAquaChatSearchPresentation];
+    if (ready) [self queueAquaSuggestionIfNeeded];
     BOOL showLogin = !ready;
     BOOL drawerHidden = TGUserDefaultBoolWithDefault(TGDrawerHiddenDefaultsKey, NO);
     BOOL showProfile = (ready && [section isEqualToString:TGSectionProfile]);
@@ -128,7 +131,7 @@
     [self showView:self.topicBackButton visible:(showChats && self.showingForumTopicList && !self.forumTopicsPresentedInTopBar && !compactChatSidebar)];
     [self showView:self.loadChatsButton visible:(showChats && !compactChatSidebar)];
     [self showView:self.loadMoreChatsButton visible:NO];
-    [self showView:self.chatSearchButton visible:(showChats && !compactChatSidebar)];
+    [self showView:self.chatSearchButton visible:(showChats && !compactChatSidebar && !TGInterfaceDesignIsAqua())];
     [self showView:self.composeChatButton visible:(showChats && !compactChatSidebar)];
     [self showView:self.chatScrollSurfaceView visible:showChats];
     [self showView:self.chatScrollView visible:showChats];
@@ -140,8 +143,9 @@
     [self showView:self.loadMessagesButton visible:showConversationContent];
     [self showView:self.loadOlderMessagesButton visible:NO];
     [self showView:self.conversationSearchButton visible:showConversationContent];
-    BOOL showSelectedChatCall = (showConversationContent &&
-                                 [self.selectedChatTypeSummary isEqualToString:@"Private"]);
+    BOOL showSelectedChatCall = (showConversationContent && self.selectedChatID &&
+                                 [self.selectedChatTypeSummary isEqualToString:@"Private"] &&
+                                 ![self.selectedChatID isEqual:self.profileUserID]);
     [self showView:self.selectedChatCallButton visible:showSelectedChatCall];
     [self showView:self.selectedChatVideoCallButton visible:showSelectedChatCall];
     [self showView:self.mediaCenterButton visible:NO];
@@ -860,7 +864,8 @@
     CGFloat conversationSearchX = conversationJumpX - 6.0 - headerButtonSize;
     CGFloat conversationCallX = conversationSearchX - 6.0 - headerButtonSize;
     CGFloat conversationVideoCallX = conversationCallX - 6.0 - headerButtonSize;
-    BOOL layoutSelectedChatCall = ([self.selectedChatTypeSummary isEqualToString:@"Private"] &&
+    BOOL layoutSelectedChatCall = (self.selectedChatID && [self.selectedChatTypeSummary isEqualToString:@"Private"] &&
+                                   ![self.selectedChatID isEqual:self.profileUserID] &&
                                    [self.activeSection isEqualToString:TGSectionChats] &&
                                    (!self.mediaCenterVisible || [self isAquaChatInfoPanelActive]));
     [self.loadOlderMessagesButton setFrame:NSMakeRect(conversationRefreshX, conversationButtonY, headerButtonSize, headerButtonSize)];
@@ -1702,7 +1707,7 @@
 
 - (void)windowWillClose:(NSNotification *)notification {
     if ([notification object] == [self window]) {
-        [self closeAquaStickerPicker]; [self closeAquaScheduledMessages];
+        [self closeAquaStickerPicker]; [self invalidateAquaChatSearchPresentation]; [self closeAquaScheduledMessages];
         [self.downloadManagerWindowController closeCompactPopover];
         [self invalidateAquaPhotoPreview]; [self.mediaPreviewWindow close];
         [self invalidateAquaChatInfoPanel];

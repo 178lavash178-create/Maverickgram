@@ -102,3 +102,8 @@ void TGDrawCallContentForItem(TGMessageItem *item, NSRect bubbleRect, BOOL outgo
 void TGDrawMessageCommentBarForItem(TGMessageItem *item, NSRect bubbleRect, BOOL outgoing, BOOL flipped);
 long long TGMessageSortValue(id value);
 NSInteger TGCompareMessageItemsAscending(id left, id right, void *context);
+
+// Lower-right metadata preceding the timestamp: views, reply count and pin.
+CGFloat TGMessageFooterIndicatorsWidthForItem(TGMessageItem *item);
+NSRect TGMessageFooterIndicatorsRectForTimeRect(TGMessageItem *item, NSRect timeRect);
+void TGDrawMessageFooterIndicatorsForTimeRect(TGMessageItem *item, NSRect timeRect, BOOL flipped);

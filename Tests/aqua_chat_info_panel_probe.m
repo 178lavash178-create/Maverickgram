@@ -75,7 +75,8 @@ int main(void) {
             NSView *tabDocument=[panel valueForKey:@"tabDocumentView"];
             Contains([panel bounds],[tabs frame]);
             assert([tabs hasHorizontalScroller] && ![tabs hasVerticalScroller]);
-            assert([tabs scrollerStyle]==NSScrollerStyleLegacy && ![[tabs horizontalScroller] isHidden]);
+            assert([tabs scrollerStyle]==NSScrollerStyleOverlay);
+            assert(![tabs drawsBackground] && ![[tabs contentView] drawsBackground]);
             assert(NSHeight([[tabs contentView] bounds])>=30.0);
             assert([tabs documentView]==tabDocument);
             assert(NSWidth([tabDocument frame])>NSWidth([[tabs contentView] bounds]));
@@ -115,7 +116,16 @@ int main(void) {
     TGSetLanguageCode(previous);[previous release];
     NSArray *buttons=[panel valueForKey:@"actionButtons"];
     for(NSButton *button in buttons) [button performClick:nil]; assert(target->media==45 && target->details==0);
-    NSButton *manage=[panel valueForKey:@"detailsButton"];[manage performClick:nil];
+    NSButton *manage=[panel valueForKey:@"detailsButton"];
+    assert([manage isHidden] && ![manage isEnabled]); [manage performClick:nil]; assert(target->details==0);
+    NSDictionary *adminSummary=[NSDictionary dictionaryWithObjectsAndKeys:@"supergroup",@"kind",@YES,@"can_manage_members",nil];
+    [panel showSummary:adminSummary loading:NO error:nil]; assert(![manage isHidden] && [manage isEnabled]); [manage performClick:nil];
+    [panel showSummary:[NSDictionary dictionaryWithObjectsAndKeys:@"private",@"kind",@YES,@"can_manage_members",nil] loading:NO error:nil];
+    assert([manage isHidden] && ![manage isEnabled]); [manage performClick:nil]; assert(target->details==1);
+    [panel showSummary:[NSDictionary dictionaryWithObject:@"secret" forKey:@"kind"] loading:NO error:nil]; assert(![manage isHidden] && [[manage title] isEqual:TGLoc(@"chat.kind.secret")]);
+    [panel showSummary:[NSDictionary dictionaryWithObjectsAndKeys:@"private",@"kind",[NSDictionary dictionaryWithObject:@YES forKey:@"is_bot"],@"profile",nil] loading:NO error:nil];
+    assert(![manage isHidden] && [[manage title] isEqual:TGLoc(@"bot.window.title")]);
+    [panel showSummary:adminSummary loading:YES error:nil]; assert([manage isHidden]);
     assert(target->details==1 && [panel selectedMediaTab]==7);
     [panel closeAnimated:NO];assert([panel isHidden] && target->closed==1 && ![panel isClosing]);
     Animate=YES;

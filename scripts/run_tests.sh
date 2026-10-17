@@ -221,6 +221,13 @@ echo "== Forum refresh navigation =="
     -framework Foundation -o "$BUILD_DIR/forum-topic-refresh-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/forum-topic-refresh-probe"
 
+echo "== Forum permissions and explicit topic read navigation =="
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/forum_topic_permissions_probe.m Sources/Core/TGTDLibClient+ForumTopics.m -framework Foundation -o "$BUILD_DIR/forum-topic-permissions-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/forum-topic-permissions-probe"
+HOME="$TEST_HOME" CLANG="$CLANG" TELEGRAPHICA_TEST_ARCH="$ARCH" TELEGRAPHICA_TEST_DEPLOYMENT_TARGET="$DEPLOYMENT_TARGET" "$PYTHON_BIN" Tests/forum_topic_actions_probe.py
+
+"$PYTHON_BIN" Tests/message_view_count_loader_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+
 echo "== Thumbnail cache eviction recovery =="
 "$CLANG" "${COMPILE_FLAGS[@]}" \
     Tests/thumbnail_prefetcher_probe.m \
@@ -409,6 +416,8 @@ echo "== Interface motion and transparent spinner =="
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/interface_motion_probe.m Sources/UI/TGAnimationSupport.m Sources/UI/TGTranscriptMotion.m Sources/UI/TGTransparentSpinnerView.m Sources/Services/TGResourcePolicy.m -framework Cocoa -o "$BUILD_DIR/interface-motion-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/interface-motion-probe"
 
+"$PYTHON_BIN" Tests/aqua_suggestion_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+
 echo "== Main section transitions =="
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/section_transition_probe.m Sources/UI/TGSectionTransition.m Sources/UI/TGAnimationSupport.m Sources/Services/TGResourcePolicy.m -framework Cocoa -o "$BUILD_DIR/section-transition-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/section-transition-probe"
@@ -519,6 +528,7 @@ HOME="$TEST_HOME" "$AQUA_PROBE_BUNDLE/Contents/MacOS/aqua-material-probe" -Teleg
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_footer_probe.m "${MESSAGE_PROBE_SOURCES[@]}" Sources/UI/TGIconAssets.m -framework Cocoa -o "$BUILD_DIR/aqua-footer-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/aqua-footer-probe" classic
 HOME="$TEST_HOME" "$BUILD_DIR/aqua-footer-probe" aqua
+"$PYTHON_BIN" Tests/playable_footer_ownership_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 
 echo "== Aqua source list geometry =="
 "$PYTHON_BIN" Tests/message_jump_visibility_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
@@ -559,12 +569,15 @@ HOME="$TEST_HOME" "$BUILD_DIR/aqua-folder-drawer-probe"
 echo "== Local window state, gallery and playback updates =="
 "$PYTHON_BIN" Tests/aqua_toolbar_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 "$PYTHON_BIN" Tests/aqua_sticker_popover_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/window_event_observer_probe.m Sources/UI/TGWindowEventObserver.m Sources/UI/TGAquaShellLayout.m -framework Cocoa -o "$BUILD_DIR/window-event-observer-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/window-event-observer-probe"
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/scheduled_date_picker_probe.m Sources/UI/TGDatePickerDialog.m Sources/UI/TGLocalization.m -framework Cocoa -o "$BUILD_DIR/scheduled-date-picker"
 HOME="$TEST_HOME" "$BUILD_DIR/scheduled-date-picker"
 HOME="$TEST_HOME" "$PYTHON_BIN" Tests/scheduled_send_context_probe.py
 TELEGRAPHICA_TEST_ARCH="$ARCH" TELEGRAPHICA_TEST_DEPLOYMENT_TARGET="$DEPLOYMENT_TARGET" scripts/run_aqua_queue_surfaces_probe.sh
 "$PYTHON_BIN" Tests/aqua_queue_integration_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 "$PYTHON_BIN" Tests/aqua_search_filter_backend_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$PYTHON_BIN" Tests/aqua_chat_search_async_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 "$PYTHON_BIN" Tests/inline_search_navigation_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 "$PYTHON_BIN" Tests/gallery_image_routing_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 TELEGRAPHICA_TEST_SDK="$SDK_NAME" scripts/run_gallery_image_benchmark.sh
@@ -599,6 +612,7 @@ HOME="$TEST_HOME" "$BUILD_DIR/aqua-chat-info-routing-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/aqua-recording-ui-probe"
 
 "$PYTHON_BIN" Tests/aqua_attachment_tracking_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$PYTHON_BIN" Tests/aqua_attachment_contact_media_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 
 "$PYTHON_BIN" Tests/aqua_media_viewer_routing_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 

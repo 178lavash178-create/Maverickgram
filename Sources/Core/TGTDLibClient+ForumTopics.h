@@ -2,6 +2,8 @@
 
 @interface TGTDLibClient (ForumTopics)
 
+- (NSDictionary *)forumTopicRightsForChatID:(NSNumber *)chatID timeout:(NSTimeInterval)timeout;
+
 - (BOOL)createForumTopicInChatID:(NSNumber *)chatID
                             name:(NSString *)name
                          timeout:(NSTimeInterval)timeout

@@ -1,3 +1,23 @@
+// Bound metadata width independently of a server-provided count's magnitude.
+static NSString *TGMessageCompactCountString(NSNumber *count) {
+    long long value = [count longLongValue];
+    if (value < 1000) return [count stringValue];
+    static NSCache *cache = nil;
+    if (!cache) { cache = [[NSCache alloc] init]; [cache setCountLimit:256]; }
+    NSString *key = [NSString stringWithFormat:@"%@|%@",TGLanguageCode(),count];
+    NSString *cached = [cache objectForKey:key];
+    if (cached) return cached;
+    double divisor = value >= 1000000000 ? 1000000000.0 : (value >= 1000000 ? 1000000.0 : 1000.0);
+    NSString *suffix = value >= 1000000000 ? @"B" : (value >= 1000000 ? @"M" : @"K");
+    NSNumberFormatter *formatter = [[[NSNumberFormatter alloc] init] autorelease];
+    [formatter setLocale:[[[NSLocale alloc] initWithLocaleIdentifier:TGLanguageCode()] autorelease]];
+    [formatter setMinimumFractionDigits:0]; [formatter setMaximumFractionDigits:1];
+    [formatter setRoundingMode:NSNumberFormatterRoundDown];
+    NSString *result = [[formatter stringFromNumber:[NSNumber numberWithDouble:value/divisor]] stringByAppendingString:suffix];
+    if (result) [cache setObject:result forKey:key];
+    return result;
+}
+
 // Shared comment/discussion presentation; included by TGMessageLayoutSupport.m.
 BOOL TGMessageItemHasCommentThread(TGMessageItem *item) {
     BOOL hasReplies = ([[item messageThreadReplyCount] respondsToSelector:@selector(integerValue)] && [[item messageThreadReplyCount] integerValue] > 0);
@@ -95,7 +115,7 @@ void TGDrawMessageCommentBarForItem(TGMessageItem *item, NSRect bubbleRect, BOOL
 CGFloat TGMessageReplyIndicatorWidthForItem(TGMessageItem *item) {
     if (![item isKindOfClass:[TGMessageItem class]] || [item isChannelPost] ||
         [[item messageThreadReplyCount] longLongValue] <= 0) return 0.0;
-    NSString *count = [[item messageThreadReplyCount] stringValue];
+    NSString *count = TGMessageCompactCountString([item messageThreadReplyCount]);
     return 12.0 + 3.0 + ceil([count sizeWithAttributes:[NSDictionary dictionaryWithObject:TGChatMessageMetaFont() forKey:NSFontAttributeName]].width) + 7.0;
 }
 
@@ -111,7 +131,7 @@ void TGDrawMessageReplyIndicatorForTimeRect(TGMessageItem *item, NSRect timeRect
     NSColor *ink = TGMessageMetadataInkColor(item,flipped);
     NSRect icon = NSMakeRect(NSMinX(rect),floor(NSMidY(rect)-6.0),12.0,12.0);
     TGDrawTemplateIconAsset(@"route-arrow",icon,ink,1.0,flipped);
-    NSString *count = [[item messageThreadReplyCount] stringValue];
+    NSString *count = TGMessageCompactCountString([item messageThreadReplyCount]);
     [count drawInRect:NSMakeRect(NSMaxX(icon)+3.0,NSMinY(rect),MAX(0.0,NSWidth(rect)-15.0),NSHeight(rect))
        withAttributes:[NSDictionary dictionaryWithObjectsAndKeys:TGChatMessageMetaFont(),NSFontAttributeName,ink,NSForegroundColorAttributeName,nil]];
 }

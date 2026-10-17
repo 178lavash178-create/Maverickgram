@@ -9,8 +9,11 @@ static void Check(BOOL condition, NSString *message) {
     if (!condition) { fprintf(stderr, "FAIL: %s\n", [message UTF8String]); exit(1); }
 }
 @interface ProbeWindow : NSObject
+@property(nonatomic) BOOL probeLiveResize;
 @end
 @implementation ProbeWindow
+@synthesize probeLiveResize = _probeLiveResize;
+- (BOOL)inLiveResize { return self.probeLiveResize; }
 - (BOOL)isVisible { return YES; }
 - (NSMethodSignature *)methodSignatureForSelector:(SEL)selector {
     return [super methodSignatureForSelector:selector] ?: [NSWindow instanceMethodSignatureForSelector:selector];
@@ -68,6 +71,88 @@ static void Check(BOOL condition, NSString *message) {
 - (BOOL)isVisible { return _probeVisible; }
 - (BOOL)isMiniaturized { return _probeMiniaturized; }
 @end
+
+@interface OrientationSpinner : TGTransparentSpinnerView
+@property(nonatomic) BOOL probeFlipped;
+@end
+@implementation OrientationSpinner
+@synthesize probeFlipped = _probeFlipped;
+- (BOOL)isFlipped { return self.probeFlipped; }
+@end
+
+static NSPoint SpinnerPeak(OrientationSpinner *spinner, NSInteger step) {
+    const NSInteger side=192;
+    [spinner setValue:[NSNumber numberWithInteger:step] forKey:@"animationStep"];
+    NSBitmapImageRep *bitmap=[[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:side pixelsHigh:side bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSCalibratedRGBColorSpace bytesPerRow:0 bitsPerPixel:0] autorelease];
+    memset([bitmap bitmapData],0,[bitmap bytesPerRow]*side);
+    [NSGraphicsContext saveGraphicsState];
+    NSGraphicsContext *context=[NSGraphicsContext graphicsContextWithBitmapImageRep:bitmap];
+    [NSGraphicsContext setCurrentContext:context];
+    NSAffineTransform *transform=[NSAffineTransform transform];
+    if([spinner isFlipped]) [transform translateXBy:0 yBy:side];
+    [transform scaleXBy:8 yBy:[spinner isFlipped]?-8:8];[transform concat];
+    [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithGraphicsPort:[context graphicsPort] flipped:[spinner isFlipped]]];
+    [spinner drawRect:[spinner bounds]];
+    [NSGraphicsContext restoreGraphicsState];
+    CGFloat total=0,xSum=0,ySum=0;
+    for(NSInteger y=0;y<side;y++) for(NSInteger x=0;x<side;x++) {
+        NSUInteger p[4];[bitmap getPixel:p atX:x y:y];
+        if(p[3]<250 || hypot(x-side/2.0,y-side/2.0)<side*0.22)continue;
+        total++;xSum+=x;ySum+=y;
+    }
+    Check(total>2,@"actual spinner raster contains a visible leading spoke");
+    return NSMakePoint(xSum/total,ySum/total);
+}
+
+static void CheckSpinnerDirection(void) {
+    for(NSInteger flipped=0;flipped<=1;flipped++) {
+        OrientationSpinner *spinner=[[[OrientationSpinner alloc] initWithFrame:NSMakeRect(0,0,24,24)] autorelease];
+        spinner.probeFlipped=flipped;
+        [spinner setValue:@YES forKey:@"animating"];
+        NSPoint right=SpinnerPeak(spinner,0),next=SpinnerPeak(spinner,1);
+        Check(right.x>130 && fabs(right.y-96)<2,@"leading spoke starts at three o'clock in either coordinate orientation");
+        Check(next.y>right.y+15 && next.x<right.x,@"actual leading spoke advances clockwise on screen in flipped and unflipped views");
+    }
+}
+
+static void CheckPanelReversalAndResize(void) {
+    TGResourcePolicySetEconomyModeEnabled(NO);
+    TGResourcePolicySetStopAnimationsWhenInactive(NO);
+    ProbeView *panel=[[[ProbeView alloc] initWithFrame:NSMakeRect(0,0,100,100)] autorelease];
+    ProbeWindow *window=(ProbeWindow *)[panel window];
+    [panel setHidden:YES];
+    TGSetViewVisibleAnimated(panel,YES);
+    Check(![panel isHidden] && [panel alphaValue]==0,@"reveal starts transparent at its stable geometry");
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.06]];
+    CGFloat intermediate=[panel alphaValue];
+    Check(intermediate>0 && intermediate<1,@"production timer reaches an intermediate reveal alpha");
+    TGSetViewVisibleAnimated(panel,NO);
+    Check(![panel isHidden] && fabs([panel alphaValue]-intermediate)<0.001,@"reveal-to-hide reversal preserves current alpha without flashing opaque");
+    TGSetViewVisibleAnimated(panel,YES);
+    Check(![panel isHidden] && fabs([panel alphaValue]-intermediate)<0.001,@"hide-to-reveal reversal preserves the same intermediate alpha");
+    TGSetViewVisibleAnimated(panel,YES);
+    Check(fabs([panel alphaValue]-intermediate)<0.001,@"repeated same-target reveal does not finish or restart an animation");
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.20]];
+    Check(![panel isHidden] && [panel alphaValue]==1,@"reversed animation settles at requested visible state");
+    TGSetViewVisibleAnimated(panel,NO);
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.05]];
+    intermediate=[panel alphaValue];
+    Check(![panel isHidden] && intermediate>0 && intermediate<1,@"hide has an observable intermediate alpha");
+    [[NSNotificationCenter defaultCenter] postNotificationName:NSWindowWillStartLiveResizeNotification object:[[[NSObject alloc] init] autorelease]];
+    Check(![panel isHidden] && fabs([panel alphaValue]-intermediate)<0.001,@"another window's live resize cannot finish this panel animation");
+    window.probeLiveResize=YES;
+    [[NSNotificationCenter defaultCenter] postNotificationName:NSWindowWillStartLiveResizeNotification object:window];
+    Check([panel isHidden] && [panel alphaValue]==1,@"own live-resize notification synchronously settles active animation");
+    Check(!TGInterfaceAnimationsEnabledForView(panel),@"live resizing suppresses interface animation allocation");
+    TGSetViewVisibleAnimated(panel,YES);
+    Check(![panel isHidden] && [panel alphaValue]==1,@"reveal requested during live resize is immediate and fully opaque");
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.20]];
+    Check(![panel isHidden] && [panel alphaValue]==1,@"cancelled animation timer cannot later hide live-resize reveal");
+    window.probeLiveResize=NO;
+    Check(TGInterfaceAnimationsEnabledForView(panel),@"after resize the normal animation policy resumes");
+    TGSetViewVisibleAnimated(panel,NO);TGCancelViewVisibilityAnimation(panel);
+    Check([panel isHidden] && [panel alphaValue]==1,@"explicit cancellation settles latest target and removes partial transparency");
+}
 
 static void CheckSpinnerWindowVisibility(void) {
     [NSApplication sharedApplication];
@@ -184,6 +269,8 @@ int main(void) {
     [spinner removeFromSuperview]; [spinner release]; [panel release];
     [motion release]; [table release];
     CheckSpinnerWindowVisibility();
+    CheckSpinnerDirection();
+    CheckPanelReversalAndResize();
     puts("PASS: bounded transcript motion, cancellation, economy, panel reversal and transparent spinner repaint");
     [pool drain];
     return 0;

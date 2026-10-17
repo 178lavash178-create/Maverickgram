@@ -24,9 +24,72 @@ a=app.index('- (void)buildMainMenu {');b=app.index('\n- (void)dealloc',a)
 menu='@interface MenuProbe : NSObject\n@end\n@implementation MenuProbe\n'+app[a:b]+'\n@end\n'
 chat_search=read('Sources/UI/TGStatusWindowController+ChatSearchWindow.inc')
 a=chat_search.index('- (void)closeChatSearchWindow:');b=chat_search.index('\n- (void)clearChatSearch',a)
-close_search='@interface SearchCloseProbe : NSObject\n@property(nonatomic,retain) NSWindow *chatSearchWindow,*mainWindow;\n@property(nonatomic,retain) NSTextField *sendTextField;\n@property(nonatomic) NSUInteger chatSearchGeneration;\n@end\n@implementation SearchCloseProbe\n@synthesize chatSearchWindow,mainWindow,sendTextField,chatSearchGeneration;\n- (NSWindow *)window { return self.mainWindow; }\n'+chat_search[a:b]+'\n@end\n'
+close_search='@interface SearchCloseProbe : NSObject\n@property(nonatomic,retain) NSWindow *chatSearchWindow,*mainWindow;\n@property(nonatomic,retain) NSTextField *sendTextField;\n@property(nonatomic) NSUInteger chatSearchGeneration;\n@end\n@implementation SearchCloseProbe\n@synthesize chatSearchWindow,mainWindow,sendTextField,chatSearchGeneration;\n- (NSWindow *)window { return self.mainWindow; }\n- (NSDictionary *)aquaChatSearchState { return nil; }\n- (void)invalidateAquaChatSearchPresentation {}\n'+chat_search[a:b]+'\n@end\n'
+
+presentation=r"""
+static NSString * const TGSectionChats=@"chats";
+BOOL TGInterfaceAnimationsEnabledForView(NSView *view) { (void)view;return NO; }
+@interface SearchPresentationProbe : NSObject <NSPopoverDelegate,NSWindowDelegate>
+@property(nonatomic,retain) NSWindow *mainWindow,*chatSearchWindow;
+@property(nonatomic,retain) NSView *anchor;
+@property(nonatomic,retain) TGChatSearchPanelView *panel;
+@property(nonatomic,retain) id client,profileUserID;
+@property(nonatomic,copy) NSString *currentAuthState,*activeSection;
+@property(nonatomic) NSUInteger chatSearchGeneration,resizeCount;
+@end
+@implementation SearchPresentationProbe
+@synthesize mainWindow,chatSearchWindow,anchor,panel,client,profileUserID,currentAuthState,activeSection,chatSearchGeneration,resizeCount;
+- (NSWindow *)window {return self.mainWindow;}
+- (NSView *)aquaToolbarSearchField {return self.anchor;}
+- (TGChatSearchPanelView *)chatSearchPanelView {return self.panel;}
+- (void)openFromAnchor:(id)sender {(void)sender;[self showAquaChatSearchPanel];}
+- (void)windowDidResize:(NSNotification *)note {(void)note;self.resizeCount++;}
+- (void)popoverDidClose:(NSNotification *)note {(void)note;[self finishAquaChatSearchDismissal];}
+__PRESENTATION_METHODS__
+@end
+static void CheckSearchPresentation(void) {
+ SearchPresentationProbe *p=[[[SearchPresentationProbe alloc] init] autorelease];
+ p.mainWindow=[[[NSWindow alloc] initWithContentRect:NSMakeRect(200,200,760,600) styleMask:NSTitledWindowMask backing:NSBackingStoreBuffered defer:NO] autorelease];[p.mainWindow setReleasedWhenClosed:NO];[p.mainWindow setDelegate:p];
+ p.anchor=[[[TGAquaSearchAnchorField alloc] initWithFrame:NSMakeRect(440,550,240,26)] autorelease];[[p.mainWindow contentView] addSubview:p.anchor];[(NSControl *)p.anchor setTarget:p];[(NSControl *)p.anchor setAction:@selector(openFromAnchor:)];
+ p.chatSearchWindow=[[[NSWindow alloc] initWithContentRect:NSMakeRect(0,0,460,340) styleMask:NSTitledWindowMask backing:NSBackingStoreBuffered defer:NO] autorelease];[p.chatSearchWindow setReleasedWhenClosed:NO];
+ p.panel=[[[TGChatSearchPanelView alloc] initWithFrame:NSMakeRect(0,0,460,340)] autorelease];[p.chatSearchWindow setContentView:p.panel];
+ p.client=[[[NSObject alloc] init] autorelease];p.profileUserID=@17;p.activeSection=@"chats";p.currentAuthState=@"ready";
+ [p.mainWindow makeKeyAndOrderFront:nil];
+ for(NSUInteger cycle=0;cycle<8;cycle++) {
+  if(cycle==0) [p.anchor mouseDown:nil];
+  Require([p showAquaChatSearchPanel],"Aqua opens real anchored popover on toolbar click");
+  NSPopover *popover=[[p aquaChatSearchState] objectForKey:@"popover"];
+  Require([popover isShown] && ![p.chatSearchWindow isVisible] && [p.panel window]!=p.chatSearchWindow,"same results panel is hosted only by the popover");
+  Require([[p.panel searchField] currentEditor]!=nil,"opening focuses editable query inside popover");
+  NSDictionary *context=[[[p aquaChatSearchState] objectForKey:@"context"] retain];
+  Require([p aquaChatSearchContextIsCurrent:context],"current request context accepted");
+  p.panel.query=@"preserve query";NSUInteger generation=p.chatSearchGeneration;
+  Require([p showAquaChatSearchPanel] && [p.panel.query isEqual:@"preserve query"] && p.chatSearchGeneration==generation,"repeated opening preserves query and generation");
+  if(cycle==0) {p.profileUserID=@18;Require(![p aquaChatSearchContextIsCurrent:context],"account swap invalidates async search");p.profileUserID=@17;p.client=[[[NSObject alloc] init] autorelease];Require(![p aquaChatSearchContextIsCurrent:context],"client replacement invalidates async search");}
+  if(cycle==1) {p.activeSection=@"settings";Require(![p aquaChatSearchContextIsCurrent:context],"section change invalidates async search");p.activeSection=@"chats";}
+  NSUInteger before=p.resizeCount;[p.mainWindow setContentSize:NSMakeSize(780+cycle,600)];
+  Require(![popover isShown] && ![[p aquaChatSearchState] objectForKey:@"context"] && p.chatSearchGeneration==generation+1,"resize closes search and invalidates asynchronous results exactly once");
+  Require(p.resizeCount>before,"search observer disposal preserves main window delegate resize");
+  [[NSRunLoop mainRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.02]];
+  Require(![popover isShown],"restoring anchor focus after dismissal never reopens search");
+  Require(![p aquaChatSearchContextIsCurrent:context],"dismissed request context stays invalid");[context release];
+ }
+ NSScreen *screen=[p.mainWindow screen];[p.mainWindow setFrameOrigin:NSMakePoint(NSMinX([screen visibleFrame])+100,NSMinY([screen visibleFrame])-450)];
+ NSRect lowAnchor=[p.mainWindow convertRectToScreen:[p.anchor convertRect:[p.anchor bounds] toView:nil]];
+ Require(NSMinY(lowAnchor)-NSMinY([screen visibleFrame])-24<220 && NSMaxY([screen visibleFrame])-NSMaxY(lowAnchor)-24>220,"low-anchor fixture really has room only above");
+ Require([p showAquaChatSearchPanel],"search also opens above low screen anchor");[p invalidateAquaChatSearchPresentation];
+ p.currentAuthState=@"waitCode";Require(![p showAquaChatSearchPanel],"unauthorized search cannot open");p.currentAuthState=@"ready";
+ [p.anchor setHidden:YES];Require(![p showAquaChatSearchPanel],"hidden anchor cannot open");[p.anchor setHidden:NO];
+ [p disposeAquaChatSearchPresentation];Require([p aquaChatSearchState]==nil,"disposal releases observer and presentation state");
+ [p.mainWindow setDelegate:nil];[p.mainWindow orderOut:nil];
+}
+""".replace('__PRESENTATION_METHODS__',read('Sources/UI/TGStatusWindowController+AquaChatSearch.inc'))
+
 harness=r'''
 #import <Cocoa/Cocoa.h>
+#import <objc/runtime.h>
+#import "TGWindowEventObserver.h"
+#import "TGAquaSearchAnchorField.h"
 #import "TGStatusViewCells.h"
 #import "TGSearchResultItem.h"
 #import "TGLocalization.h"
@@ -42,6 +105,7 @@ __SEARCH__
 __CONTACT__
 __MENU__
 __CLOSE_SEARCH__
+__PRESENTATION__
 static NSEvent *Key(unichar character,NSUInteger flags,unsigned short code) { NSString *text=[NSString stringWithCharacters:&character length:1];return [NSEvent keyEventWithType:NSKeyDown location:NSZeroPoint modifierFlags:flags timestamp:0 windowNumber:0 context:nil characters:text charactersIgnoringModifiers:text isARepeat:NO keyCode:code]; }
 @interface SearchTarget : NSObject { @public NSUInteger changed,commits,closes;long long lastChatID; }
 @end
@@ -97,6 +161,7 @@ int main(int argc,const char **argv) {
     MenuProbe *menu=[[[MenuProbe alloc] init] autorelease];[menu buildMainMenu];NSMenu *main=[NSApp mainMenu];NSMenu *find=[[main itemAtIndex:[main numberOfItems]-1] submenu];
     Require([find numberOfItems]==2 && [[find itemAtIndex:0] action]==@selector(openChatSearch:) && [[find itemAtIndex:1] action]==@selector(openChatListSearch:),"Search menu exposes distinct existing conversation and chat actions");
     Require([[[find itemAtIndex:0] keyEquivalent] isEqual:@"f"] && [[[find itemAtIndex:1] keyEquivalent] isEqual:@"k"] && [[find itemAtIndex:0] keyEquivalentModifierMask]==NSCommandKeyMask && [[find itemAtIndex:1] keyEquivalentModifierMask]==NSCommandKeyMask,"menu documents existing CmdF and CmdK shortcuts");
+    if(aqua) CheckSearchPresentation();
     NSUInteger layouts=0;
     for(NSString *language in [NSArray arrayWithObjects:@"ru",@"be",@"en",nil]) {
         TGSetLanguageCode(language);
@@ -122,12 +187,12 @@ int main(int argc,const char **argv) {
     printf("Auxiliary %s: %lu localized narrow/wide production layouts; search scroll/cancel/commit/close and keyboard/focus/IME/menu routes PASS.\n",aqua?"Aqua":"Classic",(unsigned long)layouts);
     [pool drain];return 0;
 }
-'''.replace('__CELL__',cell).replace('__SEARCH__',read('Sources/UI/TGChatSearchPanelView.inc')).replace('__CONTACT__',interface).replace('__MENU__',menu).replace('__CLOSE_SEARCH__',close_search)
+'''.replace('__CELL__',cell).replace('__SEARCH__',read('Sources/UI/TGChatSearchPanelView.inc')).replace('__CONTACT__',interface).replace('__MENU__',menu).replace('__CLOSE_SEARCH__',close_search).replace('__PRESENTATION__',presentation)
 folder=tempfile.mkdtemp(prefix='telegraphica-auxiliary-layout-')
 try:
     source=os.path.join(folder,'probe.m');binary=os.path.join(folder,'probe')
     with open(source,'wb') as handle:handle.write(harness.encode('utf-8'))
-    deps=['Sources/Core/TGSearchResultItem.m','Sources/UI/TGIconAssets.m','Sources/UI/TGLocalization.m','Sources/UI/TGTheme.m','Sources/UI/TGInterfaceDesign.m','Sources/UI/TGDialogPresentation.m','Sources/UI/TGAquaAppearance.m','Sources/UI/TGVisualWorldThemeSpec.m']
+    deps=['Sources/UI/TGAquaSearchAnchorField.m','Sources/UI/TGWindowEventObserver.m','Sources/Core/TGSearchResultItem.m','Sources/UI/TGIconAssets.m','Sources/UI/TGLocalization.m','Sources/UI/TGTheme.m','Sources/UI/TGInterfaceDesign.m','Sources/UI/TGDialogPresentation.m','Sources/UI/TGAquaAppearance.m','Sources/UI/TGVisualWorldThemeSpec.m']
     subprocess.check_call(sys.argv[1:]+['-I'+os.path.join(ROOT,'Sources/UI'),'-I'+os.path.join(ROOT,'Sources/Core'),source]+[os.path.join(ROOT,p) for p in deps]+['-framework','Cocoa','-o',binary])
     subprocess.check_call([binary,'aqua']);subprocess.check_call([binary,'classic'])
 finally:

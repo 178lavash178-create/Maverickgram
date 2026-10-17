@@ -6,6 +6,64 @@ static NSString * const TGForumTopicOperationPin = @"pin";
 static NSString * const TGForumTopicOperationUnpin = @"unpin";
 static NSString * const TGForumTopicOperationDelete = @"delete";
 
+- (BOOL)forumTopicItemIsCurrent:(TGChatItem *)item {
+    return [item isKindOfClass:[TGChatItem class]] && [item isForumTopic] && self.client &&
+        [self.forumTopicItems isKindOfClass:[NSArray class]] && [self.currentAuthState isEqualToString:@"ready"] &&
+        (self.showingForumTopicList || self.forumTopicsPresentedInTopBar) &&
+        [[item parentChatID] isEqual:self.topicParentChatID] &&
+        [self.forumTopicItems indexOfObjectIdenticalTo:item] != NSNotFound;
+}
+
+- (BOOL)forumTopicItem:(TGChatItem *)item allowsOperation:(NSString *)operation {
+    id flag = [[item forumTopicActionPermissions] objectForKey:operation];
+    return [self forumTopicItemIsCurrent:item] && [flag respondsToSelector:@selector(boolValue)] && [flag boolValue];
+}
+
+- (void)markForumTopicReadFromMenu:(id)sender {
+    TGChatItem *item = [self forumTopicItemFromSender:sender];
+    if (![self forumTopicItemIsCurrent:item] ||
+        ![[item messageThreadID] respondsToSelector:@selector(longLongValue)] || [[item messageThreadID] longLongValue]<=0) return;
+    TGTDLibClient *client=[self.client retain];
+    TGChatItem *topic=[item retain];
+    NSNumber *chatID=[[item parentChatID] retain], *threadID=[[item messageThreadID] retain];
+    NSString *kind=[[item messageTopicKind] copy];
+    NSUInteger generation=self.forumTopicNavigationGeneration;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT,0), ^{
+        NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];
+        NSError *error=nil;
+        NSArray *messages=[[client recentMessagePreviewItemsForChatID:chatID messageThreadID:threadID messageTopicKind:kind limit:50 timeout:6.0 error:&error] copy];
+        NSMutableArray *ids=[NSMutableArray array];
+        for (TGMessageItem *message in messages) {
+            if ([message isKindOfClass:[TGMessageItem class]] && [[message chatID] isEqual:chatID] && [[message messageID] longLongValue]>0)
+                [ids addObject:[message messageID]];
+        }
+        NSArray *messageIDs=[ids copy];
+        NSString *errorText=[[error localizedDescription] copy];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (client!=self.client || generation!=self.forumTopicNavigationGeneration || ![self forumTopicItemIsCurrent:topic] || ![messageIDs count]) {
+                if (client==self.client && generation==self.forumTopicNavigationGeneration && [errorText length]) [self.statusField setStringValue:TGLoc(@"chat.markReadFailed")];
+                [messageIDs release]; [messages release]; [errorText release]; [client release]; [topic release]; [chatID release]; [threadID release]; [kind release]; return;
+            }
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT,0), ^{
+                NSAutoreleasePool *readPool=[[NSAutoreleasePool alloc] init];
+                BOOL success=[client markMessagesAsReadForChatID:chatID messageThreadID:threadID messageTopicKind:kind messageIDs:messageIDs timeout:5.0 error:NULL];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    if (client==self.client && generation==self.forumTopicNavigationGeneration && [self forumTopicItemIsCurrent:topic]) {
+                        if (success) {
+                            [self recordReadNotificationMessageIDs:messageIDs chatID:chatID];
+                            [self clearUnreadCountForChatID:chatID messageThreadID:threadID];
+                            [self.statusField setStringValue:TGLoc(@"chat.markedRead")];
+                        } else [self.statusField setStringValue:TGLoc(@"chat.markReadFailed")];
+                    }
+                    [messageIDs release]; [messages release]; [errorText release]; [client release]; [topic release]; [chatID release]; [threadID release]; [kind release];
+                });
+                [readPool drain];
+            });
+        });
+        [pool drain];
+    });
+}
+
 - (NSString *)forumTopicNameFromPromptWithTitle:(NSString *)title
                                          detail:(NSString *)detail
                                    initialValue:(NSString *)initialValue
@@ -54,6 +112,8 @@ static NSString * const TGForumTopicOperationDelete = @"delete";
         return;
     }
 
+    if (item && ![self forumTopicItem:item allowsOperation:operation]) return;
+    NSUInteger contextGeneration = self.forumTopicNavigationGeneration;
     self.forumTopicMutationInFlight = YES;
     [self.statusField setStringValue:TGLoc(@"forum.topic.saving")];
     [self appendDetail:[NSString stringWithFormat:@"Forum topic: %@ requested.", operation]];
@@ -92,7 +152,13 @@ static NSString * const TGForumTopicOperationDelete = @"delete";
         NSString *errorMessage = [[operationError localizedDescription] copy];
 
         dispatch_async(dispatch_get_main_queue(), ^{
+            BOOL current = (client == self.client && contextGeneration == self.forumTopicNavigationGeneration &&
+                [self.currentAuthState isEqualToString:@"ready"] && [self.topicParentChatID isEqual:chatIDCopy]);
             self.forumTopicMutationInFlight = NO;
+            if (!current) {
+                [client release]; [chatIDCopy release]; [topicIDCopy release];
+                [operationCopy release]; [nameCopy release]; [errorMessage release]; return;
+            }
             if (success) {
                 [self.statusField setStringValue:TGLoc(@"forum.topic.saved")];
                 [self appendDetail:[NSString stringWithFormat:@"Forum topic: %@ completed.", operationCopy]];
@@ -137,7 +203,7 @@ static NSString * const TGForumTopicOperationDelete = @"delete";
 
 - (void)renameForumTopicFromMenu:(id)sender {
     TGChatItem *item = [self forumTopicItemFromSender:sender];
-    if (!item) {
+    if (![self forumTopicItem:item allowsOperation:TGForumTopicOperationRename]) {
         return;
     }
     NSString *name = [self forumTopicNameFromPromptWithTitle:TGLoc(@"forum.topic.rename")
@@ -172,7 +238,7 @@ static NSString * const TGForumTopicOperationDelete = @"delete";
 
 - (void)deleteForumTopicFromMenu:(id)sender {
     TGChatItem *item = [self forumTopicItemFromSender:sender];
-    if (!item) {
+    if (![self forumTopicItem:item allowsOperation:TGForumTopicOperationDelete]) {
         return;
     }
     NSAlert *alert = [[[NSAlert alloc] init] autorelease];
@@ -188,37 +254,21 @@ static NSString * const TGForumTopicOperationDelete = @"delete";
 }
 
 - (void)populateForumTopicContextMenu:(NSMenu *)menu forItem:(TGChatItem *)item {
-    BOOL enabled = ([self.currentAuthState isEqualToString:@"ready"] && !self.forumTopicMutationInFlight);
-    NSMenuItem *renameItem = [[[NSMenuItem alloc] initWithTitle:TGLoc(@"forum.topic.rename")
-                                                        action:@selector(renameForumTopicFromMenu:)
-                                                 keyEquivalent:@""] autorelease];
-    [renameItem setRepresentedObject:item];
-    [renameItem setTarget:self];
-    [renameItem setEnabled:enabled];
-    [menu addItem:renameItem];
-
-    NSMenuItem *closeItem = [[[NSMenuItem alloc] initWithTitle:TGLoc([item isForumTopicClosed] ? @"forum.topic.reopen" : @"forum.topic.close")
-                                                       action:@selector(toggleForumTopicClosedFromMenu:)
-                                                keyEquivalent:@""] autorelease];
-    [closeItem setRepresentedObject:item];
-    [closeItem setTarget:self];
-    [closeItem setEnabled:enabled];
-    [menu addItem:closeItem];
-
-    NSMenuItem *pinItem = [[[NSMenuItem alloc] initWithTitle:TGLoc([item isForumTopicPinned] ? @"forum.topic.unpin" : @"forum.topic.pin")
-                                                     action:@selector(toggleForumTopicPinnedFromMenu:)
-                                              keyEquivalent:@""] autorelease];
-    [pinItem setRepresentedObject:item];
-    [pinItem setTarget:self];
-    [pinItem setEnabled:enabled];
-    [menu addItem:pinItem];
-    [menu addItem:[NSMenuItem separatorItem]];
-
-    NSMenuItem *deleteItem = [[[NSMenuItem alloc] initWithTitle:TGLoc(@"forum.topic.delete")
-                                                        action:@selector(deleteForumTopicFromMenu:)
-                                                 keyEquivalent:@""] autorelease];
-    [deleteItem setRepresentedObject:item];
-    [deleteItem setTarget:self];
-    [deleteItem setEnabled:enabled];
-    [menu addItem:deleteItem];
+    if (![self forumTopicItemIsCurrent:item]) return;
+    [menu setAutoenablesItems:NO];
+    BOOL enabled = !self.forumTopicMutationInFlight;
+    NSMenuItem *readItem=[[[NSMenuItem alloc] initWithTitle:TGLoc(@"chat.markRead") action:@selector(markForumTopicReadFromMenu:) keyEquivalent:@""] autorelease];
+    [readItem setTarget:self]; [readItem setRepresentedObject:item];
+    [readItem setEnabled:enabled && [[item unreadCount] integerValue]>0];
+    [menu addItem:readItem];
+    NSArray *operations=[NSArray arrayWithObjects:@"rename",([item isForumTopicClosed] ? @"reopen" : @"close"),([item isForumTopicPinned] ? @"unpin" : @"pin"),@"delete",nil];
+    NSArray *selectors=[NSArray arrayWithObjects:NSStringFromSelector(@selector(renameForumTopicFromMenu:)),NSStringFromSelector(@selector(toggleForumTopicClosedFromMenu:)),NSStringFromSelector(@selector(toggleForumTopicPinnedFromMenu:)),NSStringFromSelector(@selector(deleteForumTopicFromMenu:)),nil];
+    BOOL separatorAdded=NO;
+    for (NSUInteger index=0;index<[operations count];index++) {
+        NSString *operation=[operations objectAtIndex:index];
+        if (![self forumTopicItem:item allowsOperation:operation]) continue;
+        if (!separatorAdded) { [menu addItem:[NSMenuItem separatorItem]]; separatorAdded=YES; }
+        NSMenuItem *action=[[[NSMenuItem alloc] initWithTitle:TGLoc([@"forum.topic." stringByAppendingString:operation]) action:NSSelectorFromString([selectors objectAtIndex:index]) keyEquivalent:@""] autorelease];
+        [action setRepresentedObject:item]; [action setTarget:self]; [action setEnabled:enabled]; [menu addItem:action];
+    }
 }

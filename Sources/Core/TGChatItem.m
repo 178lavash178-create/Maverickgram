@@ -23,6 +23,7 @@
 @synthesize parentChatID = _parentChatID;
 @synthesize messageThreadID = _messageThreadID;
 @synthesize messageTopicKind = _messageTopicKind;
+@synthesize forumTopicActionPermissions = _forumTopicActionPermissions;
 
 - (instancetype)initWithChatID:(NSNumber *)chatID
                          title:(NSString *)title
@@ -108,6 +109,7 @@
     [_parentChatID release];
     [_messageThreadID release];
     [_messageTopicKind release];
+    [_forumTopicActionPermissions release];
     [super dealloc];
 }
 

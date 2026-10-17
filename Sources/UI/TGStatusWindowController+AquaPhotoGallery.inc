@@ -25,6 +25,39 @@
     BOOL current=[self aquaPhotoGalleryIsCurrent];
     [view setGalleryIndex:current ? [[gallery objectForKey:@"index"] unsignedIntegerValue] : NSNotFound
                    count:current ? [[gallery objectForKey:@"entries"] count] : 0];
+    NSUInteger index=[[gallery objectForKey:@"index"] unsignedIntegerValue];
+    NSArray *entries=[gallery objectForKey:@"entries"];
+    if (current && index<[entries count]) {
+        NSDictionary *entry=[entries objectAtIndex:index];
+        [view setMediaTitle:[entry objectForKey:@"title"] detail:[entry objectForKey:@"detail"]];
+    }
+}
+
+/* Album bubbles aggregate multiple messages; file metadata belongs to the
+ * selected media dictionary, not to the first message in the bubble. */
+- (NSDictionary *)aquaPhotoGalleryMetadataForMedia:(NSDictionary *)media message:(TGMessageItem *)item {
+    id name=[media objectForKey:@"file_name"];
+    NSString *path=TGMediaItemFullLocalPath(media);
+    if (![path length]) path=TGMediaItemLocalPath(media);
+    NSString *title=([name isKindOfClass:[NSString class]] && [name length]) ? name : [path lastPathComponent];
+    if (![title length]) title=TGLoc(@"media.viewer.photo");
+    id size=[media objectForKey:@"file_size"];
+    unsigned long long bytes=([size respondsToSelector:@selector(longLongValue)] && [size longLongValue]>0) ? [size unsignedLongLongValue] : TGMediaCenterFileSizeAtPath(path);
+    NSMutableArray *parts=[NSMutableArray array];
+    if (bytes>0) [parts addObject:TGMediaCenterReadableSize(bytes)];
+    NSNumber *width=[media objectForKey:@"width"],*height=[media objectForKey:@"height"];
+    if ([width respondsToSelector:@selector(doubleValue)] && [height respondsToSelector:@selector(doubleValue)] && [width doubleValue]>0 && [height doubleValue]>0)
+        [parts addObject:[NSString stringWithFormat:@"%.0f × %.0f",[width doubleValue],[height doubleValue]]];
+    NSString *date=TGMediaCenterDateStringForItem(item);
+    id mediaDate=[media objectForKey:@"date"];
+    if ([mediaDate respondsToSelector:@selector(doubleValue)] && [mediaDate doubleValue]>0) {
+        NSDateFormatter *formatter=[[[NSDateFormatter alloc] init] autorelease];
+        [formatter setLocale:[[[NSLocale alloc] initWithLocaleIdentifier:TGLanguageCode()] autorelease]];
+        [formatter setDateStyle:NSDateFormatterShortStyle]; [formatter setTimeStyle:NSDateFormatterShortStyle];
+        date=[formatter stringFromDate:[NSDate dateWithTimeIntervalSince1970:[mediaDate doubleValue]]];
+    }
+    if ([date length]) [parts addObject:date];
+    return [NSDictionary dictionaryWithObjectsAndKeys:title,@"title",[parts componentsJoinedByString:@" · "],@"detail",nil];
 }
 
 - (void)prepareAquaPhotoGalleryForMessage:(TGMessageItem *)selected mediaItem:(NSDictionary *)selectedMedia gridSender:(id)sender {
@@ -48,7 +81,9 @@
             NSNumber *fileID=TGMediaItemFullFileID(media),*selectedFileID=TGMediaItemFullFileID(selectedMedia);
             BOOL sameMedia=[fileID integerValue]>0 && [selectedFileID integerValue]>0 ? [fileID isEqual:selectedFileID] : [media isEqual:selectedMedia];
             if ([[item messageID] isEqual:[selected messageID]] && sameMedia) selectedIndex=[entries count];
-            [entries addObject:[NSDictionary dictionaryWithObjectsAndKeys:[item messageID],@"message",[[media copy] autorelease],@"media",nil]];
+            NSDictionary *metadata=[self aquaPhotoGalleryMetadataForMedia:media message:item];
+            [entries addObject:[NSDictionary dictionaryWithObjectsAndKeys:[item messageID],@"message",[[media copy] autorelease],@"media",
+                [metadata objectForKey:@"title"],@"title",[metadata objectForKey:@"detail"],@"detail",nil]];
         }
     }
     if (selectedIndex==NSNotFound) return;

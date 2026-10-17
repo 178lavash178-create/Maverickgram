@@ -703,7 +703,7 @@ static CGFloat TGMessageInlineMetadataWidth(TGMessageItem *item) {
     CGFloat status = TGOutgoingStatusDotsWidthForItem(item);
     return ceil([time sizeWithAttributes:[NSDictionary dictionaryWithObject:TGChatMessageMetaFont()
                                                                      forKey:NSFontAttributeName]].width)
-           + status + (status > 0.0 ? 5.0 : 0.0) + TGMessageReplyIndicatorWidthForItem(item);
+           + status + (status > 0.0 ? 5.0 : 0.0) + TGMessageFooterIndicatorsWidthForItem(item);
 }
 
 static NSSize TGMessageSingleLineTextSize(TGMessageItem *item) {
@@ -774,7 +774,7 @@ NSRect TGMessageInlineTimeRectForItem(TGMessageItem *item, NSRect bubbleRect, BO
     CGFloat height = ceil(size.height) + 2.0;
     CGFloat baselineOffset = MAX(0.0, [TGChatMessageBodyFont() ascender] - [TGChatMessageMetaFont() ascender]);
     CGFloat y = flipped ? NSMinY(textRect) + baselineOffset : NSMaxY(textRect) - baselineOffset - height;
-    return NSMakeRect(NSMaxX(bubbleRect) - 12.0 - TGMessageInlineMetadataWidth(item) + TGMessageReplyIndicatorWidthForItem(item), y, ceil(size.width), height);
+    return NSMakeRect(NSMaxX(bubbleRect) - 12.0 - TGMessageInlineMetadataWidth(item) + TGMessageFooterIndicatorsWidthForItem(item), y, ceil(size.width), height);
 }
 
 NSString *TGDurationStringFromSecondsValue(id durationValue) {
@@ -1951,7 +1951,7 @@ static CGFloat TGMessageReactionMetadataWidth(TGMessageItem *item) {
     if ([time length] == 0) { return 0.0; }
     CGFloat statusWidth = TGOutgoingStatusDotsWidthForItem(item);
     CGFloat width = ceil([time sizeWithAttributes:[NSDictionary dictionaryWithObject:TGChatMessageMetaFont() forKey:NSFontAttributeName]].width);
-    return width + statusWidth + (statusWidth > 0.0 ? 5.0 : 0.0) + 12.0 + TGMessageReplyIndicatorWidthForItem(item);
+    return width + statusWidth + (statusWidth > 0.0 ? 5.0 : 0.0) + 12.0 + TGMessageFooterIndicatorsWidthForItem(item);
 }
 
 CGFloat TGMessageReactionContentWidth(TGMessageItem *item, CGFloat innerWidth) {
@@ -1993,8 +1993,8 @@ NSRect TGMessageReactionTimeRect(TGMessageItem *item, NSRect bandRect, BOOL flip
     // A growing/shrinking reaction band can be shorter than its final wrapped
     // chip layout. Keep metadata out of the body and neighbouring message until
     // its complete line fits; reaction chips already clip to the current band.
-    NSRect metadataRect = NSUnionRect(timeRect, TGMessageReplyIndicatorRectForTimeRect(item,timeRect));
-    if (TGMessageReplyIndicatorWidthForItem(item) <= 0.0) metadataRect = timeRect;
+    NSRect metadataRect = NSUnionRect(timeRect, TGMessageFooterIndicatorsRectForTimeRect(item,timeRect));
+    if (TGMessageFooterIndicatorsWidthForItem(item) <= 0.0) metadataRect = timeRect;
     return NSContainsRect(bandRect, metadataRect) ? timeRect : NSZeroRect;
 }
 
@@ -2026,6 +2026,7 @@ CGFloat TGMessageContextHeaderHeightForItem(TGMessageItem *item) {
 }
 
 #include "TGMessageCommentPresentation.inc"
+#include "TGMessageFooterMetadata.inc"
 
 CGFloat TGOutgoingStatusDotsWidthForItem(TGMessageItem *item) {
     if ([item isKindOfClass:[TGMessageItem class]] && [item failedToSend]) {
@@ -2143,7 +2144,7 @@ void TGDrawOutgoingStatusDotsForItem(TGMessageItem *item, NSRect timeRect, BOOL 
     CGFloat checkSide = TGOutgoingStatusCheckSide;
     CGFloat checkStep = checkSide - TGOutgoingStatusCheckOverlap;
     CGFloat checkX = NSMaxX(timeRect) + 4.0;
-    CGFloat checkY = NSMinY(timeRect) + floor((NSHeight(timeRect) - checkSide) / 2.0) + 1.0;
+    CGFloat checkY = NSMinY(timeRect) + floor((NSHeight(timeRect) - checkSide) / 2.0) + TGMessageReceiptOpticalOffset(timeRect,flipped);
     NSUInteger index = 0;
     for (index = 0; index < 2; index++) {
         NSRect checkRect = NSMakeRect(checkX + (checkStep * (CGFloat)index), checkY, checkSide, checkSide);
@@ -2375,9 +2376,9 @@ NSRect TGMessageBubbleRectForItem(TGMessageItem *item, NSRect cellFrame, BOOL sh
             [NSDictionary dictionaryWithObject:TGChatMessageBoldSecondaryFont() forKey:NSFontAttributeName]].width) + 62.0;
         bubbleWidth = MAX(bubbleWidth, MIN(maximumBubbleWidth,commentWidth));
     }
-    if ([messageText length] > 0 && separateMetadataFooter && [timeString length] > 0) {
+    if (separateMetadataFooter && [timeString length] > 0) {
         NSSize timeSize = [timeString sizeWithAttributes:timeAttributes];
-        CGFloat footerWidth = ceil(timeSize.width) + TGOutgoingStatusDotsWidthForItem(item) + TGMessageReplyIndicatorWidthForItem(item) + 29.0;
+        CGFloat footerWidth = ceil(timeSize.width) + TGOutgoingStatusDotsWidthForItem(item) + TGMessageFooterIndicatorsWidthForItem(item) + 29.0;
         if (footerWidth > bubbleWidth) {
             bubbleWidth = footerWidth;
         }
@@ -2763,23 +2764,9 @@ void TGDrawPlayableMediaContentForItem(TGMessageItem *item, NSRect bubbleRect, B
     [duration drawInRect:NSMakeRect(textX, NSMidY(playableRect) - 19.0, textWidth, 14.0)
           withAttributes:durationAttributes];
 
-    NSString *timeString = TGShortTimeStringFromDateValue([item date]);
-    if ([timeString length] > 0 && TGReactionChipsMinimumWidthForItem(item) <= 0.0) {
-        NSDictionary *timeAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
-                                        [NSFont systemFontOfSize:9.0], NSFontAttributeName,
-                                        TGMessageMetadataInkColor(item, flipped), NSForegroundColorAttributeName,
-                                        nil];
-        NSSize timeSize = [timeString sizeWithAttributes:timeAttributes];
-        CGFloat statusWidth = TGOutgoingStatusDotsWidthForItem(item);
-        CGFloat statusGap = (statusWidth > 0.0) ? 5.0 : 0.0;
-        CGFloat timeY = flipped ? (NSMaxY(playableRect) - 16.0) : (NSMinY(playableRect) + 5.0);
-        NSRect timeRect = NSMakeRect(NSMaxX(playableRect) - timeSize.width - statusWidth - statusGap - 12.0,
-                                     timeY,
-                                     timeSize.width,
-                                     10.0);
-        [timeString drawInRect:timeRect withAttributes:timeAttributes];
-        TGDrawOutgoingStatusDotsForItem(item, timeRect, flipped);
-    }
+    // Time, receipts, pin and readership have one owner: the message cell.
+    // The cell reserves their normal/reaction footer independently of playback.
+
 }
 
 long long TGMessageSortValue(id value) {

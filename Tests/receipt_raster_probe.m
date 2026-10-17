@@ -110,11 +110,42 @@ static BOOL TGOutlinedReceiptPreservesMask(void) {
     return lightPixels>=10 && edgePixels>=10;
 }
 
+static BOOL TGReceiptVerticalAlignment(BOOL flipped) {
+    const NSInteger scale=4;
+    NSBitmapImageRep *bitmap=[[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:800 pixelsHigh:160 bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSCalibratedRGBColorSpace bytesPerRow:0 bitsPerPixel:0] autorelease];
+    memset([bitmap bitmapData],0,[bitmap bytesPerRow]*160);
+    [NSGraphicsContext saveGraphicsState];
+    NSGraphicsContext *context=[NSGraphicsContext graphicsContextWithBitmapImageRep:bitmap];
+    [NSGraphicsContext setCurrentContext:context];
+    NSAffineTransform *transform=[NSAffineTransform transform];
+    if(flipped) [transform translateXBy:0 yBy:160];
+    [transform scaleXBy:scale yBy:flipped?-scale:scale];[transform concat];
+    [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithGraphicsPort:[context graphicsPort] flipped:flipped]];
+    NSFont *font=TGChatMessageMetaFont();
+    NSSize size=[@"12:30" sizeWithAttributes:[NSDictionary dictionaryWithObject:font forKey:NSFontAttributeName]];
+    NSRect time=NSMakeRect(20,12,ceil(size.width),MAX(12,ceil(size.height)+2));
+    [@"12:30" drawInRect:time withAttributes:[NSDictionary dictionaryWithObjectsAndKeys:font,NSFontAttributeName,[NSColor blackColor],NSForegroundColorAttributeName,nil]];
+    TGMessageItem *item=[[[TGMessageItem alloc] initWithChatID:@1 messageID:@2 date:@1 outgoing:YES preview:@"Test"] autorelease];[item setOutgoingRead:YES];
+    TGDrawOutgoingStatusDotsForItem(item,time,flipped);
+    [NSGraphicsContext restoreGraphicsState];
+    NSInteger minTime=160,maxTime=-1,minCheck=160,maxCheck=-1;
+    for(NSInteger y=0;y<160;y++) for(NSInteger x=0;x<800;x++) {
+        NSUInteger pixel[4];[bitmap getPixel:pixel atX:x y:y];if(pixel[3]<64)continue;
+        if(x<(NSInteger)(NSMaxX(time)*scale)) {minTime=MIN(minTime,y);maxTime=MAX(maxTime,y);}
+        else {minCheck=MIN(minCheck,y);maxCheck=MAX(maxCheck,y);}
+    }
+    CGFloat difference=fabs((minTime+maxTime-minCheck-maxCheck)/(2.0*scale));
+    printf("Receipt alignment flipped%d font%.1f: time%d..%d checks%d..%d delta%.2fpt\n",flipped,[font pointSize],(int)minTime,(int)maxTime,(int)minCheck,(int)maxCheck,difference);
+    return maxTime>=minTime && maxCheck>=minCheck && difference<=1.0;
+}
+
 int main(int argc, const char **argv) {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     TGMessageItem *item = [[[TGMessageItem alloc] initWithChatID:@1 messageID:@2 date:@1 outgoing:YES preview:@"Text"] autorelease];
     NSUInteger samples = 0; CGFloat minimumInk = 10000, minimumChanged = 10000;
     BOOL passed = TGOutlinedReceiptPreservesMask();
+    for(NSInteger level=0;level<=3;level++) {TGSetChatMessageTextSizeLevel(level); for(NSInteger flip=0;flip<=1;flip++) { if(!TGReceiptVerticalAlignment(flip)) passed=NO; }}
+    TGSetChatMessageTextSizeLevel(0);
     NSMutableArray *comparison = [NSMutableArray array];
     NSMutableArray *comparisonNames = [NSMutableArray array];
     for (NSString *theme in TGThemeIdentifiers()) {

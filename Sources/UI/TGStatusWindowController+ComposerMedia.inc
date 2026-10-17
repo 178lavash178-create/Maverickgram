@@ -151,115 +151,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     return items;
 }
 
-- (void)ensurePhotoSendPreviewWindow {
-    if (self.photoSendPreviewWindow) {
-        return;
-    }
-
-    NSRect frame = NSMakeRect(0, 0, 520, 560);
-    NSWindow *window = [[[NSWindow alloc] initWithContentRect:frame
-                                                    styleMask:(NSTitledWindowMask | NSClosableWindowMask)
-                                                      backing:NSBackingStoreBuffered
-                                                        defer:NO] autorelease];
-    [window setTitle:@"Send photo"];
-    [window setReleasedWhenClosed:NO];
-
-    TGUtilityWindowView *contentView = [[[TGUtilityWindowView alloc] initWithFrame:frame] autorelease];
-    [contentView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
-    [window setContentView:contentView];
-
-    TGUtilityPanelView *panelView = [[[TGUtilityPanelView alloc] initWithFrame:NSMakeRect(12, 16, 496, 502)] autorelease];
-    [panelView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
-    [contentView addSubview:panelView];
-    TGGroupedCardView *previewCard = [[[TGGroupedCardView alloc] initWithFrame:NSMakeRect(24, 66, 472, 442)] autorelease];
-    [previewCard setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
-    [contentView addSubview:previewCard];
-
-    NSTextField *titleField = [self labelWithFrame:NSMakeRect(24, 518, 472, 24)
-                                              text:@"1 media"
-                                              font:[NSFont boldSystemFontOfSize:16.0]];
-    [titleField setAlignment:NSCenterTextAlignment];
-    [titleField setTextColor:TGThemeSurfaceInkColor(TGClassicHeaderTextColor(1.0), TGThemeSurfaceWindow, 4.5)];
-    [contentView addSubview:titleField];
-    self.photoSendTitleField = titleField;
-
-    NSImageView *imageView = [[[NSImageView alloc] initWithFrame:NSMakeRect(36, 204, 448, 296)] autorelease];
-    [imageView setImageScaling:NSImageScaleProportionallyUpOrDown];
-    [imageView setImageFrameStyle:NSImageFrameNone];
-    [imageView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
-    [contentView addSubview:imageView];
-    self.photoSendPreviewImageView = imageView;
-
-    NSTextField *metaField = [self labelWithFrame:NSMakeRect(36, 188, 448, 16)
-                                             text:@""
-                                             font:[NSFont systemFontOfSize:11.0]];
-    [self applyMutedLabelStyle:metaField];
-    [metaField setAlignment:NSCenterTextAlignment];
-    [[metaField cell] setLineBreakMode:NSLineBreakByTruncatingMiddle];
-    [metaField setAutoresizingMask:(NSViewWidthSizable | NSViewMaxYMargin)];
-    [contentView addSubview:metaField];
-    self.photoSendMetaField = metaField;
-
-    TGScrollSurfaceView *queueSurface = [[[TGScrollSurfaceView alloc] initWithFrame:NSMakeRect(36, 108, 448, 78)] autorelease];
-    [queueSurface setAutoresizingMask:(NSViewWidthSizable | NSViewMaxYMargin)];
-    [contentView addSubview:queueSurface];
-    NSScrollView *queueScrollView = [[[NSScrollView alloc] initWithFrame:NSMakeRect(40, 112, 440, 70)] autorelease];
-    [queueScrollView setBorderType:NSNoBorder];
-    [queueScrollView setHasVerticalScroller:YES];
-    [queueScrollView setAutohidesScrollers:YES];
-    [queueScrollView setDrawsBackground:NO];
-    [queueScrollView setAutoresizingMask:(NSViewWidthSizable | NSViewMaxYMargin)];
-    NSView *queueContentView = [[[NSView alloc] initWithFrame:NSMakeRect(0, 0, 436, 70)] autorelease];
-    [queueScrollView setDocumentView:queueContentView];
-    [contentView addSubview:queueScrollView];
-    self.photoSendQueueScrollView = queueScrollView;
-    self.photoSendQueueContentView = queueContentView;
-
-    TGComposerInputBackgroundView *captionBackground = [[[TGComposerInputBackgroundView alloc] initWithFrame:NSMakeRect(36, 76, 448, 30)] autorelease];
-    [captionBackground setAutoresizingMask:(NSViewWidthSizable | NSViewMaxYMargin)];
-    [contentView addSubview:captionBackground];
-    self.photoSendCaptionBackgroundView = captionBackground;
-
-    NSTextField *captionField = [[[NSTextField alloc] initWithFrame:NSMakeRect(45, 83, 430, 18)] autorelease];
-    [self applyComposerTextFieldStyle:captionField];
-    [[captionField cell] setPlaceholderString:TGLoc(@"caption.placeholder")];
-    [captionField setDelegate:(id)self];
-    [captionField setAutoresizingMask:(NSViewWidthSizable | NSViewMaxYMargin)];
-    [contentView addSubview:captionField];
-    self.photoSendCaptionField = captionField;
-
-    NSTextField *errorField = [self labelWithFrame:NSMakeRect(36, 58, 448, 16)
-                                              text:@""
-                                              font:[NSFont systemFontOfSize:11.0]];
-    [errorField setTextColor:[NSColor colorWithCalibratedRed:0.760 green:0.160 blue:0.130 alpha:1.0]];
-    [errorField setHidden:YES];
-    [errorField setAutoresizingMask:(NSViewWidthSizable | NSViewMaxYMargin)];
-    [[errorField cell] setLineBreakMode:NSLineBreakByTruncatingMiddle];
-    [contentView addSubview:errorField];
-    self.photoSendErrorField = errorField;
-
-    NSButton *cancelButton = [self modalCloseButtonWithFrame:NSMakeRect(244, 28, 108, 30)];
-    [cancelButton setTitle:TGLoc(@"cancel")];
-    [cancelButton setTarget:self];
-    [cancelButton setAction:@selector(cancelPendingPhotoSend:)];
-    [cancelButton setKeyEquivalent:[NSString stringWithFormat:@"%C", (unichar)27]];
-    [cancelButton setKeyEquivalentModifierMask:0];
-    [cancelButton setAutoresizingMask:(NSViewMinXMargin | NSViewMaxYMargin)];
-    [contentView addSubview:cancelButton];
-
-    NSButton *sendButton = [[[NSButton alloc] initWithFrame:NSMakeRect(368, 28, 108, 30)] autorelease];
-    [sendButton setTitle:TGLoc(@"send")];
-    [sendButton setTarget:self];
-    [sendButton setAction:@selector(sendPendingPhotoPreview:)];
-    [sendButton setKeyEquivalent:@"\r"];
-    [sendButton setKeyEquivalentModifierMask:0];
-    [self applySkeuomorphicButtonStyle:sendButton isPrimary:YES];
-    [sendButton setAutoresizingMask:(NSViewMinXMargin | NSViewMaxYMargin)];
-    [contentView addSubview:sendButton];
-    self.photoSendSendButton = sendButton;
-
-    self.photoSendPreviewWindow = window;
-}
+#include "TGStatusWindowController+AttachmentPreview.inc"
 
 - (NSImage *)previewImageForAttachmentDescriptor:(TGAttachmentDescriptor *)descriptor {
     if (descriptor.kind == TGAttachmentKindPhoto) {
@@ -463,9 +355,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     [self.photoSendPreviewWindow setTitle:([safeDescriptors count] > 1 ? @"Send media" : [NSString stringWithFormat:@"Send %@", [descriptor.typeLabel lowercaseString]])];
     [self.photoSendTitleField setStringValue:[NSString stringWithFormat:@"%lu media", (unsigned long)[safeDescriptors count]]];
     [self.photoSendPreviewImageView setImage:[self previewImageForAttachmentDescriptors:safeDescriptors]];
-    [self.photoSendMetaField setStringValue:([safeDescriptors count] > 1 ? TGSummarizeAttachmentDescriptors(safeDescriptors) : [descriptor summary])];
-    [self.photoSendCaptionField setStringValue:@""];
-    [[self.photoSendCaptionField cell] setPlaceholderString:TGLoc(@"caption.placeholder")];
+    [self resetAttachmentCaption];
     [self.photoSendErrorField setStringValue:@""];
     [self.photoSendErrorField setHidden:YES];
     [self.photoSendSendButton setTitle:TGLoc(@"send")];
@@ -520,6 +410,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     self.pendingPhotoSendChatID = nil;
     self.pendingPhotoSendThreadID = nil;
     self.pendingPhotoSendTopicKind = nil;
+    [self resetAttachmentCaption];
     [self.photoSendPreviewWindow orderOut:nil];
     [self requestComposerRefocus];
 }
@@ -1010,7 +901,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
 - (void)sendPendingPhotoPreview:(id)sender {
     (void)sender;
     NSString *path = [self.pendingPhotoSendPath copy];
-    NSString *caption = [[self.photoSendCaptionField stringValue] copy];
+    NSString *caption = [[self.photoSendCaptionField string] copy];
     NSNumber *chatID = [self.pendingPhotoSendChatID retain];
     NSNumber *threadID = [self.pendingPhotoSendThreadID retain];
     NSString *topicKind = [self.pendingPhotoSendTopicKind copy];

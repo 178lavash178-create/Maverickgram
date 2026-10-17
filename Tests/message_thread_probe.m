@@ -20,16 +20,19 @@ static NSDictionary *TGThreadFixture(NSString *name) {
 @property (nonatomic, retain) NSDictionary *response;
 @property (nonatomic, copy) NSString *failType;
 @property (nonatomic, copy) NSString *fixtureRuntime;
+@property (nonatomic, retain) NSDictionary *viewerResponses;
 @end
 @implementation TGThreadProbeClient
+@synthesize viewerResponses = _viewerResponses;
 @synthesize requests = _requests, response = _response, failType = _failType, fixtureRuntime = _fixtureRuntime;
 - (id)init { self = [super init]; if (self) { self.requests = [NSMutableArray array]; } return self; }
-- (void)dealloc { [_requests release]; [_response release]; [_failType release]; [_fixtureRuntime release]; [super dealloc]; }
+- (void)dealloc { [_requests release]; [_response release]; [_failType release]; [_fixtureRuntime release]; [_viewerResponses release]; [super dealloc]; }
 - (NSString *)currentAuthorizationStatePreparingIfNeededWithTimeout:(NSTimeInterval)timeout error:(NSError **)error { (void)timeout; (void)error; return @"ready"; }
 - (NSError *)errorWithDescription:(NSString *)description code:(NSInteger)code { return [NSError errorWithDomain:@"TGThreadProbe" code:code userInfo:[NSDictionary dictionaryWithObject:description forKey:NSLocalizedDescriptionKey]]; }
 - (NSDictionary *)sendTDLibRequestAndWaitForExtra:(NSDictionary *)request extraPrefix:(NSString *)prefix timeout:(NSTimeInterval)timeout errorCode:(NSInteger)code error:(NSError **)error {
     (void)prefix; (void)timeout; (void)code;
     [self.requests addObject:request];
+    if (self.viewerResponses) return [self.viewerResponses objectForKey:[request objectForKey:@"@type"]];
     if ([[request objectForKey:@"@type"] isEqual:self.failType]) {
         if (error) { *error = [self errorWithDescription:@"Unsupported fixture schema" code:400]; }
         return nil;
@@ -258,6 +261,31 @@ int main(void) {
     TGAssert(TGMessageThreadHistoryResponseIsScoped(forumResponse, @-999, @700, @"forum"), "matching fresh forum metadata remains supported");
     TGAssert(!TGMessageThreadHistoryResponseIsScoped(forumResponse, @-999, @700, @"thread"), "equal numeric IDs with a different topic kind must not pass validation");
     TGAssert(!TGMessageThreadHistoryResponseIsScoped(TGThreadFixture(@"message_thread_history_modern.json"), @-999, @700, @"forum"), "forum fallback must not accept another kind of topic with the same ID");
+
+    // Views are independent of replies and delivery-check state.
+    TGMessageItem *viewItem=TGItem(10,0);
+    NSDictionary *viewObject=[NSDictionary dictionaryWithObject:[NSDictionary dictionaryWithObject:@27 forKey:@"view_count"] forKey:@"interaction_info"];
+    TGApplyMessageThreadMetadata(viewItem,viewObject);
+    TGAssert([[viewItem messageViewCount] intValue]==27,"server view_count parsed without reply_info");
+    TGAssert([[[[viewItem copy] autorelease] messageViewCount] intValue]==27,"copy preserves aggregate view count");
+    TGAssert(!TGMessageViewCountFromObject([NSDictionary dictionaryWithObject:[NSDictionary dictionaryWithObject:@-1 forKey:@"view_count"] forKey:@"interaction_info"]),"negative views rejected");
+    TGAssert(!TGMessageViewCountFromObject([NSDictionary dictionaryWithObject:[NSNull null] forKey:@"interaction_info"]),"missing views stay unknown");
+    NSMutableDictionary *viewUpdate=[NSMutableDictionary dictionaryWithObjectsAndKeys:@"updateMessageInteractionInfo",@"@type",@42,@"chat_id",@10,@"message_id",[NSDictionary dictionaryWithObject:@29 forKey:@"view_count"],@"interaction_info",nil];
+    TGAssert(TGApplyMessageInteractionSummaryToItem(viewItem,TGMessageInteractionUpdateSummary(viewUpdate,nil)) && [[viewItem messageViewCount] intValue]==29,"live aggregate update changes footer state");
+    [viewUpdate setObject:@99 forKey:@"chat_id"];
+    TGAssert(!TGApplyMessageInteractionSummaryToItem(viewItem,TGMessageInteractionUpdateSummary(viewUpdate,nil)) && [[viewItem messageViewCount] intValue]==29,"other chat's view update is rejected");
+    TGMessageItem *viewAlbum=TGItem(30,0);TGMergeMessageThreadMetadata(viewAlbum,viewItem);TGMergeMessageThreadMetadata(viewAlbum,viewItem);
+    TGAssert([[viewAlbum messageViewCount] intValue]==29,"album retains maximum instead of adding duplicate audiences");
+    client.fixtureRuntime=nil;client.failType=nil;[client.requests removeAllObjects];
+    NSDictionary *viewerList=[NSDictionary dictionaryWithObjectsAndKeys:@"messageViewers",@"@type",[NSArray arrayWithObjects:[NSDictionary dictionaryWithObject:@1 forKey:@"user_id"],[NSDictionary dictionaryWithObject:@2 forKey:@"user_id"],[NSDictionary dictionaryWithObject:@1 forKey:@"user_id"],nil],@"viewers",nil];
+    client.viewerResponses=[NSDictionary dictionaryWithObjectsAndKeys:[NSDictionary dictionaryWithObject:@YES forKey:@"can_get_viewers"],@"getMessageProperties",viewerList,@"getMessageViewers",nil];
+    TGAssert([[client messageViewerCountForChatID:@42 messageID:@10 timeout:1] intValue]==2 && [client.requests count]==2,"eligible outgoing group count uses complete unique viewer list, no profile fetches");
+    [client.requests removeAllObjects];client.viewerResponses=[NSDictionary dictionaryWithObject:[NSDictionary dictionaryWithObject:@NO forKey:@"can_get_viewers"] forKey:@"getMessageProperties"];
+    TGAssert(![client messageViewerCountForChatID:@42 messageID:@10 timeout:1] && [client.requests count]==1,"explicit unavailable capability prevents viewer request");
+    [client.requests removeAllObjects];client.viewerResponses=[NSDictionary dictionaryWithObjectsAndKeys:[NSDictionary dictionaryWithObject:@YES forKey:@"can_get_viewers"],@"getMessage",[NSDictionary dictionaryWithObjectsAndKeys:@"messageViewers",@"@type",[NSArray array],@"viewers",nil],@"getMessageViewers",nil];
+    TGAssert([[client messageViewerCountForChatID:@42 messageID:@10 timeout:1] isEqual:@0] && [client.requests count]==3,"legacy direct capability fallback preserves known zero readers");
+    client.viewerResponses=[NSDictionary dictionaryWithObject:[NSDictionary dictionaryWithObject:@YES forKey:@"can_get_viewers"] forKey:@"getMessageProperties"];
+    TGAssert(![client messageViewerCountForChatID:@42 messageID:@10 timeout:1],"missing list is unknown, never fabricated zero");
 
     printf("Message thread probe passed.\n"); [pool drain]; return 0;
 }

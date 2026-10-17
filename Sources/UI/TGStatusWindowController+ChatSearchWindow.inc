@@ -1,3 +1,5 @@
+#include "TGStatusWindowController+AquaChatSearch.inc"
+
 - (void)buildChatSearchWindowIfNeeded {
     if (self.chatSearchWindow) {
         return;
@@ -30,6 +32,9 @@
 - (void)openChatSearchWindow:(id)sender {
     (void)sender;
     [self buildChatSearchWindowIfNeeded];
+    if (TGInterfaceDesignIsAqua() && [[[self aquaChatSearchState] objectForKey:@"popover"] isShown]) {
+        [[[self chatSearchPanelView] window] makeFirstResponder:[[self chatSearchPanelView] searchField]]; return;
+    }
     [NSApp activateIgnoringOtherApps:YES];
     [[TGLogger sharedLogger] log:[NSString stringWithFormat:@"Search: opening chat search window with %lu visible chat candidate(s).",
                                   (unsigned long)[self.chatItems count]]];
@@ -37,9 +42,11 @@
     [panelView setQuery:@""];
     [panelView setStatusText:TGLoc(@"search.chats.recent")];
     [panelView setSelectedIndex:-1];
+    if (TGInterfaceDesignIsAqua() && ![self showAquaChatSearchPanel]) return;
     [self updateChatSearchWindowResults];
     [panelView layoutPanelSubviews];
     [panelView setNeedsDisplay:YES];
+    if (TGInterfaceDesignIsAqua()) { [self showAquaChatSearchPanel];return; }
     [self.chatSearchWindow center];
     [self.chatSearchWindow makeKeyAndOrderFront:self];
     [self.chatSearchWindow orderFrontRegardless];
@@ -50,7 +57,8 @@
 - (void)closeChatSearchWindow:(id)sender {
     (void)sender;
     self.chatSearchGeneration++;
-    BOOL restoreKeyWindow=[self.chatSearchWindow isKeyWindow];
+    BOOL restoreKeyWindow=[self.chatSearchWindow isKeyWindow] || (TGInterfaceDesignIsAqua() && [[[self aquaChatSearchState] objectForKey:@"popover"] isShown]);
+    if (TGInterfaceDesignIsAqua()) [self invalidateAquaChatSearchPresentation];
     [NSObject cancelPreviousPerformRequestsWithTarget:self
                                              selector:@selector(updateChatSearchWindowResults)
                                                object:nil];
@@ -69,6 +77,7 @@
     [self buildChatSearchWindowIfNeeded];
     TGChatSearchPanelView *panelView = [self chatSearchPanelView];
     NSString *query = [[panelView query] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    NSDictionary *presentationContext=TGInterfaceDesignIsAqua() ? [[self aquaChatSearchState] objectForKey:@"context"] : nil;
     NSUInteger generation = self.chatSearchGeneration + 1;
     self.chatSearchGeneration = generation;
     [self.chatSearchWindowResults removeAllObjects];
@@ -116,7 +125,7 @@
                 NSArray *serverItems = [[client mainChatPreviewItemsWithLimit:24 timeout:5.0 error:&loadError] retain];
                 NSString *errorMessage = [[loadError localizedDescription] copy];
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    if (self.chatSearchGeneration == generation) {
+                    if (self.chatSearchGeneration == generation && client==self.client && [self aquaChatSearchContextIsCurrent:presentationContext]) {
                         TGChatSearchPanelView *activePanelView = [self chatSearchPanelView];
                         [self.chatSearchWindowResults removeAllObjects];
                         NSUInteger index = 0;
@@ -171,7 +180,7 @@
                                                                   error:&searchError] retain];
         NSString *errorMessage = [[searchError localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
-            if (self.chatSearchGeneration != generation) {
+            if (self.chatSearchGeneration != generation || client!=self.client || ![self aquaChatSearchContextIsCurrent:presentationContext]) {
                 [serverItems release];
                 [errorMessage release];
                 [localSnapshot release];
@@ -253,7 +262,13 @@
 
 - (void)chatSearchWindowQueryChanged:(id)sender {
     (void)sender;
+    /* Reject replies for the old text immediately, including the debounce
+     * interval before the next request is submitted. Old rows cannot remain
+     * keyboard-activatable under a different query. */
+    self.chatSearchGeneration++;
     TGChatSearchPanelView *panelView = [self chatSearchPanelView];
+    [self.chatSearchWindowResults removeAllObjects];
+    [panelView setResults:self.chatSearchWindowResults];
     NSString *query = [[panelView query] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     [panelView setStatusText:([query length] == 0 ? TGLoc(@"search.chats.recent") : TGLoc(@"search.chats.searching"))];
     [NSObject cancelPreviousPerformRequestsWithTarget:self

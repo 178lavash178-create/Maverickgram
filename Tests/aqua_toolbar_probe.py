@@ -20,6 +20,7 @@ harness=r'''
 #import "TGIconAssets.h"
 #import "TGLocalization.h"
 #import "TGTheme.h"
+#import "TGAquaSearchAnchorField.h"
 #include <math.h>
 static NSUInteger Checks;
 static void Check(BOOL condition,const char *message) { Checks++;if(!condition) {fprintf(stderr,"Aqua toolbar: %s\n",message);exit(1);} }
@@ -59,6 +60,7 @@ __CELL__
 @implementation TGChatSearchPanelView
 @synthesize query=_query,searchField=_searchField;
 - (void)setQuery:(NSString *)query {[_query release];_query=[query copy];[_searchField setStringValue:query];}
+- (NSWindow *)window { return [_searchField window]; }
 - (void)dealloc {[_query release];[_searchField release];[super dealloc];}
 @end
 @interface ToolbarProbe : NSObject {
@@ -129,8 +131,8 @@ int main(void) {
  Check([[search cell] sendsWholeSearchString] && ![[search cell] sendsSearchStringImmediately],"native toolbar search submits whole query instead of sending every keystroke");
  [search setStringValue:@"  сохранённый запрос  "];[search sendAction:[search action] to:[search target]];
  Check(owner.opened==1 && owner.updated==1 && [[owner.panel query] isEqual:@"сохранённый запрос"] && [[search stringValue] length]==0,"Return seeds existing chat-search backend with trimmed query and resets toolbar input");
- [search sendAction:[search action] to:[search target]];Check(owner.opened==1,"native clear with empty query never reopens search");
- owner.currentAuthState=@"waitCode";[search setStringValue:@"private query"];[search sendAction:[search action] to:[search target]];Check(owner.opened==1,"toolbar search cannot start before authorization");
+ [search sendAction:[search action] to:[search target]];Check(owner.opened==2,"empty toolbar activation opens recent chats");
+ owner.currentAuthState=@"waitCode";[search setStringValue:@"private query"];[search sendAction:[search action] to:[search target]];Check(owner.opened==2,"toolbar search cannot start before authorization");
  NSButton *button=[[[NSButton alloc] initWithFrame:NSZeroRect] autorelease];[button setTarget:owner];[button setAction:@selector(openProfileFromDrawer:)];[button setTag:92];[button setTitle:@"Profile"];[button setState:NSOnState];[owner installAquaToolbarCellOnButton:button asset:@"contacts" toggle:YES];
  Check([button target]==owner && [button action]==@selector(openProfileFromDrawer:) && [button tag]==92 && [button state]==NSOnState && [[button cell] isKindOfClass:[TGAquaToolbarItemCell class]],"toolbar presentation preserves native action/tag/selected state");
  [owner installAquaToolbarCellOnButton:button asset:@"arrow-down" toggle:NO];[button performClick:nil];Check([(NSButtonCell *)[button cell] showsStateBy]==0 && ![[button cell] isHighlighted],"momentary downloads-style action never becomes selected tab");
@@ -187,6 +189,6 @@ try:
  shutil.copytree(os.path.join(ROOT,'Sources/Resources/Textures'),os.path.join(contents,'Resources/Textures'))
  with open(os.path.join(contents,'Info.plist'),'w') as f:f.write('<?xml version="1.0"?><plist version="1.0"><dict><key>CFBundleExecutable</key><string>probe</string><key>CFBundleIdentifier</key><string>local.telegraphica.toolbar-probe</string></dict></plist>')
  with open(path,'wb') as f:f.write(harness.encode('utf-8'))
- deps=['Sources/UI/TGAquaShellLayout.m','Sources/UI/TGIconAssets.m','Sources/UI/TGLocalization.m','Sources/UI/TGAquaAppearance.m']
+ deps=['Sources/UI/TGAquaShellLayout.m','Sources/UI/TGIconAssets.m','Sources/UI/TGLocalization.m','Sources/UI/TGAquaAppearance.m','Sources/UI/TGAquaSearchAnchorField.m']
  subprocess.check_call(sys.argv[1:]+['-I'+os.path.join(ROOT,'Sources/UI'),path]+[os.path.join(ROOT,p) for p in deps]+['-framework','Cocoa','-o',binary]);subprocess.check_call([binary])
 finally:shutil.rmtree(folder)

@@ -65,8 +65,8 @@ TGAquaChatHeaderGeometry TGAquaChatHeaderFrames(NSRect header, BOOL forum) {
     CGFloat x = NSMinX(header), y = NSMinY(header) + 3.0, width = NSWidth(header);
     g.back = forum ? NSMakeRect(x + 8.0, y, 30.0, 30.0) : NSZeroRect;
     g.refresh = NSMakeRect(x + width - 38.0, y, 30.0, 30.0);
-    g.search = NSMakeRect(x + width - 74.0, y, 30.0, 30.0);
-    g.compose = NSMakeRect(x + width - 110.0, y, 30.0, 30.0);
+    g.search = NSZeroRect; // Global chat search lives in the toolbar.
+    g.compose = NSMakeRect(x + width - 74.0, y, 30.0, 30.0);
     CGFloat titleX = x + (forum ? 46.0 : 10.0);
     g.title = NSMakeRect(titleX, y + 5.0, MAX(0.0, NSMinX(g.compose) - 8.0 - titleX), 20.0);
     return g;

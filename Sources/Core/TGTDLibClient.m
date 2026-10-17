@@ -13,6 +13,8 @@
 #import "TGTDLibClient+LocationMessages.h"
 #import "TGTDLibClient+Files.h"
 #import "TGChatItem.h"
+#import "TGTDLibClient+ForumTopics.h"
+#import "TGForumTopicPermissions.h"
 #import "TGMessageItem.h"
 #import "TGMessagePollSupport.h"
 #import "TGMessageThreadSupport.h"
@@ -5337,6 +5339,7 @@ static BOOL TGTDLibSendErrorLooksLikeSchemaMismatch(NSError *error) {
         return [NSArray array];
     }
 
+    NSDictionary *topicRights = [self forumTopicRightsForChatID:chatID timeout:MIN(timeout, 2.0)];
     NSMutableArray *topics = [NSMutableArray array];
     NSUInteger index = 0;
     for (index = 0; index < [(NSArray *)topicsObject count]; index++) {
@@ -5371,6 +5374,7 @@ static BOOL TGTDLibSendErrorLooksLikeSchemaMismatch(NSError *error) {
         NSNumber *unreadCount = [unreadValue respondsToSelector:@selector(integerValue)] ? [NSNumber numberWithInteger:[unreadValue integerValue]] : [NSNumber numberWithInteger:0];
 
         NSMutableDictionary *topicInfo = [NSMutableDictionary dictionary];
+        [topicInfo setObject:TGForumTopicActionPermissions(topicRights, info, topicID) forKey:@"action_permissions"];
         [topicInfo setObject:name forKey:@"title"];
         [topicInfo setObject:[NSNumber numberWithLongLong:[topicID longLongValue]] forKey:@"message_thread_id"];
         [topicInfo setObject:[NSNumber numberWithLongLong:[topicID longLongValue]] forKey:@"forum_topic_id"];
@@ -7398,6 +7402,7 @@ static BOOL TGTDLibSendErrorLooksLikeSchemaMismatch(NSError *error) {
             [topicItem setForumTopic:YES];
             [topicItem setForumTopicClosed:[[topic objectForKey:@"is_closed"] boolValue]];
             [topicItem setForumTopicPinned:[[topic objectForKey:@"is_pinned"] boolValue]];
+            [topicItem setForumTopicActionPermissions:[topic objectForKey:@"action_permissions"]];
             [topicItem setParentChatID:chatID];
             [topicItem setMessageThreadID:[NSNumber numberWithLongLong:[threadID longLongValue]]];
             [topicItem setMessageTopicKind:topicKind];

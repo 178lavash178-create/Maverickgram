@@ -64,7 +64,8 @@ static NSString *TGChatInfoString(id object) { return [object isKindOfClass:[NSS
     _mediaHostView = [[NSView alloc] initWithFrame:NSZeroRect]; [_sheetView addSubview:_mediaHostView];
     _tabScrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
     [_tabScrollView setBorderType:NSNoBorder]; [_tabScrollView setHasHorizontalScroller:YES];
-    [_tabScrollView setScrollerStyle:NSScrollerStyleLegacy];
+    /* Overlay scrollers preserve horizontal access without a permanent grey gutter. */
+    [_tabScrollView setScrollerStyle:NSScrollerStyleOverlay];
     [_tabScrollView setAutohidesScrollers:YES]; [_tabScrollView setDrawsBackground:NO];
     [[_tabScrollView contentView] setDrawsBackground:NO];
     _tabDocumentView = [[NSView alloc] initWithFrame:NSZeroRect];
@@ -128,6 +129,19 @@ static NSString *TGChatInfoString(id object) { return [object isKindOfClass:[NSS
     [_detailsField setStringValue:[details componentsJoinedByString:@"\n\n"]];
     NSArray *keys = [NSArray arrayWithObjects:@"chat.info.title",@"media.center.tab.media",@"media.center.tab.files",@"media.center.tab.links",@"media.center.tab.music",@"media.center.tab.voice",@"media.center.tab.gif",@"media.center.tab.polls",@"media.center.tab.groups",nil];
     [_detailsButton setTitle:TGLoc(@"aqua.profile.manage")];
+    NSDictionary *status = [[summary objectForKey:@"self_status"] isKindOfClass:[NSDictionary class]] ? [summary objectForKey:@"self_status"] : nil;
+    NSDictionary *rights = [[status objectForKey:@"rights"] isKindOfClass:[NSDictionary class]] ? [status objectForKey:@"rights"] : status;
+    BOOL group = [kind isEqual:@"basic_group"] || [kind isEqual:@"supergroup"] || [kind isEqual:@"channel"];
+    BOOL permitted = [[summary objectForKey:@"can_manage_members"] boolValue] || [[summary objectForKey:@"can_invite_members"] boolValue] ||
+        [[status objectForKey:@"@type"] isEqual:@"chatMemberStatusCreator"] ||
+        ([[status objectForKey:@"@type"] isEqual:@"chatMemberStatusAdministrator"] &&
+         ([[rights objectForKey:@"can_change_info"] boolValue] || [[rights objectForKey:@"can_manage_topics"] boolValue]));
+    BOOL secret=[kind isEqual:@"secret"];
+    BOOL bot=[kind isEqual:@"private"] && [[profile objectForKey:@"is_bot"] boolValue];
+    BOOL showDetails=(group && permitted) || secret || bot;
+    [_detailsButton setTitle:TGLoc(secret ? @"chat.kind.secret" : (bot ? @"bot.window.title" : @"aqua.profile.manage"))];
+    [_detailsButton setHidden:(!showDetails || loading)];
+    [_detailsButton setEnabled:(showDetails && !loading)];
     for (NSUInteger i=0;i<[_actionButtons count];i++) {
         NSButton *button = [_actionButtons objectAtIndex:i]; NSString *text = TGLoc([keys objectAtIndex:i]);
         [button setTitle:text]; [button setToolTip:text];
@@ -175,7 +189,8 @@ static NSString *TGChatInfoString(id object) { return [object isKindOfClass:[NSS
     CGFloat docWidth=NSWidth([[_scrollView contentView] bounds]), textWidth=MAX(0,docWidth-36), y=18;
     CGFloat detailHeight=[[_detailsField stringValue] length] ? [self heightForField:_detailsField width:textWidth minimum:20] : 0;
     [_detailsField setFrame:NSMakeRect(18,y,textWidth,detailHeight)]; y+=detailHeight+20;
-    [_detailsButton setFrame:NSMakeRect(18,y,textWidth,30)]; y+=44;
+    [_detailsButton setFrame:NSMakeRect(18,y,textWidth,[_detailsButton isHidden] ? 0 : 30)];
+    if (![_detailsButton isHidden]) y+=44;
     [_documentView setFrameSize:NSMakeSize(docWidth,MAX(NSHeight([[_scrollView contentView] bounds]),y))];
 }
 - (void)stopAnimation {
@@ -223,6 +238,7 @@ static NSString *TGChatInfoString(id object) { return [object isKindOfClass:[NSS
     if ([_target respondsToSelector:@selector(openAquaChatInfoMedia:)]) [_target performSelector:@selector(openAquaChatInfoMedia:) withObject:sender];
 }
 - (void)detailsPressed:(id)sender {
+    if ([_detailsButton isHidden] || ![_detailsButton isEnabled]) return;
     if ([_target respondsToSelector:@selector(openAquaChatInfoDetails:)]) [_target performSelector:@selector(openAquaChatInfoDetails:) withObject:sender];
 }
 @end

@@ -297,6 +297,16 @@ int main(void) {
  Check(r.applyCount==before && r.pendingLiveMessageRefresh,"latest cancels queued around-anchor completion");
  r.pendingLiveMessageRefresh=NO;[r reloadMessagesForChatID:r.selectedChatID interactive:NO];RunOne(WorkerBlocks);RunOne(MainBlocks);
  Check(!r.lastPreserveOlder && !r.messageItemsRepresentFocusedContext && [r.messageItems count]==2 && [[[r.messageItems objectAtIndex:0] messageID] isEqual:@9000],"explicit latest replaces ancient page without disjoint merge");
+ Check(!r.messageLoadingIndicatorVisible,"latest completion stops its owned spinner after queued history refresh");
+ // Saved Messages / any focused page already has rows: latest still owns a
+ // real loading generation and must stop it on both success and failure.
+ r.messageItemsRepresentFocusedContext=YES;NSUInteger latestGeneration=r.messageLoadingGeneration;
+ [r jumpToNewestMessages:nil];Check(r.messageLoadingIndicatorVisible && r.messageLoadingGeneration==latestGeneration+1,"focused latest starts one owned generation despite nonempty history");
+ RunOne(WorkerBlocks);RunOne(MainBlocks);Check(!r.messageLoadingIndicatorVisible,"focused latest success removes spinner");
+ r.messageItemsRepresentFocusedContext=YES;backend.latestItems=nil;
+ [r jumpToNewestMessages:nil];RunOne(WorkerBlocks);RunOne(MainBlocks);Check(!r.messageLoadingIndicatorVisible,"focused latest error also removes spinner");
+ r.messageItemsRepresentFocusedContext=NO;latestGeneration=r.messageLoadingGeneration;
+ [r jumpToNewestMessages:nil];Check(!r.messageLoadingIndicatorVisible && r.messageLoadingGeneration==latestGeneration,"local jump in already-loaded latest history never creates a spinner");
  Check(![WorkerBlocks count] && ![MainBlocks count],"all synthetic production async callbacks drained");[WorkerBlocks release];[MainBlocks release];
  Aqua=NO;[p captureNavigationContinuity];[p armNavigationTranscriptRestore];Check(!p.navigationPositionStore.pendingTranscriptKey,"Classic does not acquire navigation restore state");
  [listKey release];printf("Navigation continuity PASS: %lu checks, semantic isolation, actual viewports and production async guards.\n",(unsigned long)checks);

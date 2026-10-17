@@ -8,6 +8,13 @@ static NSDictionary *TGThreadReplyInfo(NSDictionary *object) {
     return [replyInfo isKindOfClass:[NSDictionary class]] ? replyInfo : nil;
 }
 
+NSNumber *TGMessageViewCountFromObject(NSDictionary *object) {
+    id interaction = [object isKindOfClass:[NSDictionary class]] ? [object objectForKey:@"interaction_info"] : nil;
+    id count = [interaction isKindOfClass:[NSDictionary class]] ? [interaction objectForKey:@"view_count"] : nil;
+    return ([count isKindOfClass:[NSNumber class]] && [count longLongValue] >= 0)
+        ? [NSNumber numberWithLongLong:[count longLongValue]] : nil;
+}
+
 NSNumber *TGMessageThreadReplyCountFromObject(NSDictionary *object) {
     id count = [TGThreadReplyInfo(object) objectForKey:@"reply_count"];
     return ([count respondsToSelector:@selector(integerValue)] && [count integerValue] >= 0)
@@ -31,6 +38,7 @@ BOOL TGMessageCanGetThreadFromObject(NSDictionary *object) {
 }
 
 void TGApplyMessageThreadMetadata(TGMessageItem *item, NSDictionary *message) {
+    [item setMessageViewCount:TGMessageViewCountFromObject(message)];
     id channelPost = [message objectForKey:@"is_channel_post"];
     [item setChannelPost:[channelPost respondsToSelector:@selector(boolValue)] && [channelPost boolValue]];
     NSNumber *count = TGMessageThreadReplyCountFromObject(message);
@@ -43,6 +51,11 @@ void TGMergeMessageThreadMetadata(TGMessageItem *albumItem, TGMessageItem *item)
     // Album members belong to the same chat. Preserve the post presentation
     // even when this member has no reply metadata or owns no discussion.
     [albumItem setChannelPost:[albumItem isChannelPost] || [item isChannelPost]];
+    // Album members can describe the same viewers: retain the maximum, not a sum.
+    if ([item messageViewCount] && (![albumItem messageViewCount] ||
+        [[item messageViewCount] longLongValue] > [[albumItem messageViewCount] longLongValue])) {
+        [albumItem setMessageViewCount:[item messageViewCount]];
+    }
     if (![item canGetMessageThread] && ![item messageThreadReplyCount]) { return; }
     NSNumber *itemCount = [item messageThreadReplyCount];
     NSNumber *albumCount = [albumItem messageThreadReplyCount];
@@ -89,12 +102,14 @@ NSDictionary *TGMessageInteractionUpdateSummary(NSDictionary *update, NSDictiona
         [NSNumber numberWithLongLong:[message longLongValue]], @"message_id",
         [NSNumber numberWithBool:TGThreadReplyInfo(update) != nil], @"has_reply_info",
         count ? (id)count : (id)[NSNull null], @"reply_count",
+        TGMessageViewCountFromObject(update) ? (id)TGMessageViewCountFromObject(update) : (id)[NSNull null], @"view_count",
         [NSNumber numberWithBool:TGMessageCanGetThreadFromObject(update)], @"can_get_message_thread",
         reactionInfo ? (id)reactionInfo : (id)[NSDictionary dictionary], @"reaction_info", nil];
 }
 
 static NSDictionary *TGInteractionDisplayState(TGMessageItem *item) {
     return [NSDictionary dictionaryWithObjectsAndKeys:
+        [item messageViewCount] ? (id)[item messageViewCount] : (id)[NSNull null], @"views",
         [item messageThreadReplyCount] ? (id)[item messageThreadReplyCount] : (id)[NSNull null], @"count",
         [item commentThreadMessageID] ? (id)[item commentThreadMessageID] : (id)[NSNull null], @"owner",
         [NSNumber numberWithBool:[item canGetMessageThread]], @"thread_available",
@@ -131,6 +146,13 @@ BOOL TGApplyMessageInteractionSummaryToItem(TGMessageItem *item, NSDictionary *s
     }
     if (!displayMessage && !commentOwner && !albumMember) { return NO; }
     NSDictionary *previous = TGInteractionDisplayState(item);
+    id views = [summary objectForKey:@"view_count"];
+    if ([views isKindOfClass:[NSNumber class]] && [views longLongValue] >= 0 &&
+        (displayMessage || albumMember)) {
+        if (!albumMember || ![item messageViewCount] || [views longLongValue] > [[item messageViewCount] longLongValue]) {
+            [item setMessageViewCount:views];
+        }
+    }
     BOOL hasReplyInfo = [[summary objectForKey:@"has_reply_info"] respondsToSelector:@selector(boolValue)] &&
         [[summary objectForKey:@"has_reply_info"] boolValue];
     id rawCount = [summary objectForKey:@"reply_count"];

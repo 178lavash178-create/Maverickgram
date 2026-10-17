@@ -1,4 +1,5 @@
 #import "TGTDLibClient+ForumTopics.h"
+#import "TGForumTopicPermissions.h"
 
 @interface TGTDLibClient (ForumTopicsPrivate)
 
@@ -12,6 +13,51 @@
 @end
 
 @implementation TGTDLibClient (ForumTopics)
+
+- (NSDictionary *)forumTopicRightsForChatID:(NSNumber *)chatID timeout:(NSTimeInterval)timeout {
+    if (![chatID respondsToSelector:@selector(longLongValue)] || [chatID longLongValue]==0) return nil;
+    NSDictionary *request = [NSDictionary dictionaryWithObjectsAndKeys:@"getChat",@"@type",chatID,@"chat_id",nil];
+    NSDictionary *chat = [self sendTDLibRequestAndWaitForExtra:request extraPrefix:@"telegraphica-forum-rights-chat" timeout:timeout errorCode:118 error:NULL];
+    NSDictionary *chatType = [[chat objectForKey:@"type"] isKindOfClass:[NSDictionary class]] ? [chat objectForKey:@"type"] : nil;
+    NSNumber *groupID = [chatType objectForKey:@"supergroup_id"];
+    if (![[chatType objectForKey:@"@type"] isEqual:@"chatTypeSupergroup"] || ![groupID respondsToSelector:@selector(longLongValue)]) return nil;
+    request = [NSDictionary dictionaryWithObjectsAndKeys:@"getSupergroup",@"@type",groupID,@"supergroup_id",nil];
+    NSDictionary *group = [self sendTDLibRequestAndWaitForExtra:request extraPrefix:@"telegraphica-forum-rights-group" timeout:timeout errorCode:118 error:NULL];
+    if (![[group objectForKey:@"@type"] isEqual:@"supergroup"]) return nil;
+    NSMutableDictionary *result = [NSMutableDictionary dictionary];
+    if ([[group objectForKey:@"status"] isKindOfClass:[NSDictionary class]]) [result setObject:[group objectForKey:@"status"] forKey:@"status"];
+    if ([[chat objectForKey:@"permissions"] isKindOfClass:[NSDictionary class]]) [result setObject:[chat objectForKey:@"permissions"] forKey:@"permissions"];
+    return result;
+}
+
+- (BOOL)tg_forumRequestHasCurrentPermission:(NSDictionary *)request timeout:(NSTimeInterval)timeout error:(NSError **)error {
+    NSString *type = [request objectForKey:@"@type"];
+    NSString *operation = nil;
+    if ([type isEqual:@"createForumTopic"]) operation=@"create";
+    else if ([type isEqual:@"editForumTopic"]) operation=@"rename";
+    else if ([type isEqual:@"toggleForumTopicIsClosed"]) operation=@"close";
+    else if ([type isEqual:@"toggleForumTopicIsPinned"]) operation=@"pin";
+    else if ([type isEqual:@"deleteForumTopic"]) operation=@"delete";
+    if (!operation) return NO;
+    NSNumber *chatID = [request objectForKey:@"chat_id"], *topicID=[request objectForKey:@"forum_topic_id"];
+    NSDictionary *rights = [self forumTopicRightsForChatID:chatID timeout:MIN(timeout,2.0)];
+    NSDictionary *info = nil;
+    if (![operation isEqual:@"create"]) {
+        NSDictionary *topicRequest = [NSDictionary dictionaryWithObjectsAndKeys:@"getForumTopic",@"@type",chatID,@"chat_id",topicID,@"forum_topic_id",topicID,@"message_thread_id",nil];
+        NSDictionary *topic = [self sendTDLibRequestAndWaitForExtra:topicRequest extraPrefix:@"telegraphica-forum-current-topic" timeout:MIN(timeout,2.0) errorCode:118 error:error];
+        info = [[topic objectForKey:@"info"] isKindOfClass:[NSDictionary class]] ? [topic objectForKey:@"info"] : nil;
+        if (!info) return NO;
+        id returnedTopicID=[info objectForKey:@"forum_topic_id"];
+        if (!returnedTopicID) returnedTopicID=[info objectForKey:@"message_thread_id"];
+        id returnedChatID=[info objectForKey:@"chat_id"];
+        if ((returnedTopicID && (![returnedTopicID respondsToSelector:@selector(longLongValue)] || [returnedTopicID longLongValue]!=[topicID longLongValue])) ||
+            (returnedChatID && (![returnedChatID respondsToSelector:@selector(longLongValue)] || [returnedChatID longLongValue]!=[chatID longLongValue]))) return NO;
+    }
+    if (TGForumPermissionFlag(TGForumTopicActionPermissions(rights,info,topicID),operation)) return YES;
+    if (error) *error=[self errorWithDescription:@"This forum topic action is not permitted by the current chat rights." code:118];
+    return NO;
+}
+
 
 - (NSString *)tg_validForumTopicName:(NSString *)name error:(NSError **)error {
     if (![name isKindOfClass:[NSString class]]) {
@@ -49,6 +95,7 @@
                            extraPrefix:(NSString *)extraPrefix
                                timeout:(NSTimeInterval)timeout
                                  error:(NSError **)error {
+    if (![self tg_forumRequestHasCurrentPermission:request timeout:timeout error:error]) return NO;
     NSDictionary *response = [self sendTDLibRequestAndWaitForExtra:request
                                                        extraPrefix:extraPrefix
                                                            timeout:timeout
@@ -108,6 +155,7 @@
                              @"editForumTopic", @"@type",
                              chatID, @"chat_id",
                              topicID, @"forum_topic_id",
+                             topicID, @"message_thread_id",
                              validatedName, @"name",
                              [NSNumber numberWithBool:NO], @"edit_icon_custom_emoji",
                              [NSNumber numberWithLongLong:0], @"icon_custom_emoji_id",
@@ -130,6 +178,7 @@
                              @"toggleForumTopicIsClosed", @"@type",
                              chatID, @"chat_id",
                              topicID, @"forum_topic_id",
+                             topicID, @"message_thread_id",
                              [NSNumber numberWithBool:closed], @"is_closed",
                              nil];
     return [self tg_forumTopicRequestSucceeded:request
@@ -150,6 +199,7 @@
                              @"toggleForumTopicIsPinned", @"@type",
                              chatID, @"chat_id",
                              topicID, @"forum_topic_id",
+                             topicID, @"message_thread_id",
                              [NSNumber numberWithBool:pinned], @"is_pinned",
                              nil];
     return [self tg_forumTopicRequestSucceeded:request
@@ -169,6 +219,7 @@
                              @"deleteForumTopic", @"@type",
                              chatID, @"chat_id",
                              topicID, @"forum_topic_id",
+                             topicID, @"message_thread_id",
                              nil];
     return [self tg_forumTopicRequestSucceeded:request
                                    extraPrefix:@"telegraphica-delete-forum-topic"

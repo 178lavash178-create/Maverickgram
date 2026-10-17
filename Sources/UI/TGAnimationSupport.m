@@ -7,7 +7,7 @@ static char TGVisibilityAnimationKey;
 
 BOOL TGInterfaceAnimationsEnabledForView(NSView *view) {
     if (!view || TGResourcePolicyEconomyModeEnabled()) return NO;
-    if (![[view window] isVisible]) return NO;
+    if (![[view window] isVisible] || [[view window] inLiveResize]) return NO;
     return !TGResourcePolicyStopAnimationsWhenInactive() || [NSApp isActive];
 }
 
@@ -34,10 +34,11 @@ BOOL TGInterfaceAnimationsEnabledForView(NSView *view) {
         _started = [NSDate timeIntervalSinceReferenceDate];
         [view setHidden:NO];
         [view setAlphaValue:_initialAlpha];
-        _timer = [[NSTimer timerWithTimeInterval:(1.0 / 15.0) target:self selector:@selector(tick:) userInfo:nil repeats:YES] retain];
+        _timer = [[NSTimer timerWithTimeInterval:(1.0 / 30.0) target:self selector:@selector(tick:) userInfo:nil repeats:YES] retain];
         [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(policyChanged:) name:TGResourcePolicyDidChangeNotification object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(policyChanged:) name:NSApplicationDidResignActiveNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(policyChanged:) name:NSWindowWillStartLiveResizeNotification object:[view window]];
     }
     return self;
 }
@@ -89,8 +90,11 @@ void TGSetViewVisibleAnimated(NSView *view, BOOL visible) {
     if (!view) return;
     TGVisibilityAnimation *current = objc_getAssociatedObject(view, &TGVisibilityAnimationKey);
     if (current && [current targetVisible] == visible && TGInterfaceAnimationsEnabledForView(view)) return;
+    BOOL reversing=current && [current targetVisible]!=visible && TGInterfaceAnimationsEnabledForView(view);
+    CGFloat continuingAlpha=[view alphaValue];
     [current finish];
-    if ((![view isHidden]) == visible || !TGInterfaceAnimationsEnabledForView(view)) {
+    if (reversing) { [view setHidden:NO];[view setAlphaValue:continuingAlpha]; }
+    if ((!reversing && (![view isHidden]) == visible) || !TGInterfaceAnimationsEnabledForView(view)) {
         [view setHidden:!visible];
         [view setAlphaValue:1.0];
         return;

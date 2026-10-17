@@ -1,4 +1,7 @@
 #import "TGDialogPresentation.h"
+#import "TGChatLifecycleAquaLayout.h"
+#import "TGAccessibilitySupport.h"
+#import "TGInterfaceDesign.h"
 #import "TGChatLifecycleWindowController.h"
 
 #import "../Core/TGTDLibClient.h"
@@ -77,6 +80,12 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
 @end
 
 @interface TGChatLifecycleWindowController ()
+@property (nonatomic, retain) NSPopUpButton *createPopUpButton;
+@property (nonatomic, retain) NSTextField *aquaTitleField;
+@property (nonatomic, retain) NSView *aquaListCard;
+@property (nonatomic, retain) NSScrollView *aquaListScrollView;
+@property (nonatomic, retain) NSButton *inviteDisclosureButton;
+@property (nonatomic, assign) BOOL aquaInvitationVisible;
 @property (nonatomic, retain) TGTDLibClient *client;
 @property (nonatomic, retain) NSSearchField *searchField;
 @property (nonatomic, retain) NSTableView *tableView;
@@ -97,6 +106,8 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
 
 @implementation TGChatLifecycleWindowController
 
+@synthesize createPopUpButton=_createPopUpButton, aquaTitleField=_aquaTitleField, aquaListCard=_aquaListCard;
+@synthesize aquaListScrollView=_aquaListScrollView, inviteDisclosureButton=_inviteDisclosureButton, aquaInvitationVisible=_aquaInvitationVisible;
 @synthesize delegate = _delegate;
 @synthesize client = _client;
 @synthesize searchField = _searchField;
@@ -127,6 +138,7 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
         self.filteredContacts = [NSArray array];
         [[self window] setTitle:TGLoc(@"contacts.title")];
         [[self window] setMinSize:NSMakeSize(560, 540)];
+        [[self window] setDelegate:(id)self];
         [self buildViews];
     }
     return self;
@@ -134,6 +146,9 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
 
 - (void)dealloc {
     _delegate = nil;
+    [[self window] setDelegate:nil];
+    [_createPopUpButton release]; [_aquaTitleField release]; [_aquaListCard release];
+    [_aquaListScrollView release]; [_inviteDisclosureButton release];
     [_client release];
     [_searchField release];
     [_tableView release];
@@ -165,7 +180,10 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
     return label;
 }
 
+#include "TGChatLifecycleWindowController+Aqua.inc"
+
 - (void)buildViews {
+    if (TGInterfaceDesignIsAqua()) { [self buildAquaViews]; return; }
     TGUtilityWindowView *root = [[[TGUtilityWindowView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease];
     [root setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [[self window] setContentView:root];
@@ -301,6 +319,7 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
     [self.searchField setEnabled:!loading];
     [self.tableView setEnabled:!loading];
     [self.channelButton setEnabled:!loading];
+    [self.createPopUpButton setEnabled:!loading];
     [self updateSelectionActions];
     NSString *link = [[self.inviteField stringValue] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     [self.joinButton setEnabled:(!loading && [link length] > 0)];
@@ -428,6 +447,12 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
     [self.openButton setEnabled:(!self.loading && oneSelected)];
     [self.secretButton setEnabled:(!self.loading && oneSelected && !isBot)];
     [self.groupButton setEnabled:(!self.loading && [selected count] > 0)];
+    NSArray *creationItems=[[self.createPopUpButton menu] itemArray];
+    for (NSUInteger i=1;i<[creationItems count];i++) {
+        NSMenuItem *item=[creationItems objectAtIndex:i];
+        BOOL eligible=[item tag]==0 || ([item tag]==1 ? [selected count]>0 : (oneSelected && !isBot));
+        [item setEnabled:!self.loading && eligible];
+    }
 }
 
 - (void)controlTextDidChange:(NSNotification *)notification {
@@ -722,6 +747,7 @@ static NSString *TGContactSubtitle(NSDictionary *contact) {
 }
 
 - (void)focusInviteLink {
+    if (self.createPopUpButton) { self.aquaInvitationVisible=YES; [self layoutAquaViews]; }
     [[self window] makeFirstResponder:self.inviteField];
 }
 

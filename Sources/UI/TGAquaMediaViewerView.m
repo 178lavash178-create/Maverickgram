@@ -205,7 +205,15 @@ static NSTextField *TGMediaViewerLabel(NSFont *font) {
     [(TGAquaMediaChromeView *)_headerView setDark:photo];[(TGAquaMediaChromeView *)_footerView setDark:photo];
     [(TGAquaMediaGalleryStage *)_stageView setDark:photo];
     [_previousButton setHidden:!photo]; [_nextButton setHidden:!photo]; [_counterField setHidden:!photo]; [_fullscreenButton setHidden:!photo];
-    [_typeImageView setHidden:photo];[_titleField setHidden:photo];[_detailField setHidden:photo];
+    [_typeImageView setHidden:photo];
+    NSView *metadataHost = photo ? _footerView : _headerView;
+    if ([_titleField superview] != metadataHost) { [_titleField removeFromSuperview]; [metadataHost addSubview:_titleField]; }
+    if ([_detailField superview] != metadataHost) { [_detailField removeFromSuperview]; [metadataHost addSubview:_detailField]; }
+    [_titleField setHidden:NO]; [_detailField setHidden:NO];
+    [_titleField setFont:[NSFont systemFontOfSize:photo ? 10 : 13]];
+    [_detailField setFont:[NSFont systemFontOfSize:photo ? 9 : 11]];
+    [_titleField setTextColor:[NSColor colorWithCalibratedWhite:photo ? 0.94 : 0.18 alpha:1]];
+    [_detailField setTextColor:[NSColor colorWithCalibratedWhite:photo ? 0.72 : 0.38 alpha:1]];
     id closeTarget=[_closeButton target]; SEL closeAction=[_closeButton action];
     if (photo && ![[_closeButton cell] isKindOfClass:[TGAquaMediaControlCell class]]) {
         TGAquaMediaControlCell *cell=[[[TGAquaMediaControlCell alloc] initTextCell:@""] autorelease];[cell setIconAssetName:@"cross"];[_closeButton setCell:cell];
@@ -238,6 +246,11 @@ static NSTextField *TGMediaViewerLabel(NSFont *font) {
     [_typeImageView setFrame:NSMakeRect(16,13,28,28)];
     [_titleField setFrame:NSMakeRect(56,29,MAX(0,w-110),18)];
     [_detailField setFrame:NSMakeRect(56,10,MAX(0,w-110),16)];
+    if (_kind == TGAquaMediaViewerPhoto) {
+        CGFloat metadataWidth = MAX(0, floor(w/2) - 104);
+        [_titleField setFrame:NSMakeRect(12,25,metadataWidth,14)];
+        [_detailField setFrame:NSMakeRect(12,8,metadataWidth,14)];
+    }
     [_previousButton setFrame:NSMakeRect(10,5,30,30)]; [_nextButton setFrame:NSMakeRect(46,5,30,30)];
     [_counterField setFrame:NSMakeRect(88,11,MAX(0,MIN(110,w-272)),18)];
     CGFloat fullscreenWidth=MAX(84,MIN(152,ceil([[_fullscreenButton title] sizeWithAttributes:[NSDictionary dictionaryWithObject:[NSFont systemFontOfSize:12] forKey:NSFontAttributeName]].width)+18));
