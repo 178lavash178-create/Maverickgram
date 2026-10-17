@@ -3,6 +3,7 @@
 #import "TGChatDisplayPreferences.h"
 #import "TGChatUnreadBadgeAppearance.h"
 #import "TGChatListSelectionAppearance.h"
+#import "TGChatListRowLayout.h"
 #import "TGIconAssets.h"
 #import "TGMessageLayoutSupport.h"
 #import "TGReactionChipLayout.h"
@@ -176,10 +177,6 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
     NSSize unreadSize = [unreadString sizeWithAttributes:unreadAttributes];
     CGFloat unreadWidth = ([unreadString length] > 0) ? MAX(unreadSize.width + 13.0, 20.0) : (drawsMarkedUnreadDot ? 10.0 : 0.0);
     CGFloat unreadHeight = ([unreadString length] > 0) ? 18.0 : (drawsMarkedUnreadDot ? 10.0 : 0.0);
-    NSRect unreadRect = NSMakeRect(NSMaxX(cellFrame) - unreadWidth - 9.0,
-                                   NSMinY(cellFrame) + floor((NSHeight(cellFrame) - unreadHeight) / 2.0),
-                                   unreadWidth,
-                                   unreadHeight);
 
     NSMutableParagraphStyle *paragraph = [[[NSMutableParagraphStyle alloc] init] autorelease];
     [paragraph setLineBreakMode:NSLineBreakByTruncatingTail];
@@ -188,11 +185,6 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
                                      selected ? TGChatListSelectionForeground() : TGThemeSurfaceInkColor(TGClassicInkColor(), TGThemeSurfaceRecessed, 4.5), NSForegroundColorAttributeName,
                                      paragraph, NSParagraphStyleAttributeName,
                                      nil];
-    CGFloat titleX = NSMaxX(avatarRect) + 9.0;
-    CGFloat titleRight = ([unreadString length] > 0 || drawsMarkedUnreadDot) ? (NSMinX(unreadRect) - 12.0) : (NSMaxX(cellFrame) - 9.0);
-    CGFloat muteIconWidth = [item notificationsMuted] ? 15.0 : 0.0;
-    CGFloat pinIconWidth = [item isPinned] ? 12.0 : 0.0;
-    CGFloat botIconWidth = [item isBot] ? 15.0 : 0.0;
     NSString *communityBadge = [item isCommunity] ? TGLoc(@"chat.community.badge") : @"";
     NSDictionary *communityAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                          [NSFont boldSystemFontOfSize:8.0], NSFontAttributeName,
@@ -200,25 +192,12 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
                                          nil];
     CGFloat communityBadgeWidth = [communityBadge length] > 0
         ? MIN(64.0, [communityBadge sizeWithAttributes:communityAttributes].width + 12.0) : 0.0;
-    CGFloat trailingIconWidth = ([item notificationsMuted] ? (muteIconWidth + 5.0) : 0.0) +
-                                ([item isPinned] ? (pinIconWidth + 4.0) : 0.0) +
-                                ([item isBot] ? (botIconWidth + 4.0) : 0.0) +
-                                (communityBadgeWidth > 0.0 ? (communityBadgeWidth + 4.0) : 0.0);
-    CGFloat titleAvailableWidth = titleRight - titleX - trailingIconWidth;
-    if (titleAvailableWidth < 40.0) {
-        titleAvailableWidth = 40.0;
-    }
-    NSRect titleRect = NSMakeRect(titleX,
-                                  NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 15.0) / 2.0),
-                                  titleAvailableWidth,
-                                  16.0);
-    [displayTitle drawInRect:titleRect withAttributes:titleAttributes];
-    CGFloat iconX = titleRight - trailingIconWidth;
-    if (communityBadgeWidth > 0.0) {
-        NSRect badgeRect = NSMakeRect(iconX,
-                                     NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 16.0) / 2.0),
-                                     communityBadgeWidth,
-                                     16.0);
+    TGChatListRowGeometry geometry=TGChatListRowFrames(cellFrame,avatarRect,unreadWidth,unreadHeight,
+        [item isPinned],[item notificationsMuted],[item isBot],communityBadgeWidth);
+    NSRect unreadRect=geometry.unread;
+    [displayTitle drawInRect:geometry.title withAttributes:titleAttributes];
+    if (!NSIsEmptyRect(geometry.community)) {
+        NSRect badgeRect = geometry.community;
         NSBezierPath *badgePath = [NSBezierPath bezierPathWithRoundedRect:badgeRect xRadius:8.0 yRadius:8.0];
         [TGClassicNavigationHighlightedColor(selected ? 0.34 : 0.16) set];
         [badgePath fill];
@@ -229,31 +208,19 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
         [communityBadge drawInRect:NSMakeRect(NSMinX(badgeRect), NSMinY(badgeRect) + 3.0,
                                               NSWidth(badgeRect), 11.0)
                     withAttributes:badgeAttributes];
-        iconX = NSMaxX(badgeRect) + 4.0;
     }
-    if ([item isBot]) {
-        NSRect botRect = NSMakeRect(iconX,
-                                    NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 15.0) / 2.0),
-                                    15.0,
-                                    15.0);
+    if (!NSIsEmptyRect(geometry.bot)) {
+        NSRect botRect = geometry.bot;
         NSColor *botColor = selected ? TGChatListSelectionForeground() : [TGThemeSurfaceInkColor(TGClassicLinkColor(), TGThemeSurfaceRecessed, 4.5) colorWithAlphaComponent:0.9];
         TGDrawTemplateIconAsset(@"robot", botRect, botColor, 1.0, [controlView isFlipped]);
-        iconX = NSMaxX(botRect) + 4.0;
     }
     if ([item isPinned]) {
-        NSRect pinRect = NSMakeRect(iconX,
-                                    NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 12.0) / 2.0),
-                                    12.0,
-                                    12.0);
+        NSRect pinRect = geometry.pin;
         NSColor *pinColor = selected ? TGChatListSelectionForeground() : [TGThemeSurfaceInkColor(TGClassicInkColor(), TGThemeSurfaceRecessed, 4.5) colorWithAlphaComponent:0.72];
         TGDrawTemplateIconAsset(@"flag-triangle", pinRect, TGThemeReadableInk(pinColor, selected ? TGChatListSelectionBackground() : TGClassicTablePaperColor(), 4.5), 1.0, [controlView isFlipped]);
-        iconX = NSMaxX(pinRect) + 4.0;
     }
     if ([item notificationsMuted]) {
-        NSRect muteRect = NSMakeRect(iconX,
-                                     NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 15.0) / 2.0),
-                                     15.0,
-                                     15.0);
+        NSRect muteRect = geometry.mute;
         NSColor *muteColor = selected ? TGChatListSelectionForeground() : [TGThemeSurfaceInkColor(TGClassicInkColor(), TGThemeSurfaceRecessed, 4.5) colorWithAlphaComponent:0.78];
         TGDrawTemplateIconAsset(@"sound-off", muteRect, TGThemeReadableInk(muteColor, selected ? TGChatListSelectionBackground() : TGClassicTablePaperColor(), 4.5), 1.0, [controlView isFlipped]);
     }

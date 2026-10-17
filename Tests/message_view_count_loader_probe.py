@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Production visible-viewer loader: serialized async ownership, cache and scope."""
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import os, subprocess, sys, tempfile, shutil
 root=os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
 with open(os.path.join(root,'Sources/UI/TGStatusWindowController+MessageViewCounts.inc'),'rb') as f:
@@ -19,23 +19,25 @@ static void One(NSMutableArray *queue) {Require([queue count]>0,"queued async op
 @interface TGTDLibClient:NSObject
 @property(nonatomic) NSUInteger calls;
 @property(nonatomic,retain) NSNumber *answer;
+@property(nonatomic,retain) NSMutableArray *requestedIDs;
 @end
 @implementation TGTDLibClient
-@synthesize calls=_calls,answer=_answer;
-- (void)dealloc {[_answer release];[super dealloc];}
-- (NSNumber *)messageViewerCountForChatID:(NSNumber *)chat messageID:(NSNumber *)message timeout:(NSTimeInterval)timeout {(void)chat;(void)message;Require(timeout<=2,"viewer lookup has bounded timeout");self.calls++;return self.answer;}
+@synthesize calls=_calls,answer=_answer,requestedIDs=_requestedIDs;
+- (void)dealloc {[_answer release];[_requestedIDs release];[super dealloc];}
+- (NSNumber *)messageViewerCountForChatID:(NSNumber *)chat messageID:(NSNumber *)message timeout:(NSTimeInterval)timeout {(void)chat;(void)message;Require(timeout<=2,"viewer lookup has bounded timeout");self.calls++;if(!self.requestedIDs)self.requestedIDs=[NSMutableArray array];[self.requestedIDs addObject:message];return self.answer;}
 @end
 @interface ProbeTable:NSObject
 @property(nonatomic) NSRange rows;
 @property(nonatomic) NSUInteger heightUpdates;
 @property(nonatomic,retain) NSIndexSet *lastHeightRows;
+@property(nonatomic,copy) dispatch_block_t heightHook;
 @end
 @implementation ProbeTable
-@synthesize rows=_rows,heightUpdates=_heightUpdates,lastHeightRows=_lastHeightRows;
-- (void)dealloc {[_lastHeightRows release];[super dealloc];}
+@synthesize rows=_rows,heightUpdates=_heightUpdates,lastHeightRows=_lastHeightRows,heightHook=_heightHook;
+- (void)dealloc {[_lastHeightRows release];[_heightHook release];[super dealloc];}
 - (NSRange)rowsInRect:(NSRect)rect {(void)rect;return self.rows;}
 - (void)setNeedsDisplay:(BOOL)yes {(void)yes;}
-- (void)noteHeightOfRowsWithIndexesChanged:(NSIndexSet *)rows {Require([rows count]<=20,"only actually changed visible message heights are invalidated");self.lastHeightRows=rows;self.heightUpdates++;}
+- (void)noteHeightOfRowsWithIndexesChanged:(NSIndexSet *)rows {Require([rows count]<=20,"only actually changed visible message heights are invalidated");self.lastHeightRows=rows;self.heightUpdates++;if(self.heightHook){dispatch_block_t hook=[self.heightHook copy];self.heightHook=nil;hook();[hook release];}}
 - (id)contentView {return self;}
 - (NSRect)bounds {return NSMakeRect(0,0,600,500);}
 @end
@@ -84,6 +86,21 @@ int main(void){NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];Workers=
  p.selectedChatTypeSummary=@"Forum topic";p.messageItems=[NSMutableArray arrayWithObject:Item(99)];table.rows=NSMakeRange(0,1);client.answer=nil;[p refreshVisibleMessageViewCounts];Drain();Require(![[p.messageItems lastObject] messageViewerCount],"unsupported or unavailable response stays unknown");before=client.calls;[p refreshVisibleMessageViewCounts];Require(![Workers count] && client.calls==before,"negative TTL prevents unsupported runtime hammering");
  p.profileUserID=@4;client.answer=@0;[p refreshVisibleMessageViewCounts];Drain();Require([[[p.messageItems lastObject] messageViewerCount] isEqual:@0],"confirmed empty viewer list is preserved as known zero");
  p.profileUserID=@5;[[p.messageItems lastObject] setOutgoing:NO];[p refreshVisibleMessageViewCounts];Require(![Workers count],"incoming group messages do not fabricate a viewer capability");
+ // A cached row's height callback replaces the models and account while
+ // another visible row was selected as a candidate. The old target must never
+ // reach the worker, and a recursive scroll callback must remain single-flight.
+ p.profileUserID=@6;p.messageItems=[NSMutableArray arrayWithObjects:Item(100),Item(101),nil];table.rows=NSMakeRange(0,2);client.answer=@4;
+ NSString *cachedKey=[NSString stringWithFormat:@"%p|%@|%@|%@",client,p.profileUserID,@-42,@100];
+ [cache setObject:[NSDictionary dictionaryWithObjectsAndKeys:@3,@"value",[NSNumber numberWithDouble:[NSDate timeIntervalSinceReferenceDate]],@"at",nil] forKey:cachedKey];
+ table.heightHook=^{
+  [p refreshVisibleMessageViewCounts];Require(![Workers count],"recursive scroll during cached height callback cannot schedule a second request");
+  p.messageItems=[NSMutableArray arrayWithObject:Item(200)];p.profileUserID=@7;table.rows=NSMakeRange(0,1);
+ };
+ before=client.calls;[p refreshVisibleMessageViewCounts];
+ Require([Workers count]==1 && client.calls==before,"replacement context owns one deferred worker, stale candidate was not queried synchronously");
+ Drain();
+ Require(client.calls==before+1 && [[client.requestedIDs lastObject] isEqual:@200],"height-callback replacement discards old target and requests only new visible message");
+ Require([[[p.messageItems lastObject] messageViewerCount] isEqual:@4],"new row gets count after reentrant replacement without stale model access");
  printf("View-count loader PASS: %lu production ownership/cache/scope checks.\n",(unsigned long)checks);[Workers release];[Completions release];[pool drain];return 0;}
 '''
 replacements={'__IVARS__':'\n'.join(' %s _%s;'%(t,n) for t,n,a in props),'__PROPS__':'\n'.join('@property(nonatomic,%s) %s %s;'%(a,t,n) for t,n,a in props),'__SYNTH__':'\n'.join('@synthesize %s=_%s;'%(n,n) for t,n,a in props),'__RELEASES__':''.join('[_%s release];'%n for t,n,a in props if a!='assign'),'__IMPLEMENTATION__':implementation}

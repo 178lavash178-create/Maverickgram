@@ -628,6 +628,7 @@ HOME="$TEST_HOME" "$AUXILIARY_APP/Contents/MacOS/probe" aqua
 HOME="$TEST_HOME" "$AUXILIARY_APP/Contents/MacOS/probe" classic
 
 "$PYTHON_BIN" Tests/aqua_chat_row_selection_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$PYTHON_BIN" Tests/chat_row_trailing_layout_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 
 # Paired foregrounds on actual Aqua selection/pressed/disabled backgrounds.
 "$PYTHON_BIN" Tests/aqua_avatar_contrast_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"

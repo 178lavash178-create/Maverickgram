@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Production one-time Aqua offer: no real dialog, defaults mutation or restart."""
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import os, subprocess, sys, tempfile, shutil
 root=os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
 with open(os.path.join(root,'Sources/UI/TGStatusWindowController+AquaSuggestion.inc'),'rb') as f:

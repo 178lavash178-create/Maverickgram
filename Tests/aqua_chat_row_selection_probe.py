@@ -17,6 +17,7 @@ harness=r'''
 #import <objc/runtime.h>
 #import "TGStatusViewCells.h"
 #import "TGChatListSelectionAppearance.h"
+#import "TGChatListRowLayout.h"
 #import "TGChatUnreadBadgeAppearance.h"
 #import "TGThemeContrast.h"
 #import "TGLocalization.h"

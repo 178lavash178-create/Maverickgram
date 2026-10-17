@@ -28,11 +28,17 @@
     if (![capability isKindOfClass:[NSNumber class]] || ![capability boolValue]) return nil;
     [request setObject:@"getMessageViewers" forKey:@"@type"];
     NSDictionary *response = [self sendTDLibRequestAndWaitForExtra:request extraPrefix:@"telegraphica-view-count" timeout:timeout errorCode:149 error:NULL];
-    id viewers = [response objectForKey:@"viewers"];
-    if (![[response objectForKey:@"@type"] isEqualToString:@"messageViewers"] || ![viewers isKindOfClass:[NSArray class]]) return nil;
+    // Modern TDLib supplies viewer records; the 1.8.0 fallback returns Users.
+    // Count the actual unique IDs in either list, never an approximate total.
+    NSString *responseType = [response objectForKey:@"@type"];
+    id viewers = nil;
+    BOOL legacyUsers = [@"users" isEqual:responseType];
+    if ([@"messageViewers" isEqual:responseType]) viewers = [response objectForKey:@"viewers"];
+    else if (legacyUsers) viewers = [response objectForKey:@"user_ids"];
+    if (![viewers isKindOfClass:[NSArray class]]) return nil;
     NSMutableSet *unique = [NSMutableSet set];
     for (id viewer in viewers) {
-        id user = [viewer isKindOfClass:[NSDictionary class]] ? [viewer objectForKey:@"user_id"] : viewer;
+        id user = (!legacyUsers && [viewer isKindOfClass:[NSDictionary class]]) ? [viewer objectForKey:@"user_id"] : viewer;
         if (![user isKindOfClass:[NSNumber class]] || [user longLongValue] <= 0) return nil;
         [unique addObject:user];
     }

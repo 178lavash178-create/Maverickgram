@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Draw actual bubble/list cells plus actual media renderer; count metadata paints."""
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import os, subprocess, sys, tempfile, shutil, re
 root=os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
 def read(path):

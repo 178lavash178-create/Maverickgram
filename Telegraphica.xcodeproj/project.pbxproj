@@ -215,6 +215,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		C69BBD8ED7E615D10956626C /* TGChatListRowLayout.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TGChatListRowLayout.h"; sourceTree = "<group>"; };
 		B42F89AD2A9C2B3555377B81 /* TGForumTopicPermissions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TGForumTopicPermissions.h"; sourceTree = "<group>"; };
 		DB05F926924E47E0A843DF34 /* TGAquaSearchAnchorField.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TGAquaSearchAnchorField.h"; sourceTree = "<group>"; };
 		4D4A85B27D1667F32EE15B38 /* TGAquaSearchAnchorField.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "TGAquaSearchAnchorField.m"; sourceTree = "<group>"; };
@@ -798,6 +799,7 @@
 		111111111111111111111406 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				C69BBD8ED7E615D10956626C /* TGChatListRowLayout.h */,
 				DB05F926924E47E0A843DF34 /* TGAquaSearchAnchorField.h */,
 				4D4A85B27D1667F32EE15B38 /* TGAquaSearchAnchorField.m */,
 				D397A8D7A270E9A20873EB4D /* TGWindowEventObserver.h */,

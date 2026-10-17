@@ -282,8 +282,29 @@ int main(void) {
     TGAssert([[client messageViewerCountForChatID:@42 messageID:@10 timeout:1] intValue]==2 && [client.requests count]==2,"eligible outgoing group count uses complete unique viewer list, no profile fetches");
     [client.requests removeAllObjects];client.viewerResponses=[NSDictionary dictionaryWithObject:[NSDictionary dictionaryWithObject:@NO forKey:@"can_get_viewers"] forKey:@"getMessageProperties"];
     TGAssert(![client messageViewerCountForChatID:@42 messageID:@10 timeout:1] && [client.requests count]==1,"explicit unavailable capability prevents viewer request");
-    [client.requests removeAllObjects];client.viewerResponses=[NSDictionary dictionaryWithObjectsAndKeys:[NSDictionary dictionaryWithObject:@YES forKey:@"can_get_viewers"],@"getMessage",[NSDictionary dictionaryWithObjectsAndKeys:@"messageViewers",@"@type",[NSArray array],@"viewers",nil],@"getMessageViewers",nil];
-    TGAssert([[client messageViewerCountForChatID:@42 messageID:@10 timeout:1] isEqual:@0] && [client.requests count]==3,"legacy direct capability fallback preserves known zero readers");
+    [client.requests removeAllObjects];client.viewerResponses=[NSDictionary dictionaryWithObjectsAndKeys:[NSDictionary dictionaryWithObject:@YES forKey:@"can_get_viewers"],@"getMessage",[NSDictionary dictionaryWithObjectsAndKeys:@"users",@"@type",@0,@"total_count",[NSArray array],@"user_ids",nil],@"getMessageViewers",nil];
+    TGAssert([[client messageViewerCountForChatID:@42 messageID:@10 timeout:1] isEqual:@0] && [client.requests count]==3,"real 1.8.0 Users response and direct capability fallback preserve known zero readers");
+    [client.requests removeAllObjects];
+    NSDictionary *legacyViewers=[NSDictionary dictionaryWithObjectsAndKeys:@"users",@"@type",@99,@"total_count",[NSArray arrayWithObjects:@101,@102,@101,nil],@"user_ids",nil];
+    client.viewerResponses=[NSDictionary dictionaryWithObjectsAndKeys:[NSDictionary dictionaryWithObject:@YES forKey:@"can_get_viewers"],@"getMessage",legacyViewers,@"getMessageViewers",nil];
+    TGAssert([[client messageViewerCountForChatID:@42 messageID:@10 timeout:1] isEqual:@2] && [client.requests count]==3,"legacy user_ids counts distinct actual people, never duplicate IDs or approximate total_count");
+    NSArray *malformedLegacy=[NSArray arrayWithObjects:
+        [NSDictionary dictionaryWithObjectsAndKeys:@"users",@"@type",@"not-an-array",@"user_ids",nil],
+        [NSDictionary dictionaryWithObjectsAndKeys:@"users",@"@type",[NSArray arrayWithObject:@"101"],@"user_ids",nil],
+        [NSDictionary dictionaryWithObjectsAndKeys:@"users",@"@type",[NSArray arrayWithObject:[NSNull null]],@"user_ids",nil],
+        [NSDictionary dictionaryWithObjectsAndKeys:@"users",@"@type",[NSArray arrayWithObject:@0],@"user_ids",nil],
+        [NSDictionary dictionaryWithObjectsAndKeys:@"users",@"@type",[NSArray arrayWithObject:@-5],@"user_ids",nil],
+        [NSDictionary dictionaryWithObjectsAndKeys:@"users",@"@type",[NSArray arrayWithObject:[NSDictionary dictionaryWithObject:@101 forKey:@"user_id"]],@"user_ids",nil],
+        [NSDictionary dictionaryWithObjectsAndKeys:[NSNull null],@"@type",[NSArray arrayWithObject:@101],@"user_ids",nil],
+        [NSDictionary dictionaryWithObjectsAndKeys:@"unknown",@"@type",[NSArray arrayWithObject:@101],@"user_ids",nil],nil];
+    for(NSDictionary *malformed in malformedLegacy) {
+        client.viewerResponses=[NSDictionary dictionaryWithObjectsAndKeys:[NSDictionary dictionaryWithObject:@YES forKey:@"can_get_viewers"],@"getMessage",malformed,@"getMessageViewers",nil];
+        TGAssert(![client messageViewerCountForChatID:@42 messageID:@10 timeout:1],"malformed legacy viewer list remains unavailable instead of invented count");
+    }
+    client.viewerResponses=[NSDictionary dictionaryWithObjectsAndKeys:[NSDictionary dictionaryWithObject:@YES forKey:@"can_get_viewers"],@"getMessageProperties",[NSDictionary dictionaryWithObjectsAndKeys:@"messageViewers",@"@type",[NSArray array],@"viewers",nil],@"getMessageViewers",nil];
+    TGAssert([[client messageViewerCountForChatID:@42 messageID:@10 timeout:1] isEqual:@0],"modern empty viewer list still produces confirmed zero");
+    client.viewerResponses=[NSDictionary dictionaryWithObjectsAndKeys:[NSDictionary dictionaryWithObject:@YES forKey:@"can_get_viewers"],@"getMessageProperties",viewerList,@"getMessageViewers",nil];
+    TGAssert([[client messageViewerCountForChatID:@42 messageID:@10 timeout:1] isEqual:@2],"modern viewer-record schema remains unchanged after legacy Users support");
     client.viewerResponses=[NSDictionary dictionaryWithObject:[NSDictionary dictionaryWithObject:@YES forKey:@"can_get_viewers"] forKey:@"getMessageProperties"];
     TGAssert(![client messageViewerCountForChatID:@42 messageID:@10 timeout:1],"missing list is unknown, never fabricated zero");
 
