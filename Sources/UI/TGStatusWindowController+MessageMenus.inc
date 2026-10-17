@@ -938,6 +938,7 @@ static NSString *TGMessageViewerMenuTitle(NSDictionary *summary) {
                                                                                    replyMarkup:[item replyMarkup]] autorelease];
     [self.botKeyboardWindowController showWindow:self];
     [[self.botKeyboardWindowController window] center];
+    TGFitUtilityWindowToVisibleScreen([self.botKeyboardWindowController window]);
     [[self.botKeyboardWindowController window] makeKeyAndOrderFront:self];
 }
 

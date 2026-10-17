@@ -13,6 +13,7 @@
 #import "TGIconDrawing.h"
 #import "TGLocalization.h"
 #import "TGStatusViewComponents.h"
+#import "TGStatusButtonCells.h"
 #import "TGTheme.h"
 #import "TGThemeTextField.h"
 #import "TGButtonAppearance.h"
@@ -206,30 +207,42 @@ static NSColor *TGStorageRowSeparatorColor(void) {
         NSRectFill(NSMakeRect(46.0, NSMaxY(bounds) - 1.0, NSWidth(bounds) - 58.0, 1.0));
     }
 
-    NSRect markerRect = NSMakeRect(18.0, floor((NSHeight(bounds) - 18.0) / 2.0), 18.0, 18.0);
+    BOOL aqua=TGInterfaceDesignIsAqua();
+    CGFloat markerSide=aqua?12.0:18.0;
+    NSRect markerRect = NSMakeRect(aqua?16.0:18.0, floor((NSHeight(bounds) - markerSide) / 2.0), markerSide, markerSide);
     NSBezierPath *markerPath = [NSBezierPath bezierPathWithOvalInRect:markerRect];
     [(self.markerColor ? self.markerColor : TGStorageAccentBlue()) set];
     [markerPath fill];
 
     NSString *titleText = self.title ? self.title : @"";
     NSString *percentText = self.percentText ? self.percentText : @"";
-    NSString *leftText = [percentText length] > 0 ? [NSString stringWithFormat:@"%@ %@", titleText, percentText] : titleText;
+    NSString *leftText = aqua ? titleText : ([percentText length] > 0 ? [NSString stringWithFormat:@"%@ %@", titleText, percentText] : titleText);
     NSDictionary *titleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
-                                     [NSFont systemFontOfSize:14.0], NSFontAttributeName,
+                                     [NSFont systemFontOfSize:aqua?12.0:14.0], NSFontAttributeName,
                                      TGClassicInkColor(), NSForegroundColorAttributeName,
                                      nil];
-    [leftText drawInRect:NSMakeRect(48.0, 9.0, NSWidth(bounds) - 190.0, 20.0) withAttributes:titleAttributes];
+    NSSize titleSize=[leftText sizeWithAttributes:titleAttributes];
+    CGFloat textX=aqua?36.0:48.0;
+    [leftText drawInRect:NSMakeRect(textX, aqua?floor((NSHeight(bounds)-titleSize.height)/2.0):9.0,
+                                   NSWidth(bounds) - (aqua?220.0:190.0), aqua?titleSize.height:20.0)
+         withAttributes:titleAttributes];
 
     NSString *value = self.valueText ? self.valueText : @"";
     NSDictionary *valueAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
-                                     [NSFont systemFontOfSize:14.0], NSFontAttributeName,
+                                     [NSFont systemFontOfSize:aqua?12.0:14.0], NSFontAttributeName,
                                      TGClassicMutedInkColor(), NSForegroundColorAttributeName,
                                      nil];
+    if (aqua && [percentText length]) {
+        NSSize percentSize=[percentText sizeWithAttributes:valueAttributes];
+        [percentText drawInRect:NSMakeRect(NSWidth(bounds)-120.0-percentSize.width,
+            floor((NSHeight(bounds)-percentSize.height)/2.0),percentSize.width,percentSize.height)
+                withAttributes:valueAttributes];
+    }
     NSSize valueSize = [value sizeWithAttributes:valueAttributes];
     [value drawInRect:NSMakeRect(NSWidth(bounds) - valueSize.width - 18.0,
-                                 9.0,
+                                 aqua?floor((NSHeight(bounds)-valueSize.height)/2.0):9.0,
                                  valueSize.width,
-                                 20.0)
+                                 aqua?valueSize.height:20.0)
        withAttributes:valueAttributes];
 }
 

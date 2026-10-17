@@ -14,6 +14,7 @@
 #import "TGThemeContrast.h"
 #import "TGThemeTextField.h"
 #import "TGAquaAppearance.h"
+#import "TGAquaShellViews.h"
 
 static NSString * const TGChatFolderDragPasteboardType = @"com.telegraphica.chat-folder-row";
 
@@ -103,6 +104,7 @@ static NSString * const TGChatFolderDragPasteboardType = @"com.telegraphica.chat
         [[self window] setMaxSize:NSMakeSize(980.0, 760.0)];
         [[self window] setReleasedWhenClosed:NO];
         [self buildViews];
+        if(TGInterfaceDesignIsAqua()){TGFitUtilityWindowToVisibleScreen([self window]);[self layoutAquaViews];}
     }
     return self;
 }
@@ -160,7 +162,11 @@ static NSString * const TGChatFolderDragPasteboardType = @"com.telegraphica.chat
 
 - (NSButton *)iconButtonWithFrame:(NSRect)frame assetName:(NSString *)assetName toolTip:(NSString *)toolTip action:(SEL)action {
     NSButton *button = [[[NSButton alloc] initWithFrame:frame] autorelease];
-    [button setCell:[[[TGHeaderIconButtonCell alloc] initTextCell:@""] autorelease]];
+    if(TGInterfaceDesignIsAqua()) {
+        TGAquaUtilityButtonCell *cell=[[[TGAquaUtilityButtonCell alloc] initTextCell:@""] autorelease];
+        [cell setIconOnly:YES];[cell setIconAssetName:assetName];[button setCell:cell];
+        [button setButtonType:NSMomentaryPushInButton];
+    } else [button setCell:[[[TGHeaderIconButtonCell alloc] initTextCell:@""] autorelease]];
     [button setTitle:@""];
     [button setImage:TGTemplateIconAssetImage(assetName, NSMakeSize(18.0, 18.0), TGClassicHeaderTextColor(1.0), 1.0)];
     [button setToolTip:toolTip];
@@ -969,8 +975,9 @@ writeRowsWithIndexes:(NSIndexSet *)rowIndexes
         self.sharingWindowController = [[[TGChatFolderSharingWindowController alloc] initWithClient:self.client] autorelease];
     }
     [self.sharingWindowController configureWithFolderDefinition:self.editingDefinition];
-    [self.sharingWindowController showWindow:nil];
     [[self.sharingWindowController window] center];
+    TGFitUtilityWindowToVisibleScreen([self.sharingWindowController window]);
+    [self.sharingWindowController showWindow:nil];
     [[self.sharingWindowController window] makeKeyAndOrderFront:nil];
     [self.sharingWindowController reloadData];
 }

@@ -1,4 +1,5 @@
 #import "TGNotificationSettingsWindowController.h"
+#import "TGDialogPresentation.h"
 
 #import "../Core/TGTDLibClient+Notifications.h"
 #import "TGLocalization.h"
@@ -8,6 +9,7 @@
 #import "TGTheme.h"
 #import "TGThemeTextField.h"
 #import "TGAquaAppearance.h"
+#import "TGAquaShellViews.h"
 #import "TGChatListSelectionAppearance.h"
 #import "TGMessageLayoutSupport.h"
 #import "TGIconAssets.h"
@@ -64,6 +66,7 @@
         [[self window] setMaxSize:NSMakeSize(860.0, 680.0)];
         [[self window] setReleasedWhenClosed:NO];
         [self buildViews];
+        if(TGInterfaceDesignIsAqua()){TGFitUtilityWindowToVisibleScreen([self window]);[self layoutAquaViews];}
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(refreshPreviewTheme:)
             name:NSUserDefaultsDidChangeNotification object:nil];
     }
@@ -288,7 +291,7 @@
     [self.applyButton setEnabled:enabled];
     [self.resetButton setEnabled:enabled];
     [self.refreshButton setEnabled:!self.loading];
-    if (self.aquaViews) { [self.aquaSearchField setEnabled:!self.loading]; [self.tableView setEnabled:!self.loading]; }
+    if (self.aquaViews) { [self.aquaSearchField setEnabled:!self.loading]; [self.tableView setEnabled:!self.loading]; [self updateAquaNotificationContext]; }
 }
 
 - (void)setLoading:(BOOL)loading status:(NSString *)status {

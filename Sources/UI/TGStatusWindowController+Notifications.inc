@@ -316,6 +316,7 @@
         self.notificationSettingsWindowController = [[[TGNotificationSettingsWindowController alloc] initWithClient:self.client] autorelease];
     }
     [[self.notificationSettingsWindowController window] center];
+    TGFitUtilityWindowToVisibleScreen([self.notificationSettingsWindowController window]);
     [self.notificationSettingsWindowController showWindow:self];
     [[self.notificationSettingsWindowController window] makeKeyAndOrderFront:self];
     [self.notificationSettingsWindowController reloadExceptions];

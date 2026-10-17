@@ -1,5 +1,19 @@
 #import "TGLocalization.h"
 #import "TGChatListSelectionAppearance.h"
+@interface TGFolderSourceListView : NSTableView @end
+@implementation TGFolderSourceListView
+- (BOOL)isOpaque {return YES;}
+- (void)drawBackgroundInClipRect:(NSRect)clip {[TGClassicTablePaperColor() set];NSRectFillUsingOperation(clip,NSCompositeCopy);}
+- (void)highlightSelectionInClipRect:(NSRect)clip {(void)clip;}
+- (void)drawRow:(NSInteger)row clipRect:(NSRect)clip {
+    NSRect rowFrame=[self rectOfRow:row];rowFrame.origin.x=NSMinX([self bounds]);rowFrame.size.width=NSWidth([self bounds]);
+    NSRect frame=NSInsetRect(rowFrame,4,2);
+    if([[self selectedRowIndexes] containsIndex:(NSUInteger)row] && NSIntersectsRect(frame,clip)) {
+        [TGListSelectionBackground() set];[[NSBezierPath bezierPathWithRoundedRect:frame xRadius:4 yRadius:4] fill];
+    }
+    [super drawRow:row clipRect:clip];
+}
+@end
 @interface TGChatFolderListCell : TGRepresentedObjectCell
 @end
 
@@ -14,8 +28,10 @@
     }
 
     BOOL highlighted = [self isHighlighted];
+    BOOL ownsSelection=[controlView isKindOfClass:[TGFolderSourceListView class]];
+    if(ownsSelection) {NSTableView *table=(NSTableView *)controlView;NSInteger row=[table rowAtPoint:NSMakePoint(NSMidX(cellFrame),NSMidY(cellFrame))];highlighted=row>=0&&[[table selectedRowIndexes] containsIndex:(NSUInteger)row];}
     NSColor *surface=highlighted ? TGListSelectionBackground() : TGClassicTablePaperColor();
-    [surface setFill]; NSRectFill(cellFrame);
+    if(!ownsSelection){[surface setFill]; NSRectFill(cellFrame);}
     NSColor *titleColor=TGThemeReadableInk(highlighted ? TGListSelectionForeground() : TGClassicCardInkColor(),surface,4.5);
     NSColor *detailColor=TGThemeReadableInk(highlighted ? titleColor : TGClassicCardMutedInkColor(),surface,4.5);
     NSRect iconRect = NSMakeRect(NSMinX(cellFrame) + 8.0,
@@ -69,8 +85,10 @@
         return;
     }
     BOOL highlighted = [self isHighlighted];
+    BOOL ownsSelection=[controlView isKindOfClass:[TGFolderSourceListView class]];
+    if(ownsSelection) {NSTableView *table=(NSTableView *)controlView;NSInteger row=[table rowAtPoint:NSMakePoint(NSMidX(cellFrame),NSMidY(cellFrame))];highlighted=row>=0&&[[table selectedRowIndexes] containsIndex:(NSUInteger)row];}
     NSColor *surface=highlighted ? TGListSelectionBackground() : TGClassicTablePaperColor();
-    [surface setFill]; NSRectFill(cellFrame);
+    if(!ownsSelection){[surface setFill]; NSRectFill(cellFrame);}
     NSColor *titleColor=TGThemeReadableInk(highlighted ? TGListSelectionForeground() : TGClassicCardInkColor(),surface,4.5);
     NSColor *detailColor=TGThemeReadableInk(highlighted ? titleColor : TGClassicCardMutedInkColor(),surface,4.5);
     NSRect avatarRect = NSMakeRect(NSMinX(cellFrame) + 5.0,

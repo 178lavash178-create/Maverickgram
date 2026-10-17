@@ -126,6 +126,7 @@
         [self startVoicePreviewTimer];
     }
     [self.voicePreviewWindow center];
+    TGFitUtilityWindowToVisibleScreen(self.voicePreviewWindow);
     [self.voicePreviewWindow makeKeyAndOrderFront:nil];
 }
 
@@ -152,6 +153,7 @@
     }
     [self updateVoicePreviewTimelineWithCurrentTime:0.0 duration:duration];
     [self.voicePreviewWindow center];
+    TGFitUtilityWindowToVisibleScreen(self.voicePreviewWindow);
     [self.voicePreviewWindow makeKeyAndOrderFront:nil];
 }
 

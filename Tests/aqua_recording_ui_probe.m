@@ -8,6 +8,7 @@
 #import "TGThemeTextField.h"
 #import "TGTheme.h"
 #import "TGLocalization.h"
+#import "TGDialogPresentation.h"
 #include <unistd.h>
 static BOOL Aqua=YES;
 BOOL TGInterfaceDesignIsAqua(void) { return Aqua; }

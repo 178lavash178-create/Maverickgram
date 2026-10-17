@@ -92,7 +92,7 @@ static NSString *TGPreparedProfilePhotoPath(NSString *sourcePath, NSError **erro
 
 - (id)init {
     BOOL aqua = TGInterfaceDesignIsAqua();
-    NSWindow *window = [[[NSWindow alloc] initWithContentRect:NSMakeRect(0.0, 0.0, aqua ? 500.0 : 470.0, aqua ? 540.0 : 450.0)
+    NSWindow *window = [[[NSWindow alloc] initWithContentRect:NSMakeRect(0.0, 0.0, aqua ? 500.0 : 470.0, aqua ? 500.0 : 450.0)
                                                    styleMask:(NSTitledWindowMask | NSClosableWindowMask)
                                                      backing:NSBackingStoreBuffered
                                                        defer:NO] autorelease];

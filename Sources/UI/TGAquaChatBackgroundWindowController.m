@@ -232,7 +232,7 @@ static NSString *TGAquaBackgroundPresetTitle(NSDictionary *preset) {
     [_accountID release]; [_chatID release]; [_chatTitle release]; [_drafts release]; [_changedScopes release]; [_colorButtons release]; [_textureButtons release]; [_wallpaperButtons release]; [_modeChoices release];
     [super dealloc];
 }
-- (void)showWindow:(id)sender { [self reloadDrafts]; [super showWindow:sender]; }
+- (void)showWindow:(id)sender { [self reloadDrafts]; TGFitUtilityWindowToVisibleScreen([self window]); [super showWindow:sender]; }
 - (NSString *)scopeKey { return [_scopePopUp indexOfSelectedItem]==1 && _chatID ? @"chat" : @"common"; }
 - (void)discardUnusedImports {
     for (NSDictionary *configuration in _importedConfigurations) [[TGAquaChatBackgroundStore sharedStore] discardImportedConfiguration:configuration];

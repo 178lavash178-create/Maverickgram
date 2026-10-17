@@ -1,3 +1,4 @@
+#import "TGDialogPresentation.h"
 #import "TGLocationPickerWindowController.h"
 
 #import <MapKit/MapKit.h>
@@ -91,6 +92,11 @@
     [_spinner release];
     [_result release];
     [super dealloc];
+}
+
+- (void)setStatusText:(NSString *)text {
+    [self.statusField setStringValue:text ? text : @""];
+    [self.statusField setToolTip:[self.statusField stringValue]];
 }
 
 - (NSTextField *)labelWithFrame:(NSRect)frame text:(NSString *)text font:(NSFont *)font color:(NSColor *)color {
@@ -232,9 +238,8 @@
         [self.mapImageView setCenterLatitude:coordinate.latitude];
         [self.mapImageView setCenterLongitude:coordinate.longitude];
     }
-    [self.statusField setStringValue:[NSString stringWithFormat:TGLoc(@"share.location.coordinates"),
+    [self setStatusText:[NSString stringWithFormat:TGLoc(@"share.location.coordinates"),
                                       coordinate.latitude, coordinate.longitude]];
-    [self.statusField setToolTip:[self.statusField stringValue]];
     if (reloadMap) {
         [self reloadMapThumbnail];
     }
@@ -247,7 +252,7 @@
     NSInteger zoom = self.mapZoom;
     NSSize mapSize = [self.mapImageView bounds].size;
     [self.spinner startAnimation:nil];
-    [self.statusField setStringValue:TGLoc(@"share.location.mapLoading")];
+    [self setStatusText:TGLoc(@"share.location.mapLoading")];
     TGTDLibClient *client = [self.client retain];
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -266,10 +271,10 @@
                                     centerLatitude:coordinate.latitude
                                          longitude:coordinate.longitude
                                               zoom:zoom];
-                    [self.statusField setStringValue:[NSString stringWithFormat:TGLoc(@"share.location.coordinates"),
+                    [self setStatusText:[NSString stringWithFormat:TGLoc(@"share.location.coordinates"),
                                                       coordinate.latitude, coordinate.longitude]];
                 } else {
-                    [self.statusField setStringValue:[failure length] > 0
+                    [self setStatusText:[failure length] > 0
                         ? failure : TGLoc(@"share.location.mapUnavailable")];
                 }
             }
@@ -307,7 +312,7 @@
     (void)mapView;
     self.waitingForUserLocation = NO;
     [self.spinner stopAnimation:nil];
-    [self.statusField setStringValue:[error localizedDescription] ?: TGLoc(@"share.location.locationFailed")];
+    [self setStatusText:[error localizedDescription] ?: TGLoc(@"share.location.locationFailed")];
 }
 
 - (void)zoomOutPressed:(id)sender {
@@ -328,7 +333,7 @@
     [self.searchService cancel];
     [self.searchButton setEnabled:[self.searchService isAvailable]];
     self.waitingForUserLocation = YES;
-    [self.statusField setStringValue:TGLoc(@"share.location.locating")];
+    [self setStatusText:TGLoc(@"share.location.locating")];
     [self.spinner startAnimation:nil];
     [self.locationServiceMapView setShowsUserLocation:NO];
     [self.locationServiceMapView setShowsUserLocation:YES];
@@ -345,7 +350,7 @@
 
     [self.searchButton setEnabled:NO];
     [self.spinner startAnimation:nil];
-    [self.statusField setStringValue:TGLoc(@"share.location.searching")];
+    [self setStatusText:TGLoc(@"share.location.searching")];
     TGLocationPickerWindowController *controller = self;
     [self.searchService searchForQuery:query
                        centerLatitude:self.selectedCoordinate.latitude
@@ -359,7 +364,7 @@
         NSDictionary *result = ([results count] > 0 && [[results objectAtIndex:0] isKindOfClass:[NSDictionary class]])
             ? [results objectAtIndex:0] : nil;
         if (!result) {
-            [controller.statusField setStringValue:[error localizedDescription] ?: TGLoc(@"share.location.notFound")];
+            [controller setStatusText:[error localizedDescription] ?: TGLoc(@"share.location.notFound")];
             return;
         }
         CLLocationCoordinate2D coordinate = CLLocationCoordinate2DMake(
@@ -392,7 +397,7 @@
     if (!self.hasSelection || !CLLocationCoordinate2DIsValid(coordinate) ||
         coordinate.latitude < -90.0 || coordinate.latitude > 90.0 ||
         coordinate.longitude < -180.0 || coordinate.longitude > 180.0) {
-        [self.statusField setStringValue:TGLoc(@"share.location.error.invalid")];
+        [self setStatusText:TGLoc(@"share.location.error.invalid")];
         NSBeep();
         return;
     }
@@ -422,6 +427,7 @@
     self.result = nil;
     self.closing = NO;
     [[self window] center];
+    TGFitUtilityWindowToVisibleScreen([self window]);
     [NSApp runModalForWindow:[self window]];
     return self.result;
 }

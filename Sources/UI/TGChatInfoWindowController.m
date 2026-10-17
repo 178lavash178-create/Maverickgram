@@ -1,3 +1,4 @@
+#import "TGUtilityResponsiveLayout.h"
 #import "TGDialogPresentation.h"
 #import "TGChatInfoWindowController.h"
 
@@ -17,6 +18,8 @@
 #import "TGThemeTextField.h"
 
 @interface TGChatInfoWindowController () <NSTableViewDataSource, NSTableViewDelegate>
+@property (nonatomic, retain) NSDictionary *responsiveLayout;
+- (void)layoutResponsiveViews;
 @property (nonatomic, retain) TGTDLibClient *client;
 @property (nonatomic, retain) NSNumber *chatID;
 @property (nonatomic, copy) NSString *chatTitle;
@@ -82,6 +85,7 @@ static NSImage *TGSecretChatKeyImage(NSData *keyHashData) {
 
 @implementation TGChatInfoWindowController
 
+@synthesize responsiveLayout = _responsiveLayout;
 @synthesize client = _client;
 @synthesize chatID = _chatID;
 @synthesize chatTitle = _chatTitle;
@@ -133,12 +137,16 @@ static NSImage *TGSecretChatKeyImage(NSData *keyHashData) {
         [[self window] setMinSize:NSMakeSize(660.0, 520.0)];
         [[self window] setMaxSize:NSMakeSize(940.0, 760.0)];
         [[self window] setReleasedWhenClosed:NO];
+        [[self window] setDelegate:(id)self];
         [self buildViews];
+        TGFitUtilityWindowToVisibleScreen([self window]);
     }
     return self;
 }
 
 - (void)dealloc {
+    [[self window] setDelegate:nil];
+    [_responsiveLayout release];
     [_client release];
     [_chatID release];
     [_chatTitle release];
@@ -380,6 +388,8 @@ static NSImage *TGSecretChatKeyImage(NSData *keyHashData) {
     [self.spinner setDisplayedWhenStopped:NO];
     [self.spinner setAutoresizingMask:(NSViewMinXMargin | NSViewMaxYMargin)];
     [root addSubview:self.spinner];
+    self.responsiveLayout=TGUtilityCaptureResponsiveLayout(root,[NSDictionary dictionaryWithObjectsAndKeys:autoDeleteLabel,@"autoDeleteLabel",nil]);
+    [self layoutResponsiveViews];
     [self updateControls];
 }
 
@@ -559,6 +569,9 @@ static NSImage *TGSecretChatKeyImage(NSData *keyHashData) {
         [[self.contactPopUpButton lastItem] setRepresentedObject:[contact objectForKey:@"user_id"]];
     }
     [self updateControls];
+    // AppKit's native popup title/indicator metrics differ across supported
+    // systems. Measure after rebuilding the group/secret timer menu.
+    [self layoutResponsiveViews];
 }
 
 - (void)reloadChatInfo {
@@ -607,8 +620,9 @@ static NSImage *TGSecretChatKeyImage(NSData *keyHashData) {
     self.botWindowController = [[[TGBotInteractionWindowController alloc] initWithClient:self.client
                                                                                   userID:userID
                                                                                   chatID:self.chatID] autorelease];
-    [self.botWindowController showWindow:self];
     [[self.botWindowController window] center];
+    TGFitUtilityWindowToVisibleScreen([self.botWindowController window]);
+    [self.botWindowController showWindow:self];
     [[self.botWindowController window] makeKeyAndOrderFront:self];
     [self.botWindowController reloadBot];
 }
@@ -627,6 +641,7 @@ static NSImage *TGSecretChatKeyImage(NSData *keyHashData) {
                                                 title:[self.titleField stringValue]] autorelease];
     }
     [[self.administrationWindowController window] center];
+    TGFitUtilityWindowToVisibleScreen([self.administrationWindowController window]);
     [self.administrationWindowController showWindow:self];
     [[self.administrationWindowController window] makeKeyAndOrderFront:self];
     [self.administrationWindowController reloadAdministration];
@@ -794,5 +809,7 @@ static NSImage *TGSecretChatKeyImage(NSData *keyHashData) {
         [pool drain];
     });
 }
+
+#include "TGChatInfoWindowController+Responsive.inc"
 
 @end

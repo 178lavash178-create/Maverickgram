@@ -12,6 +12,7 @@
 #import "TGThemeTextField.h"
 #import "TGThemeContrast.h"
 #import "TGAquaAppearance.h"
+#import "TGDialogPresentation.h"
 #import "TGInterfaceDesign.h"
 
 #include "TGPrivacyWindowController+BlockedSenderCell.inc"
@@ -19,6 +20,7 @@
 @interface TGPrivacyWindowController () <NSTableViewDataSource, NSTableViewDelegate, NSWindowDelegate>
 @property (nonatomic, retain) TGTDLibClient *client;
 @property (nonatomic, retain) NSSegmentedControl *aquaSectionSelector;
+@property (nonatomic, retain) NSPopUpButton *aquaSectionPopUp;
 @property (nonatomic, retain) NSArray *aquaSectionViews;
 @property (nonatomic, retain) NSArray *aquaSectionLabels;
 @property (nonatomic, retain) NSTextField *aquaTitleField;
@@ -52,6 +54,7 @@
 @implementation TGPrivacyWindowController
 
 @synthesize client = _client;
+@synthesize aquaSectionPopUp=_aquaSectionPopUp;
 @synthesize aquaSectionSelector=_aquaSectionSelector, aquaSectionViews=_aquaSectionViews, aquaSectionLabels=_aquaSectionLabels, aquaTitleField=_aquaTitleField, aquaBlockedScrollView=_aquaBlockedScrollView;
 @synthesize settingPopUpButton = _settingPopUpButton;
 @synthesize rulePopUpButton = _rulePopUpButton;
@@ -104,7 +107,7 @@
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     [[self window] setDelegate:nil];
-    [_aquaSectionSelector release]; [_aquaSectionViews release]; [_aquaSectionLabels release];
+    [_aquaSectionSelector release]; [_aquaSectionPopUp release]; [_aquaSectionViews release]; [_aquaSectionLabels release];
     [_aquaTitleField release]; [_aquaBlockedScrollView release];
     [_client release];
     [_settingPopUpButton release];

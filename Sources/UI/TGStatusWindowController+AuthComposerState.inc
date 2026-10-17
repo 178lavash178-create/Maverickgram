@@ -53,6 +53,7 @@
     }
     [self.qrLoginWindowController showWindow:self];
     [[self.qrLoginWindowController window] center];
+    TGFitUtilityWindowToVisibleScreen([self.qrLoginWindowController window]);
     [[self.qrLoginWindowController window] makeKeyAndOrderFront:self];
     if ([self.currentAuthState isEqualToString:@"waitPhoneNumber"]) {
         [self.qrLoginWindowController beginQRCodeAuthentication];
