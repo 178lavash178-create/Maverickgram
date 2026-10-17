@@ -144,11 +144,15 @@ int main(int argc,const char **argv) {
       }
       for(NSUInteger selected=0;selected<2;selected++) for(NSUInteger scale=1;scale<=2;scale++) {
         SearchSource *source=[[[SearchSource alloc] init] autorelease];source.result=[[[TGSearchResultItem alloc] init] autorelease];source.result.chatTitle=@"Synthetic search";source.result.snippet=@"Result detail";
-        TGChatSearchResultsTableView *table=[[[TGChatSearchResultsTableView alloc] initWithFrame:NSMakeRect(0,0,360,60)] autorelease];[table setHeaderView:nil];[table setRowHeight:50];[table setIntercellSpacing:NSZeroSize];[table setDataSource:source];[table setSelectionHighlightStyle:NSTableViewSelectionHighlightStyleNone];
+        TGChatSearchResultsTableView *table=[[[TGChatSearchResultsTableView alloc] initWithFrame:NSMakeRect(0,0,360,60)] autorelease];[table setHeaderView:nil];[table setRowHeight:(aqua?44:50)];[table setIntercellSpacing:NSZeroSize];[table setDataSource:source];[table setSelectionHighlightStyle:NSTableViewSelectionHighlightStyleNone];
         NSTableColumn *column=[[[NSTableColumn alloc] initWithIdentifier:@"result"] autorelease];[column setWidth:360];[column setDataCell:[[[TGChatSearchResultCell alloc] initTextCell:@""] autorelease]];[table addTableColumn:column];[table reloadData];
         if(selected) [table selectRowIndexes:[NSIndexSet indexSetWithIndex:0] byExtendingSelection:NO];
         NSBitmapImageRep *bitmap=Begin(360,60,YES,scale);[table drawRect:[table bounds]];[NSGraphicsContext restoreGraphicsState];
         if(aqua && selected) {assert(Same([bitmap colorAtX:335*scale y:25*scale],TGListSelectionBackground()));VerifyGlyphs(bitmap,YES,scale,60);}
+        if(aqua && !selected) {
+          assert(Same([bitmap colorAtX:335*scale y:12*scale],TGClassicTablePaperColor()));
+          assert(Same([bitmap colorAtX:335*scale y:35*scale],TGClassicTablePaperColor()));
+        }
         assert([Texts count]==2);searches++;
       }
 
