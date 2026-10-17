@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Native production constructors: caption scrolling, contact picker, image-first media."""
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import os, shutil, subprocess, sys, tempfile
 ROOT=os.path.abspath(os.path.join(os.path.dirname(__file__),os.pardir))
 def read(path):
@@ -29,6 +29,6 @@ folder=tempfile.mkdtemp(prefix='telegraphica-aqua-composition-')
 try:
     source=os.path.join(folder,'probe.m');binary=os.path.join(folder,'probe')
     with open(source,'wb') as f: f.write(harness.encode('utf-8'))
-    subprocess.check_call(sys.argv[1:]+[source,'-I'+os.path.join(ROOT,'Sources/UI'),'-Wno-incomplete-implementation','-framework','Cocoa','-o',binary])
+    subprocess.check_call(sys.argv[1:]+[source,'-I'+os.path.join(ROOT,'Sources/UI'),'-Wno-incomplete-implementation',os.path.join(ROOT,'Sources/UI/TGLocalization.m'),'-framework','Cocoa','-o',binary])
     subprocess.check_call([binary])
 finally: shutil.rmtree(folder)

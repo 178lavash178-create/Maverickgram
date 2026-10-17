@@ -1055,6 +1055,7 @@
         [self appendDetail:@"Reloading forum topics from TDLib..."];
     }
 
+    NSNumber *account = [self.profileUserID copy];
     TGTDLibClient *client = [self.client retain];
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -1063,7 +1064,8 @@
         NSString *topicErrorMessage = [[topicError localizedDescription] copy];
 
         dispatch_async(dispatch_get_main_queue(), ^{
-            BOOL stillCurrent = TGForumTopicRefreshMatchesContext(refreshGeneration,
+            BOOL sameAccount = ((!account && !self.profileUserID) || [account isEqual:self.profileUserID]);
+            BOOL stillCurrent = (client == self.client && sameAccount && [self.currentAuthState isEqualToString:@"ready"]) && TGForumTopicRefreshMatchesContext(refreshGeneration,
                                                                  self.forumTopicNavigationGeneration,
                                                                  parentChatID,
                                                                  self.selectedChatID,
@@ -1152,6 +1154,7 @@
             [parentChatID release];
             [parentTitle release];
             [parentAvatarPath release];
+            [account release];
             [client release];
         });
 
@@ -1290,6 +1293,7 @@
     TGChatItem *chatItemCopy = [chatItem retain];
     NSString *parentTitle = [[chatItem title] copy];
     NSString *parentAvatarPath = [[chatItem avatarLocalPath] copy];
+    NSNumber *account = [self.profileUserID copy];
     TGTDLibClient *client = [self.client retain];
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -1310,7 +1314,8 @@
             BOOL topicAutoOpenSuppressed = ([self isForumTopicAutoOpenSuppressedForChatID:chatIDCopy] ||
                                             self.forumTopicNavigationGeneration != forumNavigationGeneration ||
                                             self.chatNavigationClosed);
-            BOOL selectionStillCurrent = (!topicAutoOpenSuppressed &&
+            BOOL sameAccount = ((!account && !self.profileUserID) || [account isEqual:self.profileUserID]);
+            BOOL selectionStillCurrent = (client == self.client && sameAccount && [self.currentAuthState isEqualToString:@"ready"] && !topicAutoOpenSuppressed &&
                                           self.selectedChatID &&
                                           [self.selectedChatID longLongValue] == [chatIDCopy longLongValue] &&
                                           self.selectedMessageThreadID == nil);
@@ -1329,6 +1334,7 @@
             [chatItemCopy release];
             [parentTitle release];
             [parentAvatarPath release];
+            [account release];
             [client release];
         });
 

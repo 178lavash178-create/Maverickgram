@@ -18,13 +18,13 @@ harness=r'''
 #import "TGStatusViewCells.h"
 #import "TGAccessibilitySupport.h"
 #import "TGTranscriptMotion.h"
-static NSMutableArray *PaintedStrings;
+static NSMutableArray *PaintedStrings,*PaintedFrames;
 @interface NSString (TGSingleFooterProbe)
 - (void)tgSingleFooterDrawInRect:(NSRect)rect withAttributes:(NSDictionary *)attributes;
 @end
 @implementation NSString (TGSingleFooterProbe)
 - (void)tgSingleFooterDrawInRect:(NSRect)rect withAttributes:(NSDictionary *)attributes {
- if(PaintedStrings)[PaintedStrings addObject:self];
+ if(PaintedStrings){[PaintedStrings addObject:self];[PaintedFrames addObject:[NSValue valueWithRect:rect]];}
  [self tgSingleFooterDrawInRect:rect withAttributes:attributes];
 }
 @end
@@ -42,32 +42,52 @@ __CELL__
 - (BOOL)isFlipped{return self.flipped;}
 @end
 static NSUInteger Occurrences(NSString *wanted){NSUInteger n=0;for(NSString *s in PaintedStrings)if([s isEqual:wanted])n++;return n;}
-int main(int argc,const char **argv){NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];[NSApplication sharedApplication];
+static void UnexpectedException(NSException *e){fprintf(stderr,"Unexpected footer exception: %s %s\n",[[e name] UTF8String],[[e reason] UTF8String]);}
+int main(int argc,const char **argv){NSSetUncaughtExceptionHandler(UnexpectedException);NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];[NSApplication sharedApplication];
  BOOL aqua=argc>1 && strcmp(argv[1],"aqua")==0;[[NSUserDefaults standardUserDefaults] setObject:aqua?@"aqua":@"classic" forKey:TGInterfaceDesignDefaultsKey];TGSetLanguageCode(@"ru");
  Method original=class_getInstanceMethod([NSString class],@selector(drawInRect:withAttributes:));Method traced=class_getInstanceMethod([NSString class],@selector(tgSingleFooterDrawInRect:withAttributes:));method_exchangeImplementations(original,traced);
- PaintedStrings=[[NSMutableArray alloc] init];
- for(NSUInteger blocks=0;blocks<=1;blocks++)for(NSUInteger flipped=0;flipped<=1;flipped++)for(NSString *type in [NSArray arrayWithObjects:@"messageAudio",@"messageVoiceNote",@"messageDocument",nil])for(NSUInteger reaction=0;reaction<=1;reaction++) {
-  TGSetChatMessagesAsBlocksEnabled(blocks);
+ PaintedStrings=[[NSMutableArray alloc] init];PaintedFrames=[[NSMutableArray alloc] init];
+ for(NSInteger level=0;level<4;level++)for(NSNumber *width in [NSArray arrayWithObjects:@220,@296,@640,nil])for(NSUInteger blocks=0;blocks<=1;blocks++)for(NSUInteger flipped=0;flipped<=1;flipped++)for(NSString *type in [NSArray arrayWithObjects:@"messageAudio",@"messageVoiceNote",@"messageDocument",@"messageText",@"messagePhoto",nil])for(NSUInteger reaction=0;reaction<=1;reaction++) {
+  NSAutoreleasePool *casePool=[[NSAutoreleasePool alloc] init];
+  TGSetChatMessagesAsBlocksEnabled(blocks);TGSetChatMessageTextSizeLevel(level);CGFloat cellWidth=[width doubleValue];
   TGMessageItem *item=[[[TGMessageItem alloc] initWithChatID:@-42 messageID:@2 date:@1 outgoing:YES preview:@"Audio"] autorelease];[item setContentType:type];[item setMediaDuration:@90];
-  if([type isEqual:@"messageDocument"]){[item setMediaMimeType:@"audio/mpeg"];[item setDownloadFileName:@"Synthetic.mp3"];}[item setPinned:YES];[item setMessageViewerCount:@3];[item setMessageThreadReplyCount:@2];
+  if([type isEqual:@"messageDocument"]){[item setMediaMimeType:@"audio/mpeg"];[item setDownloadFileName:@"Synthetic.mp3"];}[item setPinned:YES];[item setMessageViewerCount:@3];[item setMessageThreadReplyCount:@99];
+  if([type isEqual:@"messagePhoto"]){item.mediaWidth=@320;item.mediaHeight=@240;item.mediaItems=[NSArray arrayWithObjects:[NSDictionary dictionaryWithObjectsAndKeys:@2,@"message_id",@320,@"width",@240,@"height",nil],[NSDictionary dictionaryWithObjectsAndKeys:@3,@"message_id",@240,@"width",@320,@"height",nil],nil];}
   if(reaction)[item setReactionSummary:@"❤️ 1  👍 2"];
-  Require(TGMessageItemIsNonVisualPlayableMedia(item),@"voice/audio/document fixture uses real nonvisual playable path");
+  if(![type isEqual:@"messageText"] && ![type isEqual:@"messagePhoto"])Require(TGMessageItemIsNonVisualPlayableMedia(item),@"voice/audio/document fixture uses real nonvisual playable path");
   TGMessageBubbleCell *cell=[[[TGMessageBubbleCell alloc] initTextCell:@""] autorelease];[cell setMessageItem:item];
-  FooterHost *host=[[[FooterHost alloc] initWithFrame:NSMakeRect(0,0,640,400)] autorelease];host.flipped=flipped;
-  NSBitmapImageRep *bitmap=[[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:640 pixelsHigh:400 bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSCalibratedRGBColorSpace bytesPerRow:0 bitsPerPixel:0] autorelease];
-  memset([bitmap bitmapData],0,[bitmap bytesPerRow]*400);
+  FooterHost *host=[[[FooterHost alloc] initWithFrame:NSMakeRect(0,0,cellWidth,800)] autorelease];host.flipped=flipped;
+  NSBitmapImageRep *bitmap=[[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:cellWidth pixelsHigh:800 bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSCalibratedRGBColorSpace bytesPerRow:0 bitsPerPixel:0] autorelease];
+  memset([bitmap bitmapData],0,[bitmap bytesPerRow]*800);
   [NSGraphicsContext saveGraphicsState];NSGraphicsContext *context=[NSGraphicsContext graphicsContextWithBitmapImageRep:bitmap];[NSGraphicsContext setCurrentContext:context];
-  NSAffineTransform *transform=[NSAffineTransform transform];if(flipped){[transform translateXBy:0 yBy:400];[transform scaleXBy:1 yBy:-1];}[transform concat];[NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithGraphicsPort:[context graphicsPort] flipped:flipped]];
+  NSAffineTransform *transform=[NSAffineTransform transform];if(flipped){[transform translateXBy:0 yBy:800];[transform scaleXBy:1 yBy:-1];}[transform concat];[NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithGraphicsPort:[context graphicsPort] flipped:flipped]];
   // Warm the one-time font/asset metric before measuring footer ownership.
   TGDrawOutgoingStatusDotsForItem(item,NSMakeRect(10,10,30,14),flipped);
-  [PaintedStrings removeAllObjects];[cell drawWithFrame:NSMakeRect(0,0,640,350) inView:host];
+  NSRect cellFrame=NSMakeRect(0,0,cellWidth,TGMessageBubbleHeightForItem(item,cellWidth,NO));
+  [PaintedStrings removeAllObjects];[PaintedFrames removeAllObjects];[cell drawWithFrame:cellFrame inView:host];
   [NSGraphicsContext restoreGraphicsState];
   Require(Occurrences(TGShortTimeStringFromDateValue([item date]))==1,@"owning cell paints timestamp exactly once for audio/voice/document with and without reactions");
   Require(Occurrences([NSString stringWithFormat:TGLoc(@"message.views.format"),@"3"])==1,@"owning cell paints readership exactly once, with no doubled pin/footer path");
-  NSUInteger ink=0;const unsigned char *pixels=[bitmap bitmapData];for(NSUInteger i=3;i<[bitmap bytesPerRow]*400;i+=4)if(pixels[i]>64)ink++;
+  NSRect container=blocks?NSInsetRect(cellFrame,6,2):TGMessageBubbleRectForItem(item,cellFrame,NO);
+  for(NSString *label in [NSArray arrayWithObjects:TGShortTimeStringFromDateValue(item.date),[NSString stringWithFormat:TGLoc(@"message.views.format"),@"3"],nil]) {
+   NSUInteger index=[PaintedStrings indexOfObject:label];NSRect painted=[[PaintedFrames objectAtIndex:index] rectValue];
+   if(!NSContainsRect(container,painted))fprintf(stderr,"paint bounds %s level%ld width%.0f blocks%lu reaction%lu flip%lu: %s in %s\n",[type UTF8String],(long)level,cellWidth,(unsigned long)blocks,(unsigned long)reaction,(unsigned long)flipped,[NSStringFromRect(painted) UTF8String],[NSStringFromRect(container) UTF8String]);
+   Require(NSContainsRect(container,painted),@"actual timestamp/readership paint stays within computed cell at minimum width and larger text sizes");
+  }
+  if(TGMessageItemIsNonVisualPlayableMedia(item)) {
+   NSUInteger timeIndex=[PaintedStrings indexOfObject:TGShortTimeStringFromDateValue(item.date)];NSRect timePaint=[[PaintedFrames objectAtIndex:timeIndex] rectValue];
+   NSRect pinAndTime=timePaint;pinAndTime.origin.x-=16;pinAndTime.size.width+=16+TGOutgoingStatusDotsWidthForItem(item)+5;
+   NSRect countPaint=[[PaintedFrames objectAtIndex:[PaintedStrings indexOfObject:[NSString stringWithFormat:TGLoc(@"message.views.format"),@"3"]]] rectValue];
+   for(NSString *body in [NSArray arrayWithObjects:TGPlayableMediaTitleForMessageItem(item),TGDurationStringFromSecondsValue(item.mediaDuration),nil]) {
+    NSUInteger bodyIndex=[PaintedStrings indexOfObject:body];Require(bodyIndex!=NSNotFound,@"actual playback title/duration is painted");NSRect bodyPaint=[[PaintedFrames objectAtIndex:bodyIndex] rectValue];
+    Require(!NSIntersectsRect(bodyPaint,pinAndTime)&&!NSIntersectsRect(bodyPaint,countPaint),@"playback title/duration never intersects time/pin/readership, including wrapped narrow footer");
+   }
+  }
+  NSUInteger ink=0;const unsigned char *pixels=[bitmap bitmapData];for(NSUInteger i=3;i<[bitmap bytesPerRow]*800;i+=4)if(pixels[i]>64)ink++;
   Require(ink>100,@"complete production cell and playback content produce a real nonempty raster");
+  [PaintedStrings removeAllObjects];[PaintedFrames removeAllObjects];[casePool drain];
  }
- [PaintedStrings release];PaintedStrings=nil;method_exchangeImplementations(original,traced);
+ [PaintedStrings release];[PaintedFrames release];PaintedStrings=nil;PaintedFrames=nil;method_exchangeImplementations(original,traced);
  printf("Playable footer ownership %s PASS: %lu actual cell/media timestamp/readership paint-count and raster checks.\n",aqua?"Aqua":"Classic",(unsigned long)checks);[pool drain];return 0;}
 '''
 harness=harness.replace('__SHARED_PROBE__',os.path.join(root,'Tests/aqua_footer_probe.m')).replace('__CELL__',cells)

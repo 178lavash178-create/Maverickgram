@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Production topic menus/read actions and folder routing, isolated from accounts."""
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import os,sys,subprocess,tempfile,shutil
 root=os.path.abspath(os.path.join(os.path.dirname(__file__),os.pardir))
 def read(path):
@@ -9,6 +9,12 @@ controller=read('Sources/UI/TGStatusWindowController.m')
 a=controller.index('- (void)folderFilterChanged:');b=controller.index('\n- (void)toggleDrawer:',a)
 folder=controller[a:b]
 forum=read('Sources/UI/TGStatusWindowController+ForumTopicManagement.inc')
+refresh=read('Sources/UI/TGStatusWindowController+TableForumFlow.inc')
+a=refresh.index('- (void)reloadCurrentForumTopicListInteractive:')
+a=refresh.index('            BOOL sameAccount =',a)
+b=refresh.index('            if (stillCurrent',a)
+refresh_guard='- (BOOL)acceptsForumRefreshClient:(TGTDLibClient *)client account:(NSNumber *)account generation:(NSUInteger)refreshGeneration parent:(NSNumber *)parentChatID {'+refresh[a:b]+'return stillCurrent;}'
+
 section=read('Sources/UI/TGStatusWindowController+SectionLayout.inc')
 def bool_method(source,name,method,extra=''):
     a=source.index('    BOOL '+name+' = ');b=source.index(';',a)+1
@@ -17,6 +23,9 @@ header=bool_method(controller,'canCall','headerCanCall')+bool_method(section,'sh
 harness=r'''
 #import <Cocoa/Cocoa.h>
 #import <dispatch/dispatch.h>
+#import <objc/runtime.h>
+#import "TGForumTopicPermissions.h"
+#import "TGForumTopicRefreshSupport.h"
 #import "TGChatItem.h"
 #import "TGMessageItem.h"
 #import "TGTDLibClient+ForumTopics.h"
@@ -84,6 +93,7 @@ __HEADER__
 - (void)clearForumTopicListState{self.showingForumTopicList=NO;self.forumTopicsPresentedInTopBar=NO;self.forumTopicItems=nil;self.topicParentChatID=nil;}
 - (void)reloadChatsInteractive:(BOOL)interactive preserveSelection:(BOOL)preserve requestedLimit:(NSUInteger)limit{Check(interactive&&!preserve&&limit==40,"folder reload uses correct navigation request");self.reloads++;}
 __FORUM__
+__REFRESH_GUARD__
 __FOLDER__
 @end
 static BOOL MenuHas(NSMenu *menu,SEL selector){for(NSMenuItem *item in [menu itemArray])if([item action]==selector)return YES;return NO;}
@@ -92,6 +102,50 @@ static void Spin(void){NSDate *until=[NSDate dateWithTimeIntervalSinceNow:.3];wh
 int main(void){NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];[NSApplication sharedApplication];
  TopicRoot *p=[[[TopicRoot alloc] init] autorelease];TGChatItem *item=Topic(@66);p.topicParentChatID=item.parentChatID;p.forumTopicItems=[NSArray arrayWithObject:item];p.showingForumTopicList=YES;
  NSMenu *menu=[[[NSMenu alloc] initWithTitle:@"test"] autorelease];[p populateForumTopicContextMenu:menu forItem:item];Check([menu numberOfItems]==1&&MenuHas(menu,@selector(markForumTopicReadFromMenu:)),"non-admin only sees read action");
+ // Execute real receiver normalization and UI role-cache policy, including a
+ // delayed topic snapshot that still contains administrator capabilities.
+ p.profileUserID=@1;p.selectedChatID=p.topicParentChatID;
+ Check([p acceptsForumRefreshClient:p.client account:@1 generation:p.forumTopicNavigationGeneration parent:p.topicParentChatID],"matching topic refresh callback remains eligible");
+ Check(![p acceptsForumRefreshClient:p.client account:@2 generation:p.forumTopicNavigationGeneration parent:p.topicParentChatID],"topic refresh rejects an old account with identical group IDs");
+ Check(![p acceptsForumRefreshClient:[[[TopicClient alloc] init] autorelease] account:@1 generation:p.forumTopicNavigationGeneration parent:p.topicParentChatID],"topic refresh rejects a replaced client");
+ p.currentAuthState=@"closed";Check(![p acceptsForumRefreshClient:p.client account:@1 generation:p.forumTopicNavigationGeneration parent:p.topicParentChatID],"topic refresh rejects signed-out callback");p.currentAuthState=@"ready";
+ Check(![p acceptsForumRefreshClient:p.client account:@1 generation:p.forumTopicNavigationGeneration+1 parent:p.topicParentChatID],"topic refresh rejects superseded navigation");
+ NSDictionary *adminStatus=[NSDictionary dictionaryWithObject:@"chatMemberStatusCreator" forKey:@"@type"];
+ NSDictionary *adminContext=[NSDictionary dictionaryWithObjectsAndKeys:adminStatus,@"status",@30,@"supergroup_id",nil];
+ NSDictionary *adminPermissions=TGForumTopicActionPermissions(adminContext,nil,@66);
+ item.forumTopicActionPermissions=adminPermissions;
+ [menu removeAllItems];[p populateForumTopicContextMenu:menu forItem:item];
+ Check(MenuHas(menu,@selector(deleteForumTopicFromMenu:))&&MenuHas(menu,@selector(toggleForumTopicPinnedFromMenu:)),"fresh administrator snapshot offers permitted actions");
+ NSDictionary *member=[NSDictionary dictionaryWithObject:@"chatMemberStatusMember" forKey:@"@type"];
+ NSDictionary *raw=[NSDictionary dictionaryWithObjectsAndKeys:@"updateSupergroup",@"@type",[NSDictionary dictionaryWithObjectsAndKeys:@30,@"id",member,@"status",@"must not propagate",@"description",nil],@"supergroup",nil];
+ NSDictionary *demotion=TGForumTopicRightsUpdateSummary(raw);
+ Check([[demotion objectForKey:@"kind"] isEqual:@"forum_topic_rights"] && ![demotion objectForKey:@"description"],"receiver normalizes only safe current-role capabilities");
+ [p applyForumTopicRightsUpdateSummary:demotion];[menu removeAllItems];[p populateForumTopicContextMenu:menu forItem:item];
+ Check([menu numberOfItems]==1,"retained topic menu drops revoked administrative actions without reloading transcript");
+ item.forumTopicActionPermissions=adminPermissions;[menu removeAllItems];[p populateForumTopicContextMenu:menu forItem:item];
+ Check([menu numberOfItems]==1,"late administrator topic snapshot cannot restore revoked menu entries");
+ for(NSUInteger group=100;group<200;group++) {
+  [p applyForumTopicRightsUpdateSummary:[NSDictionary dictionaryWithObjectsAndKeys:@"forum_topic_rights",@"kind",[NSNumber numberWithUnsignedInteger:group],@"supergroup_id",member,@"status",nil]];
+ }
+ Check([[p forumTopicRoleContexts] count]<=64,"role cache remains bounded during unrelated group updates");
+ item.forumTopicActionPermissions=adminPermissions;Check(![p forumTopicItem:item allowsOperation:@"delete"],"bounded pruning preserves the displayed group's revocation");
+ p.profileUserID=@2;item.forumTopicActionPermissions=adminPermissions;
+ Check([p forumTopicItem:item allowsOperation:@"delete"],"previous account role cache cannot override a new account snapshot");
+ [p applyForumTopicRightsUpdateSummary:demotion];p.client=[[[TopicClient alloc] init] autorelease];item.forumTopicActionPermissions=adminPermissions;
+ Check([p forumTopicItem:item allowsOperation:@"delete"],"previous client role cache cannot override current client capabilities");
+ [p applyForumTopicRightsUpdateSummary:demotion];
+ item.forumTopicActionPermissions=TGForumTopicActionPermissions(adminContext,[NSDictionary dictionaryWithObject:@YES forKey:@"is_outgoing"],@66);
+ Check([p forumTopicItem:item allowsOperation:@"rename"]&&![p forumTopicItem:item allowsOperation:@"delete"],"demoted topic creator keeps only documented ownership actions");
+ [p applyForumTopicRightsUpdateSummary:[NSDictionary dictionaryWithObjectsAndKeys:@"forum_topic_rights",@"kind",@30,@"supergroup_id",[NSDictionary dictionaryWithObject:@"chatMemberStatusBanned" forKey:@"@type"],@"status",nil]];
+ Check(![p forumTopicItem:item allowsOperation:@"rename"],"banned creator loses ownership management actions");
+ [p applyForumTopicRightsUpdateSummary:demotion];
+ Check([p forumTopicItem:item allowsOperation:@"rename"],"rejoining restores actual topic ownership without inventing deletion rights");
+ NSDictionary *flatStatus=[NSDictionary dictionaryWithObjectsAndKeys:@"chatMemberStatusAdministrator",@"@type",@YES,@"can_manage_topics",@NO,@"can_delete_messages",nil];
+ NSDictionary *flatUpdate=TGForumTopicRightsUpdateSummary([NSDictionary dictionaryWithObjectsAndKeys:@"updateSupergroup",@"@type",[NSDictionary dictionaryWithObjectsAndKeys:@30,@"id",flatStatus,@"status",nil],@"supergroup",nil]);
+ [p applyForumTopicRightsUpdateSummary:flatUpdate];
+ Check([p forumTopicItem:item allowsOperation:@"pin"]&&![p forumTopicItem:item allowsOperation:@"delete"],"legacy flat role updates preserve distinct manage and delete capabilities");
+ Check(!TGForumTopicRightsUpdateSummary([NSDictionary dictionaryWithObject:@"updateSupergroup" forKey:@"@type"]),"malformed role update does not invent capabilities");
+ // Existing independent fixtures below have no server group identity.
  item.forumTopicActionPermissions=[NSDictionary dictionaryWithObjectsAndKeys:@YES,@"rename",@YES,@"close",nil];[menu removeAllItems];[p populateForumTopicContextMenu:menu forItem:item];Check(MenuHas(menu,@selector(renameForumTopicFromMenu:))&&MenuHas(menu,@selector(toggleForumTopicClosedFromMenu:)),"documented own-topic permissions appear");Check(!MenuHas(menu,@selector(deleteForumTopicFromMenu:))&&!MenuHas(menu,@selector(toggleForumTopicPinnedFromMenu:)),"ownership does not invent destructive rights");
  NSMenuItem *sender=[[[NSMenuItem alloc] init] autorelease];[sender setRepresentedObject:item];
  for(NSNumber *thread in [NSArray arrayWithObjects:@66,@1,nil]){item.messageThreadID=thread;NSUInteger before=p.client.readCalls;[p markForumTopicReadFromMenu:sender];Spin();Check(p.client.readCalls==before+1,"one explicit topic read sends one receipt");Check([p.client.historyThread isEqual:thread]&&[p.client.readThread isEqual:thread]&&[p.client.readKind isEqual:@"forum"],"read remains scoped to requested topic including General");Check([p.client.readChat isEqual:@(-100)]&&[p.client.readIDs isEqual:[NSArray arrayWithObject:@99]],"only returned topic message IDs reach receipt");}
@@ -113,9 +167,9 @@ int main(void){NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];[NSAppli
 build=tempfile.mkdtemp(prefix='telegraphica-forum-actions-')
 try:
  path=os.path.join(build,'probe.m')
- with open(path,'wb') as f:f.write(harness.replace('__FORUM__',forum).replace('__FOLDER__',folder).replace('__HEADER__',header).encode('utf-8'))
+ with open(path,'wb') as f:f.write(harness.replace('__FORUM__',forum).replace('__FOLDER__',folder).replace('__REFRESH_GUARD__',refresh_guard).replace('__HEADER__',header).encode('utf-8'))
  clang=os.environ.get('CLANG') or subprocess.check_output(['xcrun','--find','clang']).decode('utf-8').strip()
  sdk=subprocess.check_output(['xcrun','--show-sdk-path']).decode('utf-8').strip()
- command=[clang,'-isysroot',sdk,'-fblocks','-fno-objc-arc','-Wno-deprecated-declarations','-Wno-shadow-ivar','-Wno-objc-method-access','-arch',os.environ.get('TELEGRAPHICA_TEST_ARCH','x86_64'),'-mmacosx-version-min='+os.environ.get('TELEGRAPHICA_TEST_DEPLOYMENT_TARGET','10.8'),'-I'+os.path.join(root,'Sources/Core'),path,os.path.join(root,'Sources/Core/TGChatItem.m'),os.path.join(root,'Sources/Core/TGMessageItem.m'),'-framework','Cocoa','-o',os.path.join(build,'probe')]
+ command=[clang,'-isysroot',sdk,'-fblocks','-fno-objc-arc','-Wno-deprecated-declarations','-Wno-shadow-ivar','-Wno-objc-method-access','-arch',os.environ.get('TELEGRAPHICA_TEST_ARCH','x86_64'),'-mmacosx-version-min='+os.environ.get('TELEGRAPHICA_TEST_DEPLOYMENT_TARGET','10.8'),'-I'+os.path.join(root,'Sources/Core'),'-I'+os.path.join(root,'Sources/UI'),path,os.path.join(root,'Sources/Core/TGChatItem.m'),os.path.join(root,'Sources/Core/TGMessageItem.m'),'-framework','Cocoa','-o',os.path.join(build,'probe')]
  subprocess.check_call(command);subprocess.check_call([os.path.join(build,'probe')])
 finally:shutil.rmtree(build)

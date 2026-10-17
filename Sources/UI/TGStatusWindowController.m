@@ -6,6 +6,7 @@
 #import "TGAccessibilitySupport.h"
 #import "TGChatDisplayPreferences.h"
 #import "TGForumTopicRefreshSupport.h"
+#import "TGForumTopicPermissions.h"
 #import "TGChatFolderManagementWindowController.h"
 #import "TGChatInfoWindowController.h"
 #import "TGDatePickerDialog.h"

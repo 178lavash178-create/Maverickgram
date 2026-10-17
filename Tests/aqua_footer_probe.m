@@ -216,6 +216,48 @@ static void CheckFooterIndicators(void) {
     TGSetActiveThemeIdentifier(@"vk-blue");
 }
 
+static void CheckNarrowMetadataFooters(void) {
+    TGSetChatMessagesAsBlocksEnabled(NO);
+    BOOL exercisedWrap=NO,exercisedWiderBubble=NO;
+    for(NSString *language in [NSArray arrayWithObjects:@"ru",@"be",@"en",nil]) {
+        TGSetLanguageCode(language);
+        for(NSInteger level=0;level<4;level++) {
+            TGSetChatMessageTextSizeLevel(level);
+            for(NSNumber *width in [NSArray arrayWithObjects:@220,@240,@296,nil])
+            for(NSUInteger media=0;media<3;media++) for(NSUInteger reactions=0;reactions<2;reactions++)
+            for(NSUInteger outgoing=0;outgoing<2;outgoing++) for(NSUInteger flip=0;flip<2;flip++) {
+                TGMessageItem *item=[[[TGMessageItem alloc] initWithChatID:@-42 messageID:@2 date:@1720000000 outgoing:outgoing preview:@"Hi"] autorelease];
+                item.contentType=media?@"messagePhoto":@"messageText";item.pinned=YES;
+                item.messageViewerCount=@3;item.messageThreadReplyCount=@99;
+                if(media){item.mediaWidth=@640;item.mediaHeight=@480;item.messageViewCount=@2147483647;}
+                if(media==2)item.mediaItems=[NSArray arrayWithObjects:[NSDictionary dictionaryWithObjectsAndKeys:@2,@"message_id",@640,@"width",@480,@"height",nil],[NSDictionary dictionaryWithObjectsAndKeys:@3,@"message_id",@480,@"width",@640,@"height",nil],nil];
+                if(reactions)item.reactionSummary=@"❤️ 1  👍 99";
+                CGFloat cellWidth=[width doubleValue];NSRect cell=NSMakeRect(0,0,cellWidth,1600);
+                NSRect bubble=TGMessageBubbleRectForItem(item,cell,NO);
+                Require(NSMinX(bubble)>=14 && NSMaxX(bubble)<=cellWidth-14,@"narrow metadata host preserves real side gutters");
+                Require(NSHeight(bubble)+10<=TGMessageBubbleHeightForItem(item,cellWidth,NO)+.1,@"table height reserves full widened/wrapped footer geometry");
+                if(NSWidth(bubble)>TGMaximumBubbleWidthForItem(item,cellWidth)+.1)exercisedWiderBubble=YES;
+                CGFloat innerWidth=NSWidth(bubble)-24;
+                NSString *time=TGShortTimeStringFromDateValue(item.date);NSSize size=[time sizeWithAttributes:[NSDictionary dictionaryWithObject:TGChatMessageMetaFont() forKey:NSFontAttributeName]];
+                CGFloat status=TGOutgoingStatusDotsWidthForItem(item),h=MAX(12,ceil(size.height)+2);
+                NSRect timeRect=NSMakeRect(NSMaxX(bubble)-size.width-status-(status>0?5:0)-12,flip?NSMaxY(bubble)-h-4:NSMinY(bubble)+4,size.width,h);
+                NSRect footerHost=bubble;
+                if(reactions){CGFloat bandHeight=TGMessageReactionFooterHeight(item,NSWidth(bubble)-20);footerHost=NSMakeRect(NSMinX(bubble)+10,flip?NSMaxY(bubble)-bandHeight:NSMinY(bubble),NSWidth(bubble)-20,bandHeight);innerWidth=NSWidth(footerHost);timeRect=TGMessageReactionTimeRect(item,footerHost,flip);}
+                Require(!NSIsEmptyRect(timeRect),@"settled narrow footer retains timestamp with reactions and photo albums");
+                NSRect indicators=TGMessageFooterIndicatorsRectInWidth(item,timeRect,innerWidth,flip);
+                NSRect receipt=timeRect;receipt.size.width+=status+(status>0?5:0);NSRect all=NSUnionRect(receipt,indicators);
+                if(!NSContainsRect(footerHost,all))fprintf(stderr,"narrow %s level%ld width%.0f media%lu reactions%lu out%lu flip%lu bubble%s host%s time%s indicators%s\n",[language UTF8String],(long)level,cellWidth,(unsigned long)media,(unsigned long)reactions,(unsigned long)outgoing,(unsigned long)flip,[NSStringFromRect(bubble) UTF8String],[NSStringFromRect(footerHost) UTF8String],[NSStringFromRect(timeRect) UTF8String],[NSStringFromRect(indicators) UTF8String]);
+                Require(NSContainsRect(footerHost,all),@"pin/views/replies/time/checks stay inside actual narrow footer at every text size");
+                NSRect pin=NSMakeRect(NSMinX(timeRect)-16,NSMinY(timeRect),16,NSHeight(timeRect));
+                Require(NSContainsRect(footerHost,pin),@"pin remains next to timestamp on final line even when counts wrap");
+                if(TGMessageFooterWrappedHeightForItem(item,innerWidth)>0){exercisedWrap=YES;Require(NSHeight(indicators)>h,@"physically narrow footer has a real reserved second metadata line");}
+            }
+        }
+    }
+    Require(exercisedWrap && exercisedWiderBubble,@"production cases exercise physical wrapping and gutter-safe width beyond decorative body cap");
+    TGSetChatMessageTextSizeLevel(0);
+}
+
 int main(int argc,const char **argv) {
     NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];
     BOOL aqua=argc>1 && strcmp(argv[1],"aqua")==0;
@@ -224,6 +266,7 @@ int main(int argc,const char **argv) {
     TGSetChatMessagesAsBlocksEnabled(NO);
     CheckReactionsBelowBodyAcrossThemes();
     CheckCommentPresentation();
+    CheckNarrowMetadataFooters();
     NSString *originalLanguage=[[TGLanguageCode() copy] autorelease];
     for(NSString *language in [NSArray arrayWithObjects:@"ru",@"be",@"en",nil]) {TGSetLanguageCode(language);CheckFooterIndicators();}
     TGSetLanguageCode(originalLanguage);

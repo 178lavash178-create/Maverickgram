@@ -352,6 +352,16 @@ int main(void) {
  NSUInteger newerOwner=r.messageLoadingGeneration;RunOne(MainBlocks);
  Check(r.messageLoadingIndicatorVisible && r.messageLoadingGeneration==newerOwner,"discovery completion cannot stop a newer owner");
  RunOne(WorkerBlocks);RunOne(MainBlocks);r.messageLoadingIndicatorVisible=NO;
+ // Forum discovery is also account/client scoped even when group IDs match.
+ for(NSUInteger stale=0;stale<3;stale++) {
+  r.forceMessageScrollToNewest=NO;r.messageItemsRepresentFocusedContext=NO;
+  [r loadForumTopicsForChatItem:group];RunOne(WorkerBlocks);
+  NSNumber *savedAccount=[r.profileUserID retain];TGTDLibClient *savedClient=[r.client retain];
+  if(stale==0) r.profileUserID=@999;else if(stale==1) r.client=[[[TGTDLibClient alloc] init] autorelease];else r.currentAuthState=@"closed";
+  RunOne(MainBlocks);
+  Check(![WorkerBlocks count] && !r.backgroundMessageRefreshInFlight && !r.messageLoadingIndicatorVisible,"stale forum discovery cannot enqueue another account/client's message load");
+  r.profileUserID=savedAccount;r.client=savedClient;r.currentAuthState=@"ready";[savedAccount release];[savedClient release];
+ }
  // Destructive actions are never sent by this probe: execute only their actual
  // production cancellation clauses, verifying old callbacks lose ownership.
  for(NSUInteger action=0;action<2;action++) {

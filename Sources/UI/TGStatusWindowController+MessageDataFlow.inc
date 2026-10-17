@@ -611,6 +611,10 @@
         [self updateMessageJumpToNewestButtonVisibility];
     }
     [self animatePendingLiveArrivals:shouldScrollToNewest];
+    // Quiet updates also check expired visible reader counts. The loader stays
+    // single-flight and TTL bounded, including a stationary viewport.
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(refreshVisibleMessageViewCounts) object:nil];
+    [self performSelector:@selector(refreshVisibleMessageViewCounts) withObject:nil afterDelay:0.15];
 }
 
 - (NSUInteger)appendOlderMessageItems:(NSArray *)items preservingVisiblePosition:(BOOL)preserveVisiblePosition {
@@ -1799,6 +1803,10 @@
         }
 
         NSString *kind = [summary objectForKey:@"kind"];
+        if ([kind isEqualToString:@"forum_topic_rights"]) {
+            [self applyForumTopicRightsUpdateSummary:summary];
+            continue;
+        }
         if ([kind isEqualToString:@"authorization"]) {
             NSString *state = [summary objectForKey:@"state"];
             if ([state length] > 0) {

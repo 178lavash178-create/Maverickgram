@@ -22,6 +22,19 @@ NSString *TGLoc(NSString *key) {
 
     NSString *language = TGLanguageCode();
     NSDictionary *ru = [NSDictionary dictionaryWithObjectsAndKeys:
+                        @"Отправка вложений", @"attachment.preview.title",
+                        @"Вложений: %lu", @"attachment.preview.count",
+                        @"Отправка %lu из %lu…", @"attachment.send.batch",
+                        @"Отмена после текущего файла…", @"attachment.send.cancelling",
+                        @"Отправка вложения не подтверждена.", @"attachment.send.unconfirmed",
+                        @"Чат для отправки больше недоступен.", @"attachment.send.targetUnavailable",
+                        @"Отправка вложений отменена.", @"attachment.send.cancelled",
+                        @"Отправить большие файлы?", @"attachment.large.title",
+                        @"%@. Отправка может занять некоторое время.", @"attachment.large.message",
+                        @"Готово к отправке", @"attachment.ready",
+                        @"Отправка альбома…", @"attachment.send.album",
+                        @"Сеть недоступна. Вложение не отправлялось повторно, чтобы избежать дублей.", @"attachment.send.offline",
+
                         @"Совпадений пока нет. Нажмите «Далее», чтобы продолжить поиск.", @"search.messages.noMatchesYet",
                         @"Загрузить следующие результаты", @"search.messages.more",
                         @"Наборы", @"stickers.sets.tab",
@@ -1384,6 +1397,19 @@ NSString *TGLoc(NSString *key) {
                         @"Можно открыть канал в браузере.", @"about.channel.open.browserFallback",
                         nil];
     NSDictionary *be = [NSDictionary dictionaryWithObjectsAndKeys:
+                        @"Адпраўка ўкладанняў", @"attachment.preview.title",
+                        @"Укладанняў: %lu", @"attachment.preview.count",
+                        @"Адпраўка %lu з %lu…", @"attachment.send.batch",
+                        @"Скасаванне пасля бягучага файла…", @"attachment.send.cancelling",
+                        @"Адпраўка ўкладання не пацверджана.", @"attachment.send.unconfirmed",
+                        @"Чат для адпраўкі больш недаступны.", @"attachment.send.targetUnavailable",
+                        @"Адпраўка ўкладанняў скасавана.", @"attachment.send.cancelled",
+                        @"Адправіць вялікія файлы?", @"attachment.large.title",
+                        @"%@. Адпраўка можа заняць некаторы час.", @"attachment.large.message",
+                        @"Гатова да адпраўкі", @"attachment.ready",
+                        @"Адпраўка альбома…", @"attachment.send.album",
+                        @"Сетка недаступная. Укладанне не адпраўлялася паўторна, каб пазбегнуць дубляў.", @"attachment.send.offline",
+
                         @"Супадзенняў пакуль няма. Націсніце «Далей», каб працягнуць пошук.", @"search.messages.noMatchesYet",
                         @"Загрузіць наступныя вынікі", @"search.messages.more",
                         @"Наборы", @"stickers.sets.tab",
@@ -2746,6 +2772,19 @@ NSString *TGLoc(NSString *key) {
                         @"Можна адкрыць канал у браўзеры.", @"about.channel.open.browserFallback",
                         nil];
     NSDictionary *en = [NSDictionary dictionaryWithObjectsAndKeys:
+                        @"Send attachments", @"attachment.preview.title",
+                        @"Attachments: %lu", @"attachment.preview.count",
+                        @"Sending %lu of %lu…", @"attachment.send.batch",
+                        @"Cancelling after the current file…", @"attachment.send.cancelling",
+                        @"Attachment send was not confirmed.", @"attachment.send.unconfirmed",
+                        @"The destination chat is no longer available.", @"attachment.send.targetUnavailable",
+                        @"Attachment sending cancelled.", @"attachment.send.cancelled",
+                        @"Send large files?", @"attachment.large.title",
+                        @"%@. Sending may take a while.", @"attachment.large.message",
+                        @"Ready to send", @"attachment.ready",
+                        @"Sending album…", @"attachment.send.album",
+                        @"Network unavailable. The attachment was not retried automatically to avoid duplicates.", @"attachment.send.offline",
+
                         @"No matches yet. Choose Next to continue searching.", @"search.messages.noMatchesYet",
                         @"Load more results", @"search.messages.more",
                         @"Sets", @"stickers.sets.tab",

@@ -25,6 +25,7 @@
     NSDictionary *group = [self sendTDLibRequestAndWaitForExtra:request extraPrefix:@"telegraphica-forum-rights-group" timeout:timeout errorCode:118 error:NULL];
     if (![[group objectForKey:@"@type"] isEqual:@"supergroup"]) return nil;
     NSMutableDictionary *result = [NSMutableDictionary dictionary];
+    [result setObject:groupID forKey:@"supergroup_id"];
     if ([[group objectForKey:@"status"] isKindOfClass:[NSDictionary class]]) [result setObject:[group objectForKey:@"status"] forKey:@"status"];
     if ([[chat objectForKey:@"permissions"] isKindOfClass:[NSDictionary class]]) [result setObject:[chat objectForKey:@"permissions"] forKey:@"permissions"];
     return result;

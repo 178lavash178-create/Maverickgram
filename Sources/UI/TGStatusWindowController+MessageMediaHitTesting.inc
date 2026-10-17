@@ -518,7 +518,8 @@
         }
         pollRect = TGMessageContentRectByRemovingFooter(pollRect,
             TGMessageCommentBarHeightForItem((TGMessageItem *)item) +
-            TGReactionBandHeightForMessageItemWidth((TGMessageItem *)item, NSWidth(bubbleRect)),
+            TGReactionBandHeightForMessageItemWidth((TGMessageItem *)item, NSWidth(bubbleRect)) +
+            TGMessageContentFooterReservation((TGMessageItem *)item,MAX(1.0,NSWidth(bubbleRect)-24.0)),
             [self.messageTableView isFlipped]);
         if (TGPollPointIsInConfirmRect((TGMessageItem *)item, pollRect, tablePoint, [self.messageTableView isFlipped])) {
             NSArray *pendingPollOptions = [(TGMessageItem *)item pendingPollOptionIndexes];
