@@ -12,7 +12,7 @@
     root.headerHeight=110;root.footerHeight=54;[root setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
     self.aquaTitleField=[self aquaPrivacyLabel:TGLoc(@"privacy.title") size:17 bold:YES];[root addSubview:self.aquaTitleField];
     self.aquaSectionSelector=[[[NSSegmentedControl alloc] initWithFrame:NSZeroRect] autorelease];
-    [self.aquaSectionSelector setSegmentCount:4];[self.aquaSectionSelector setTrackingMode:NSSegmentSwitchTrackingSelectOne];
+    [self.aquaSectionSelector setSegmentCount:4];[[self.aquaSectionSelector cell] setTrackingMode:NSSegmentSwitchTrackingSelectOne];
     NSArray *tabs=[NSArray arrayWithObjects:@"aqua.privacy.visibility",@"privacy.retention",@"aqua.privacy.permissions",@"aqua.privacy.blocked",nil];
     NSMutableArray *panes=[NSMutableArray array];NSMutableArray *labels=[NSMutableArray array];
     NSArray *headings=[NSArray arrayWithObjects:@"privacy.rules",@"privacy.retention",@"privacy.permissions.title",@"privacy.blocked",@"privacy.accountTTL",@"privacy.defaultAutoDelete",nil];
