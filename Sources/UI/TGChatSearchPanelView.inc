@@ -29,7 +29,7 @@
 
 - (void)drawBackgroundInClipRect:(NSRect)clipRect {
     /*
-     * The table is transparent so the themed results card remains visible.
+     * Paint the result paper, including the empty space after the final row.
      * Clear its backing store explicitly when a search shrinks the result
      * count; otherwise AppKit 10.8/10.9 can leave the previously drawn rows
      * cached below the last real result.
@@ -39,15 +39,26 @@
 }
 
 - (void)drawRow:(NSInteger)row clipRect:(NSRect)clipRect {
-    NSRect rowRect = NSInsetRect([self rectOfRow:row], 4.0, 3.0);
+    NSRect nativeRow = [self rectOfRow:row];
+    if (TGInterfaceDesignIsAqua()) {
+        NSRect rowRect = NSInsetRect(nativeRow, 4.0, 1.0);
+        if (NSIntersectsRect(rowRect, clipRect)) {
+            if ([[self selectedRowIndexes] containsIndex:(NSUInteger)row]) {
+                [TGListSelectionBackground() set];
+                [[NSBezierPath bezierPathWithRoundedRect:rowRect xRadius:4.0 yRadius:4.0] fill];
+            } else {
+                [TGClassicTableGridColor() set];
+                NSRectFill(NSMakeRect(NSMinX(nativeRow)+49.0, NSMaxY(nativeRow)-1.0,
+                                     MAX(0.0,NSWidth(nativeRow)-61.0), 1.0));
+            }
+        }
+        [super drawRow:row clipRect:clipRect];
+        return;
+    }
+    NSRect rowRect = NSInsetRect(nativeRow, 4.0, 3.0);
     if (NSIntersectsRect(rowRect, clipRect)) {
         NSBezierPath *rowPath = [NSBezierPath bezierPathWithRoundedRect:rowRect xRadius:7.0 yRadius:7.0];
-        if (TGInterfaceDesignIsAqua() && [[self selectedRowIndexes] containsIndex:(NSUInteger)row]) {
-            [TGListSelectionBackground() set];
-            [rowPath fill];
-        } else {
-            TGThemeDrawGroupedCardInPath(rowPath, rowRect, [self isFlipped]);
-        }
+        TGThemeDrawGroupedCardInPath(rowPath, rowRect, [self isFlipped]);
         [TGClassicTableGridColor() set];
         [rowPath setLineWidth:1.0];
         [rowPath stroke];
@@ -60,16 +71,19 @@
     if (selectedRow < 0 || selectedRow >= [self numberOfRows]) {
         return;
     }
-    NSRect rowRect = NSInsetRect([self rectOfRow:selectedRow], 4.0, 3.0);
+    BOOL aqua = TGInterfaceDesignIsAqua();
+    NSRect rowRect = NSInsetRect([self rectOfRow:selectedRow], 4.0, aqua ? 1.0 : 3.0);
     if (!NSIntersectsRect(rowRect, clipRect)) {
         return;
     }
-    NSBezierPath *selectedPath = [NSBezierPath bezierPathWithRoundedRect:rowRect xRadius:7.0 yRadius:7.0];
+    NSBezierPath *selectedPath = [NSBezierPath bezierPathWithRoundedRect:rowRect xRadius:(aqua ? 4.0 : 7.0) yRadius:(aqua ? 4.0 : 7.0)];
     [TGListSelectionBackground() set];
     [selectedPath fill];
-    [TGClassicNavigationSelectedStrokeColor(0.62) set];
-    [selectedPath setLineWidth:1.0];
-    [selectedPath stroke];
+    if (!aqua) {
+        [TGClassicNavigationSelectedStrokeColor(0.62) set];
+        [selectedPath setLineWidth:1.0];
+        [selectedPath stroke];
+    }
 }
 
 @end
@@ -96,10 +110,12 @@
         selected = row >= 0 && [[table selectedRowIndexes] containsIndex:(NSUInteger)row];
     }
     BOOL flipped = [controlView isFlipped];
-    NSRect avatarRect = NSMakeRect(NSMinX(cellFrame) + 9.0,
-                                   NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 34.0) / 2.0),
-                                   34.0,
-                                   34.0);
+    BOOL aqua = TGInterfaceDesignIsAqua();
+    CGFloat avatarSize = aqua ? 30.0 : 34.0;
+    NSRect avatarRect = NSMakeRect(NSMinX(cellFrame) + (aqua ? 10.0 : 9.0),
+                                   NSMinY(cellFrame) + floor((NSHeight(cellFrame) - avatarSize) / 2.0),
+                                   avatarSize,
+                                   avatarSize);
     NSString *title = [result displayTitle];
     TGDrawAvatarInRect([result avatarLocalPath], title, avatarRect, selected, flipped);
 
@@ -107,21 +123,25 @@
     CGFloat textWidth = MAX(40.0, NSMaxX(cellFrame) - textX - 12.0);
     NSColor *titleColor = selected ? (TGInterfaceDesignIsAqua() ? TGListSelectionForeground() : TGClassicHeaderTextColor(1.0)) : TGClassicCardInkColor();
     NSColor *detailColor = selected ? (TGInterfaceDesignIsAqua() ? TGListSelectionForeground() : TGClassicHeaderDetailTextColor(0.95)) : TGClassicCardMutedInkColor();
+    NSMutableParagraphStyle *paragraph = [[[NSMutableParagraphStyle alloc] init] autorelease];
+    [paragraph setLineBreakMode:(aqua ? NSLineBreakByTruncatingTail : NSLineBreakByWordWrapping)];
     NSDictionary *titleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
-                                     [NSFont boldSystemFontOfSize:12.5], NSFontAttributeName,
+                                     paragraph, NSParagraphStyleAttributeName,
+                                     [NSFont boldSystemFontOfSize:(aqua ? 12.0 : 12.5)], NSFontAttributeName,
                                      titleColor, NSForegroundColorAttributeName,
                                      nil];
     NSDictionary *detailAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
+                                      paragraph, NSParagraphStyleAttributeName,
                                       [NSFont systemFontOfSize:11.0], NSFontAttributeName,
                                       detailColor, NSForegroundColorAttributeName,
                                       nil];
-    [title drawInRect:NSMakeRect(textX, NSMinY(cellFrame) + 7.0, textWidth, 17.0)
+    [title drawInRect:NSMakeRect(textX, NSMinY(cellFrame) + (aqua ? 5.0 : 7.0), textWidth, 17.0)
        withAttributes:titleAttributes];
     NSString *detail = [result displaySubtitle];
     if ([detail length] == 0) {
         detail = TGLoc(@"search.chats.openHint");
     }
-    [detail drawInRect:NSMakeRect(textX, NSMinY(cellFrame) + 25.0, textWidth, 16.0)
+    [detail drawInRect:NSMakeRect(textX, NSMinY(cellFrame) + (aqua ? 23.0 : 25.0), textWidth, 16.0)
         withAttributes:detailAttributes];
 }
 
@@ -206,12 +226,12 @@
         [[_statusField cell] setLineBreakMode:NSLineBreakByTruncatingTail];
         [_statusField setFont:[NSFont systemFontOfSize:11.0]];
         [_statusField setTextColor:TGClassicMutedInkColor()];
-        [_statusField setStringValue:_statusText ? _statusText : @""];
+        [_statusField setStringValue:(TGInterfaceDesignIsAqua() ? TGLoc(@"search.chats.recentShort") : _statusText)];
         [self addSubview:_statusField];
 
         _tableView = [[TGChatSearchResultsTableView alloc] initWithFrame:NSZeroRect];
         [_tableView setHeaderView:nil];
-        [_tableView setRowHeight:50.0];
+        [_tableView setRowHeight:(TGInterfaceDesignIsAqua() ? 44.0 : 50.0)];
         [_tableView setDelegate:self];
         [_tableView setDataSource:self];
         [_tableView setTarget:self];
@@ -222,7 +242,7 @@
         [_tableView setUsesAlternatingRowBackgroundColors:NO];
         [_tableView setGridStyleMask:NSTableViewGridNone];
         [_tableView setSelectionHighlightStyle:NSTableViewSelectionHighlightStyleNone];
-        [_tableView setIntercellSpacing:NSMakeSize(0.0, 1.0)];
+        [_tableView setIntercellSpacing:NSMakeSize(0.0, TGInterfaceDesignIsAqua() ? 0.0 : 1.0)];
 
         NSTableColumn *resultColumn = [[[NSTableColumn alloc] initWithIdentifier:@"result"] autorelease];
         [resultColumn setWidth:400.0];
@@ -284,11 +304,14 @@
     NSRect bounds = [self bounds];
     CGFloat inset = 18.0;
     if (TGInterfaceDesignIsAqua()) {
-        CGFloat available = MAX(0.0, NSWidth(bounds) - inset * 2.0);
-        [_titleField setFrame:NSMakeRect(inset, 15.0, available, 22.0)];
-        [_searchField setFrame:NSMakeRect(inset, 48.0, available, 26.0)];
-        [_statusField setFrame:NSMakeRect(inset, 84.0, available, 18.0)];
-        [_scrollView setFrame:NSMakeRect(inset, 112.0, available, MAX(0.0, NSHeight(bounds) - 130.0))];
+        // One native query field, one quiet section line, then the source list.
+        // No repeated title or nested row cards inside an already framed popover.
+        CGFloat available = MAX(0.0, NSWidth(bounds) - 24.0);
+        [_titleField setHidden:YES];
+        [_titleField setFrame:NSZeroRect];
+        [_searchField setFrame:NSMakeRect(12.0, 12.0, available, 26.0)];
+        [_statusField setFrame:NSMakeRect(14.0, 46.0, MAX(0.0,NSWidth(bounds)-28.0), 17.0)];
+        [_scrollView setFrame:NSMakeRect(0.0, 70.0, NSWidth(bounds), MAX(0.0, NSHeight(bounds) - 76.0))];
     } else {
         [_titleField setFrame:NSMakeRect(inset + 6.0, 18.0, MAX(80.0, NSWidth(bounds) - (inset * 2.0) - 12.0), 22.0)];
         [_searchField setFrame:NSMakeRect(inset + 48.0, 67.0, MAX(92.0, NSWidth(bounds) - (inset * 2.0) - 62.0), 21.0)];
@@ -333,12 +356,11 @@
     (void)dirtyRect;
     NSRect bounds = [self bounds];
     if (TGInterfaceDesignIsAqua()) {
-        TGAquaDrawSurfaceInPath([NSBezierPath bezierPathWithRect:bounds], bounds, TGThemeSurfaceRail, [self isFlipped]);
-        NSRect header = NSMakeRect(0, 0, NSWidth(bounds), 108.0);
+        [TGClassicTablePaperColor() set]; NSRectFill(bounds);
+        NSRect header = NSMakeRect(0, 0, NSWidth(bounds), 69.0);
         TGAquaDrawSurfaceInPath([NSBezierPath bezierPathWithRect:header], header, TGThemeSurfaceHeader, [self isFlipped]);
-        NSRect results = NSInsetRect([_scrollView frame], -1.0, -1.0);
-        [TGClassicTablePaperColor() set]; NSRectFill(results);
-        [TGClassicPanelStrokeColor() set]; NSFrameRect(results);
+        [TGClassicTableGridColor() set];
+        NSRectFill(NSMakeRect(0.0,69.0,NSWidth(bounds),1.0));
         return;
     }
     TGThemeDrawWindowBackgroundInRect(bounds, [self isFlipped]);
@@ -397,7 +419,10 @@
     }
     [_statusText release];
     _statusText = [statusText copy];
-    [_statusField setStringValue:(_statusText ? _statusText : @"")];
+    NSString *display = _statusText ? _statusText : @"";
+    if (TGInterfaceDesignIsAqua() && [display isEqualToString:TGLoc(@"search.chats.recent")])
+        display = TGLoc(@"search.chats.recentShort");
+    [_statusField setStringValue:display];
 }
 
 - (void)setResults:(NSArray *)results {

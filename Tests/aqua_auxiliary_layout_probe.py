@@ -162,13 +162,33 @@ int main(int argc,const char **argv) {
     Require([find numberOfItems]==2 && [[find itemAtIndex:0] action]==@selector(openChatSearch:) && [[find itemAtIndex:1] action]==@selector(openChatListSearch:),"Search menu exposes distinct existing conversation and chat actions");
     Require([[[find itemAtIndex:0] keyEquivalent] isEqual:@"f"] && [[[find itemAtIndex:1] keyEquivalent] isEqual:@"k"] && [[find itemAtIndex:0] keyEquivalentModifierMask]==NSCommandKeyMask && [[find itemAtIndex:1] keyEquivalentModifierMask]==NSCommandKeyMask,"menu documents existing CmdF and CmdK shortcuts");
     if(aqua) CheckSearchPresentation();
+    if(aqua) {
+        for(NSString *language in [NSArray arrayWithObjects:@"ru",@"be",@"en",nil]) {
+            TGSetLanguageCode(language);
+            for(NSNumber *width in [NSArray arrayWithObjects:@280,@320,@400,nil]) {
+                for(NSNumber *height in [NSArray arrayWithObjects:@220,@340,nil]) {
+                    TGChatSearchPanelView *compact=[[[TGChatSearchPanelView alloc] initWithFrame:NSMakeRect(0,0,[width doubleValue],[height doubleValue])] autorelease];
+                    compact.results=results;
+                    NSTextField *title=[compact valueForKey:@"titleField"],*status=[compact valueForKey:@"statusField"];
+                    NSScrollView *list=[compact valueForKey:@"scrollView"];
+                    Require([title isHidden] && NSIsEmptyRect([title frame]),"compact Aqua search has no repeated large title");
+                    Require([[status stringValue] isEqual:TGLoc(@"search.chats.recentShort")],"recent section uses complete short localized label");
+                    Require(NSMaxY([[compact searchField] frame]) < NSMinY([status frame]) && NSMaxY([status frame]) < NSMinY([list frame]),"query, section label and list never overlap");
+                    Require(NSContainsRect([compact bounds],[list frame]) && NSMinY([list frame])<=70 && NSWidth([list frame])==[width doubleValue],"compact results reclaim header and card padding at minimum size");
+                    Require([[list documentView] rowHeight]==44 && [list hasVerticalScroller],"compact source rows retain native scrolling for overflow");
+                    compact.statusText=@"Network unavailable";
+                    Require([[status stringValue] isEqual:@"Network unavailable"],"compact status still shows loading/error result text");
+                }
+            }
+        }
+    }
     NSUInteger layouts=0;
     for(NSString *language in [NSArray arrayWithObjects:@"ru",@"be",@"en",nil]) {
         TGSetLanguageCode(language);
         for(NSNumber *width in [NSArray arrayWithObjects:@320,@420,@620,nil]) {
             [panel setFrameSize:NSMakeSize([width doubleValue],460)];
             for(NSString *key in [NSArray arrayWithObjects:@"titleField",@"searchField",@"statusField",@"scrollView",nil])
-                Require(NSContainsRect([panel bounds],[[panel valueForKey:key] frame]),"search controls fit narrow window");
+                Require([[panel valueForKey:key] isHidden] || NSContainsRect([panel bounds],[[panel valueForKey:key] frame]),"visible search controls fit narrow window");
             Require([TGLoc(@"downloads.short") sizeWithAttributes:[NSDictionary dictionaryWithObject:[NSFont boldSystemFontOfSize:13] forKey:NSFontAttributeName]].width+24<=112,"localized toolbar download caption fits full button");
             if(aqua) Require([[panel searchField] isBezeled] && [[[panel searchField] cell] searchButtonCell]!=nil && [[[panel searchField] cell] cancelButtonCell]!=nil,"Aqua uses native search and clear affordances");
             layouts++;
