@@ -11,9 +11,11 @@ static char TGUtilityWindowScreenObserverKey;
 
 // The window owns this observer; the back-reference is deliberately non-owning.
 @interface TGUtilityWindowScreenObserver : NSObject { NSWindow *_window; BOOL _fitting; }
+@property(nonatomic,assign) BOOL fitting;
 - (id)initWithWindow:(NSWindow *)window;
 @end
 @implementation TGUtilityWindowScreenObserver
+@synthesize fitting=_fitting;
 - (id)initWithWindow:(NSWindow *)window {
     self=[super init];if(self){_window=window;
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(screenChanged:) name:NSWindowDidChangeScreenNotification object:window];
@@ -21,8 +23,7 @@ static char TGUtilityWindowScreenObserverKey;
     return self;
 }
 - (void)screenChanged:(NSNotification *)notification {
-    (void)notification;if(_fitting)return;_fitting=YES;
-    TGFitUtilityWindowToVisibleScreen(_window);_fitting=NO;
+    (void)notification;if(!_fitting)TGFitUtilityWindowToVisibleScreen(_window);
 }
 - (void)dealloc {[[NSNotificationCenter defaultCenter] removeObserver:self];[super dealloc];}
 @end
@@ -44,6 +45,8 @@ NSRect TGUtilityWindowFrameFittingVisibleFrame(NSRect frame, NSRect visibleFrame
 
 void TGFitUtilityWindowToVisibleFrame(NSWindow *window, NSRect visibleFrame) {
     if (!window || ![NSThread isMainThread] || NSIsEmptyRect(visibleFrame)) return;
+    TGUtilityWindowScreenObserver *screenObserver=objc_getAssociatedObject(window,&TGUtilityWindowScreenObserverKey);
+    if(screenObserver.fitting)return;
     NSDictionary *limits = objc_getAssociatedObject(window,&TGUtilityWindowOriginalLimitsKey);
     if (!limits) {
         NSSize minimum = [window minSize];
@@ -54,7 +57,11 @@ void TGFitUtilityWindowToVisibleFrame(NSWindow *window, NSRect visibleFrame) {
         objc_setAssociatedObject(window,&TGUtilityWindowOriginalLimitsKey,limits,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         TGUtilityWindowScreenObserver *observer=[[[TGUtilityWindowScreenObserver alloc] initWithWindow:window] autorelease];
         objc_setAssociatedObject(window,&TGUtilityWindowScreenObserverKey,observer,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        screenObserver=observer;
     }
+    // setFrame can synchronously announce a screen change. Finish this fit
+    // before responding to it, including explicit fits to another display.
+    screenObserver.fitting=YES;
     NSSize minimum = [[limits objectForKey:@"minimum"] sizeValue];
     NSSize maximum = [[limits objectForKey:@"maximum"] sizeValue];
     NSRect fitted = TGUtilityWindowFrameFittingVisibleFrame([window frame],visibleFrame);
@@ -96,6 +103,7 @@ void TGFitUtilityWindowToVisibleFrame(NSWindow *window, NSRect visibleFrame) {
         NSView *document = [scroll documentView];
         [document scrollPoint:NSMakePoint(0,[document isFlipped] ? 0 : MAX(0.0,NSHeight([document bounds])-NSHeight([[scroll contentView] bounds])))];
     }
+    screenObserver.fitting=NO;
 }
 
 void TGFitUtilityWindowToVisibleScreen(NSWindow *window) {

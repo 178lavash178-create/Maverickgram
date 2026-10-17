@@ -615,7 +615,7 @@ HOME="$TEST_HOME" "$BUILD_DIR/aqua-chat-info-routing-probe"
 "$PYTHON_BIN" Tests/aqua_audio_routing_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 
 # Recording construction/state checks deliberately use no camera or microphone.
-"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_recording_ui_probe.m Sources/UI/TGVideoNoteRecorderWindowController.m Sources/UI/TGAquaRecordingViews.m Sources/UI/TGAquaShellViews.m Sources/UI/TGAquaAppearance.m Sources/UI/TGLocalization.m -framework Cocoa -framework AVFoundation -framework QuartzCore -framework CoreMedia -o "$BUILD_DIR/aqua-recording-ui-probe"
+"$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_recording_ui_probe.m Sources/UI/TGVideoNoteRecorderWindowController.m Sources/UI/TGAquaRecordingViews.m Sources/UI/TGAquaShellViews.m Sources/UI/TGAquaAppearance.m Sources/UI/TGLocalization.m Sources/UI/TGDialogPresentation.m -framework Cocoa -framework AVFoundation -framework QuartzCore -framework CoreMedia -o "$BUILD_DIR/aqua-recording-ui-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/aqua-recording-ui-probe"
 
 "$PYTHON_BIN" Tests/aqua_attachment_tracking_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
