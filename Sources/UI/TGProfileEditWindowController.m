@@ -5,6 +5,10 @@
 #import "TGTheme.h"
 #import "TGThemeTextField.h"
 #import "TGLocalization.h"
+#import "TGInterfaceDesign.h"
+#import "TGAquaAppearance.h"
+#import "TGAquaShellViews.h"
+#import "TGStatusViewComponents.h"
 
 @interface TGProfileEditBackgroundView : NSView
 @end
@@ -22,11 +26,16 @@
     NSTextField *_lastNameField;
     NSTextField *_usernameField;
     NSTextField *_bioField;
+    NSTextView *_bioTextView;
+    NSScrollView *_bioScrollView;
+    TGProfileAvatarView *_avatarView;
+    BOOL _saving;
     NSTextField *_errorField;
     NSButton *_photoButton;
     NSButton *_saveButton;
     NSButton *_cancelButton;
 }
+- (void)buildAquaProfileEditor;
 - (void)chooseProfilePhoto:(id)sender;
 - (void)saveProfile:(id)sender;
 - (void)cancelProfileEdit:(id)sender;
@@ -37,6 +46,7 @@
 @synthesize delegate = _delegate;
 
 #include "TGProfileEditWindowController+Fields.inc"
+#include "TGProfileEditWindowController+Aqua.inc"
 
 static NSString *TGPreparedProfilePhotoPath(NSString *sourcePath, NSError **error) {
     NSImage *sourceImage = [[[NSImage alloc] initWithContentsOfFile:sourcePath] autorelease];
@@ -81,7 +91,8 @@ static NSString *TGPreparedProfilePhotoPath(NSString *sourcePath, NSError **erro
 }
 
 - (id)init {
-    NSWindow *window = [[[NSWindow alloc] initWithContentRect:NSMakeRect(0.0, 0.0, 470.0, 450.0)
+    BOOL aqua = TGInterfaceDesignIsAqua();
+    NSWindow *window = [[[NSWindow alloc] initWithContentRect:NSMakeRect(0.0, 0.0, aqua ? 500.0 : 470.0, aqua ? 540.0 : 450.0)
                                                    styleMask:(NSTitledWindowMask | NSClosableWindowMask)
                                                      backing:NSBackingStoreBuffered
                                                        defer:NO] autorelease];
@@ -89,6 +100,7 @@ static NSString *TGPreparedProfilePhotoPath(NSString *sourcePath, NSError **erro
     [window setReleasedWhenClosed:NO];
     self = [super initWithWindow:window];
     if (self) {
+        if (aqua) { [self buildAquaProfileEditor]; return self; }
         TGProfileEditBackgroundView *contentView = [[[TGProfileEditBackgroundView alloc] initWithFrame:NSMakeRect(0.0, 0.0, 470.0, 450.0)] autorelease];
         [window setContentView:contentView];
 
@@ -157,6 +169,9 @@ static NSString *TGPreparedProfilePhotoPath(NSString *sourcePath, NSError **erro
     [_lastNameField release];
     [_usernameField release];
     [_bioField release];
+    [_bioTextView release];
+    [_bioScrollView release];
+    [_avatarView release];
     [_errorField release];
     [_photoButton release];
     [_saveButton release];
@@ -172,11 +187,30 @@ static NSString *TGPreparedProfilePhotoPath(NSString *sourcePath, NSError **erro
     [_lastNameField setStringValue:lastName ? lastName : @""];
     [_usernameField setStringValue:username ? username : @""];
     [_bioField setStringValue:bio ? bio : @""];
+    // A reopened profile is a new edit session. Native undo can otherwise keep
+    // ranges from a much longer previous bio and resurrect a cancelled draft.
+    [_bioTextView breakUndoCoalescing];
+    [[_bioTextView undoManager] removeAllActions];
+    [_bioTextView setString:bio ? bio : @""];
+    [_bioTextView breakUndoCoalescing];
+    [[_bioTextView undoManager] removeAllActions];
+    [_bioTextView setSelectedRange:NSMakeRange(0,0)];
+    [_bioTextView scrollRangeToVisible:NSMakeRange(0,0)];
+    NSString *displayName = [NSString stringWithFormat:@"%@ %@",firstName ? firstName : @"",lastName ? lastName : @""];
+    [_avatarView setDisplayName:[displayName stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
     [self showErrorMessage:nil];
     [self setSaving:NO];
 }
 
+- (void)setAvatarLocalPath:(NSString *)localPath {
+    [_avatarView setAvatarLocalPath:localPath];
+}
+
 - (void)setSaving:(BOOL)saving {
+    _saving = saving;
+    [_bioTextView setEditable:!saving];
+    [_bioTextView setSelectable:!saving];
+    if (_bioTextView) [[[self window] standardWindowButton:NSWindowCloseButton] setEnabled:!saving];
     [_firstNameField setEnabled:!saving];
     [_lastNameField setEnabled:!saving];
     [_usernameField setEnabled:!saving];
@@ -188,10 +222,12 @@ static NSString *TGPreparedProfilePhotoPath(NSString *sourcePath, NSError **erro
 
 - (void)showErrorMessage:(NSString *)message {
     [_errorField setStringValue:message ? message : @""];
+    if (_bioTextView) { [_errorField setHidden:[message length]==0]; [_errorField setToolTip:message]; }
 }
 
 - (void)chooseProfilePhoto:(id)sender {
     (void)sender;
+    if (_saving) return;
     NSOpenPanel *panel = [NSOpenPanel openPanel];
     [panel setCanChooseDirectories:NO];
     [panel setCanChooseFiles:YES];
@@ -216,10 +252,12 @@ static NSString *TGPreparedProfilePhotoPath(NSString *sourcePath, NSError **erro
 
 - (void)saveProfile:(id)sender {
     (void)sender;
+    if (_saving) return;
+    if (_bioTextView) [[self window] makeFirstResponder:nil];
     NSString *firstName = [[_firstNameField stringValue] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     NSString *lastName = [[_lastNameField stringValue] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     NSString *username = [[_usernameField stringValue] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    NSString *bio = [[_bioField stringValue] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    NSString *bio = [(_bioTextView ? [_bioTextView string] : [_bioField stringValue]) stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     if ([username hasPrefix:@"@"]) {
         username = [username substringFromIndex:1];
     }
@@ -239,6 +277,7 @@ static NSString *TGPreparedProfilePhotoPath(NSString *sourcePath, NSError **erro
 
 - (void)cancelProfileEdit:(id)sender {
     (void)sender;
+    if (_saving) return;
     [[self window] orderOut:self];
 }
 

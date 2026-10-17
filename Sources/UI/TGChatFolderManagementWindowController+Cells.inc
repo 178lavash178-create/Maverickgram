@@ -27,11 +27,15 @@
     CGFloat textX = NSMaxX(iconRect) + 8.0;
     CGFloat textWidth = MAX(36.0, NSMaxX(cellFrame) - textX - 8.0);
     BOOL shared = [[folder objectForKey:@"is_shareable"] boolValue];
+    NSMutableParagraphStyle *paragraph=[[[NSMutableParagraphStyle alloc] init] autorelease];
+    [paragraph setLineBreakMode:TGInterfaceDesignIsAqua() ? NSLineBreakByTruncatingTail : NSLineBreakByWordWrapping];
     NSDictionary *titleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
+                                     paragraph, NSParagraphStyleAttributeName,
                                      [NSFont boldSystemFontOfSize:12.0], NSFontAttributeName,
                                      titleColor, NSForegroundColorAttributeName,
                                      nil];
     NSDictionary *detailAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
+                                      paragraph, NSParagraphStyleAttributeName,
                                       [NSFont systemFontOfSize:10.0], NSFontAttributeName,
                                       detailColor, NSForegroundColorAttributeName,
                                       nil];
@@ -81,11 +85,15 @@
 
     CGFloat textX = NSMaxX(avatarRect) + 9.0;
     CGFloat width = MAX(40.0, NSMaxX(cellFrame) - textX - 8.0);
+    NSMutableParagraphStyle *paragraph=[[[NSMutableParagraphStyle alloc] init] autorelease];
+    [paragraph setLineBreakMode:TGInterfaceDesignIsAqua() ? NSLineBreakByTruncatingTail : NSLineBreakByWordWrapping];
     NSDictionary *titleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
+                                     paragraph, NSParagraphStyleAttributeName,
                                      [NSFont boldSystemFontOfSize:12.0], NSFontAttributeName,
                                      titleColor, NSForegroundColorAttributeName,
                                      nil];
     NSDictionary *detailAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
+                                      paragraph, NSParagraphStyleAttributeName,
                                       [NSFont systemFontOfSize:10.0], NSFontAttributeName,
                                       detailColor, NSForegroundColorAttributeName,
                                       nil];

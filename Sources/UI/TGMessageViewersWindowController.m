@@ -7,17 +7,6 @@
 #import "TGThemeContrast.h"
 #import "TGStatusViewCells.h"
 
-@interface TGAquaMessageViewersBackgroundView : NSView
-@end
-@implementation TGAquaMessageViewersBackgroundView
-- (void)drawRect:(NSRect)dirtyRect {
-    (void)dirtyRect;
-    NSRect bounds=[self bounds];
-    TGAquaDrawSurfaceInPath([NSBezierPath bezierPathWithRect:bounds],bounds,TGThemeSurfaceRail,[self isFlipped]);
-    TGThemeDrawHeaderBackgroundInRect(NSMakeRect(0,MAX(0,NSHeight(bounds)-76),NSWidth(bounds),MIN(76,NSHeight(bounds))),[self isFlipped]);
-}
-@end
-
 @interface TGMessageViewersWindowController ()
 @property (nonatomic, retain) NSTextField *titleField;
 @property (nonatomic, retain) NSTextField *subtitleField;
@@ -37,7 +26,7 @@
 @synthesize imageLoadTokens = _imageLoadTokens;
 
 - (id)initWithMessagePreview:(NSString *)messagePreview {
-    NSRect frame = NSMakeRect(0, 0, 420, 340);
+    NSRect frame = TGInterfaceDesignIsAqua() ? NSMakeRect(0, 0, 360, 320) : NSMakeRect(0, 0, 420, 340);
     NSWindow *window = [[[NSWindow alloc] initWithContentRect:frame
                                                     styleMask:(NSTitledWindowMask | NSClosableWindowMask)
                                                       backing:NSBackingStoreBuffered
@@ -82,30 +71,31 @@
 - (void)buildViews {
     NSView *root = [[self window] contentView];
     if (TGInterfaceDesignIsAqua()) {
-        root=[[[TGAquaMessageViewersBackgroundView alloc] initWithFrame:[root bounds]] autorelease];
+        TGAquaUtilityWindowView *utility = [[[TGAquaUtilityWindowView alloc] initWithFrame:[root bounds]] autorelease];
+        utility.headerHeight = 64.0; utility.footerHeight = 0.0;
+        root = utility;
         [[self window] setContentView:root];
-        TGGroupedCardView *card=[[[TGGroupedCardView alloc] initWithFrame:NSMakeRect(18,18,384,244)] autorelease];
-        [root addSubview:card];
     } else {
         [root setWantsLayer:YES];
         [[root layer] setBackgroundColor:[[NSColor colorWithCalibratedRed:0.91 green:0.95 blue:0.98 alpha:1.0] CGColor]];
     }
 
-    self.titleField = [self labelWithFrame:NSMakeRect(24, 294, 372, 24)
-                                      font:[NSFont boldSystemFontOfSize:18.0]
+    self.titleField = [self labelWithFrame:TGInterfaceDesignIsAqua()?NSMakeRect(14, 292, 332, 20):NSMakeRect(24, 294, 372, 24)
+                                      font:[NSFont boldSystemFontOfSize:TGInterfaceDesignIsAqua()?13.0:18.0]
                                      color:TGInterfaceDesignIsAqua()?TGClassicHeaderTextColor(1):[NSColor colorWithCalibratedWhite:0.08 alpha:1.0]];
-    [self.titleField setAlignment:NSCenterTextAlignment];
+    [self.titleField setAlignment:TGInterfaceDesignIsAqua()?NSLeftTextAlignment:NSCenterTextAlignment];
     [self.titleField setStringValue:TGLoc(@"message.viewers.title")];
     [root addSubview:self.titleField];
 
-    self.subtitleField = [self labelWithFrame:NSMakeRect(34, 268, 352, 18)
+    self.subtitleField = [self labelWithFrame:TGInterfaceDesignIsAqua()?NSMakeRect(14, 268, 332, 18):NSMakeRect(34, 268, 352, 18)
                                          font:[NSFont systemFontOfSize:12.0]
                                         color:TGInterfaceDesignIsAqua()?TGThemeSurfaceInkColor(TGClassicHeaderDetailTextColor(1),TGThemeSurfaceHeader,5.4):[NSColor colorWithCalibratedWhite:0.35 alpha:1.0]];
-    [self.subtitleField setAlignment:NSCenterTextAlignment];
+    [self.subtitleField setAlignment:TGInterfaceDesignIsAqua()?NSLeftTextAlignment:NSCenterTextAlignment];
+    [self.subtitleField setToolTip:self.messagePreview];
     [self.subtitleField setStringValue:([self.messagePreview length] > 0 ? self.messagePreview : TGLoc(@"message"))];
     [root addSubview:self.subtitleField];
 
-    self.scrollView = [[[NSScrollView alloc] initWithFrame:NSMakeRect(24, 24, 372, 232)] autorelease];
+    self.scrollView = [[[NSScrollView alloc] initWithFrame:TGInterfaceDesignIsAqua()?NSMakeRect(0, 0, 360, 256):NSMakeRect(24, 24, 372, 232)] autorelease];
     [self.scrollView setHasVerticalScroller:YES];
     [self.scrollView setBorderType:NSNoBorder];
     [self.scrollView setDrawsBackground:NO];
@@ -113,9 +103,25 @@
         [[self.scrollView contentView] setDrawsBackground:NO];
         [self.scrollView setScrollerStyle:NSScrollerStyleOverlay];[self.scrollView setAutohidesScrollers:YES];
     }
-    self.contentView = [[[NSView alloc] initWithFrame:NSMakeRect(0, 0, 352, 232)] autorelease];
+    self.contentView = [[[NSView alloc] initWithFrame:NSMakeRect(0, 0, TGInterfaceDesignIsAqua()?360:352, TGInterfaceDesignIsAqua()?256:232)] autorelease];
     [self.scrollView setDocumentView:self.contentView];
     [root addSubview:self.scrollView];
+}
+
+- (void)showNearRect:(NSRect)rect ofView:(NSView *)view {
+    NSWindow *parent = [view window];
+    if (TGInterfaceDesignIsAqua() && parent && !NSIsEmptyRect(rect)) {
+        NSRect anchor = [parent convertRectToScreen:[view convertRect:rect toView:nil]];
+        NSRect visible = [[parent screen] visibleFrame];
+        NSRect frame = [[self window] frame];
+        CGFloat x = NSMaxX(anchor) + 8.0;
+        if (x + NSWidth(frame) > NSMaxX(visible)-8.0) x = NSMinX(anchor)-NSWidth(frame)-8.0;
+        x = MAX(NSMinX(visible)+8.0,MIN(x,NSMaxX(visible)-NSWidth(frame)-8.0));
+        CGFloat y = MAX(NSMinY(visible)+8.0,MIN(NSMaxY(anchor)-NSHeight(frame),NSMaxY(visible)-NSHeight(frame)-8.0));
+        [[self window] setFrameOrigin:NSMakePoint(x,y)];
+    } else [[self window] center];
+    [self showWindow:nil];
+    [[self window] makeKeyAndOrderFront:nil];
 }
 
 - (void)clearContent {
@@ -134,11 +140,12 @@
 
 - (void)setSingleMessage:(NSString *)message color:(NSColor *)color {
     [self clearContent];
-    [self.contentView setFrame:NSMakeRect(0, 0, 352, 232)];
-    NSTextField *label = [self labelWithFrame:NSMakeRect(18, 100, 316, 24)
+    [self.contentView setFrame:NSMakeRect(0, 0, TGInterfaceDesignIsAqua()?360:352, TGInterfaceDesignIsAqua()?256:232)];
+    NSTextField *label = [self labelWithFrame:TGInterfaceDesignIsAqua()?NSMakeRect(18, 102, 324, 44):NSMakeRect(18, 100, 316, 24)
                                          font:[NSFont systemFontOfSize:13.0]
                                         color:TGInterfaceDesignIsAqua()?TGThemeSurfaceInkColor(color,TGThemeSurfaceCard,4.5):color];
     [label setAlignment:NSCenterTextAlignment];
+    if (TGInterfaceDesignIsAqua()) { [[label cell] setWraps:YES]; [[label cell] setLineBreakMode:NSLineBreakByWordWrapping]; }
     [label setStringValue:([message length] > 0 ? message : TGLoc(@"message.viewers.noData"))];
     [self.contentView addSubview:label];
 }
@@ -168,18 +175,20 @@
         return;
     }
 
-    CGFloat rowHeight = 46.0;
-    CGFloat totalHeight = MAX(232.0, rowHeight * [viewerSummaries count]);
-    [self.contentView setFrame:NSMakeRect(0, 0, 352, totalHeight)];
+    BOOL aqua = TGInterfaceDesignIsAqua();
+    CGFloat rowHeight = aqua ? 52.0 : 46.0;
+    CGFloat width = aqua ? 360.0 : 352.0;
+    CGFloat totalHeight = MAX(aqua?256.0:232.0, rowHeight * [viewerSummaries count]);
+    [self.contentView setFrame:NSMakeRect(0, 0, width, totalHeight)];
 
     NSUInteger index = 0;
     for (index = 0; index < [viewerSummaries count]; index++) {
         NSDictionary *summary = [viewerSummaries objectAtIndex:index];
         CGFloat y = totalHeight - ((CGFloat)index + 1.0) * rowHeight;
-        NSView *row = [[[NSView alloc] initWithFrame:NSMakeRect(0, y, 352, rowHeight)] autorelease];
+        NSView *row = [[[NSView alloc] initWithFrame:NSMakeRect(0, y, width, rowHeight)] autorelease];
 
         NSString *avatarPath = [summary objectForKey:@"avatar_local_path"];
-        NSImageView *avatarView = [[[NSImageView alloc] initWithFrame:NSMakeRect(10, 7, 32, 32)] autorelease];
+        NSImageView *avatarView = [[[NSImageView alloc] initWithFrame:aqua?NSMakeRect(14,10,32,32):NSMakeRect(10, 7, 32, 32)] autorelease];
         if ([avatarPath length] > 0) {
             NSImage *avatar = TGMediaCachedThumbnailFromFile(avatarPath, 64);
             if (avatar) {
@@ -199,20 +208,21 @@
         [avatarView setImageScaling:NSImageScaleProportionallyUpOrDown];
         [row addSubview:avatarView];
 
-        NSTextField *name = [self labelWithFrame:NSMakeRect(54, 16, 220, 18)
+        NSTextField *name = [self labelWithFrame:aqua?NSMakeRect(58,27,284,18):NSMakeRect(54, 16, 220, 18)
                                             font:[NSFont boldSystemFontOfSize:13.0]
                                            color:TGInterfaceDesignIsAqua()?TGClassicCardInkColor():[NSColor colorWithCalibratedWhite:0.12 alpha:1.0]];
         NSString *displayName = [summary objectForKey:@"display_name"];
-        [name setStringValue:([displayName length] > 0 ? displayName : @"Unknown")];
+        [name setStringValue:([displayName length] > 0 ? displayName : TGLoc(@"message.viewers.unknown"))];
+        [name setToolTip:[name stringValue]];
         [row addSubview:name];
 
         NSString *reactionDisplay = [summary objectForKey:@"reaction_display"];
         if ([reactionDisplay length] > 0) {
             if (TGInterfaceDesignIsAqua()) {
-                [name setFrameSize:NSMakeSize(184,18)];
+                [name setFrameSize:NSMakeSize(246,18)];
                 [name setToolTip:[name stringValue]];
             }
-            NSTextField *reaction = [self labelWithFrame:NSMakeRect(246, 14, 28, 22)
+            NSTextField *reaction = [self labelWithFrame:aqua?NSMakeRect(312,18,30,24):NSMakeRect(246, 14, 28, 22)
                                                      font:[NSFont systemFontOfSize:16.0]
                                                     color:TGInterfaceDesignIsAqua()?TGClassicCardInkColor():[NSColor colorWithCalibratedWhite:0.18 alpha:1.0]];
             [reaction setAlignment:NSCenterTextAlignment];
@@ -226,21 +236,24 @@
             NSDateFormatter *formatter = [[[NSDateFormatter alloc] init] autorelease];
             [formatter setDateStyle:NSDateFormatterNoStyle];
             [formatter setTimeStyle:NSDateFormatterShortStyle];
-            NSTextField *time = [self labelWithFrame:NSMakeRect(278, 16, 62, 18)
+            NSTextField *time = [self labelWithFrame:aqua?NSMakeRect(58,8,242,16):NSMakeRect(278, 16, 62, 18)
                                                 font:[NSFont systemFontOfSize:12.0]
                                                color:TGInterfaceDesignIsAqua()?TGClassicCardMutedInkColor():[NSColor colorWithCalibratedWhite:0.50 alpha:1.0]];
-            [time setAlignment:NSRightTextAlignment];
+            [time setAlignment:aqua?NSLeftTextAlignment:NSRightTextAlignment];
             [time setStringValue:[formatter stringFromDate:date]];
             [row addSubview:time];
         }
 
         if (index + 1 < [viewerSummaries count]) {
-            NSBox *line = [[[NSBox alloc] initWithFrame:NSMakeRect(54, 0, 286, 1)] autorelease];
+            NSBox *line = [[[NSBox alloc] initWithFrame:aqua?NSMakeRect(58,0,284,1):NSMakeRect(54, 0, 286, 1)] autorelease];
             [line setBoxType:NSBoxSeparator];
             [row addSubview:line];
         }
 
         [self.contentView addSubview:row];
+    }
+    if (aqua) {
+        [self.contentView scrollPoint:NSMakePoint(0,MAX(0.0,totalHeight-NSHeight([[self.scrollView contentView] bounds])))];
     }
 }
 

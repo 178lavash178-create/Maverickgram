@@ -11,6 +11,8 @@
 #import "TGStatusViewCells.h"
 #import "TGTheme.h"
 #import "TGThemeContrast.h"
+#import "TGInterfaceDesign.h"
+#import "TGAquaAppearance.h"
 
 @interface TGLocationPickerWindowController ()
 @property (nonatomic, retain) TGTDLibClient *client;
@@ -141,7 +143,10 @@
     return image;
 }
 
+#include "TGLocationPickerWindowController+Aqua.inc"
+
 - (void)buildViews {
+    if (TGInterfaceDesignIsAqua()) { [self buildAquaViews]; return; }
     CGFloat height = NSHeight([[[self window] contentView] bounds]);
     TGUtilityWindowView *root = [[[TGUtilityWindowView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease];
     [[self window] setContentView:root];
@@ -229,6 +234,7 @@
     }
     [self.statusField setStringValue:[NSString stringWithFormat:TGLoc(@"share.location.coordinates"),
                                       coordinate.latitude, coordinate.longitude]];
+    [self.statusField setToolTip:[self.statusField stringValue]];
     if (reloadMap) {
         [self reloadMapThumbnail];
     }
@@ -239,6 +245,7 @@
     NSUInteger generation = self.mapGeneration;
     CLLocationCoordinate2D coordinate = self.selectedCoordinate;
     NSInteger zoom = self.mapZoom;
+    NSSize mapSize = [self.mapImageView bounds].size;
     [self.spinner startAnimation:nil];
     [self.statusField setStringValue:TGLoc(@"share.location.mapLoading")];
     TGTDLibClient *client = [self.client retain];
@@ -247,12 +254,12 @@
         NSError *error = nil;
         NSString *path = [[client mapThumbnailPathForLatitude:coordinate.latitude
                                                    longitude:coordinate.longitude
-                                                        zoom:zoom width:580 height:294
+                                                        zoom:zoom width:(NSInteger)mapSize.width height:(NSInteger)mapSize.height
                                                      timeout:12.0 error:&error] copy];
         NSImage *image = [path length] > 0 ? [[NSImage alloc] initWithContentsOfFile:path] : nil;
         NSString *failure = [[error localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
-            if (generation == self.mapGeneration) {
+            if (!self.closing && generation == self.mapGeneration) {
                 [self.spinner stopAnimation:nil];
                 if (image) {
                     [self.mapImageView setMapImage:image
