@@ -109,7 +109,15 @@ static void RasterRows(void) {
 static void SourceListRaster(NSTableView *table) {
  assert([table focusRingType]==NSFocusRingTypeNone && [table selectionHighlightStyle]==NSTableViewSelectionHighlightStyleNone);Checks++;
  NSRect rect=NSMakeRect(0,0,NSWidth([table bounds]),[table rowHeight]);
- NSBitmapImageRep *bitmap=[table bitmapImageRepForCachingDisplayInRect:rect];[table cacheDisplayInRect:rect toBitmapImageRep:bitmap];
+ // Never-ordered windows are not drawable on10.9; cacheDisplay can silently
+ // produce a transparent bitmap there. Supply a real context, then exercise
+ // the actual source-list background, selected row and native cell renderer.
+ NSBitmapImageRep *bitmap=[[[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:(NSInteger)NSWidth(rect) pixelsHigh:(NSInteger)NSHeight(rect) bitsPerSample:8 samplesPerPixel:4 hasAlpha:YES isPlanar:NO colorSpaceName:NSCalibratedRGBColorSpace bytesPerRow:0 bitsPerPixel:0] autorelease];
+ NSGraphicsContext *bitmapContext=[NSGraphicsContext graphicsContextWithBitmapImageRep:bitmap];
+ [NSGraphicsContext saveGraphicsState];[NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithGraphicsPort:[bitmapContext graphicsPort] flipped:[table isFlipped]]];
+ if([table isFlipped]){NSAffineTransform *flip=[NSAffineTransform transform];[flip translateXBy:0 yBy:NSHeight(rect)];[flip scaleXBy:1 yBy:-1];[flip concat];}
+ [table drawBackgroundInClipRect:rect];[table drawRow:0 clipRect:rect];
+ [NSGraphicsContext restoreGraphicsState];
  CGFloat scale=[bitmap pixelsWide]/NSWidth(rect);NSInteger y=(NSInteger)(NSHeight(rect)*scale/2);
  NSColor *left=[[bitmap colorAtX:(NSInteger)(scale) y:y] colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
  NSColor *right=[[bitmap colorAtX:[bitmap pixelsWide]-1-(NSInteger)scale y:y] colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
