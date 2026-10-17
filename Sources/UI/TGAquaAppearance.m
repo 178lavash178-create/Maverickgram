@@ -150,3 +150,33 @@ NSColor *TGAquaMessageFooterColor(BOOL outgoing, BOOL flipped) {
     (void)flipped; // The material is oriented consistently in either coordinate system.
     return [TGAquaGradient(outgoing ? 0xDDEEFF : 0xFFFFFF,outgoing ? 0xBCD9F6 : 0xECEFF2) interpolatedColorAtLocation:0.92];
 }
+
+@implementation TGAquaUtilityWindowView
+@synthesize headerHeight = _headerHeight;
+@synthesize footerHeight = _footerHeight;
+- (id)initWithFrame:(NSRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) { _headerHeight = 52.0; _footerHeight = 54.0; }
+    return self;
+}
+- (BOOL)isOpaque { return YES; }
+- (void)setHeaderHeight:(CGFloat)height { _headerHeight = MAX(0.0,height); [self setNeedsDisplay:YES]; }
+- (void)setFooterHeight:(CGFloat)height { _footerHeight = MAX(0.0,height); [self setNeedsDisplay:YES]; }
+- (void)drawRect:(NSRect)dirtyRect {
+    (void)dirtyRect;
+    NSRect bounds = [self bounds];
+    [[NSColor colorWithCalibratedWhite:0.985 alpha:1.0] set]; NSRectFill(bounds);
+    CGFloat header = MIN(_headerHeight,NSHeight(bounds));
+    CGFloat footer = MIN(_footerHeight,MAX(0.0,NSHeight(bounds)-header));
+    if (header > 0.0) {
+        NSRect rail = NSMakeRect(NSMinX(bounds),[self isFlipped] ? NSMinY(bounds) : NSMaxY(bounds)-header,NSWidth(bounds),header);
+        TGAquaDrawSurfaceInPath([NSBezierPath bezierPathWithRect:rail],rail,TGThemeSurfaceHeader,[self isFlipped]);
+    }
+    if (footer > 0.0) {
+        NSRect rail = NSMakeRect(NSMinX(bounds),[self isFlipped] ? NSMaxY(bounds)-footer : NSMinY(bounds),NSWidth(bounds),footer);
+        TGAquaDrawSurfaceInPath([NSBezierPath bezierPathWithRect:rail],rail,TGThemeSurfaceHeader,[self isFlipped]);
+        [[NSColor colorWithCalibratedWhite:0.65 alpha:1.0] set];
+        NSRectFill(NSMakeRect(NSMinX(rail),[self isFlipped] ? NSMinY(rail) : NSMaxY(rail)-1.0,NSWidth(rail),1.0));
+    }
+}
+@end

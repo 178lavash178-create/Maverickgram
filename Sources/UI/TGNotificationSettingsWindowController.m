@@ -7,9 +7,18 @@
 #import "TGStatusViewCells.h"
 #import "TGTheme.h"
 #import "TGThemeTextField.h"
+#import "TGAquaAppearance.h"
+#import "TGChatListSelectionAppearance.h"
+#import "TGMessageLayoutSupport.h"
+#import "TGIconAssets.h"
 
-@interface TGNotificationSettingsWindowController () <NSTableViewDataSource, NSTableViewDelegate>
+#include "TGNotificationSettingsWindowController+AquaCell.inc"
+
+@interface TGNotificationSettingsWindowController () <NSTableViewDataSource, NSTableViewDelegate, NSTextFieldDelegate>
 @property (nonatomic, retain) TGTDLibClient *client;
+@property (nonatomic, retain) NSMutableDictionary *aquaViews;
+@property (nonatomic, retain) NSSearchField *aquaSearchField;
+@property (nonatomic, copy) NSArray *filteredExceptions;
 @property (nonatomic, retain) NSTableView *tableView;
 @property (nonatomic, retain) NSTextField *statusField;
 @property (nonatomic, retain) NSTextField *selectionField;
@@ -26,6 +35,7 @@
 
 @implementation TGNotificationSettingsWindowController
 
+@synthesize aquaViews=_aquaViews, aquaSearchField=_aquaSearchField, filteredExceptions=_filteredExceptions;
 @synthesize client = _client;
 @synthesize tableView = _tableView;
 @synthesize statusField = _statusField;
@@ -62,6 +72,10 @@
 
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [[self window] setDelegate:nil];
+    [_tableView setDelegate:nil]; [_tableView setDataSource:nil];
+    [_aquaSearchField setDelegate:nil];
+    [_aquaViews release]; [_aquaSearchField release]; [_filteredExceptions release];
     [_client release];
     [_tableView release];
     [_statusField release];
@@ -92,7 +106,10 @@
     return field;
 }
 
+#include "TGNotificationSettingsWindowController+Aqua.inc"
+
 - (void)buildViews {
+    if (TGInterfaceDesignIsAqua()) { [self buildAquaViews]; return; }
     TGUtilityWindowView *root = [[[TGUtilityWindowView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease];
     [root setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [[self window] setContentView:root];
@@ -218,7 +235,7 @@
 
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)tableView {
     (void)tableView;
-    return (NSInteger)[self.exceptions count];
+    return (NSInteger)[[self displayedExceptions] count];
 }
 
 - (id)tableView:(NSTableView *)tableView
@@ -226,10 +243,11 @@
                            row:(NSInteger)row {
     (void)tableView;
     (void)tableColumn;
-    if (row < 0 || (NSUInteger)row >= [self.exceptions count]) {
+    if (row < 0 || (NSUInteger)row >= [[self displayedExceptions] count]) {
         return @"";
     }
-    NSDictionary *summary = [self.exceptions objectAtIndex:(NSUInteger)row];
+    NSDictionary *summary = [[self displayedExceptions] objectAtIndex:(NSUInteger)row];
+    if (TGInterfaceDesignIsAqua()) return summary;
     NSString *title = [[summary objectForKey:@"title"] isKindOfClass:[NSString class]]
         ? [summary objectForKey:@"title"]
         : @"";
@@ -238,10 +256,10 @@
 
 - (NSDictionary *)selectedSummary {
     NSInteger row = [self.tableView selectedRow];
-    if (row < 0 || (NSUInteger)row >= [self.exceptions count]) {
+    if (row < 0 || (NSUInteger)row >= [[self displayedExceptions] count]) {
         return nil;
     }
-    return [self.exceptions objectAtIndex:(NSUInteger)row];
+    return [[self displayedExceptions] objectAtIndex:(NSUInteger)row];
 }
 
 - (void)tableViewSelectionDidChange:(NSNotification *)notification {
@@ -250,10 +268,12 @@
     if (summary) {
         NSString *title = [summary objectForKey:@"title"];
         [self.selectionField setStringValue:[title length] > 0 ? title : TGLoc(@"chat.untitled")];
+        [self.selectionField setToolTip:[self.selectionField stringValue]];
         [self.mutePopUpButton selectItemAtIndex:[[summary objectForKey:@"muted"] boolValue] ? 4 : 0];
         [self.previewButton setState:[[summary objectForKey:@"show_preview"] boolValue] ? NSOnState : NSOffState];
     } else {
         [self.selectionField setStringValue:TGLoc(@"notifications.exceptions.select")];
+        [self.selectionField setToolTip:nil];
     }
     [self updateEditorAvailability];
 }
@@ -268,11 +288,13 @@
     [self.applyButton setEnabled:enabled];
     [self.resetButton setEnabled:enabled];
     [self.refreshButton setEnabled:!self.loading];
+    if (self.aquaViews) { [self.aquaSearchField setEnabled:!self.loading]; [self.tableView setEnabled:!self.loading]; }
 }
 
 - (void)setLoading:(BOOL)loading status:(NSString *)status {
     self.loading = loading;
     [self.statusField setStringValue:status ? status : @""];
+    [self.statusField setToolTip:status];
     if (loading) {
         [self.spinner startAnimation:nil];
     } else {
@@ -297,6 +319,7 @@
         dispatch_async(dispatch_get_main_queue(), ^{
             if (generation == self.requestGeneration) {
                 self.exceptions = result ? result : [NSArray array];
+                if (self.aquaViews) [self applyAquaSearch];
                 [self.tableView reloadData];
                 [self.tableView deselectAll:nil];
                 NSString *status = detail;

@@ -571,6 +571,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
                                                    lastName:self.profileLastName
                                                    username:self.profileUsername
                                                         bio:self.profileBio];
+    [self.profileEditWindowController setAvatarLocalPath:self.profileAvatarLocalPath];
     NSWindow *profileEditWindow = [self.profileEditWindowController window];
     [profileEditWindow center];
     [NSApp activateIgnoringOtherApps:YES];
@@ -661,6 +662,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
             if (controller == self.profileEditWindowController) {
                 [controller setSaving:NO];
                 if (success) {
+                    [controller setAvatarLocalPath:photoPathCopy];
                     [self.statusField setStringValue:TGLoc(@"profile.edit.photo.saved")];
                     self.profileSummaryLoaded = NO;
                     [self reloadProfileSummaryIfReady];

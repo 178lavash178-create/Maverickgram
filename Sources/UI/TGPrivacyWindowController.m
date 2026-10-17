@@ -11,11 +11,20 @@
 #import "TGTheme.h"
 #import "TGThemeTextField.h"
 #import "TGThemeContrast.h"
+#import "TGAquaAppearance.h"
+#import "TGInterfaceDesign.h"
 
 #include "TGPrivacyWindowController+BlockedSenderCell.inc"
 
-@interface TGPrivacyWindowController () <NSTableViewDataSource, NSTableViewDelegate>
+@interface TGPrivacyWindowController () <NSTableViewDataSource, NSTableViewDelegate, NSWindowDelegate>
 @property (nonatomic, retain) TGTDLibClient *client;
+@property (nonatomic, retain) NSSegmentedControl *aquaSectionSelector;
+@property (nonatomic, retain) NSArray *aquaSectionViews;
+@property (nonatomic, retain) NSArray *aquaSectionLabels;
+@property (nonatomic, retain) NSTextField *aquaTitleField;
+@property (nonatomic, retain) NSScrollView *aquaBlockedScrollView;
+- (void)configureAquaPrivacyViews;
+- (void)layoutAquaPrivacyViews;
 @property (nonatomic, retain) NSPopUpButton *settingPopUpButton;
 @property (nonatomic, retain) NSPopUpButton *rulePopUpButton;
 @property (nonatomic, retain) NSButton *applyRuleButton;
@@ -43,6 +52,7 @@
 @implementation TGPrivacyWindowController
 
 @synthesize client = _client;
+@synthesize aquaSectionSelector=_aquaSectionSelector, aquaSectionViews=_aquaSectionViews, aquaSectionLabels=_aquaSectionLabels, aquaTitleField=_aquaTitleField, aquaBlockedScrollView=_aquaBlockedScrollView;
 @synthesize settingPopUpButton = _settingPopUpButton;
 @synthesize rulePopUpButton = _rulePopUpButton;
 @synthesize applyRuleButton = _applyRuleButton;
@@ -93,6 +103,9 @@
 
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [[self window] setDelegate:nil];
+    [_aquaSectionSelector release]; [_aquaSectionViews release]; [_aquaSectionLabels release];
+    [_aquaTitleField release]; [_aquaBlockedScrollView release];
     [_client release];
     [_settingPopUpButton release];
     [_rulePopUpButton release];
@@ -371,6 +384,7 @@
     [root addSubview:self.spinner];
     [self updatePrivacyPermissionControls];
     [self updateControls];
+    if (TGInterfaceDesignIsAqua()) [self configureAquaPrivacyViews];
 }
 
 - (void)updatePrivacyPermissionControls {
@@ -520,6 +534,7 @@
 - (void)setLoading:(BOOL)loading status:(NSString *)status {
     self.loading = loading;
     [self.statusField setStringValue:status ? status : @""];
+    if (self.aquaSectionSelector) [self.statusField setToolTip:status];
     if (loading) {
         [self.spinner startAnimation:nil];
     } else {
@@ -644,5 +659,7 @@
         return result;
     }];
 }
+
+#include "TGPrivacyWindowController+Aqua.inc"
 
 @end

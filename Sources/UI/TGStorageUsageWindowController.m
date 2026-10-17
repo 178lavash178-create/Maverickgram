@@ -17,6 +17,8 @@
 #import "TGThemeTextField.h"
 #import "TGButtonAppearance.h"
 #import "TGTransparentSpinnerView.h"
+#import "TGAquaAppearance.h"
+#import "TGInterfaceDesign.h"
 #include <math.h>
 
 static NSColor *TGStorageAccentBlue(void) {
@@ -28,6 +30,7 @@ static NSColor *TGStorageCardColor(void) {
 }
 
 static NSColor *TGStorageSoftBackgroundColor(void) {
+    if (TGInterfaceDesignIsAqua()) return [NSColor whiteColor];
     return TGClassicPanelBottomColor();
 }
 
@@ -235,6 +238,10 @@ static NSColor *TGStorageRowSeparatorColor(void) {
 @interface TGStorageUsageWindowController () <NSWindowDelegate>
 
 @property (nonatomic, retain) TGTDLibClient *client;
+@property (nonatomic, retain) NSView *aquaRowsView;
+@property (nonatomic, retain) NSArray *aquaSectionFields;
+- (void)configureAquaStorageViews;
+- (void)layoutAquaStorageViews;
 @property (nonatomic, retain) NSTextField *titleField;
 @property (nonatomic, retain) NSTextField *subtitleField;
 @property (nonatomic, retain) TGStoragePieChartView *chartView;
@@ -257,6 +264,7 @@ static NSColor *TGStorageRowSeparatorColor(void) {
 @implementation TGStorageUsageWindowController
 
 @synthesize client = _client;
+@synthesize aquaRowsView=_aquaRowsView, aquaSectionFields=_aquaSectionFields;
 @synthesize titleField = _titleField;
 @synthesize subtitleField = _subtitleField;
 @synthesize chartView = _chartView;
@@ -336,7 +344,7 @@ static NSColor *TGStorageRowSeparatorColor(void) {
 
 - (void)buildWindow {
     NSWindow *window = [[[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 640, 650)
-                                                   styleMask:(NSTitledWindowMask | NSClosableWindowMask)
+                                                   styleMask:(NSTitledWindowMask | NSClosableWindowMask | (TGInterfaceDesignIsAqua() ? NSResizableWindowMask : 0))
                                                      backing:NSBackingStoreBuffered
                                                        defer:NO] autorelease];
     [window setTitle:TGLoc(@"storage.title")];
@@ -444,6 +452,7 @@ static NSColor *TGStorageRowSeparatorColor(void) {
     self.progressIndicator = [[[TGTransparentSpinnerView alloc] initWithFrame:NSMakeRect(308, 474, 24, 24)] autorelease];
     [self.progressIndicator setDisplayedWhenStopped:NO];
     [contentView addSubview:self.progressIndicator];
+    if (TGInterfaceDesignIsAqua()) [self configureAquaStorageViews];
 }
 
 - (id)initWithClient:(TGTDLibClient *)client {
@@ -460,6 +469,7 @@ static NSColor *TGStorageRowSeparatorColor(void) {
     [[self window] setDelegate:nil];
     [_requestLifetime invalidate];
     [_refreshOperation cancel];
+    [_aquaRowsView release];[_aquaSectionFields release];
     [_client release];
     [_titleField release];
     [_subtitleField release];
@@ -532,8 +542,9 @@ static NSColor *TGStorageRowSeparatorColor(void) {
     long long logs = [[summary objectForKey:@"log_size"] longLongValue];
 
     [self.hintField setStringValue:TGLoc(@"storage.safeHint")];
+    if (self.aquaRowsView) [self.hintField setToolTip:[self.hintField stringValue]];
     NSString *totalText = [[self class] displayStringForBytes:total];
-    [self.chartView setCenterText:totalText];
+    [self.chartView setCenterText:(TGInterfaceDesignIsAqua() ? @"" : totalText)];
     [self.subtitleField setStringValue:[NSString stringWithFormat:TGLoc(@"storage.total"), totalText]];
 
     NSArray *values = [NSArray arrayWithObjects:
@@ -601,6 +612,7 @@ static NSColor *TGStorageRowSeparatorColor(void) {
                               [owner.chartView setCenterText:@"—"];
                               NSString *errorText = [error localizedDescription];
                               [owner.hintField setStringValue:([errorText length] > 0 ? errorText : TGLoc(@"settings.sessions.unknownError"))];
+                              if (TGInterfaceDesignIsAqua()) [owner.hintField setToolTip:[owner.hintField stringValue]];
                               [owner.chartView setNeedsDisplay:YES];
                           }
                       }] autorelease];
@@ -662,6 +674,7 @@ static NSColor *TGStorageRowSeparatorColor(void) {
                     [owner.subtitleField setStringValue:TGLoc(@"storage.clearFailed")];
                     [owner.hintField setStringValue:([errorText length] > 0 ? errorText : TGLoc(@"settings.sessions.unknownError"))];
                 }
+                if (owner.aquaRowsView) [owner.hintField setToolTip:[owner.hintField stringValue]];
             }
             [summary release];
             [errorText release];
@@ -683,5 +696,7 @@ static NSColor *TGStorageRowSeparatorColor(void) {
     self.refreshOperation = nil;
     [self.progressIndicator stopAnimation:nil];
 }
+
+#include "TGStorageUsageWindowController+Aqua.inc"
 
 @end

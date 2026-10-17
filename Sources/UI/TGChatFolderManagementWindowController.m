@@ -13,6 +13,7 @@
 #import "TGTheme.h"
 #import "TGThemeContrast.h"
 #import "TGThemeTextField.h"
+#import "TGAquaAppearance.h"
 
 static NSString * const TGChatFolderDragPasteboardType = @"com.telegraphica.chat-folder-row";
 
@@ -20,6 +21,7 @@ static NSString * const TGChatFolderDragPasteboardType = @"com.telegraphica.chat
 
 @interface TGChatFolderManagementWindowController ()
 @property (nonatomic, retain) TGTDLibClient *client;
+@property (nonatomic, retain) NSMutableDictionary *aquaViews;
 @property (nonatomic, retain) NSTableView *folderTableView;
 @property (nonatomic, retain) NSTableView *chatTableView;
 @property (nonatomic, retain) NSSearchField *chatSearchField;
@@ -52,6 +54,7 @@ static NSString * const TGChatFolderDragPasteboardType = @"com.telegraphica.chat
 
 @implementation TGChatFolderManagementWindowController
 
+@synthesize aquaViews = _aquaViews;
 @synthesize delegate = _delegate;
 @synthesize client = _client;
 @synthesize folderTableView = _folderTableView;
@@ -106,6 +109,11 @@ static NSString * const TGChatFolderDragPasteboardType = @"com.telegraphica.chat
 
 - (void)dealloc {
     _delegate = nil;
+    [[self window] setDelegate:nil];
+    [_folderTableView setDelegate:nil]; [_folderTableView setDataSource:nil];
+    [_chatTableView setDelegate:nil]; [_chatTableView setDataSource:nil];
+    [_chatSearchField setDelegate:nil]; [_titleField setDelegate:nil];
+    [_aquaViews release];
     [_client release];
     [_folderTableView release];
     [_chatTableView release];
@@ -169,7 +177,10 @@ static NSString * const TGChatFolderDragPasteboardType = @"com.telegraphica.chat
     return button;
 }
 
+#include "TGChatFolderManagementWindowController+Aqua.inc"
+
 - (void)buildViews {
+    if (TGInterfaceDesignIsAqua()) { [self buildAquaViews]; return; }
     TGUtilityWindowView *root = [[[TGUtilityWindowView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease];
     [root setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [[self window] setContentView:root];
@@ -422,6 +433,10 @@ static NSString * const TGChatFolderDragPasteboardType = @"com.telegraphica.chat
     [self.folderTableView setEnabled:!self.loading];
     [self.chatTableView setEnabled:!self.loading];
     [self.titleField setEnabled:!self.loading];
+    if (self.aquaViews) {
+        [self.chatSearchField setEnabled:!self.loading];
+        for (NSButton *button in [NSArray arrayWithObjects:self.includeContactsButton,self.includeNonContactsButton,self.includeBotsButton,self.includeGroupsButton,self.includeChannelsButton,self.excludeMutedButton,self.excludeReadButton,self.excludeArchivedButton,nil]) [button setEnabled:!self.loading];
+    }
     [self.shareButton setToolTip:(supportsSharing
                                   ? TGLoc(@"folders.share")
                                   : TGLoc(@"folders.share.unsupported"))];

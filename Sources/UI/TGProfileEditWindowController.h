@@ -20,6 +20,7 @@
                       lastName:(NSString *)lastName
                       username:(NSString *)username
                            bio:(NSString *)bio;
+- (void)setAvatarLocalPath:(NSString *)localPath;
 - (void)setSaving:(BOOL)saving;
 - (void)showErrorMessage:(NSString *)message;
 

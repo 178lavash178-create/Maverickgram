@@ -1114,11 +1114,15 @@ static NSString *TGMessageViewerMenuTitle(NSDictionary *summary) {
         return;
     }
 
+    [[self.messageViewersWindowController window] close];
     self.messageViewersWindowController = [[[TGMessageViewersWindowController alloc] initWithMessagePreview:[item preview]] autorelease];
-    [self.messageViewersWindowController showWindow:self];
-    [[self.messageViewersWindowController window] makeKeyAndOrderFront:self];
+    NSUInteger viewerRow = [self.messageItems indexOfObjectIdenticalTo:item];
+    NSRect viewerAnchor = viewerRow != NSNotFound ? [self.messageTableView rectOfRow:(NSInteger)viewerRow] : NSZeroRect;
+    [self.messageViewersWindowController showNearRect:viewerAnchor ofView:self.messageTableView];
     [self.messageViewersWindowController showLoading];
 
+    TGMessageViewersWindowController *requestedViewers = self.messageViewersWindowController;
+    NSNumber *viewersAccountID = self.profileUserID;
     NSNumber *chatID = [[item chatID] retain];
     NSNumber *messageID = [[item messageID] retain];
     TGTDLibClient *client = [self.client retain];
@@ -1132,10 +1136,13 @@ static NSString *TGMessageViewerMenuTitle(NSDictionary *summary) {
                                                       error:&viewersError] retain];
         NSString *errorMessage = [[viewersError localizedDescription] copy];
         dispatch_async(dispatch_get_main_queue(), ^{
-            if (viewers) {
-                [self.messageViewersWindowController showViewerSummaries:viewers];
+            if (requestedViewers != self.messageViewersWindowController || client != self.client ||
+                ![self.currentAuthState isEqualToString:@"ready"] || ![viewersAccountID isEqual:self.profileUserID]) {
+                // A later readers/reactions panel owns the presentation now.
+            } else if (viewers) {
+                [requestedViewers showViewerSummaries:viewers];
             } else {
-                [self.messageViewersWindowController showErrorMessage:([errorMessage length] > 0 ? errorMessage : @"Readers are unavailable for this message.")];
+                [requestedViewers showErrorMessage:([errorMessage length] > 0 ? errorMessage : @"Readers are unavailable for this message.")];
             }
             [viewers release];
             [errorMessage release];
@@ -1158,14 +1165,18 @@ static NSString *TGMessageViewerMenuTitle(NSDictionary *summary) {
 
     [self.reactionUsersOperation cancel];
     self.reactionUsersOperation = nil;
+    [[self.messageViewersWindowController window] close];
     self.messageViewersWindowController = [[[TGMessageViewersWindowController alloc]
         initWithMessagePreview:[item preview]] autorelease];
     [self.messageViewersWindowController setContentTitle:TGLoc(@"message.reactions.usersTitle")
                                               windowTitle:TGLoc(@"message.reactions.whoReacted")];
-    [self.messageViewersWindowController showWindow:self];
-    [[self.messageViewersWindowController window] makeKeyAndOrderFront:self];
+    NSUInteger viewerRow = [self.messageItems indexOfObjectIdenticalTo:item];
+    NSRect viewerAnchor = viewerRow != NSNotFound ? [self.messageTableView rectOfRow:(NSInteger)viewerRow] : NSZeroRect;
+    [self.messageViewersWindowController showNearRect:viewerAnchor ofView:self.messageTableView];
     [self.messageViewersWindowController showLoading];
 
+    TGMessageViewersWindowController *requestedReactionUsers = self.messageViewersWindowController;
+    NSNumber *reactionUsersAccountID = self.profileUserID;
     NSNumber *chatID = [item chatID];
     NSNumber *messageID = [item messageID];
     TGTDLibClient *client = self.client;
@@ -1186,7 +1197,9 @@ static NSString *TGMessageViewerMenuTitle(NSDictionary *summary) {
              generationCheck:nil
                   completion:^(id result, NSError *error) {
                       TGStatusWindowController *strongOwner = owner;
-                      if (!strongOwner) {
+                      if (!strongOwner || requestedReactionUsers != strongOwner.messageViewersWindowController ||
+                          client != strongOwner.client || ![strongOwner.currentAuthState isEqualToString:@"ready"] ||
+                          ![reactionUsersAccountID isEqual:strongOwner.profileUserID]) {
                           return;
                       }
                       strongOwner.reactionUsersOperation = nil;
