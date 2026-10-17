@@ -93,6 +93,9 @@ void TGFitUtilityWindowToVisibleFrame(NSWindow *window, NSRect visibleFrame) {
         fitted = TGUtilityWindowFrameFittingVisibleFrame(fitted,visibleFrame);
         [window setMinSize:NSMakeSize(MIN(minimum.width,NSWidth(available)),MIN(minimum.height,NSHeight(available)))];
         [window setMaxSize:NSMakeSize(MIN(maximum.width,NSWidth(available)),MIN(maximum.height,NSHeight(available)))];
+        // Resize delegates still reach the document through the viewport.
+        // Give them the final bounds before setFrame dispatches their callback.
+        [document setFrameSize:[window contentRectForFrameRect:fitted].size];
         [window setFrame:fitted display:NO];
         [viewport setDocumentView:nil];
         [document setAutoresizingMask:originalMask];

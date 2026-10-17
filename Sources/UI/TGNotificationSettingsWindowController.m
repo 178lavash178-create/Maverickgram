@@ -1,4 +1,5 @@
 #import "TGNotificationSettingsWindowController.h"
+#import "TGDialogPresentation.h"
 
 #import "../Core/TGTDLibClient+Notifications.h"
 #import "TGLocalization.h"

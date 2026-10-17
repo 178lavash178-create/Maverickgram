@@ -11,6 +11,7 @@ def impl(p,name):
 buttons=read('Sources/UI/TGStatusButtonCells.m');buttons=buttons[:buttons.index('\n@implementation TGDrawerButtonCell')]
 source=r'''
 #import <Cocoa/Cocoa.h>
+#import <objc/runtime.h>
 #import "TGChatFolderSharingWindowController.h"
 #import "TGChatAdministrationWindowController.h"
 #import "TGChatInfoWindowController.h"
@@ -24,10 +25,10 @@ source=r'''
 #import "TGDialogPresentation.h"
 @implementation TGBotInteractionWindowController
 @end
-// External alerts and presentation are isolated here. The full real window
+// Only external alerts are isolated. The real production screen guard,
 // constructors, data rendering, controls and resize delegates are compiled.
 NSInteger TGRunAlert(NSAlert *a,NSWindow *w){(void)a;(void)w;return NSAlertSecondButtonReturn;}
-void TGFitUtilityWindowToVisibleScreen(NSWindow *w){(void)w;}
+#include "TGUtilityWindowGeometry.inc"
 __VIEWS__
 @interface NSObject (ProbePrivate)
 - (void)layoutResponsiveViews;
@@ -125,6 +126,28 @@ int main(int argc,const char **argv){NSAutoreleasePool *p=[[NSAutoreleasePool al
     // Native tables must track the real viewport after narrowing and widening.
     for(NSString *key in c==sharing?[NSArray arrayWithObjects:@"linkTableView",@"recommendedTableView",nil]:c==admin?[NSArray arrayWithObjects:@"linksTableView",@"requestsTableView",@"eventsTableView",nil]:[NSArray arrayWithObject:@"memberTableView"]){NSTableView *t=V(c,key);Require(fabs([[[t tableColumns] lastObject] width]-NSWidth([[[t enclosingScrollView] contentView] bounds]))<1,"actual table column follows viewport width");}
    }
+  }
+  for(NSWindowController *c in [NSArray arrayWithObjects:sharing,admin,info,nil]){
+   NSWindow *w=[c window];NSView *natural=[TGUtilityWindowContentView(w) retain];NSSize naturalSize=[natural bounds].size;
+   for(NSUInteger cycle=0;cycle<3;cycle++){
+    TGFitUtilityWindowToVisibleFrame(w,NSMakeRect(0,0,400,300));
+    Require([w contentView]!=natural&&TGUtilityWindowContentView(w)==natural,"real controller below-min screen uses its original natural root in scroll viewport");
+    Require(NSEqualSizes([natural bounds].size,naturalSize),"screen overflow never compresses the real form's natural bounds");
+    TGFitUtilityWindowToVisibleFrame(w,NSMakeRect(0,0,1440,1000));
+    Require([w contentView]==natural,"large screen unwraps the real controller's original root");
+    NSRect nativeContent=[w contentRectForFrameRect:[w frame]];
+    Require(fabs(NSWidth([natural bounds])-NSWidth(nativeContent))<1&&fabs(NSHeight([natural bounds])-NSHeight(nativeContent))<1,"restored controller adopts actual native content rect");
+    // No explicit layout/resize adapter here: production guard + actual
+    // window callbacks must finish the controller's restored geometry.
+    for(NSView *v in [natural subviews])if(![v isHidden]&&!NSContainsRect([natural bounds],[v frame]))fprintf(stderr,"Restored %s root%s stale %s frame%s\n",[NSStringFromClass([c class]) UTF8String],[NSStringFromRect([natural bounds]) UTF8String],[NSStringFromClass([v class]) UTF8String],[NSStringFromRect([v frame]) UTF8String]);
+    CheckRoot(natural);
+    CGFloat finalWidth=NSWidth([natural bounds]);
+    if(c==info)Require(NSMinX([V(info,@"applyRoleButton") frame])==finalWidth-150,"restored ChatInfo layout follows final content width");
+    else if(c==sharing)Require(NSMaxX([V(sharing,@"dismissNewChatsButton") frame])==finalWidth-28,"restored Sharing footer follows final content width");
+    else Require(NSMinX([V(admin,@"spinner") frame])==finalWidth-42,"restored Administration footer follows final content width");
+    naturalSize=[natural bounds].size;
+   }
+   [natural release];
   }
   [[sharing window] close];[[admin window] close];[[info window] close];
  }
