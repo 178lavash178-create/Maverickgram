@@ -262,6 +262,8 @@
                 [self appendDetail:[NSString stringWithFormat:@"Cleared history for %@.", titleCopy]];
                 if (self.selectedChatID && [self.selectedChatID longLongValue] == [chatID longLongValue]) {
                     self.messageLoadingGeneration++;
+                    self.messageLoadingIndicatorVisible = NO;
+                    [self.messageLoadingSpinner stopAnimation:self];
                     self.pendingLiveMessageRefresh = NO;
                     self.messageItemsRepresentFocusedContext = NO;
                     [self.messageItems removeAllObjects];
@@ -333,6 +335,8 @@
                     self.selectedMessageThreadID = nil;
                     self.selectedMessageTopicKind = nil;
                     self.messageLoadingGeneration++;
+                    self.messageLoadingIndicatorVisible = NO;
+                    [self.messageLoadingSpinner stopAnimation:self];
                     self.pendingLiveMessageRefresh = NO;
                     self.messageItemsRepresentFocusedContext = NO;
                     [self.messageItems removeAllObjects];

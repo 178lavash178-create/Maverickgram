@@ -21,6 +21,19 @@ reload_method = flow[reload_start:reload_end]
 jump_start = flow.index('- (void)jumpToNewestMessages:')
 jump_end = flow.index('\n- (NSInteger)firstUnreadMessageRow', jump_start)
 jump_method = flow[jump_start:jump_end]
+with open(os.path.join(ROOT, 'Sources/UI/TGStatusWindowController+TableForumFlow.inc'), 'rb') as stream:
+    forum_flow = stream.read().decode('utf-8')
+forum_load_start = forum_flow.index('- (void)loadForumTopicsForChatItem:')
+forum_load_end = forum_flow.find('\n- (', forum_load_start + 1)
+forum_load_method = forum_flow[forum_load_start:forum_load_end if forum_load_end >= 0 else len(forum_flow)]
+with open(os.path.join(ROOT, 'Sources/UI/TGStatusWindowController+ChatLifecycle.inc'), 'rb') as stream:
+    lifecycle = stream.read().decode('utf-8')
+lifecycle_cancellations=[]
+for chunk in lifecycle.split('                    self.messageLoadingGeneration++;')[1:]:
+    lifecycle_cancellations.append('self.messageLoadingGeneration++;'+chunk[:chunk.index('                    self.pendingLiveMessageRefresh = NO;')])
+assert len(lifecycle_cancellations)==2
+lifecycle_methods='\n'.join('- (void)cancelLifecycleLoad%d {%s}' % (index,body) for index,body in enumerate(lifecycle_cancellations))
+
 props = [
  ('TGNavigationPositionStore *','navigationPositionStore','retain'),
  ('NSNumber *','profileUserID','retain'),('NSNumber *','selectedChatFilterID','retain'),
@@ -38,12 +51,13 @@ props = [
  ('BOOL','messageItemsRepresentFocusedContext','assign'),('BOOL','forceMessageScrollToNewest','assign'),
  ('BOOL','initialUnreadPositionPending','assign'),('NSUInteger','searchGeneration','assign'),
  ('NSUInteger','jumpUpdates','assign'),
+ ('BOOL','forumTopicRefreshInFlight','assign'),('NSUInteger','forumTopicNavigationGeneration','assign'),
  ('BOOL','backgroundMessageRefreshInFlight','assign'),('BOOL','pendingLiveMessageRefresh','assign'),
  ('BOOL','messageLoadingIndicatorVisible','assign'),('BOOL','composerRefocusPending','assign'),
  ('BOOL','olderMessagesExhausted','assign'),('BOOL','lastPreserveOlder','assign'),
  ('NSUInteger','messageLoadingGeneration','assign'),('NSUInteger','selectedChatUnreadCount','assign'),
  ('NSUInteger','applyCount','assign'),('NSNumber *','selectedChatLastReadInboxMessageID','retain'),
- ('NSProgressIndicator *','messageLoadingSpinner','retain'),('NSTextField *','statusField','retain'),
+ ('TGTransparentSpinnerView *','messageLoadingSpinner','retain'),('NSTextField *','statusField','retain'),
  ('NSArray *','lastAppliedItems','retain')]
 ivars='\n'.join('    %s _%s;' % (t,n) for t,n,a in props)
 properties='\n'.join('@property(nonatomic,%s) %s %s;' % (a,t,n) for t,n,a in props)
@@ -57,6 +71,7 @@ search_cancel = search[search_start:search_end]
 harness=r'''
 #import <Cocoa/Cocoa.h>
 #import "TGNavigationPositionStore.h"
+#import "TGTransparentSpinnerView.h"
 #include <math.h>
 static NSUInteger const TGStatusChatPreviewInitialLimit=50,TGStatusChatPreviewMaximumLimit=500;
 static BOOL Aqua=YES;
@@ -81,15 +96,15 @@ static NSUInteger checks;
 static void Check(BOOL yes,const char *message) { checks++;if(!yes) { fprintf(stderr,"Navigation continuity: %s\n",message);exit(1); } }
 static void Near(CGFloat actual,CGFloat expected,const char *message) { if(fabs(actual-expected)>=0.05) fprintf(stderr,"actual=%f expected=%f\n",actual,expected);Check(fabs(actual-expected)<0.05,message); }
 @interface TGChatItem : NSObject {
- NSNumber *_chatID,*_parentChatID,*_messageThreadID,*_messageID;NSString *_messageTopicKind;BOOL _isForumTopic;
+ NSNumber *_chatID,*_parentChatID,*_messageThreadID,*_messageID;NSString *_messageTopicKind,*_typeSummary,*_title,*_avatarLocalPath;BOOL _isForumTopic;
 }
 @property(nonatomic,retain) NSNumber *chatID,*parentChatID,*messageThreadID,*messageID;
-@property(nonatomic,copy) NSString *messageTopicKind;
+@property(nonatomic,copy) NSString *messageTopicKind,*typeSummary,*title,*avatarLocalPath;
 @property(nonatomic) BOOL isForumTopic;
 @end
 @implementation TGChatItem
-@synthesize chatID=_chatID,parentChatID=_parentChatID,messageThreadID=_messageThreadID,messageID=_messageID,messageTopicKind=_messageTopicKind,isForumTopic=_isForumTopic;
-- (void)dealloc { [_chatID release];[_parentChatID release];[_messageThreadID release];[_messageID release];[_messageTopicKind release];[super dealloc]; }
+@synthesize chatID=_chatID,parentChatID=_parentChatID,messageThreadID=_messageThreadID,messageID=_messageID,messageTopicKind=_messageTopicKind,typeSummary=_typeSummary,title=_title,avatarLocalPath=_avatarLocalPath,isForumTopic=_isForumTopic;
+- (void)dealloc { [_chatID release];[_parentChatID release];[_messageThreadID release];[_messageID release];[_messageTopicKind release];[_typeSummary release];[_title release];[_avatarLocalPath release];[super dealloc]; }
 @end
 @interface TGMessageItem : TGChatItem @end
 @implementation TGMessageItem @end
@@ -103,6 +118,7 @@ static void Near(CGFloat actual,CGFloat expected,const char *message) { if(fabs(
 @property(nonatomic,copy) NSString *authorizationState;
 - (NSArray *)messagePreviewItemsForChatID:(NSNumber *)chat messageThreadID:(NSNumber *)thread messageTopicKind:(NSString *)kind aroundMessageID:(NSNumber *)anchor newerMessageCount:(NSUInteger)newer limit:(NSUInteger)limit timeout:(NSTimeInterval)timeout error:(NSError **)error;
 - (NSArray *)recentMessagePreviewItemsForChatID:(NSNumber *)chat messageThreadID:(NSNumber *)thread messageTopicKind:(NSString *)kind limit:(NSUInteger)limit timeout:(NSTimeInterval)timeout error:(NSError **)error;
+- (NSArray *)threadPreviewItemsForChatID:(NSNumber *)chat limit:(NSUInteger)limit timeout:(NSTimeInterval)timeout error:(NSError **)error;
 - (NSString *)currentAuthorizationStatePreparingIfNeededWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
 @end
 @implementation TGTDLibClient
@@ -116,6 +132,7 @@ static void Near(CGFloat actual,CGFloat expected,const char *message) { if(fabs(
 - (NSArray *)recentMessagePreviewItemsForChatID:(NSNumber *)chat messageThreadID:(NSNumber *)thread messageTopicKind:(NSString *)kind limit:(NSUInteger)limit timeout:(NSTimeInterval)timeout error:(NSError **)error {
  (void)chat;(void)thread;(void)kind;(void)limit;(void)timeout;(void)error;_latestCalls++;return _latestItems;
 }
+- (NSArray *)threadPreviewItemsForChatID:(NSNumber *)chat limit:(NSUInteger)limit timeout:(NSTimeInterval)timeout error:(NSError **)error {(void)chat;(void)limit;(void)timeout;(void)error;return [NSArray array];}
 - (NSString *)currentAuthorizationStatePreparingIfNeededWithTimeout:(NSTimeInterval)timeout error:(NSError **)error { (void)timeout;(void)error;return _authorizationState ? _authorizationState : @"ready"; }
 @end
 @interface NavigationProbe : NSObject <NSTableViewDataSource> {
@@ -139,6 +156,8 @@ BOOL navigationInitialRestore=navigationAnchorCopy!=nil,navigationContinuingRest
 __GUARDS__
  return selectionStillCurrent && !cancelledRestore;
 }
+- (BOOL)isForumTopicAutoOpenSuppressedForChatID:(NSNumber *)chat {(void)chat;return NO;}
+- (void)showForumTopicListForChatItem:(TGChatItem *)item topics:(NSArray *)topics {(void)item;(void)topics;}
 - (void)appendDetail:(NSString *)text { (void)text; }
 - (void)setControlsBusy:(BOOL)value { (void)value; }
 - (void)updateVisibleSection {}
@@ -163,14 +182,17 @@ __GUARDS__
 }
 #define dispatch_async(queue, ...) ProbeDispatch(queue, (__VA_ARGS__))
 __RELOAD_METHOD__
+__FORUM_LOAD_METHOD__
 #undef dispatch_async
 __JUMP_METHOD__
+__LIFECYCLE_CANCELLATIONS__
 @end
 static TGChatItem *Chat(NSInteger i) { TGChatItem *item=[[[TGChatItem alloc] init] autorelease];item.chatID=[NSNumber numberWithInteger:i];return item; }
 static TGMessageItem *Message(NSInteger i) { TGMessageItem *item=[[[TGMessageItem alloc] init] autorelease];item.messageID=[NSNumber numberWithInteger:i];return item; }
 static void Prepare(NavigationProbe *p) {
  p.profileUserID=@1;p.selectedChatID=@12;p.currentAuthState=@"ready";p.client=[[[TGTDLibClient alloc] init] autorelease];
  p.chatItems=[NSMutableArray array];p.messageItems=[NSMutableArray array];
+ p.messageLoadingSpinner=[[[TGTransparentSpinnerView alloc] initWithFrame:NSMakeRect(0,0,24,24)] autorelease];
  for(NSInteger i=0;i<40;i++) { [p.chatItems addObject:Chat(100+i)];[p.messageItems addObject:Message(200+i)]; }
  for(NSUInteger t=0;t<2;t++) {
   NSScrollView *scroll=[[[NSScrollView alloc] initWithFrame:NSMakeRect(0,0,240,180)] autorelease];
@@ -307,6 +329,39 @@ int main(void) {
  [r jumpToNewestMessages:nil];RunOne(WorkerBlocks);RunOne(MainBlocks);Check(!r.messageLoadingIndicatorVisible,"focused latest error also removes spinner");
  r.messageItemsRepresentFocusedContext=NO;latestGeneration=r.messageLoadingGeneration;
  [r jumpToNewestMessages:nil];Check(!r.messageLoadingIndicatorVisible && r.messageLoadingGeneration==latestGeneration,"local jump in already-loaded latest history never creates a spinner");
+ // Supergroup/forum discovery may finish while an existing transcript request
+ // is still running. Its spinner must retire before delegating a queued reload,
+ // because that reload can run with cached rows and need no spinner of its own.
+ backend.latestItems=[NSArray arrayWithObjects:Message(9000),Message(9001),nil];
+ r.forceMessageScrollToNewest=NO;r.backgroundMessageRefreshInFlight=YES;
+ TGChatItem *group=Chat(12);group.typeSummary=@"Supergroup";group.title=@"Fixture";
+ [r loadForumTopicsForChatItem:group];Check(r.messageLoadingIndicatorVisible && [[r.messageLoadingSpinner valueForKey:@"animating"] boolValue],"forum discovery starts its owned spinner");
+ RunOne(WorkerBlocks);RunOne(MainBlocks);
+ Check(r.pendingLiveMessageRefresh && !r.forumTopicRefreshInFlight,"forum fallback queues behind an existing background request");
+ Check(!r.messageLoadingIndicatorVisible && [r.messageLoadingSpinner isHidden] && ![[r.messageLoadingSpinner valueForKey:@"animating"] boolValue],"completed forum discovery retires its actual spinner before queued cached-row fallback");
+ r.backgroundMessageRefreshInFlight=NO;r.pendingLiveMessageRefresh=NO;
+ [r reloadMessagesForChatID:r.selectedChatID interactive:NO];RunOne(WorkerBlocks);RunOne(MainBlocks);
+ Check(!r.messageLoadingIndicatorVisible,"cached-row fallback cannot leave an orphan discovery spinner");
+ // Immediate cached fallback also must not inherit the discovery spinner.
+ r.forceMessageScrollToNewest=NO;
+ [r loadForumTopicsForChatItem:group];RunOne(WorkerBlocks);RunOne(MainBlocks);
+ Check(!r.messageLoadingIndicatorVisible && r.backgroundMessageRefreshInFlight,"immediate cached fallback owns no foreground spinner");
+ RunOne(WorkerBlocks);RunOne(MainBlocks);Check(!r.messageLoadingIndicatorVisible,"immediate discovery fallback stays stopped");
+ // A newer foreground owner must survive a stale discovery completion.
+ [r loadForumTopicsForChatItem:group];RunOne(WorkerBlocks);r.messageLoadingGeneration++;r.messageLoadingIndicatorVisible=YES;
+ NSUInteger newerOwner=r.messageLoadingGeneration;RunOne(MainBlocks);
+ Check(r.messageLoadingIndicatorVisible && r.messageLoadingGeneration==newerOwner,"discovery completion cannot stop a newer owner");
+ RunOne(WorkerBlocks);RunOne(MainBlocks);r.messageLoadingIndicatorVisible=NO;
+ // Destructive actions are never sent by this probe: execute only their actual
+ // production cancellation clauses, verifying old callbacks lose ownership.
+ for(NSUInteger action=0;action<2;action++) {
+  r.messageItemsRepresentFocusedContext=YES;[r jumpToNewestMessages:nil];RunOne(WorkerBlocks);
+  NSUInteger cancelledOwner=r.messageLoadingGeneration;
+  if(action==0) [r cancelLifecycleLoad0];else [r cancelLifecycleLoad1];
+  Check(!r.messageLoadingIndicatorVisible && [r.messageLoadingSpinner isHidden] && ![[r.messageLoadingSpinner valueForKey:@"animating"] boolValue] && r.messageLoadingGeneration==cancelledOwner+1,"history clear/delete cancellation retires both spinner and generation");
+  before=r.applyCount;RunOne(MainBlocks);
+  Check(r.applyCount==before && !r.messageLoadingIndicatorVisible,"cancelled history callback cannot resurrect the spinner or apply messages");
+ }
  Check(![WorkerBlocks count] && ![MainBlocks count],"all synthetic production async callbacks drained");[WorkerBlocks release];[MainBlocks release];
  Aqua=NO;[p captureNavigationContinuity];[p armNavigationTranscriptRestore];Check(!p.navigationPositionStore.pendingTranscriptKey,"Classic does not acquire navigation restore state");
  [listKey release];printf("Navigation continuity PASS: %lu checks, semantic isolation, actual viewports and production async guards.\n",(unsigned long)checks);
@@ -316,14 +371,14 @@ int main(void) {
 # Keep the embedded Cyrillic fixture Unicode on both Python 2.7 and Python 3.
 if not isinstance(harness, type(u'')):
     harness = harness.decode('utf-8')
-for token,value in [('__IVARS__',ivars),('__PROPERTIES__',properties),('__SYNTH__',synth),('__RELEASES__',releases),('__GUARDS__',guards),('__SEARCH_CANCEL__',search_cancel),('__RELOAD_METHOD__',reload_method),('__JUMP_METHOD__',jump_method)]:
+for token,value in [('__IVARS__',ivars),('__PROPERTIES__',properties),('__SYNTH__',synth),('__RELEASES__',releases),('__GUARDS__',guards),('__SEARCH_CANCEL__',search_cancel),('__RELOAD_METHOD__',reload_method),('__JUMP_METHOD__',jump_method),('__FORUM_LOAD_METHOD__',forum_load_method),('__LIFECYCLE_CANCELLATIONS__',lifecycle_methods)]:
     harness=harness.replace(token,value)
 folder=tempfile.mkdtemp(prefix='telegraphica-navigation-')
 try:
     path=os.path.join(folder,'probe.m')
     binary=os.path.join(folder,'probe')
     with open(path,'wb') as stream: stream.write(harness.encode('utf-8'))
-    subprocess.check_call(sys.argv[1:]+['-I'+os.path.join(ROOT,'Sources/UI'),path,os.path.join(ROOT,'Sources/UI/TGNavigationPositionStore.m'),'-framework','Cocoa','-o',binary])
+    subprocess.check_call(sys.argv[1:]+['-I'+os.path.join(ROOT,'Sources/UI'),'-I'+os.path.join(ROOT,'Sources/Services'),path,os.path.join(ROOT,'Sources/UI/TGNavigationPositionStore.m'),os.path.join(ROOT,'Sources/UI/TGTransparentSpinnerView.m'),os.path.join(ROOT,'Sources/Services/TGResourcePolicy.m'),'-framework','Cocoa','-o',binary])
     subprocess.check_call([binary])
 finally:
     shutil.rmtree(folder)
