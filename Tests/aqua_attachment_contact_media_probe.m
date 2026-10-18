@@ -187,7 +187,7 @@ static NSUInteger CheckMediaGrid(SurfaceOwner *owner) {
    NSUInteger labels=0,images=0,hits=0;
    for(NSView *child in [tile subviews]) {
     if([child isKindOfClass:[NSTextField class]])labels++;
-    if([child isKindOfClass:[NSImageView class]]){images++;assert(NSHeight([child frame])==(Aqua ? 120:86));checks++;}
+    if([child isKindOfClass:[NSImageView class]]){images++;assert(NSHeight([child frame])==(Aqua ? 128:86));checks++;}
     if([child isKindOfClass:[NSButton class]]){hits++;assert([(NSButton *)child action]==@selector(previewMediaCenterItem:)&&[(NSButton *)child target]==owner);checks++;assert([[child toolTip] rangeOfString:@"photo.jpg"].location!=NSNotFound);checks++;}
    }
    assert(labels==(Aqua ? 0:2)&&images==1&&hits==1);checks++;

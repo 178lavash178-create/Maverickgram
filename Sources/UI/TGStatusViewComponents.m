@@ -6,6 +6,7 @@
 #import "TGMessageLayoutSupport.h"
 #import "TGTheme.h"
 #import "TGThemeContrast.h"
+#import "TGChatListSelectionAppearance.h"
 #include <math.h>
 
 static CGFloat const TGPanelCornerRadius = 8.0;
@@ -446,36 +447,60 @@ static CGFloat const TGPanelCornerRadius = 8.0;
 }
 
 - (void)drawWithFrame:(NSRect)cellFrame inView:(NSView *)controlView {
-    NSRect cardRect = NSInsetRect(cellFrame, 3.0, 3.0);
+    BOOL aqua=TGInterfaceDesignIsAqua();
+    BOOL selected=NO;
+    if(aqua && [controlView isKindOfClass:[NSTableView class]]) {
+        NSTableView *table=(NSTableView *)controlView;
+        NSInteger row=[table rowAtPoint:NSMakePoint(NSMidX(cellFrame),NSMidY(cellFrame))];
+        selected=row>=0 && [table isRowSelected:row];
+    }
+    NSRect cardRect = aqua ? cellFrame : NSInsetRect(cellFrame, 3.0, 3.0);
     NSBezierPath *cardPath = [NSBezierPath bezierPathWithRoundedRect:cardRect xRadius:10.0 yRadius:10.0];
-    TGThemeDrawGroupedCardInPath(cardPath, cardRect, [controlView isFlipped]);
-    [TGClassicTableGridColor() set];
-    [cardPath setLineWidth:1.0];
-    [cardPath stroke];
+    if(aqua) {
+        [(selected ? TGListSelectionBackground() : [NSColor whiteColor]) set]; NSRectFill(cardRect);
+        if(!selected) {
+            [[NSColor colorWithCalibratedWhite:0.86 alpha:1] set];
+            CGFloat y=[controlView isFlipped] ? NSMaxY(cardRect)-1 : NSMinY(cardRect);
+            NSRectFill(NSMakeRect(NSMinX(cardRect)+20,y,MAX(0,NSWidth(cardRect)-40),1));
+        }
+    } else {
+        TGThemeDrawGroupedCardInPath(cardPath, cardRect, [controlView isFlipped]);
+        [TGClassicTableGridColor() set]; [cardPath setLineWidth:1.0]; [cardPath stroke];
+    }
 
     NSColor *titleColor = TGClassicCardInkColor();
     NSColor *detailColor = TGClassicCardMutedInkColor();
+    if(aqua) {
+        titleColor=selected ? [NSColor whiteColor] : [NSColor colorWithCalibratedWhite:0.18 alpha:1];
+        detailColor=selected ? [NSColor whiteColor] : [NSColor colorWithCalibratedWhite:0.34 alpha:1];
+    }
     NSString *title = [self.sessionPresentation objectForKey:@"title"];
     NSString *detail = [self.sessionPresentation objectForKey:@"detail"];
     NSString *iconName = [self.sessionPresentation objectForKey:@"icon_name"];
-    NSRect iconSlot = NSMakeRect(NSMinX(cardRect) + 10.0, NSMinY(cardRect) + 9.0, 30.0, 30.0);
+    NSRect iconSlot = NSMakeRect(NSMinX(cardRect) + (aqua ? 20.0 : 10.0), aqua ? floor(NSMidY(cardRect)-15.0) : NSMinY(cardRect) + 9.0, 30.0, 30.0);
     if ([iconName length] > 0) {
         TGDrawTemplateIconAsset(iconName, iconSlot, titleColor, 0.92, [controlView isFlipped]);
     }
 
     CGFloat textX = NSMaxX(iconSlot) + 10.0;
     CGFloat textWidth = MAX(0.0, NSMaxX(cardRect) - textX - 10.0);
+    NSMutableParagraphStyle *paragraph=[[[NSMutableParagraphStyle alloc] init] autorelease];
+    [paragraph setLineBreakMode:NSLineBreakByTruncatingTail];
     NSDictionary *titleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                      [NSFont boldSystemFontOfSize:12.0], NSFontAttributeName,
                                      titleColor, NSForegroundColorAttributeName,
+                                     paragraph, NSParagraphStyleAttributeName,
                                      nil];
     NSDictionary *detailAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                       [NSFont systemFontOfSize:10.0], NSFontAttributeName,
                                       detailColor, NSForegroundColorAttributeName,
+                                      paragraph, NSParagraphStyleAttributeName,
                                       nil];
-    [(title ? title : @"") drawInRect:NSMakeRect(textX, NSMinY(cardRect) + 8.0, textWidth, 16.0)
+    CGFloat titleY=aqua ? floor(NSMidY(cardRect)-18.0) : NSMinY(cardRect)+8.0;
+    CGFloat detailY=aqua ? titleY+19.0 : NSMinY(cardRect)+27.0;
+    [(title ? title : @"") drawInRect:NSMakeRect(textX, titleY, textWidth, 16.0)
                        withAttributes:titleAttributes];
-    [(detail ? detail : @"") drawInRect:NSMakeRect(textX, NSMinY(cardRect) + 27.0, textWidth, 14.0)
+    [(detail ? detail : @"") drawInRect:NSMakeRect(textX, detailY, textWidth, 14.0)
                          withAttributes:detailAttributes];
 }
 

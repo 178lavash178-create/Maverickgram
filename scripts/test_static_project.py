@@ -1131,8 +1131,8 @@ def check_primary_navigation_contract(errors):
     if "TGPrimaryTextButtonCell *openCell" not in contacts_text:
         errors.append("%s: open-chat action must use the themed primary text-button cell" %
                       contacts_rel)
-    if 'TGDrawTemplateIconAsset(@"route-arrow"' not in button_cells_text:
-        errors.append("%s: drawer back state must use the approved route-arrow asset" %
+    if '@"Phosphor/back"' not in button_cells_text or '@"Phosphor/list"' not in button_cells_text:
+        errors.append("%s: drawer back/list states must use the approved Phosphor assets" %
                       button_cells_rel)
     if "profileBackButton" in controller_text:
         errors.append("%s: profile must reuse the drawer button back state, not add a separate text button" %
@@ -1781,7 +1781,7 @@ def check_chat_folder_management_contract(errors):
         'assetName:@"folder-add"',
         'assetName:@"folder-remove"',
         'assetName:@"folder-share"',
-        'assetName:@"upload"',
+        'assetName:TGInterfaceDesignIsAqua() ? @"Phosphor/folder-import" : @"upload"',
         "reorderChatFolderDefinitions:",
         "chatFolderInvitePreviewForLink:",
         "importChatFolderWithInviteLink:",

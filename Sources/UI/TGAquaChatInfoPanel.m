@@ -63,13 +63,17 @@ static NSString *TGChatInfoString(id object) { return [object isKindOfClass:[NSS
     _detailsField = [TGChatInfoLabel([NSFont systemFontOfSize:12.0], YES) retain]; [_documentView addSubview:_detailsField];
     _mediaHostView = [[NSView alloc] initWithFrame:NSZeroRect]; [_sheetView addSubview:_mediaHostView];
     _tabScrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
-    [_tabScrollView setBorderType:NSNoBorder]; [_tabScrollView setHasHorizontalScroller:YES];
-    /* Overlay scrollers preserve horizontal access without a permanent grey gutter. */
-    [_tabScrollView setScrollerStyle:NSScrollerStyleOverlay];
+    [_tabScrollView setBorderType:NSNoBorder]; [_tabScrollView setHasHorizontalScroller:NO];
+    // Categories either fit completely or use the popup. No hidden category
+    // depends on scrolling, including when legacy AppKit forces legacy bars.
     [_tabScrollView setAutohidesScrollers:YES]; [_tabScrollView setDrawsBackground:NO];
     [[_tabScrollView contentView] setDrawsBackground:NO];
     _tabDocumentView = [[NSView alloc] initWithFrame:NSZeroRect];
     [_tabScrollView setDocumentView:_tabDocumentView]; [_sheetView addSubview:_tabScrollView];
+    _categoryPopUp = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:NO];
+    [_categoryPopUp setFont:[NSFont systemFontOfSize:12]];
+    [_categoryPopUp setTarget:self]; [_categoryPopUp setAction:@selector(categoryChanged:)];
+    [_sheetView addSubview:_categoryPopUp];
     NSMutableArray *buttons = [NSMutableArray array];
     for (NSInteger index=-1;index<8;index++) {
         NSButton *button = [[[NSButton alloc] initWithFrame:NSZeroRect] autorelease];
@@ -77,6 +81,8 @@ static NSString *TGChatInfoString(id object) { return [object isKindOfClass:[NSS
         [button setButtonType:NSToggleButton]; [button setFont:[NSFont systemFontOfSize:12]];
         [button setTag:index]; [button setTarget:self]; [button setAction:@selector(actionPressed:)];
         [_tabDocumentView addSubview:button]; [buttons addObject:button];
+        [_categoryPopUp addItemWithTitle:[NSString stringWithFormat:@"%ld",(long)index]];
+        [[_categoryPopUp lastItem] setTag:index];
     }
     _actionButtons = [buttons copy]; _selectedMediaTab=-1;
     _detailsButton = [[NSButton alloc] initWithFrame:NSZeroRect];
@@ -93,7 +99,7 @@ static NSString *TGChatInfoString(id object) { return [object isKindOfClass:[NSS
     [_sheetView release]; [_scrollView release]; [_documentView release]; [_avatarView release];
     [_headingField release]; [_nameField release]; [_subtitleField release]; [_detailsField release];
     [_closeButton release]; [_actionButtons release]; [_summary release];
-    [_tabScrollView release]; [_tabDocumentView release]; [_mediaHostView release]; [_detailsButton release];
+    [_tabScrollView release]; [_tabDocumentView release]; [_categoryPopUp release]; [_mediaHostView release]; [_detailsButton release];
     [super dealloc];
 }
 - (void)showSummary:(NSDictionary *)summary loading:(BOOL)loading error:(NSString *)errorMessage {
@@ -145,6 +151,7 @@ static NSString *TGChatInfoString(id object) { return [object isKindOfClass:[NSS
     for (NSUInteger i=0;i<[_actionButtons count];i++) {
         NSButton *button = [_actionButtons objectAtIndex:i]; NSString *text = TGLoc([keys objectAtIndex:i]);
         [button setTitle:text]; [button setToolTip:text];
+        [[_categoryPopUp itemAtIndex:i] setTitle:text];
     }
     [self resizeSubviewsWithOldSize:NSZeroSize];
 }
@@ -155,9 +162,9 @@ static NSString *TGChatInfoString(id object) { return [object isKindOfClass:[NSS
 - (void)setSelectedMediaTab:(NSInteger)tab {
     _selectedMediaTab=MAX(-1,MIN(7,tab));
     for (NSButton *button in _actionButtons) [button setState:([button tag]==_selectedMediaTab ? NSOnState : NSOffState)];
+    [_categoryPopUp selectItemWithTag:_selectedMediaTab];
     [_scrollView setHidden:(_selectedMediaTab>=0)]; [_mediaHostView setHidden:(_selectedMediaTab<0)];
     [self resizeSubviewsWithOldSize:NSZeroSize];
-    for (NSButton *button in _actionButtons) if ([button tag]==_selectedMediaTab) [button scrollRectToVisible:[button bounds]];
 }
 - (void)resizeSubviewsWithOldSize:(NSSize)oldSize {
     (void)oldSize;
@@ -173,7 +180,7 @@ static NSString *TGChatInfoString(id object) { return [object isKindOfClass:[NSS
     [_avatarView setFrame:NSMakeRect(18,MAX(0,identityTop-70),56,56)];
     [_nameField setFrame:NSMakeRect(88,MAX(0,identityTop-14-nameHeight),nameWidth,nameHeight)];
     [_subtitleField setFrame:NSMakeRect(88,MAX(0,identityTop-18-nameHeight-subtitleHeight),nameWidth,subtitleHeight)];
-    CGFloat tabsTop=MAX(0,identityTop-identityHeight), tabsHeight=MIN(48,tabsTop);
+    CGFloat tabsTop=MAX(0,identityTop-identityHeight), tabsHeight=MIN(38,tabsTop);
     [_tabScrollView setFrame:NSMakeRect(12,tabsTop-tabsHeight,MAX(0,width-24),tabsHeight)];
     CGFloat x=0;
     for (NSButton *button in _actionButtons) {
@@ -183,6 +190,12 @@ static NSString *TGChatInfoString(id object) { return [object isKindOfClass:[NSS
     }
     [_tabDocumentView setFrameSize:NSMakeSize(MAX(x-6,NSWidth([[_tabScrollView contentView] bounds])),30)];
     [_tabScrollView tile];
+    // The complete category name and all destinations remain visible on narrow
+    // layouts; a partially hidden horizontal strip is unnecessary here.
+    BOOL tabsFit=x-6<=MAX(0,width-24);
+    [_tabScrollView setHidden:!tabsFit]; [_categoryPopUp setHidden:tabsFit];
+    [_categoryPopUp setFrame:NSMakeRect(12,tabsTop-tabsHeight+4,MAX(0,width-24),MIN(28,MAX(0,tabsHeight-4)))];
+    [_categoryPopUp selectItemWithTag:_selectedMediaTab];
     NSRect body=NSMakeRect(1,1,MAX(0,width-2),MAX(0,tabsTop-tabsHeight-5));
     [_scrollView setFrame:body]; [_scrollView tile]; [_mediaHostView setFrame:body];
     [_scrollView setHidden:(_selectedMediaTab>=0)]; [_mediaHostView setHidden:(_selectedMediaTab<0)];
@@ -236,6 +249,10 @@ static NSString *TGChatInfoString(id object) { return [object isKindOfClass:[NSS
 - (void)closePressed:(id)sender { if ([_target respondsToSelector:@selector(closeAquaChatInfo:)]) [_target performSelector:@selector(closeAquaChatInfo:) withObject:sender]; }
 - (void)actionPressed:(id)sender {
     if ([_target respondsToSelector:@selector(openAquaChatInfoMedia:)]) [_target performSelector:@selector(openAquaChatInfoMedia:) withObject:sender];
+}
+- (void)categoryChanged:(id)sender {
+    (void)sender;
+    [self actionPressed:[_categoryPopUp selectedItem]];
 }
 - (void)detailsPressed:(id)sender {
     if ([_detailsButton isHidden] || ![_detailsButton isEnabled]) return;

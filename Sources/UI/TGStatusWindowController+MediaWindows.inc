@@ -818,11 +818,16 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
         NSUInteger rowIndex = index / columns;
         CGFloat tileX = gap + (CGFloat)column * (tileWidth + gap);
         CGFloat tileY = gap + (CGFloat)rowIndex * (tileHeight + gap);
-        TGGroupedCardView *tile = [[[TGGroupedCardView alloc] initWithFrame:NSMakeRect(tileX, tileY, tileWidth, tileHeight)] autorelease];
+        NSRect tileFrame = NSMakeRect(tileX, tileY, tileWidth, tileHeight);
+        NSView *tile = TGInterfaceDesignIsAqua()
+            ? [[[NSView alloc] initWithFrame:tileFrame] autorelease]
+            : [[[TGGroupedCardView alloc] initWithFrame:tileFrame] autorelease];
         [self.mediaCenterResultsView addSubview:tile];
 
         BOOL imageFirst = TGInterfaceDesignIsAqua();
-        NSRect previewRect = NSMakeRect(8.0, 8.0, tileWidth - 16.0, imageFirst ? tileHeight - 16.0 : 86.0);
+        CGFloat previewInset = imageFirst ? 4.0 : 8.0;
+        NSRect previewRect = NSMakeRect(previewInset, previewInset, tileWidth - previewInset * 2.0,
+                                        imageFirst ? tileHeight - previewInset * 2.0 : 86.0);
         [self ensureMediaCenterHighQualityThumbnailForItem:item];
         NSImage *thumbnail = [self mediaCenterThumbnailForItem:item];
         if (thumbnail) {

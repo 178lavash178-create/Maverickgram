@@ -27,6 +27,12 @@
     [self.deleteSecretHistoryButton setFrame:NSMakeRect(190,secretActionY-38,secretTextWidth,30)];
     [self.statusField setFrame:NSMakeRect(34,24,w-100,16)];
     [self.spinner setFrame:NSMakeRect(w-50,24,16,16)];
+    if (TGInterfaceDesignIsAqua()) {
+        [self.titleField setFrame:NSMakeRect(24,h-36,w-260,20)];
+        [self.refreshButton setFrame:NSMakeRect(w-112,h-40,88,28)];
+        [self.administrationButton setFrame:NSMakeRect(w-234,h-40,114,28)];
+        [self.botButton setFrame:[self.administrationButton frame]];
+    }
     TGUtilitySizeResponsiveTable(self.memberTableView);
 }
 - (void)windowDidResize:(NSNotification *)notification {

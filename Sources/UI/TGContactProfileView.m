@@ -3,6 +3,7 @@
 #import "TGLocalization.h"
 #import "TGStatusViewComponents.h"
 #import "TGTheme.h"
+#import "TGInterfaceDesign.h"
 
 static NSTextField *TGContactProfileLabel(NSRect frame, NSFont *font, NSInteger alignment) {
     NSTextField *field = [[[NSTextField alloc] initWithFrame:frame] autorelease];
@@ -63,6 +64,14 @@ static NSString *TGContactProfileBirthday(NSDictionary *contact) {
 }
 
 @implementation TGContactProfileView
+
+- (void)drawRect:(NSRect)dirtyRect {
+    if (!TGInterfaceDesignIsAqua()) { [super drawRect:dirtyRect]; return; }
+    // A quiet details column, separated once from the contact source list.
+    [[NSColor colorWithCalibratedWhite:0.985 alpha:1] set]; NSRectFill([self bounds]);
+    [[NSColor colorWithCalibratedWhite:0.80 alpha:1] set];
+    NSRectFill(NSMakeRect(0,0,1,NSHeight([self bounds])));
+}
 
 - (id)initWithFrame:(NSRect)frame {
     self = [super initWithFrame:frame];
@@ -142,6 +151,7 @@ static NSString *TGContactProfileBirthday(NSDictionary *contact) {
 }
 
 - (void)showPlaceholder {
+    _presentationState=0;
     [_contact release];
     _contact = nil;
     [self setDetailFieldsHidden:YES];
@@ -151,10 +161,12 @@ static NSString *TGContactProfileBirthday(NSDictionary *contact) {
 
 - (void)showLoadingForContact:(NSDictionary *)contact {
     [self showContact:contact];
+    _presentationState=1;
     [_statusField setStringValue:TGLoc(@"contacts.profileLoading")];
 }
 
 - (void)showContact:(NSDictionary *)contact {
+    _presentationState=0;
     [_contact release];
     _contact = [contact copy];
     if (!_contact) {
@@ -190,7 +202,23 @@ static NSString *TGContactProfileBirthday(NSDictionary *contact) {
 
 - (void)showError:(NSString *)message contact:(NSDictionary *)contact {
     [self showContact:contact];
+    _presentationState=2;
     [_statusField setStringValue:([message length] > 0 ? message : TGLoc(@"contacts.profileError"))];
+}
+
+- (void)refreshLocalizedText {
+    if(!_contact){[_hintField setStringValue:TGLoc(@"contacts.selectHint")];return;}
+    [_usernameTitleField setStringValue:TGLoc(@"profile.username")];
+    [_phoneTitleField setStringValue:TGLoc(@"profile.phone")];
+    [_birthdayTitleField setStringValue:TGLoc(@"profile.birthday")];
+    [_bioTitleField setStringValue:TGLoc(@"profile.about")];
+    if([[_contact objectForKey:@"username"] length]==0)[_usernameValueField setStringValue:TGLoc(@"contacts.notAvailable")];
+    if([[_contact objectForKey:@"phone_number"] length]==0)[_phoneValueField setStringValue:TGLoc(@"contacts.notAvailable")];
+    if([[_contact objectForKey:@"bio"] length]==0)[_bioValueField setStringValue:TGLoc(@"contacts.notAvailable")];
+    [_birthdayValueField setStringValue:TGContactProfileBirthday(_contact)];
+    if(_presentationState==0)[_statusField setStringValue:TGContactProfilePresence(_contact)];
+    else if(_presentationState==1)[_statusField setStringValue:TGLoc(@"contacts.profileLoading")];
+    // A server error remains visible verbatim rather than becoming presence.
 }
 
 - (void)refreshThemeAppearance {

@@ -32,3 +32,17 @@ Icons: Creative Commons Attribution 4.0 International.
 https://creativecommons.org/licenses/by/4.0/
 Paths unchanged; PNG conversion and runtime tint only.
 Original SVGs, license and attribution bundled in Icons/AquaGlyphs.
+
+## Phosphor Icons 2.1.1
+
+Selected Aqua action glyphs use the bold weight of Phosphor Icons 2.1.1
+by Phosphor Icons, licensed under the MIT License. Original SVGs, the
+unmodified license, attribution and SHA-256 source/conversion manifest
+are bundled in `Icons/Phosphor`. PNG conversion only; original paths unchanged.
+
+Source: https://github.com/phosphor-icons/core/tree/2b75f3ad12b420c9504ef05df8d2564a28f8500e
+
+The pre-existing flat PNG icon collection is separately inventoried in
+`Icons/LEGACY_ASSET_INVENTORY.json`. Its upstream source and license were not
+recorded in the repository; that inventory makes no third-party authorship
+or license claim. It is not covered by the Phosphor or Font Awesome notices.

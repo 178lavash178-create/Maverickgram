@@ -5,6 +5,10 @@
 #import "TGMediaFileActions.h"
 #import "TGLocalization.h"
 #import "TGTheme.h"
+#import "TGInterfaceDesign.h"
+#import "TGAquaAppearance.h"
+#import "TGIconAssets.h"
+#import "TGChatListSelectionAppearance.h"
 #import "TGStatusViewComponents.h"
 #include <math.h>
 #include <stdio.h>
@@ -13,6 +17,7 @@
 // Layout, row rendering, themes/localization, buttons and controller are real.
 @implementation TGRepresentedObjectCell
 @synthesize representedObject = _representedObject;
+- (void)setObjectValue:(id)value {self.representedObject=value;[super setObjectValue:@""];}
 - (void)dealloc { [_representedObject release]; [super dealloc]; }
 @end
 @implementation TGUtilityWindowView
@@ -85,6 +90,24 @@ static NSColor *RenderedPixel(NSSize size, void (^draw)(void)) {
     CGImageRelease(image); CGContextRelease(bitmap); CGColorSpaceRelease(space);
     return pixel;
 }
+// The context below is explicitly sRGB. Read its encoded components directly;
+// colorAtX can label the returned NSColor calibrated, so converting that color
+// again would apply a second color-space transform to already-rendered pixels.
+static double RasterLuminance(NSColor *pixel) {
+    double c[]={[pixel redComponent],[pixel greenComponent],[pixel blueComponent]};
+    for(NSUInteger i=0;i<3;i++)c[i]=c[i]<=0.04045?c[i]/12.92:pow((c[i]+0.055)/1.055,2.4);
+    return 0.2126*c[0]+0.7152*c[1]+0.0722*c[2];
+}
+static NSBitmapImageRep *RenderedSelectedRow(TGDownloadListCell *cell) {
+    CGColorSpaceRef space=CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+    CGContextRef bitmap=CGBitmapContextCreate(NULL,548,72,8,0,space,kCGImageAlphaPremultipliedLast|kCGBitmapByteOrder32Big);
+    Require(bitmap!=NULL,"selected row creates actual raster context");
+    [NSGraphicsContext saveGraphicsState];[NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithGraphicsPort:bitmap flipped:NO]];
+    NSView *view=[[[NSView alloc] initWithFrame:NSMakeRect(0,0,548,72)] autorelease];
+    [cell drawWithFrame:[view bounds] inView:view];[NSGraphicsContext restoreGraphicsState];
+    CGImageRef image=CGBitmapContextCreateImage(bitmap);NSBitmapImageRep *rep=[[[NSBitmapImageRep alloc] initWithCGImage:image] autorelease];
+    CGImageRelease(image);CGContextRelease(bitmap);CGColorSpaceRelease(space);return rep;
+}
 static NSColor *RenderedSurfacePaper(NSView *surface) {
     NSSize size = [surface bounds].size;
     NSColor *pixel = RenderedPixel(size, ^{
@@ -136,8 +159,10 @@ static void CheckLayout(NSSize size) {
         [NSDictionary dictionaryWithObject:[NSFont systemFontOfSize:11] forKey:NSFontAttributeName]].width + 4,
         "localized maximum persisted queue count fits footer summary");
 }
-int main(void) {
+int main(int argc,const char **argv) {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; [NSApplication sharedApplication];
+    BOOL isAqua=argc>1&&strcmp(argv[1],"aqua")==0;
+    [[NSUserDefaults standardUserDefaults] setVolatileDomain:[NSDictionary dictionaryWithObject:isAqua?@"aqua":@"classic" forKey:TGInterfaceDesignDefaultsKey] forName:NSArgumentDomain];
     SetRecords([NSArray array]);
     TGDownloadManagerWindowController *controller = [[[TGDownloadManagerWindowController alloc] init] autorelease];
     for (NSString *language in [NSArray arrayWithObjects:@"ru",@"be",@"en",nil]) {
@@ -228,6 +253,36 @@ int main(void) {
         [[[[controller valueForKey:@"downloads"] objectAtIndex:0] objectForKey:@"identifier"] isEqual:@"new-retry"],
         "actual controller retry preserves stable-identity API and selects returned record");
     [controller reloadDownloads]; Require([table selectedRow]==0, "later updates preserve retry selection");
+    if(isAqua) {
+    TGDownloadManagerWindowController *aqua=[[[TGDownloadManagerWindowController alloc] init] autorelease];
+    Require([[[aqua window] contentView] isKindOfClass:[TGAquaUtilityWindowView class]],"Aqua actual constructor uses shared casework");
+    for(NSString *lang in [NSArray arrayWithObjects:@"ru",@"be",@"en",nil]) {
+        TGSetLanguageCode(lang);[aqua refreshPresentation];
+        for(NSValue *sizeValue in [NSArray arrayWithObjects:[NSValue valueWithSize:NSMakeSize(620,460)],[NSValue valueWithSize:NSMakeSize(740,540)],[NSValue valueWithSize:NSMakeSize(1000,760)],nil]) {
+            NSSize size=[sizeValue sizeValue];CheckLayout(size);
+            [[aqua window] setContentSize:size];[aqua layoutDownloadViews];
+            Require([[aqua valueForKey:@"titleField"] font].pointSize==14,"compact utility title replaces large card heading");
+            Require([[aqua valueForKey:@"headerView"] isHidden]&&[[aqua valueForKey:@"footerView"] isHidden]&&[[aqua valueForKey:@"listSurface"] isHidden],"Aqua removes nested card surfaces");
+            for(NSString *key in [NSArray arrayWithObjects:@"pauseButton",@"cancelButton",@"retryButton",@"revealButton",@"clearButton",nil]) Require(NSContainsRect([[[aqua window] contentView] bounds],[[aqua valueForKey:key] frame]),"actual Aqua commands stay inside resized content");
+        }
+    }
+    SetRecords([NSArray array]);[aqua reloadDownloads];Require([[aqua valueForKey:@"statusField"] isHidden],"empty Aqua has one empty message rather than duplicate footer text");
+    SetRecords([NSArray arrayWithObject:Record(@"paused")]);[aqua reloadDownloads];Require(![[aqua valueForKey:@"statusField"] isHidden],"populated Aqua restores footer summary");
+    NSTableView *actualTable=[aqua valueForKey:@"tableView"];
+    TGDownloadListCell *actualCell=[actualTable preparedCellAtColumn:0 row:0];
+    Require([[[actualCell representedObject] objectForKey:@"title"] length]>0,"actual prepared cell receives populated model through represented-object storage");
+    [actualCell setHighlighted:YES];NSBitmapImageRep *selectedRaster=RenderedSelectedRow(actualCell);
+    NSColor *selectedPaper=[selectedRaster colorAtX:530 y:20];
+    if((1.05/(RasterLuminance(selectedPaper)+0.05))<4.5)fprintf(stderr,"Selected raster paper%s contrast%g source%s actualCell%s highlighted%d\n",[[selectedPaper description] UTF8String],(1.05/(RasterLuminance(selectedPaper)+0.05)),[[TGListSelectionBackground() description] UTF8String],[NSStringFromClass([actualCell class]) UTF8String],[actualCell isHighlighted]);
+    Require((1.05/(RasterLuminance(selectedPaper)+0.05))>=4.5,"actual selected download paper supports white text contrast");
+    NSUInteger whiteTextPixels=0;
+    for(NSUInteger y=8;y<46;y++)for(NSUInteger x=64;x<490;x++)if(RasterLuminance([selectedRaster colorAtX:x y:y])>0.85)whiteTextPixels++;
+    Require(whiteTextPixels>20,"actual selected row contains white filename and detail glyph pixels");
+    Require([actualTable selectionHighlightStyle]==NSTableViewSelectionHighlightStyleNone,"native gray selection does not form a second backing behind Aqua row");
+    if(getenv("TG_DOWNLOAD_REQUIRE_ICON_ASSETS"))Require(TGTemplateIconAssetImage(@"document",NSMakeSize(24,24),[NSColor whiteColor],1)!=nil,"actual bundled approved document icon is available");
+    const char *preview=getenv("TG_DOWNLOAD_PREVIEW_DIR");
+    if(preview){TGSetLanguageCode(@"ru");[aqua refreshPresentation];[[aqua window] setContentSize:NSMakeSize(620,460)];[aqua layoutDownloadViews];NSView *root=[[aqua window] contentView];NSBitmapImageRep *rep=[root bitmapImageRepForCachingDisplayInRect:[root bounds]];[root cacheDisplayInRect:[root bounds] toBitmapImageRep:rep];[[rep representationUsingType:NSPNGFileType properties:[NSDictionary dictionary]] writeToFile:[[NSString stringWithUTF8String:preview] stringByAppendingPathComponent:@"downloads-narrow.png"] atomically:YES];}
+    }
     [TGRecords release]; TGRecords=nil; [TGRetrySource release]; TGRetrySource=nil;
     puts("Download manager presentation probe passed."); [pool drain]; return 0;
 }

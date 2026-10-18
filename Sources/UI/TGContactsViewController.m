@@ -11,6 +11,8 @@
 #import "TGStatusViewCells.h"
 #import "TGStatusViewComponents.h"
 #import "TGTheme.h"
+#import "TGInterfaceDesign.h"
+#import "TGAquaAppearance.h"
 #import "TGThemeContrast.h"
 
 static NSString *TGContactsSubtitle(NSDictionary *contact) {
@@ -36,6 +38,7 @@ static NSString *TGContactsSubtitle(NSDictionary *contact) {
 @implementation TGContactRowCell
 
 - (void)drawInteriorWithFrame:(NSRect)cellFrame inView:(NSView *)controlView {
+    if(TGInterfaceDesignIsAqua()) cellFrame.size.width=MAX(0,MIN(NSMaxX(cellFrame),NSMaxX([controlView bounds]))-NSMinX(cellFrame));
     NSDictionary *contact = [[self representedObject] isKindOfClass:[NSDictionary class]]
         ? [self representedObject]
         : nil;
@@ -160,7 +163,7 @@ static NSString *TGContactsSubtitle(NSDictionary *contact) {
 }
 
 - (void)buildView {
-    TGPanelView *root = [[[TGPanelView alloc] initWithFrame:NSMakeRect(0, 0, 720, 560)] autorelease];
+    NSView *root = TGInterfaceDesignIsAqua() ? [[[TGAquaUtilityWindowView alloc] initWithFrame:NSMakeRect(0,0,720,560)] autorelease] : [[[TGPanelView alloc] initWithFrame:NSMakeRect(0,0,720,560)] autorelease];
     [root setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [self setView:root];
 
@@ -266,7 +269,8 @@ static NSString *TGContactsSubtitle(NSDictionary *contact) {
     CGFloat width = NSWidth(bounds);
     CGFloat height = NSHeight(bounds);
     CGFloat margin = 14.0;
-    CGFloat headerHeight = 40.0;
+    BOOL aqua=TGInterfaceDesignIsAqua();
+    CGFloat headerHeight = aqua?52.0:40.0;
     CGFloat buttonSize = 30.0;
     CGFloat buttonY = height - headerHeight + floor((headerHeight - buttonSize) / 2.0) - 2.0;
     CGFloat refreshX = width - margin - buttonSize;
@@ -283,8 +287,13 @@ static NSString *TGContactsSubtitle(NSDictionary *contact) {
     CGFloat searchY = height - headerHeight - 40.0;
     [self.searchField setFrame:NSMakeRect(margin, searchY, MAX(120.0, width - (margin * 2.0)), 28.0)];
     CGFloat tableTop = searchY - 8.0;
-    BOOL showsProfile = (width >= 720.0);
-    CGFloat footerHeight = showsProfile ? 48.0 : 78.0;
+    BOOL showsProfile = (width >= 720.0) && (!aqua || height>=520.0);
+    CGFloat footerHeight = showsProfile ? (aqua?54.0:48.0) : (aqua?84.0:78.0);
+    if(aqua){[(TGAquaUtilityWindowView *)[self view] setHeaderHeight:96];[(TGAquaUtilityWindowView *)[self view] setFooterHeight:footerHeight];
+        [self.titleField setAlignment:NSLeftTextAlignment];[self.titleField setFont:[NSFont boldSystemFontOfSize:14]];
+        [self.titleField setFrame:NSMakeRect(margin,height-36,MAX(80,titleRight-margin),20)];
+    }
+    [self.listCardView setHidden:aqua];
     CGFloat openWidth = ceil([[self.openButton title] sizeWithAttributes:[NSDictionary dictionaryWithObject:
         [NSFont boldSystemFontOfSize:13.0] forKey:NSFontAttributeName]].width) + 32.0;
     CGFloat actionsWidth = ceil([[self.actionButton title] sizeWithAttributes:[NSDictionary dictionaryWithObject:
@@ -299,7 +308,7 @@ static NSString *TGContactsSubtitle(NSDictionary *contact) {
                                       MAX(120.0, listWidth),
                                       MAX(80.0, tableTop - footerHeight));
     [self.listCardView setFrame:listCardFrame];
-    [self.scrollView setFrame:NSInsetRect(listCardFrame, 7.0, 7.0)];
+    [self.scrollView setFrame:NSInsetRect(listCardFrame,aqua?0.0:7.0,aqua?8.0:7.0)];
     if (showsProfile) {
         [self.profileView setFrame:NSMakeRect(margin * 2.0 + listWidth,
                                               footerHeight,
@@ -377,6 +386,7 @@ static NSString *TGContactsSubtitle(NSDictionary *contact) {
 }
 
 - (void)refreshLocalizedText {
+    if(TGInterfaceDesignIsAqua())[self.profileView refreshLocalizedText];
     [self.titleField setStringValue:TGLoc(@"contacts.section.title")];
     [[self.searchField cell] setPlaceholderString:TGLoc(@"contacts.search")];
     [self.refreshButton setTitle:@"↻"];

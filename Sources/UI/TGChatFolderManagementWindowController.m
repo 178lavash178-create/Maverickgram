@@ -210,7 +210,7 @@ static NSString * const TGChatFolderDragPasteboardType = @"com.telegraphica.chat
     [root addSubview:subtitle];
 
     self.importButton = [self iconButtonWithFrame:NSMakeRect(566, 584, 34, 32)
-                                       assetName:@"upload"
+                                       assetName:TGInterfaceDesignIsAqua() ? @"Phosphor/folder-import" : @"upload"
                                           toolTip:TGLoc(@"folders.import")
                                            action:@selector(importFolder:)];
     [self.importButton setAutoresizingMask:(NSViewMinXMargin | NSViewMinYMargin)];

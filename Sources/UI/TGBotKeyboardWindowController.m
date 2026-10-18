@@ -8,6 +8,9 @@
 #import "TGStatusViewCells.h"
 #import "TGTheme.h"
 #import "TGThemeTextField.h"
+#import "TGAquaAppearance.h"
+#import "TGAquaShellViews.h"
+#import "TGInterfaceDesign.h"
 
 @interface TGBotKeyboardWindowController () <NSTableViewDataSource, NSTableViewDelegate>
 @property (nonatomic, retain) TGTDLibClient *client;
@@ -19,6 +22,7 @@
 @property (nonatomic, retain) NSButton *activateButton;
 @property (nonatomic, retain) NSTextField *statusField;
 @property (nonatomic, retain) NSProgressIndicator *spinner;
+- (void)buildAquaViews;
 @property (nonatomic, assign) BOOL loading;
 @end
 
@@ -109,7 +113,11 @@
     return field;
 }
 
+
+#include "TGBotKeyboardWindowController+Aqua.inc"
+
 - (void)buildViews {
+    if (TGInterfaceDesignIsAqua()) { [self buildAquaViews]; return; }
     TGUtilityWindowView *root = [[[TGUtilityWindowView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease];
     [root setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [[self window] setContentView:root];
@@ -210,6 +218,7 @@
 - (void)setLoading:(BOOL)loading status:(NSString *)status {
     self.loading = loading;
     [self.statusField setStringValue:status ? status : @""];
+    [self.statusField setToolTip:status];
     if (loading) {
         [self.spinner startAnimation:nil];
     } else {

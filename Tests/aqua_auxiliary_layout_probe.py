@@ -97,6 +97,7 @@ harness=r'''
 #import "TGIconAssets.h"
 #import "TGMessageLayoutSupport.h"
 #import "TGInterfaceDesign.h"
+#import "TGAquaAppearance.h"
 #include <stdlib.h>
 void TGDrawAvatarInRect(NSString *p,NSString *t,NSRect r,BOOL s,BOOL f) {(void)p;(void)t;(void)r;(void)s;(void)f;}
 static void Require(BOOL value,const char *message) {if(!value){fprintf(stderr,"Auxiliary layout: %s\n",message);exit(1);}}
@@ -194,7 +195,7 @@ int main(int argc,const char **argv) {
             layouts++;
         }
         for(NSNumber *width in [NSArray arrayWithObjects:@420,@719,@720,@980,nil]) {
-            ContactLayoutProbe *c=[[[ContactLayoutProbe alloc] init] autorelease];[c setView:[[[NSView alloc] initWithFrame:NSMakeRect(0,0,[width doubleValue],560)] autorelease]];
+            ContactLayoutProbe *c=[[[ContactLayoutProbe alloc] init] autorelease];[c setView:aqua ? [[[TGAquaUtilityWindowView alloc] initWithFrame:NSMakeRect(0,0,[width doubleValue],560)] autorelease] : [[[NSView alloc] initWithFrame:NSMakeRect(0,0,[width doubleValue],560)] autorelease]];
             c.titleField=[[[NSTextField alloc] init] autorelease];c.createChatButton=[[[NSButton alloc] init] autorelease];c.refreshButton=[[[NSButton alloc] init] autorelease];c.searchField=[[[NSSearchField alloc] init] autorelease];c.profileView=[[[NSView alloc] init] autorelease];c.listCardView=[[[NSView alloc] init] autorelease];c.scrollView=[[[NSScrollView alloc] init] autorelease];c.tableView=[[[NSTableView alloc] init] autorelease];c.statusField=[[[NSTextField alloc] init] autorelease];c.spinner=[[[NSProgressIndicator alloc] init] autorelease];c.openButton=[[[NSButton alloc] init] autorelease];c.actionButton=[[[NSButton alloc] init] autorelease];[c.openButton setTitle:TGLoc(@"contacts.open")];[c.actionButton setTitle:TGLoc(@"contacts.actions")];[c layoutContent];
             Require(NSContainsRect([[c view] bounds],[c.openButton frame]) && NSContainsRect([[c view] bounds],[c.actionButton frame]) && !NSIntersectsRect([c.openButton frame],[c.actionButton frame]),"contact actions fit and do not overlap");
             NSButton *buttons[]={c.openButton,c.actionButton};for(NSUInteger i=0;i<2;i++) {

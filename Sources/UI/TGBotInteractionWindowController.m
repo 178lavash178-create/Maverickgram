@@ -8,6 +8,10 @@
 #import "TGStatusViewCells.h"
 #import "TGTheme.h"
 #import "TGThemeTextField.h"
+#import "TGAquaAppearance.h"
+#import "TGAquaShellViews.h"
+#import "TGInterfaceDesign.h"
+#import "TGDialogPresentation.h"
 
 @interface TGBotInteractionWindowController () <NSTableViewDataSource, NSTableViewDelegate>
 @property (nonatomic, retain) TGTDLibClient *client;
@@ -28,7 +32,10 @@
 @property (nonatomic, retain) NSButton *resultButton;
 @property (nonatomic, retain) NSTextField *statusField;
 @property (nonatomic, retain) NSProgressIndicator *spinner;
+- (void)buildAquaViews;
+- (void)layoutAquaViews;
 @property (nonatomic, assign) BOOL loading;
+@property (nonatomic, retain) NSMutableDictionary *aquaViews;
 @end
 
 @implementation TGBotInteractionWindowController
@@ -52,6 +59,7 @@
 @synthesize statusField = _statusField;
 @synthesize spinner = _spinner;
 @synthesize loading = _loading;
+@synthesize aquaViews = _aquaViews;
 
 - (id)initWithClient:(TGTDLibClient *)client
               userID:(NSNumber *)userID
@@ -77,6 +85,8 @@
 }
 
 - (void)dealloc {
+    [[self window] setDelegate:nil];
+    [_aquaViews release];
     [_client release];
     [_userID release];
     [_chatID release];
@@ -147,7 +157,11 @@
     return button;
 }
 
+
+#include "TGBotInteractionWindowController+Aqua.inc"
+
 - (void)buildViews {
+    if (TGInterfaceDesignIsAqua()) { [self buildAquaViews]; return; }
     TGUtilityWindowView *root = [[[TGUtilityWindowView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease];
     [root setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [[self window] setContentView:root];
@@ -179,6 +193,9 @@
     self.commandTableView = [self tableWithFrame:NSMakeRect(34, 336, 652, 120)
                                       identifier:@"command" root:root];
     [self.commandTableView setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
+    // Only the lower host consumes extra height, keeping the command list
+    // clear of its action and the inline results in the Classic layout too.
+    [[self.commandTableView enclosingScrollView] setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
     self.commandButton = [self buttonWithFrame:NSMakeRect(520, 302, 166, 28)
                                      titleKey:@"bot.command.send" action:@selector(sendCommandPressed:) primary:YES];
     [self.commandButton setAutoresizingMask:(NSViewMinXMargin | NSViewMinYMargin)];
@@ -201,7 +218,7 @@
     [self.queryField setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
     [root addSubview:self.queryField];
     self.searchButton = [self buttonWithFrame:NSMakeRect(564, 210, 122, 28)
-                                     titleKey:@"search" action:@selector(searchPressed:) primary:NO];
+                                     titleKey:@"menu.search" action:@selector(searchPressed:) primary:NO];
     [self.searchButton setAutoresizingMask:(NSViewMinXMargin | NSViewMinYMargin)];
     [root addSubview:self.searchButton];
     self.resultTableView = [self tableWithFrame:NSMakeRect(34, 88, 652, 116)
@@ -253,6 +270,7 @@
 - (void)setLoading:(BOOL)loading status:(NSString *)status {
     self.loading = loading;
     [self.statusField setStringValue:status ? status : @""];
+    [self.statusField setToolTip:status];
     if (loading) {
         [self.spinner startAnimation:nil];
     } else {
@@ -291,6 +309,7 @@
         dispatch_async(dispatch_get_main_queue(), ^{
             if (summary) {
                 [self.titleField setStringValue:[summary objectForKey:@"display_name"]];
+                [self.descriptionField setToolTip:[summary objectForKey:@"description"]];
                 [self.descriptionField setStringValue:[[summary objectForKey:@"description"] length] > 0
                     ? [summary objectForKey:@"description"] : TGLoc(@"bot.noDescription")];
                 self.commands = [summary objectForKey:@"commands"];

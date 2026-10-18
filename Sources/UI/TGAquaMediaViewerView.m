@@ -180,9 +180,9 @@ static NSTextField *TGMediaViewerLabel(NSFont *font) {
             TGAquaMediaControlCell *galleryCell=[[[TGAquaMediaControlCell alloc] initTextCell:@""] autorelease];
             [button setCell:galleryCell]; [button setBordered:NO]; [button setFocusRingType:NSFocusRingTypeNone]; [_headerView addSubview:button];
         }
-        [(TGAquaMediaControlCell *)[_previousButton cell] setIconAssetName:@"next"];
-        [(TGAquaMediaControlCell *)[_previousButton cell] setMirrored:YES];
-        [(TGAquaMediaControlCell *)[_nextButton cell] setIconAssetName:@"next"];
+        [(TGAquaMediaControlCell *)[_previousButton cell] setIconAssetName:@"Phosphor/back"];
+        [(TGAquaMediaControlCell *)[_previousButton cell] setMirrored:NO];
+        [(TGAquaMediaControlCell *)[_nextButton cell] setIconAssetName:@"Phosphor/forward"];
         [_previousButton setToolTip:TGLoc(@"media.viewer.previous")]; [_nextButton setToolTip:TGLoc(@"media.viewer.next")];
         [_fullscreenButton setTitle:TGLoc(@"media.viewer.fullScreen")]; [_fullscreenButton setToolTip:TGLoc(@"media.viewer.fullScreen")];
         [self setGalleryIndex:NSNotFound count:0];

@@ -19,6 +19,8 @@ xcuserdata/
 *.zip
 
 # Logs and diagnostics
+__pycache__/
+*.pyc
 *.log
 *.profraw
 *.gcda

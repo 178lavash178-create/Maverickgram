@@ -128,8 +128,9 @@ harness=harness.replace('__SHARED_PROBE__',os.path.join(root,'Tests/aqua_footer_
 folder=tempfile.mkdtemp(prefix='telegraphica-playable-footer-')
 try:
  bundle=os.path.join(folder,'FooterProbe.app');contents=os.path.join(bundle,'Contents');os.makedirs(os.path.join(contents,'MacOS'));icons=os.path.join(contents,'Resources/Icons');os.makedirs(icons)
- for name in ['play','done-mini','flag-triangle','route-arrow']:
+ for name in ['play','done-mini','route-arrow']:
   shutil.copy(os.path.join(root,'Sources/Resources/Icons',name+'.png'),icons)
+ shutil.copytree(os.path.join(root,'Sources/Resources/Icons/Phosphor'),os.path.join(icons,'Phosphor'))
  with open(os.path.join(contents,'Info.plist'),'w') as f:f.write('<?xml version="1.0"?><plist version="1.0"><dict><key>CFBundleExecutable</key><string>probe</string><key>CFBundleIdentifier</key><string>local.telegraphica.single-footer-probe</string><key>CFBundlePackageType</key><string>APPL</string></dict></plist>')
  source=os.path.join(folder,'probe.m');binary=os.path.join(contents,'MacOS/probe')
  with open(source,'wb') as f:f.write(harness.encode('utf-8'))

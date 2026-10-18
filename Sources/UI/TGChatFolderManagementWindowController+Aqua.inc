@@ -21,7 +21,7 @@
     NSArray *keys=[NSArray arrayWithObjects:@"folderLabel",@"nameLabel",@"includeLabel",@"excludeLabel",@"chatLabel",nil];
     NSArray *texts=[NSArray arrayWithObjects:@"folders.list",@"folders.name",@"folders.include",@"folders.exclude",@"folders.alwaysInclude",nil];
     for(NSUInteger i=0;i<[keys count];i++) [self aquaFolderLabel:[keys objectAtIndex:i] text:TGLoc([texts objectAtIndex:i])];
-    NSArray *assets=[NSArray arrayWithObjects:@"upload",@"folder-add",@"folder-remove",@"folder-share",@"refresh",nil];
+    NSArray *assets=[NSArray arrayWithObjects:@"Phosphor/folder-import",@"folder-add",@"folder-remove",@"folder-share",@"refresh",nil];
     NSArray *tips=[NSArray arrayWithObjects:@"folders.import",@"folders.add",@"folders.delete",@"folders.share",@"folders.refresh",nil];
     SEL actions[]={@selector(importFolder:),@selector(addFolder:),@selector(deleteFolder:),@selector(shareFolder:),@selector(refreshAction:)};
     NSMutableArray *toolbar=[NSMutableArray array];

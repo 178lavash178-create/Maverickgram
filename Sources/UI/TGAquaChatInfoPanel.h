@@ -16,6 +16,7 @@ TGAquaChatInfoGeometry TGAquaChatInfoFrames(NSRect conversation, BOOL visible);
     NSView *_avatarView;
     NSScrollView *_tabScrollView;
     NSView *_tabDocumentView;
+    NSPopUpButton *_categoryPopUp;
     NSView *_mediaHostView;
     NSButton *_detailsButton;
     NSInteger _selectedMediaTab;

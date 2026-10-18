@@ -694,7 +694,7 @@ static NSString *TGMessageViewerMenuTitle(NSDictionary *summary) {
                                                      keyEquivalent:@""] autorelease];
         [retryItem setRepresentedObject:item];
         [retryItem setTarget:self];
-        [retryItem setImage:TGTemplateIconAssetImage(@"reload", NSMakeSize(16.0, 16.0), [NSColor blackColor], 0.82)];
+        [retryItem setImage:TGTemplateIconAssetImage(@"refresh", NSMakeSize(16.0, 16.0), [NSColor blackColor], 0.82)];
         [menu addItem:retryItem];
 
         NSMenuItem *copyUnsentItem = [[[NSMenuItem alloc] initWithTitle:TGLoc(@"message.copyUnsentText")
@@ -781,7 +781,7 @@ static NSString *TGMessageViewerMenuTitle(NSDictionary *summary) {
         NSMenuItem *pollItem = [[[NSMenuItem alloc] initWithTitle:TGLoc(@"message.poll.vote")
                                                            action:nil
                                                     keyEquivalent:@""] autorelease];
-        [pollItem setImage:TGTemplateIconAssetImage(@"poll", NSMakeSize(16.0, 16.0), [NSColor blackColor], 0.80)];
+        [pollItem setImage:TGTemplateIconAssetImage(@"Phosphor/poll", NSMakeSize(16.0, 16.0), [NSColor blackColor], 0.80)];
         [pollItem setSubmenu:[self pollOptionsMenuForItem:item]];
         [pollItem setEnabled:(![item isPollClosed] && [[item pollOptions] count] > 0)];
         [menu addItem:pollItem];
@@ -825,7 +825,7 @@ static NSString *TGMessageViewerMenuTitle(NSDictionary *summary) {
                                                         keyEquivalent:@""] autorelease];
         [commentsItem setRepresentedObject:item];
         [commentsItem setTarget:self];
-        [commentsItem setImage:TGTemplateIconAssetImage(@"chats", NSMakeSize(16.0, 16.0), [NSColor blackColor], 0.82)];
+        [commentsItem setImage:TGTemplateIconAssetImage(@"chat", NSMakeSize(16.0, 16.0), [NSColor blackColor], 0.82)];
         [menu addItem:commentsItem];
         addedMessageAction = YES;
     }
@@ -850,7 +850,7 @@ static NSString *TGMessageViewerMenuTitle(NSDictionary *summary) {
                                                           keyEquivalent:@""] autorelease];
         [pinMessageItem setRepresentedObject:item];
         [pinMessageItem setTarget:self];
-        [pinMessageItem setImage:TGTemplateIconAssetImage(@"flag-triangle", NSMakeSize(16.0, 16.0), [NSColor blackColor], 0.78)];
+        [pinMessageItem setImage:TGTemplateIconAssetImage(@"Phosphor/pin", NSMakeSize(16.0, 16.0), [NSColor blackColor], 0.78)];
         [menu addItem:pinMessageItem];
         addedMessageAction = YES;
     }

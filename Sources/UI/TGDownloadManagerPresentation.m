@@ -3,6 +3,7 @@
 #import "TGLocalization.h"
 #import "TGTheme.h"
 #import "TGInterfaceDesign.h"
+#import "TGChatListSelectionAppearance.h"
 #import "TGAquaAppearance.h"
 #include <math.h>
 
@@ -30,6 +31,29 @@ static CGFloat TGDownloadButtonWidth(NSString *key, BOOL primary) {
 TGDownloadManagerLayout TGDownloadManagerLayoutForSize(NSSize size) {
     CGFloat width = MAX(620.0, size.width), height = MAX(460.0, size.height);
     TGDownloadManagerLayout f;
+    if (TGInterfaceDesignIsAqua()) {
+        // Only the list grows. Two measured action rows retain every command
+        // at the minimum width without enclosing them in another card.
+        f.header=NSMakeRect(0,height-52,width,52);
+        f.title=NSMakeRect(24,height-26,width-48,18);
+        f.subtitle=NSMakeRect(24,height-44,width-48,14);
+        f.footer=NSMakeRect(0,0,width,104);
+        f.surface=NSMakeRect(0,104,width,height-156);
+        f.list=NSInsetRect(f.surface,16,12);
+        CGFloat pause=MAX(112,MAX(TGDownloadButtonWidth(@"downloads.pause",YES),TGDownloadButtonWidth(@"downloads.resume",YES)));
+        CGFloat cancel=MAX(100,TGDownloadButtonWidth(@"downloads.cancel",NO));
+        CGFloat retry=MAX(112,TGDownloadButtonWidth(@"downloads.retry",NO));
+        CGFloat reveal=MAX(140,TGDownloadButtonWidth(@"downloads.reveal",NO));
+        CGFloat clear=MAX(160,TGDownloadButtonWidth(@"downloads.clear",NO));
+        f.pause=NSMakeRect(24,60,pause,28);
+        f.cancel=NSMakeRect(NSMaxX(f.pause)+8,60,cancel,28);
+        f.retry=NSMakeRect(NSMaxX(f.cancel)+8,60,retry,28);
+        f.clear=NSMakeRect(width-24-clear,16,clear,28);
+        f.reveal=NSMakeRect(NSMinX(f.clear)-8-reveal,16,reveal,28);
+        f.summary=NSMakeRect(24,21,NSMinX(f.reveal)-40,18);
+        f.empty=NSMakeRect(32,NSMidY(f.list)-12,width-64,24);
+        return f;
+    }
     f.header = NSMakeRect(24, height - 78, width - 48, 58);
     f.title = NSMakeRect(40, height - 50, width - 80, 26);
     f.subtitle = NSMakeRect(40, height - 72, width - 80, 18);
@@ -71,16 +95,17 @@ NSColor *TGDownloadManagerReadableInk(NSColor *preferred, NSColor *background) {
 
 @implementation TGDownloadListCell
 - (void)drawWithFrame:(NSRect)frame inView:(NSView *)view {
+    if(TGInterfaceDesignIsAqua()) frame.size.width=MAX(0,MIN(NSMaxX(frame),NSMaxX([view bounds]))-NSMinX(frame));
     NSDictionary *item = [self.representedObject isKindOfClass:[NSDictionary class]] ? self.representedObject : nil;
     if (!item) { return; }
     [NSGraphicsContext saveGraphicsState];
     [NSBezierPath clipRect:frame];
     BOOL selected = [self isHighlighted];
     NSRect row = NSInsetRect(frame, 2, 2);
-    NSColor *paper = selected ? TGClassicSelectedRowColor() : TGClassicTablePaperColor();
+    NSColor *paper = selected ? TGListSelectionBackground() : TGClassicTablePaperColor();
     [paper set];
     [[NSBezierPath bezierPathWithRoundedRect:row xRadius:(selected ? 6 : 0) yRadius:(selected ? 6 : 0)] fill];
-    NSColor *ink = TGDownloadManagerReadableInk(selected ? TGClassicSelectedRowTextColor() : TGClassicCardInkColor(), paper);
+    NSColor *ink = TGDownloadManagerReadableInk(selected ? TGListSelectionForeground() : TGClassicCardInkColor(), paper);
     NSColor *detailInk = TGDownloadManagerReadableInk(selected ? ink : TGClassicCardMutedInkColor(), paper);
     CGFloat iconY = [view isFlipped] ? NSMinY(row) + 12 : NSMaxY(row) - 36;
     NSRect icon = NSMakeRect(NSMinX(row) + 12, iconY, 24, 24);

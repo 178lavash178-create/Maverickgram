@@ -33,6 +33,7 @@
 #import "TGAquaRecordingViews.h"
 #import "TGAquaMediaViewerView.h"
 #import "TGDialogPresentation.h"
+#import "TGAquaAppearance.h"
 #import <objc/runtime.h>
 #import "TGSectionTransition.h"
 #import "TGConversationVisibility.h"
@@ -2211,9 +2212,12 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [self.settingsMediaCacheLimitLabel setStringValue:TGLoc(@"settings.resources.cacheLimit")];
     [self.settingsResourceHintField setStringValue:TGLoc(@"settings.resources.hint")];
     [self.activeSessionsWindow setTitle:TGLoc(@"settings.section.sessions")];
-    [self.activeSessionsRefreshButton setTitle:TGLoc(@"settings.sessions.refresh")];
+    [self.activeSessionsRefreshButton setTitle:TGInterfaceDesignIsAqua() ? @"↻" : TGLoc(@"settings.sessions.refresh")];
+    [self.activeSessionsRefreshButton setToolTip:TGLoc(@"settings.sessions.refresh")];
+    [(NSTextField *)[TGUtilityWindowContentView(self.activeSessionsWindow) viewWithTag:5921] setStringValue:TGLoc(@"settings.section.sessions")];
     [self.activeSessionsTerminateButton setTitle:TGLoc(@"settings.sessions.terminate")];
     [self.activeSessionsCloseButton setTitle:TGLoc(@"close")];
+    [self layoutAquaActiveSessionsWindow];
     [self.profileRefreshButton setTitle:TGLoc(@"profile.refresh")];
     [self.profileEditButton setTitle:TGLoc(@"profile.edit.short")];
     [self.profileEditButton setToolTip:TGLoc(@"profile.edit.title")];
@@ -3220,7 +3224,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [contentView addSubview:self.selectedChatVideoCallButton];
 
     self.topicBackButton = [[[NSButton alloc] initWithFrame:NSMakeRect(24, 332, 32, 32)] autorelease];
-    [self.topicBackButton setTitle:@"‹"];
+    [self.topicBackButton setTitle:TGInterfaceDesignIsAqua() ? @"Phosphor/back" : @"‹"];
     [self.topicBackButton setToolTip:TGLoc(@"chat.backToChatsHint")];
     [self.topicBackButton setTarget:self];
     [self.topicBackButton setAction:@selector(closeForumTopicList:)];
@@ -3231,7 +3235,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [contentView addSubview:self.topicBackButton];
 
     self.commentThreadBackButton = [[[NSButton alloc] initWithFrame:NSMakeRect(228, 192, 32, 32)] autorelease];
-    [self.commentThreadBackButton setTitle:@"‹"];
+    [self.commentThreadBackButton setTitle:TGInterfaceDesignIsAqua() ? @"Phosphor/back" : @"‹"];
     [self.commentThreadBackButton setToolTip:TGLoc(@"chat.backToChannelHint")];
     [self.commentThreadBackButton setTarget:self];
     [self.commentThreadBackButton setAction:@selector(closeMessageCommentsThread:)];

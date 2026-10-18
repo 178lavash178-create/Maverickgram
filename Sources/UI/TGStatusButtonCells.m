@@ -3,28 +3,9 @@
 #import "TGIconDrawing.h"
 #import "TGTheme.h"
 #import "TGButtonAppearance.h"
+#import "TGInterfaceDesign.h"
 #import "TGThemeContrast.h"
 #include <math.h>
-
-static void TGStrokeLine(NSPoint startPoint, NSPoint endPoint, CGFloat width) {
-    NSBezierPath *path = [NSBezierPath bezierPath];
-    [path setLineWidth:width];
-    [path moveToPoint:startPoint];
-    [path lineToPoint:endPoint];
-    [path stroke];
-}
-
-static CGFloat TGIconY(NSRect rect, CGFloat y, CGFloat height, BOOL flipped) {
-    return flipped ? (NSMaxY(rect) - y - height) : (NSMinY(rect) + y);
-}
-
-static NSRect TGIconRect(NSRect rect, CGFloat x, CGFloat y, CGFloat width, CGFloat height, BOOL flipped) {
-    return NSMakeRect(NSMinX(rect) + x, TGIconY(rect, y, height, flipped), width, height);
-}
-
-static NSPoint TGIconPoint(NSRect rect, CGFloat x, CGFloat y, BOOL flipped) {
-    return NSMakePoint(NSMinX(rect) + x, flipped ? (NSMaxY(rect) - y) : (NSMinY(rect) + y));
-}
 
 static CGFloat TGButtonPressedOffset(BOOL highlighted, BOOL flipped) {
     if (!highlighted) {
@@ -64,28 +45,7 @@ static void TGDrawCenteredTextButtonTitle(NSButtonCell *cell,
 }
 
 void TGDrawMutedSpeakerIconInRect(NSRect iconRect, NSColor *color, BOOL flipped) {
-    [color set];
-    NSBezierPath *speakerPath = [NSBezierPath bezierPath];
-    [speakerPath moveToPoint:TGIconPoint(iconRect, 3.0, 7.0, flipped)];
-    [speakerPath lineToPoint:TGIconPoint(iconRect, 6.5, 7.0, flipped)];
-    [speakerPath lineToPoint:TGIconPoint(iconRect, 11.0, 3.5, flipped)];
-    [speakerPath lineToPoint:TGIconPoint(iconRect, 11.0, 14.5, flipped)];
-    [speakerPath lineToPoint:TGIconPoint(iconRect, 6.5, 11.0, flipped)];
-    [speakerPath lineToPoint:TGIconPoint(iconRect, 3.0, 11.0, flipped)];
-    [speakerPath closePath];
-    [speakerPath fill];
-
-    NSBezierPath *wavePath = [NSBezierPath bezierPath];
-    [wavePath setLineWidth:1.25];
-    [wavePath moveToPoint:TGIconPoint(iconRect, 13.0, 6.0, flipped)];
-    [wavePath curveToPoint:TGIconPoint(iconRect, 13.0, 12.0, flipped)
-             controlPoint1:TGIconPoint(iconRect, 15.0, 7.4, flipped)
-             controlPoint2:TGIconPoint(iconRect, 15.0, 10.6, flipped)];
-    [wavePath stroke];
-
-    TGStrokeLine(TGIconPoint(iconRect, 3.0, 3.5, flipped),
-                 TGIconPoint(iconRect, 16.0, 15.5, flipped),
-                 1.7);
+    TGDrawTemplateIconAsset(@"sound-off", iconRect, color, 1.0, flipped);
 }
 
 static void TGDrawNavigationIcon(NSString *title, NSRect iconRect, NSColor *color, BOOL flipped) {
@@ -109,22 +69,9 @@ static void TGDrawNavigationIcon(NSString *title, NSRect iconRect, NSColor *colo
     } else if ([title isEqualToString:@"Private"] || [title isEqualToString:@"Groups"]) {
         TGDrawTemplateIconAsset(@"folder", iconRect, color, 1.0, flipped);
     } else if ([title isEqualToString:@"Logs"]) {
-        NSRect pageRect = TGIconRect(iconRect, 3.0, 2.0, 12.0, 14.0, flipped);
-        [[NSBezierPath bezierPathWithRoundedRect:pageRect xRadius:2.0 yRadius:2.0] stroke];
-        TGStrokeLine(TGIconPoint(iconRect, 6.0, 12.0, flipped), TGIconPoint(iconRect, 12.0, 12.0, flipped), 1.1);
-        TGStrokeLine(TGIconPoint(iconRect, 6.0, 8.0, flipped), TGIconPoint(iconRect, 12.0, 8.0, flipped), 1.1);
-        TGStrokeLine(TGIconPoint(iconRect, 6.0, 4.0, flipped), TGIconPoint(iconRect, 10.0, 4.0, flipped), 1.1);
+        TGDrawTemplateIconAsset(@"document", iconRect, color, 1.0, flipped);
     } else if ([title isEqualToString:@"About"]) {
-        NSRect circleRect = TGIconRect(iconRect, 2.5, 2.5, 13.0, 13.0, flipped);
-        [[NSBezierPath bezierPathWithOvalInRect:circleRect] stroke];
-        NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys:
-                                    [NSFont boldSystemFontOfSize:13.0], NSFontAttributeName,
-                                    color, NSForegroundColorAttributeName,
-                                    nil];
-        NSSize size = [@"i" sizeWithAttributes:attributes];
-        [@"i" drawAtPoint:NSMakePoint(NSMidX(circleRect) - (size.width / 2.0),
-                                      NSMidY(circleRect) - (size.height / 2.0) - 0.5)
-           withAttributes:attributes];
+        TGDrawTemplateIconAsset(@"info", iconRect, color, 1.0, flipped);
     } else {
         TGDrawTemplateIconAsset(@"folder", iconRect, color, 1.0, flipped);
     }
@@ -239,29 +186,11 @@ static void TGDrawNavigationIcon(NSString *title, NSRect iconRect, NSColor *colo
     [path stroke];
 
     NSColor *lineColor = TGButtonForegroundColor(TGButtonSurfaceEnamel, highlighted, NO, enabled);
-    [lineColor set];
     BOOL flipped = [controlView isFlipped];
-    if (self.backStyle) {
-        NSRect backRect = NSMakeRect(floor(NSMidX(cellFrame) - 9.0),
-                                     floor(NSMidY(cellFrame) - 9.0),
-                                     18.0,
-                                     18.0);
-        [NSGraphicsContext saveGraphicsState];
-        NSAffineTransform *transform = [NSAffineTransform transform];
-        [transform translateXBy:(NSMinX(backRect) + NSMaxX(backRect)) yBy:0.0];
-        [transform scaleXBy:-1.0 yBy:1.0];
-        [transform concat];
-        TGDrawTemplateIconAsset(@"route-arrow", backRect, lineColor, 1.0, flipped);
-        [NSGraphicsContext restoreGraphicsState];
-        return;
-    }
-    NSRect iconRect = NSMakeRect(NSMinX(cellFrame) + floor((NSWidth(cellFrame) - 18.0) / 2.0),
-                                 NSMinY(cellFrame) + floor((NSHeight(cellFrame) - 14.0) / 2.0),
-                                 18.0,
-                                 14.0);
-    TGStrokeLine(TGIconPoint(iconRect, 2.0, 12.0, flipped), TGIconPoint(iconRect, 16.0, 12.0, flipped), 1.8);
-    TGStrokeLine(TGIconPoint(iconRect, 2.0, 7.0, flipped), TGIconPoint(iconRect, 16.0, 7.0, flipped), 1.8);
-    TGStrokeLine(TGIconPoint(iconRect, 2.0, 2.0, flipped), TGIconPoint(iconRect, 16.0, 2.0, flipped), 1.8);
+    NSRect iconRect = NSMakeRect(floor(NSMidX(cellFrame) - 9.0),
+                                 floor(NSMidY(cellFrame) - 9.0), 18.0, 18.0);
+    TGDrawTemplateIconAsset(self.backStyle ? @"Phosphor/back" : @"Phosphor/list",
+                            iconRect, lineColor, 1.0, flipped);
 }
 
 @end
@@ -384,9 +313,15 @@ static void TGDrawNavigationIcon(NSString *title, NSRect iconRect, NSColor *colo
     (void)controlView;
     BOOL highlighted = [self isHighlighted];
     BOOL enabled = [self isEnabled];
+    // Header controls perform momentary actions. A blue idle surface made them
+    // indistinguishable from the persistent selection in the source list.
+    BOOL aqua = TGInterfaceDesignIsAqua();
+    TGButtonSurfaceStyle surface = aqua ? TGButtonSurfaceSecondary : TGButtonSurfaceEnamel;
+    BOOL selected = !aqua;
+    NSColor *ink = TGButtonForegroundColor(surface, highlighted, selected, enabled);
     NSRect buttonRect = NSInsetRect(cellFrame, 1.0, 1.0);
     NSBezierPath *buttonPath = [NSBezierPath bezierPathWithRoundedRect:buttonRect xRadius:5.0 yRadius:5.0];
-    TGDrawReadableButtonSurface(buttonPath, buttonRect, TGButtonSurfaceEnamel, highlighted, YES, enabled, [controlView isFlipped]);
+    TGDrawReadableButtonSurface(buttonPath, buttonRect, surface, highlighted, selected, enabled, [controlView isFlipped]);
     [TGClassicTableGridColor() set];
     [buttonPath setLineWidth:1.0];
     [buttonPath stroke];
@@ -409,13 +344,16 @@ static void TGDrawNavigationIcon(NSString *title, NSRect iconRect, NSColor *colo
         assetName = @"remove-ellipse";
     } else if ([title isEqualToString:@"media"] || [title isEqualToString:@"media-center"]) {
         assetName = @"image";
+    } else if ([title hasPrefix:@"Phosphor/"]) {
+        assetName = title;
+    } else if (aqua && [title isEqualToString:@"‹"]) {
+        assetName = @"Phosphor/back";
     }
     if ([assetName length] > 0) {
-        NSRect iconRect = NSMakeRect(NSMidX(buttonRect) - 9.0,
-                                     NSMidY(buttonRect) - 9.0,
-                                     18.0,
-                                     18.0);
-        TGDrawTemplateIconAsset(assetName, iconRect, TGButtonForegroundColor(TGButtonSurfaceEnamel, highlighted, YES, enabled), 1.0, [controlView isFlipped]);
+        CGFloat side = aqua ? 20.0 : 18.0;
+        NSRect iconRect = NSMakeRect(floor(NSMidX(buttonRect) - side / 2.0),
+                                     floor(NSMidY(buttonRect) - side / 2.0), side, side);
+        TGDrawTemplateIconAsset(assetName, iconRect, ink, 1.0, [controlView isFlipped]);
         return;
     }
     if ([controlView isKindOfClass:[NSButton class]]) {
@@ -425,12 +363,12 @@ static void TGDrawNavigationIcon(NSString *title, NSRect iconRect, NSColor *colo
             if (imageSize.width <= 0.0 || imageSize.height <= 0.0) {
                 imageSize = NSMakeSize(18.0, 18.0);
             }
-            CGFloat side = 18.0;
+            CGFloat side = aqua ? 20.0 : 18.0;
             NSRect iconRect = NSMakeRect(NSMidX(buttonRect) - (side / 2.0),
                                          NSMidY(buttonRect) - (side / 2.0),
                                          side,
                                          side);
-            TGDrawButtonTemplateImage(image, iconRect, TGButtonForegroundColor(TGButtonSurfaceEnamel, highlighted, YES, enabled), [controlView isFlipped]);
+            TGDrawButtonTemplateImage(image, iconRect, ink, [controlView isFlipped]);
             return;
         }
     }
@@ -438,7 +376,7 @@ static void TGDrawNavigationIcon(NSString *title, NSRect iconRect, NSColor *colo
     [paragraph setAlignment:NSCenterTextAlignment];
     NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                 [NSFont boldSystemFontOfSize:16.0], NSFontAttributeName,
-                                TGButtonForegroundColor(TGButtonSurfaceEnamel, highlighted, YES, enabled), NSForegroundColorAttributeName,
+                                ink, NSForegroundColorAttributeName,
                                 paragraph, NSParagraphStyleAttributeName,
                                 nil];
     NSSize titleSize = [title sizeWithAttributes:attributes];

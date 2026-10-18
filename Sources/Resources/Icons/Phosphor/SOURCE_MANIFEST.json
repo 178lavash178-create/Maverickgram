@@ -1,0 +1,47 @@
+{
+  "assets": {
+    "back": {
+      "png_sha256": "5dd48f8b6563aeee175589c81a9fac4e6b81beb32c60bffde13e5a84387e2e44",
+      "svg_sha256": "b78b6f532b53b9847340961848cb9e4f5be7e1da07e9dcf11c60cf64aa3986b7",
+      "upstream": "https://raw.githubusercontent.com/phosphor-icons/core/2b75f3ad12b420c9504ef05df8d2564a28f8500e/assets/bold/caret-left-bold.svg",
+      "upstream_name": "caret-left-bold"
+    },
+    "folder-import": {
+      "png_sha256": "8640ea9498df0968cc0fef1585493c85d0ac3c49d237f2c928254b2da450611a",
+      "svg_sha256": "3ca0b8bba15633eb29f9818fe3670d6438bcbc897649c767e491a411e696e2d3",
+      "upstream": "https://raw.githubusercontent.com/phosphor-icons/core/2b75f3ad12b420c9504ef05df8d2564a28f8500e/assets/bold/download-simple-bold.svg",
+      "upstream_name": "download-simple-bold"
+    },
+    "forward": {
+      "png_sha256": "4cc54487da92d213a13a771996a9b3ac428ffa34e5a32c1c5d175cecd705cd4a",
+      "svg_sha256": "03cadd956d715541432ec8dc2eda1c53ca341af7d3ccecb8dd32c5b9747e290f",
+      "upstream": "https://raw.githubusercontent.com/phosphor-icons/core/2b75f3ad12b420c9504ef05df8d2564a28f8500e/assets/bold/caret-right-bold.svg",
+      "upstream_name": "caret-right-bold"
+    },
+    "list": {
+      "png_sha256": "4803c0bd758930ac7728e31714b69007b4d1f051e3d621a2d3fadb18b51b28e2",
+      "svg_sha256": "eebf2179178a5d4e93097a35f6a02efec45db6a88c1fbbc027fe81a167fd910f",
+      "upstream": "https://raw.githubusercontent.com/phosphor-icons/core/2b75f3ad12b420c9504ef05df8d2564a28f8500e/assets/bold/list-bold.svg",
+      "upstream_name": "list-bold"
+    },
+    "pin": {
+      "png_sha256": "f22616c729fcf37ccd720125c242c0e29b6f77a6df701fa168a0f54c24506bb6",
+      "svg_sha256": "47cf424c346b4cf5b581f037499d519796735f4c1b31a0ec44b945d43779aa4b",
+      "upstream": "https://raw.githubusercontent.com/phosphor-icons/core/2b75f3ad12b420c9504ef05df8d2564a28f8500e/assets/bold/push-pin-bold.svg",
+      "upstream_name": "push-pin-bold"
+    },
+    "poll": {
+      "png_sha256": "151018bcfd60ad54a0b4187cadea7c93dec8564db6ed4a1a8ae6875e7a3ffa4c",
+      "svg_sha256": "dec4c21084915b1115d14bce389b66c2c6af19abdb1b61d8e752b74ecd91a404",
+      "upstream": "https://raw.githubusercontent.com/phosphor-icons/core/2b75f3ad12b420c9504ef05df8d2564a28f8500e/assets/bold/chart-bar-bold.svg",
+      "upstream_name": "chart-bar-bold"
+    }
+  },
+  "commit": "2b75f3ad12b420c9504ef05df8d2564a28f8500e",
+  "conversion": "Unmodified official bold paths, original square 256x256 viewBox; macOS sips SVG to PNG and resize64, no shape edits. Runtime uses PNG only.",
+  "license": "MIT",
+  "license_sha256": "b5b1f1da112d18ea2147decfd48ddc1bf2b5aeb6c265381579340e95b15a2bb2",
+  "name": "Phosphor Icons",
+  "repository": "https://github.com/phosphor-icons/core",
+  "version": "2.1.1"
+}

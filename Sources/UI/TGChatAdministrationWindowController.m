@@ -8,6 +8,8 @@
 #import "TGStatusViewComponents.h"
 #import "TGStatusViewCells.h"
 #import "TGTheme.h"
+#import "TGInterfaceDesign.h"
+#import "TGAquaAppearance.h"
 #import "TGThemeTextField.h"
 
 @interface TGChatAdministrationWindowController () <NSTableViewDataSource, NSTableViewDelegate>
@@ -141,7 +143,8 @@
                                         root:(NSView *)root {
     NSScrollView *scroll = [[[NSScrollView alloc] initWithFrame:frame] autorelease];
     [scroll setHasVerticalScroller:YES];
-    [scroll setBorderType:NSNoBorder];
+    [scroll setBorderType:TGInterfaceDesignIsAqua()?NSBezelBorder:NSNoBorder];
+    [scroll setAutohidesScrollers:YES];
     [scroll setDrawsBackground:NO];
     [scroll setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     NSTableView *table = [[[NSTableView alloc] initWithFrame:[[scroll contentView] bounds]] autorelease];
@@ -165,11 +168,11 @@
 }
 
 - (void)buildViews {
-    TGUtilityWindowView *root = [[[TGUtilityWindowView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease];
+    NSView *root = TGInterfaceDesignIsAqua() ? [[[TGAquaUtilityWindowView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease] : [[[TGUtilityWindowView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease];
     [root setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [[self window] setContentView:root];
     NSTextField *title = [self labelWithFrame:NSMakeRect(24, 602, 720, 28)
-                                         font:[NSFont boldSystemFontOfSize:20.0]
+                                         font:[NSFont boldSystemFontOfSize:TGInterfaceDesignIsAqua()?14.0:20.0]
                                         surface:TGThemeSurfaceWindow detail:NO];
     [title setStringValue:[self.chatTitle length] > 0
         ? [NSString stringWithFormat:@"%@ — %@", TGLoc(@"admin.title"), self.chatTitle]
@@ -187,6 +190,7 @@
     TGGroupedCardView *linksCard = [[[TGGroupedCardView alloc] initWithFrame:NSMakeRect(20, 336, 420, 248)] autorelease];
     [linksCard setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
     [root addSubview:linksCard];
+    [linksCard setHidden:TGInterfaceDesignIsAqua()];
     NSTextField *linksTitle = [self labelWithFrame:NSMakeRect(38, 554, 380, 18)
                                               font:[NSFont boldSystemFontOfSize:13.0]
                                              surface:TGThemeSurfaceCard detail:NO];
@@ -225,12 +229,14 @@
     [self.createLinkButton setAutoresizingMask:NSViewMinYMargin];
     [root addSubview:self.createLinkButton];
     self.copyLinkButton = [[[NSButton alloc] initWithFrame:NSMakeRect(322, 358, 50, 28)] autorelease];
+    if(TGInterfaceDesignIsAqua())[self.copyLinkButton setCell:[[[TGSecondaryTextButtonCell alloc] initTextCell:TGLoc(@"admin.copy") ] autorelease]];
     [self.copyLinkButton setTitle:TGLoc(@"admin.copy")];
     [self.copyLinkButton setTarget:self];
     [self.copyLinkButton setAction:@selector(copyLinkPressed:)];
     [self.copyLinkButton setAutoresizingMask:NSViewMinYMargin];
     [root addSubview:self.copyLinkButton];
     self.revokeLinkButton = [[[NSButton alloc] initWithFrame:NSMakeRect(374, 358, 52, 28)] autorelease];
+    if(TGInterfaceDesignIsAqua())[self.revokeLinkButton setCell:[[[TGSecondaryTextButtonCell alloc] initTextCell:TGLoc(@"admin.revoke") ] autorelease]];
     [self.revokeLinkButton setTitle:TGLoc(@"admin.revoke")];
     [self.revokeLinkButton setTarget:self];
     [self.revokeLinkButton setAction:@selector(revokeLinkPressed:)];
@@ -240,6 +246,7 @@
     TGGroupedCardView *requestsCard = [[[TGGroupedCardView alloc] initWithFrame:NSMakeRect(452, 336, 428, 248)] autorelease];
     [requestsCard setAutoresizingMask:(NSViewMinXMargin | NSViewMinYMargin)];
     [root addSubview:requestsCard];
+    [requestsCard setHidden:TGInterfaceDesignIsAqua()];
     NSTextField *requestsTitle = [self labelWithFrame:NSMakeRect(470, 554, 390, 18)
                                                  font:[NSFont boldSystemFontOfSize:13.0]
                                                 surface:TGThemeSurfaceCard detail:NO];
@@ -267,6 +274,7 @@
     TGGroupedCardView *eventsCard = [[[TGGroupedCardView alloc] initWithFrame:NSMakeRect(20, 54, 860, 266)] autorelease];
     [eventsCard setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [root addSubview:eventsCard];
+    [eventsCard setHidden:TGInterfaceDesignIsAqua()];
     NSTextField *eventsTitle = [self labelWithFrame:NSMakeRect(38, 288, 300, 18)
                                                font:[NSFont boldSystemFontOfSize:13.0]
                                               surface:TGThemeSurfaceCard detail:NO];

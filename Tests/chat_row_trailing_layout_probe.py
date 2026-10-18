@@ -49,7 +49,7 @@ static void CheckActualRows(BOOL aqua){
    [cell drawWithFrame:frame inView:view];[NSGraphicsContext restoreGraphicsState];
    NSUInteger titleIndex=[Texts indexOfObject:title];Require(titleIndex!=NSNotFound,"actual renderer paints selected short/long title");NSRect titleRect=[[Frames objectAtIndex:titleIndex] rectValue];
    Require(NSContainsRect(frame,titleRect)&&NSWidth(titleRect)>=40,"actual title rectangle remains readable inside row");
-   NSRect pin=RowMarker(@"flag-triangle"),mute=RowMarker(@"sound-off");
+   NSRect pin=RowMarker(@"Phosphor/pin"),mute=RowMarker(@"sound-off");
    Require(NSIsEmptyRect(pin)==!item.pinned&&NSIsEmptyRect(mute)==!item.notificationsMuted,"renderer preserves exact pin/mute visibility");
    if(item.pinned)Require(NSMinX(pin)==NSMaxX(frame)-89 && ClearOf(titleRect,pin),"actual pin is independent of title length and unread width");
    if(item.notificationsMuted)Require(NSMinX(mute)==NSMaxX(frame)-71 && ClearOf(titleRect,mute),"actual mute is independent of title length and unread width");
@@ -62,7 +62,7 @@ static void CheckActualRows(BOOL aqua){
 }
 int main(void){NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];[NSApplication sharedApplication];
  Texts=[NSMutableArray array];Inks=[NSMutableArray array];Frames=[NSMutableArray array];Markers=[NSMutableArray array];
- Require(TGIconAssetImageNamed(@"flag-triangle")&&TGIconAssetImageNamed(@"sound-off"),"unchanged approved assets are available");
+ Require(TGIconAssetImageNamed(@"Phosphor/pin")&&TGIconAssetImageNamed(@"sound-off"),"approved pin and mute assets are available");
  method_exchangeImplementations(class_getInstanceMethod([NSString class],@selector(drawInRect:withAttributes:)),class_getInstanceMethod([NSString class],@selector(tgRowDrawInRect:withAttributes:)));
  CheckGeometry();CheckActualRows(YES);CheckActualRows(NO);
  method_exchangeImplementations(class_getInstanceMethod([NSString class],@selector(drawInRect:withAttributes:)),class_getInstanceMethod([NSString class],@selector(tgRowDrawInRect:withAttributes:)));

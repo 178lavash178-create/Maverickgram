@@ -1634,6 +1634,10 @@
 }
 
 - (void)windowDidResize:(NSNotification *)notification {
+    if ([notification object] == self.activeSessionsWindow) {
+        [self layoutAquaActiveSessionsWindow];
+        return;
+    }
     if ([notification object] == self.mediaPreviewWindow) {
         [self layoutMediaPreviewWindowControls];
         [self fitMediaPreview:nil];
