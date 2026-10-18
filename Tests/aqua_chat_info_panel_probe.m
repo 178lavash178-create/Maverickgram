@@ -75,8 +75,7 @@ int main(void) {
             NSPopUpButton *category=[panel valueForKey:@"categoryPopUp"];
             NSView *tabDocument=[panel valueForKey:@"tabDocumentView"];
             Contains([panel bounds],[tabs frame]);
-            assert([tabs hasHorizontalScroller] && ![tabs hasVerticalScroller]);
-            assert([tabs scrollerStyle]==NSScrollerStyleOverlay);
+            assert(![tabs hasHorizontalScroller] && ![tabs hasVerticalScroller]);
             assert(![tabs drawsBackground] && ![[tabs contentView] drawsBackground]);
             assert(NSHeight([[tabs contentView] bounds])>=30.0);
             assert([tabs documentView]==tabDocument);

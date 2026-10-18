@@ -63,9 +63,9 @@ static NSString *TGChatInfoString(id object) { return [object isKindOfClass:[NSS
     _detailsField = [TGChatInfoLabel([NSFont systemFontOfSize:12.0], YES) retain]; [_documentView addSubview:_detailsField];
     _mediaHostView = [[NSView alloc] initWithFrame:NSZeroRect]; [_sheetView addSubview:_mediaHostView];
     _tabScrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
-    [_tabScrollView setBorderType:NSNoBorder]; [_tabScrollView setHasHorizontalScroller:YES];
-    /* Overlay scrollers preserve horizontal access without a permanent grey gutter. */
-    [_tabScrollView setScrollerStyle:NSScrollerStyleOverlay];
+    [_tabScrollView setBorderType:NSNoBorder]; [_tabScrollView setHasHorizontalScroller:NO];
+    // Categories either fit completely or use the popup. No hidden category
+    // depends on scrolling, including when legacy AppKit forces legacy bars.
     [_tabScrollView setAutohidesScrollers:YES]; [_tabScrollView setDrawsBackground:NO];
     [[_tabScrollView contentView] setDrawsBackground:NO];
     _tabDocumentView = [[NSView alloc] initWithFrame:NSZeroRect];
@@ -165,7 +165,6 @@ static NSString *TGChatInfoString(id object) { return [object isKindOfClass:[NSS
     [_categoryPopUp selectItemWithTag:_selectedMediaTab];
     [_scrollView setHidden:(_selectedMediaTab>=0)]; [_mediaHostView setHidden:(_selectedMediaTab<0)];
     [self resizeSubviewsWithOldSize:NSZeroSize];
-    for (NSButton *button in _actionButtons) if ([button tag]==_selectedMediaTab) [button scrollRectToVisible:[button bounds]];
 }
 - (void)resizeSubviewsWithOldSize:(NSSize)oldSize {
     (void)oldSize;
