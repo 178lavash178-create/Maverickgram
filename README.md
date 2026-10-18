@@ -5,7 +5,7 @@
   <p><b>For the Intel Macs that still have plenty of life left in them.</b></p>
   <p>OS X 10.8–macOS 10.13 · Objective-C · Cocoa/AppKit · TDLib</p>
   <p>
-    <img src="https://img.shields.io/badge/version-v0.6.0-blue" alt="version v0.6.0" />
+    <img src="https://img.shields.io/badge/version-v0.6.1-blue" alt="version v0.6.1" />
     <img src="https://img.shields.io/badge/status-open%20beta-brightgreen" alt="open beta" />
     <img src="https://img.shields.io/badge/architecture-Intel%20x86__64-lightgrey" alt="Intel x86_64" />
     <img src="https://img.shields.io/badge/no-Electron-success" alt="no Electron" />
@@ -26,7 +26,28 @@ handle downloads and keep a Telegram session on an older Mac. It is an open
 beta: useful for everyday conversations, with rough edges still being worked
 on. It is not affiliated with Telegram.
 
-## New in 0.6.0: Aqua
+## New in 0.6.1: refining Aqua
+
+This update follows the first Aqua release with fixes from everyday use on an
+older Mac. I worked through the smaller windows as well as the main conversation
+view, making controls, spacing and navigation more consistent.
+
+- Return reliably from folders and forum topics to All Chats; mark individual
+  topics as read and show administrative actions only when permitted.
+- Cleaner message footers: aligned times and read receipts, pin placement and
+  available view counts. Pin and mute markers keep fixed columns in chat lists.
+- Chat search stays attached to the toolbar, with a compact results list.
+- A simpler attachment preview gives multiline captions a scrollable editor.
+- Refined folders, notifications, profile editing, privacy/storage, location,
+  people lists, contacts, calls, sessions, bot dialogs and downloads.
+- Media thumbnails have less surrounding chrome; profile categories switch to
+  a dropdown when the tabs would not fit. Shared actions use consistent icons.
+- Fixes for the history spinner, narrow-window layouts and temporary button
+  states. Saved Messages no longer offers calls to yourself.
+
+[Full 0.6.1 release notes](docs/releases/v0.6.1.md)
+
+## Aqua, introduced in 0.6.0
 
 I spent a long time rethinking Telegraphica's interface for this update.
 Reading magazines, watching old films and visiting a museum of art and
@@ -77,14 +98,14 @@ Intel `x86_64`**. There are no separate Mountain Lion and Mavericks downloads.
 
 | Download | Use it for |
 | --- | --- |
-| [0.6.0 DMG installer](https://github.com/MiChiRose/telegraphica/releases/download/v0.6.0/Telegraphica-v0.6.0-macos10.8-10.13-x86_64.dmg) | Normal installation: drag Telegraphica into Applications. |
-| [0.6.0 application ZIP](https://github.com/MiChiRose/telegraphica/releases/download/v0.6.0/Telegraphica-v0.6.0-macos10.8-10.13-x86_64.app.zip) | Manual transfer of the same application bundle. |
+| [0.6.1 DMG installer](https://github.com/MiChiRose/telegraphica/releases/download/v0.6.1/Telegraphica-v0.6.1-macos10.8-10.13-x86_64.dmg) | Normal installation: drag Telegraphica into Applications. |
+| [0.6.1 application ZIP](https://github.com/MiChiRose/telegraphica/releases/download/v0.6.1/Telegraphica-v0.6.1-macos10.8-10.13-x86_64.app.zip) | Manual transfer of the same application bundle. |
 | [All releases and SHA-256 files](https://github.com/MiChiRose/telegraphica/releases) | Earlier versions, release notes and checksum verification. |
 
 **Updating:** quit Telegraphica before replacing the application. Keep its
 Application Support folder; you do not need to delete your session or settings.
 Copy any important unsent text before restarting: draft restoration across an
-application restart is a known issue in 0.6.0.
+application restart remains a known issue in 0.6.1.
 
 **First installation:** open the DMG, drag Telegraphica into Applications and
 launch it. The public build includes the connection bootstrap, so you do not
@@ -160,7 +181,7 @@ See the [capability guide](docs/tdlib-capabilities.md) for the boundaries.
 | OS X 10.10–macOS 10.13 | Supported targets using the same Intel application. |
 | Newer macOS / Apple Silicon | Unofficial and outside regular testing. No native `arm64` build. |
 
-The **0.6.0** release was built and tested on real **OS X 10.9.5** using
+The **0.6.1** release was built and tested on real **OS X 10.9.5** using
 **Xcode 5.1.1**, with a shared **10.8 deployment target**. Automated checks cover
 Classic/Aqua, runtime capabilities, layouts, resource packaging and asynchronous
 ownership. Both TDLib runtimes ship in the same bundle.
@@ -182,7 +203,7 @@ Known limits:
   manage paid-only capabilities.
 
 [Compatibility matrix](docs/compatibility-matrix.md) ·
-[Release verification and limits](docs/releases/v0.6.0.md)
+[Release verification and limits](docs/releases/v0.6.1.md)
 
 ## Why I started this
 
