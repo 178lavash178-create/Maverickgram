@@ -4,6 +4,7 @@
 
 @interface TGContactProfileView : TGGroupedCardView {
     NSDictionary *_contact;
+    NSUInteger _presentationState;
     id _avatarView;
     NSTextField *_nameField;
     NSTextField *_statusField;
@@ -23,5 +24,6 @@
 - (void)showContact:(NSDictionary *)contact;
 - (void)showError:(NSString *)message contact:(NSDictionary *)contact;
 - (void)refreshThemeAppearance;
+- (void)refreshLocalizedText;
 
 @end

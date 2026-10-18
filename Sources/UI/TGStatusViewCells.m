@@ -217,7 +217,7 @@ static CGFloat const TGPanelHeaderHeight = 40.0;
     if ([item isPinned]) {
         NSRect pinRect = geometry.pin;
         NSColor *pinColor = selected ? TGChatListSelectionForeground() : [TGThemeSurfaceInkColor(TGClassicInkColor(), TGThemeSurfaceRecessed, 4.5) colorWithAlphaComponent:0.72];
-        TGDrawTemplateIconAsset(@"flag-triangle", pinRect, TGThemeReadableInk(pinColor, selected ? TGChatListSelectionBackground() : TGClassicTablePaperColor(), 4.5), 1.0, [controlView isFlipped]);
+        TGDrawTemplateIconAsset(@"Phosphor/pin", pinRect, TGThemeReadableInk(pinColor, selected ? TGChatListSelectionBackground() : TGClassicTablePaperColor(), 4.5), 1.0, [controlView isFlipped]);
     }
     if ([item notificationsMuted]) {
         NSRect muteRect = geometry.mute;

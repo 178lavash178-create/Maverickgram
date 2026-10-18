@@ -12,6 +12,7 @@ NSColor *TGColorFromHex(NSUInteger rgb) {
 }
 #define INK(name) NSColor *name(void) { return [NSColor grayColor]; }
 INK(TGClassicCardInkColor) INK(TGClassicCardMutedInkColor) INK(TGClassicMutedInkColor)
+INK(TGClassicSelectedRowColor)
 INK(TGClassicPanelStrokeColor) INK(TGClassicRailStrokeColor) INK(TGClassicSelectedRowTextColor)
 INK(TGClassicTableGridColor) INK(TGClassicWindowBottomColor)
 NSColor *TGClassicNavigationSelectedColor(CGFloat alpha) { return [[NSColor grayColor] colorWithAlphaComponent:alpha]; }

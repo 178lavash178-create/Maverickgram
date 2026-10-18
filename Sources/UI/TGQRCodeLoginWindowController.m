@@ -6,6 +6,8 @@
 #import "TGStatusViewComponents.h"
 #import "TGTheme.h"
 #import "TGThemeTextField.h"
+#import "TGAquaAppearance.h"
+#import "TGInterfaceDesign.h"
 #import "../Core/TGTDLibClient.h"
 
 @interface TGQRCodeLoginBackgroundView : NSView
@@ -28,6 +30,7 @@
     BOOL _closesForCompletedAuthorization;
     id<TGQRCodeLoginWindowControllerDelegate> _delegate;
 }
+- (void)buildAquaViews;
 - (void)showQRCodeLink:(NSString *)link;
 - (void)showError:(NSString *)message;
 @end
@@ -59,6 +62,8 @@ static NSTextField *TGQRCodeLoginLabel(NSString *text, NSRect frame, NSFont *fon
     if (self) {
         _client = [client retain];
         [window setDelegate:self];
+
+        if (TGInterfaceDesignIsAqua()) { [self buildAquaViews]; return self; }
 
         TGQRCodeLoginBackgroundView *contentView = [[[TGQRCodeLoginBackgroundView alloc] initWithFrame:NSMakeRect(0.0, 0.0, 480.0, 520.0)] autorelease];
         [window setContentView:contentView];
@@ -101,6 +106,9 @@ static NSTextField *TGQRCodeLoginLabel(NSString *text, NSRect frame, NSFont *fon
     return self;
 }
 
+
+#include "TGQRCodeLoginWindowController+Aqua.inc"
+
 - (void)dealloc {
     _delegate = nil;
     [_client release];
@@ -118,7 +126,10 @@ static NSTextField *TGQRCodeLoginLabel(NSString *text, NSRect frame, NSFont *fon
     _closesForCompletedAuthorization = NO;
     _requestInFlight = YES;
     [_spinner startAnimation:self];
+    [(TGThemeTextField *)_statusField setErrorInk:NO];
+    [(TGThemeTextField *)_statusField refreshThemeInk];
     [_statusField setStringValue:TGLoc(@"login.qr.loading")];
+    [_statusField setToolTip:TGLoc(@"login.qr.loading")];
 
     TGTDLibClient *client = [_client retain];
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
@@ -148,8 +159,11 @@ static NSTextField *TGQRCodeLoginLabel(NSString *text, NSRect frame, NSFont *fon
         [self showError:TGLoc(@"login.qr.failed")];
         return;
     }
+    [(TGThemeTextField *)_statusField setErrorInk:NO];
+    [(TGThemeTextField *)_statusField refreshThemeInk];
     [_qrImageView setImage:image];
     [_statusField setStringValue:TGLoc(@"login.qr.ready")];
+    [_statusField setToolTip:TGLoc(@"login.qr.ready")];
 }
 
 - (void)showError:(NSString *)message {
@@ -157,6 +171,7 @@ static NSTextField *TGQRCodeLoginLabel(NSString *text, NSRect frame, NSFont *fon
     [(TGThemeTextField *)_statusField setErrorInk:YES];
     [(TGThemeTextField *)_statusField refreshThemeInk];
     [_statusField setStringValue:message ? message : TGLoc(@"login.qr.failed")];
+    [_statusField setToolTip:[_statusField stringValue]];
 }
 
 - (void)refreshQRCodeFromClient {

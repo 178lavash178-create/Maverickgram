@@ -26,7 +26,7 @@ static void TGDrawMessageFooterIndicators(TGMessageItem *item, NSRect timeRect, 
     NSRect remaining = countAnchor;
     if ([item isPinned]) {
         NSRect pin = NSMakeRect(NSMinX(timeRect)-16.0,floor(NSMidY(timeRect)-6.0),12.0,12.0);
-        TGDrawTemplateIconAsset(@"flag-triangle",pin,ink,1.0,flipped);
+        TGDrawTemplateIconAsset(@"Phosphor/pin",pin,ink,1.0,flipped);
         if (!wrapped) remaining.origin.x -= 16.0;
     }
     TGDrawMessageReplyIndicatorForTimeRect(item,remaining,flipped);

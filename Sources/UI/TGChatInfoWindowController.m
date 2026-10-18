@@ -15,6 +15,8 @@
 #import "TGStatusViewComponents.h"
 #import "TGStatusViewCells.h"
 #import "TGTheme.h"
+#import "TGInterfaceDesign.h"
+#import "TGAquaAppearance.h"
 #import "TGThemeTextField.h"
 
 @interface TGChatInfoWindowController () <NSTableViewDataSource, NSTableViewDelegate>
@@ -195,12 +197,12 @@ static NSImage *TGSecretChatKeyImage(NSData *keyHashData) {
 }
 
 - (void)buildViews {
-    TGUtilityWindowView *root = [[[TGUtilityWindowView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease];
+    NSView *root = TGInterfaceDesignIsAqua() ? [[[TGAquaUtilityWindowView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease] : [[[TGUtilityWindowView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease];
     [root setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [[self window] setContentView:root];
 
     self.titleField = [self labelWithFrame:NSMakeRect(24, 530, 530, 28)
-                                      font:[NSFont boldSystemFontOfSize:20.0]
+                                      font:[NSFont boldSystemFontOfSize:TGInterfaceDesignIsAqua()?14.0:20.0]
                                      color:TGClassicHeaderTextColor(1.0)];
     [self.titleField setStringValue:[self.chatTitle length] > 0 ? self.chatTitle : TGLoc(@"chat.info.title")];
     [self.titleField setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
@@ -235,6 +237,7 @@ static NSImage *TGSecretChatKeyImage(NSData *keyHashData) {
     TGGroupedCardView *overviewCard = [[[TGGroupedCardView alloc] initWithFrame:NSMakeRect(20, 410, 680, 104)] autorelease];
     [overviewCard setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
     [root addSubview:overviewCard];
+    [overviewCard setHidden:TGInterfaceDesignIsAqua()];
 
     self.summaryField = [self labelWithFrame:NSMakeRect(38, 478, 644, 18)
                                         font:[NSFont boldSystemFontOfSize:12.0]
@@ -254,6 +257,7 @@ static NSImage *TGSecretChatKeyImage(NSData *keyHashData) {
     TGGroupedCardView *membersCard = [[[TGGroupedCardView alloc] initWithFrame:NSMakeRect(20, 76, 680, 318)] autorelease];
     [membersCard setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [root addSubview:membersCard];
+    [membersCard setHidden:TGInterfaceDesignIsAqua()];
 
     self.membersLabel = [self labelWithFrame:NSMakeRect(38, 362, 300, 18)
                                          font:[NSFont boldSystemFontOfSize:12.0]
@@ -290,7 +294,8 @@ static NSImage *TGSecretChatKeyImage(NSData *keyHashData) {
 
     self.memberScrollView = [[[NSScrollView alloc] initWithFrame:NSMakeRect(34, 156, 652, 198)] autorelease];
     [self.memberScrollView setHasVerticalScroller:YES];
-    [self.memberScrollView setBorderType:NSNoBorder];
+    [self.memberScrollView setBorderType:TGInterfaceDesignIsAqua()?NSBezelBorder:NSNoBorder];
+    [self.memberScrollView setAutohidesScrollers:YES];
     [self.memberScrollView setDrawsBackground:NO];
     [self.memberScrollView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     self.memberTableView = [[[NSTableView alloc] initWithFrame:[[self.memberScrollView contentView] bounds]] autorelease];
@@ -388,7 +393,7 @@ static NSImage *TGSecretChatKeyImage(NSData *keyHashData) {
     [self.spinner setDisplayedWhenStopped:NO];
     [self.spinner setAutoresizingMask:(NSViewMinXMargin | NSViewMaxYMargin)];
     [root addSubview:self.spinner];
-    self.responsiveLayout=TGUtilityCaptureResponsiveLayout(root,[NSDictionary dictionaryWithObjectsAndKeys:autoDeleteLabel,@"autoDeleteLabel",nil]);
+    self.responsiveLayout=TGUtilityCaptureResponsiveLayout(root,[NSDictionary dictionaryWithObjectsAndKeys:autoDeleteLabel,@"autoDeleteLabel",overviewCard,@"overviewCard",membersCard,@"membersCard",nil]);
     [self layoutResponsiveViews];
     [self updateControls];
 }

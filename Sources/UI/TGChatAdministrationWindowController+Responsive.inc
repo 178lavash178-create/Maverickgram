@@ -43,6 +43,10 @@
         [TGUtilityResponsiveView(self.responsiveLayout,@"eventsTitle") setFrame:NSMakeRect(38,eventsTop-32,w-76,18)];
         [[self.eventsTableView enclosingScrollView] setFrame:NSMakeRect(34,104,w-68,MAX(30,eventsTop-144))];
     }
+    if (TGInterfaceDesignIsAqua()) {
+        [TGUtilityResponsiveView(self.responsiveLayout,@"title") setFrame:NSMakeRect(24,h-36,w-148,20)];
+        [self.refreshButton setFrame:NSMakeRect(w-112,h-40,88,28)];
+    }
     [self.statusField setFrame:NSMakeRect(24,24,w-72,18)];
     [self.spinner setFrame:NSMakeRect(w-42,24,16,16)];
     TGUtilitySizeResponsiveTable(self.linksTableView);TGUtilitySizeResponsiveTable(self.requestsTableView);TGUtilitySizeResponsiveTable(self.eventsTableView);

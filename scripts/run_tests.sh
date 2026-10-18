@@ -159,6 +159,7 @@ HOME="$TEST_HOME" "$BUILD_DIR/download-restart-identity-probe"
 echo "== Download manager layout and themes =="
 "$CLANG" "${COMPILE_FLAGS[@]}" -I"$ROOT_DIR/Sources/UI" -I"$ROOT_DIR/Sources/Services" -I"$ROOT_DIR/Sources/Media" Tests/download_manager_presentation_probe.m Sources/UI/TGDownloadManagerPresentation.m Sources/UI/TGDownloadManagerWindowController.m Sources/UI/TGDownloadCompactPopover.m Sources/UI/TGAnimationSupport.m Sources/Services/TGResourcePolicy.m Sources/UI/TGAquaShellViews.m Sources/UI/TGLocalization.m Sources/UI/TGTheme.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGAquaAppearance.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGStatusButtonCells.m Sources/UI/TGButtonAppearance.m Sources/UI/TGIconAssets.m Sources/UI/TGIconDrawing.m -framework Cocoa -framework CoreGraphics -o "$BUILD_DIR/download-manager-presentation-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/download-manager-presentation-probe"
+HOME="$TEST_HOME" "$BUILD_DIR/download-manager-presentation-probe" aqua
 
 echo "== Nonblocking download progress presentation =="
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/download_progress_presentation_probe.m Sources/UI/TGDownloadProgressWindowController.m -framework Cocoa -o "$BUILD_DIR/download-progress-presentation-probe"
@@ -594,6 +595,10 @@ HOME="$TEST_HOME" "$BUILD_DIR/playback-timeline-updates-probe"
 "$PYTHON_BIN" Tests/aqua_privacy_storage_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 "$PYTHON_BIN" Tests/aqua_readers_location_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 "$PYTHON_BIN" Tests/utility_responsive_windows_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$PYTHON_BIN" Tests/aqua_bot_utility_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$PYTHON_BIN" Tests/aqua_icon_assets_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$PYTHON_BIN" Tests/aqua_lists_composition_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
+"$PYTHON_BIN" Tests/aqua_consistency_probe.py "$CLANG" "${COMPILE_FLAGS[@]}"
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/utility_window_geometry_probe.m -framework Cocoa -o "$BUILD_DIR/utility-window-geometry-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/utility-window-geometry-probe"
 

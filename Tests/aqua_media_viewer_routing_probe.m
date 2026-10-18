@@ -222,7 +222,9 @@ int main(void) {
     assert([(NSTextField *)child textColor]); metadataCount++;
    }
    assert(metadataCount==2);checks+=3;
-   assert([(TGAquaMediaControlCell *)[previous cell] mirrored] && ![(TGAquaMediaControlCell *)[next cell] mirrored]);checks++;
+   assert(![(TGAquaMediaControlCell *)[previous cell] mirrored] && ![(TGAquaMediaControlCell *)[next cell] mirrored]);checks++;
+   assert([[(TGAquaMediaControlCell *)[previous cell] iconAssetName] isEqual:@"Phosphor/back"]);
+   assert([[(TGAquaMediaControlCell *)[next cell] iconAssetName] isEqual:@"Phosphor/forward"]);checks+=2;
    [viewer setGalleryIndex:2 count:12];assert([[counter stringValue] isEqual:@"3 / 12"] && [previous isEnabled] && [next isEnabled]);checks++;
    [viewer setGalleryIndex:0 count:12];assert(![previous isEnabled] && [next isEnabled]);checks++;
    [viewer setGalleryIndex:11 count:12];assert([previous isEnabled] && ![next isEnabled]);checks++;

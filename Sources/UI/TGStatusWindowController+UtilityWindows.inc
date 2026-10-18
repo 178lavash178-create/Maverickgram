@@ -1,3 +1,4 @@
+#include "TGStatusWindowController+AquaSessions.inc"
 static NSNumber *TGActiveSessionSelectableIdentifier(NSDictionary *session) {
     if (![session isKindOfClass:[NSDictionary class]]) {
         return nil;
@@ -208,7 +209,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
     if ([errorMessage length] > 0 || ![summary isKindOfClass:[NSDictionary class]]) {
         NSString *message = [NSString stringWithFormat:TGLoc(@"settings.sessions.failed"),
                              ([errorMessage length] > 0 ? errorMessage : TGLoc(@"settings.sessions.unknownError"))];
-        [self.activeSessionsStatusField setStringValue:message];
+        [self setActiveSessionsStatusText:message];
         [self.activeSessionsTextView setString:@""];
         return;
     }
@@ -217,7 +218,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
     TGActiveSessionsLocalizationBlock localize = ^NSString *(NSString *key) {
         return TGLoc(key);
     };
-    [self.activeSessionsStatusField setStringValue:[TGActiveSessionsPresentation statusTextForSummary:summary
+    [self setActiveSessionsStatusText:[TGActiveSessionsPresentation statusTextForSummary:summary
                                                                                               localize:localize]];
     NSAttributedString *output = [TGActiveSessionsPresentation detailsTextForSummary:summary
                                                                          languageCode:TGLanguageCode()
@@ -313,7 +314,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
         }
     }
     if (!foundFreshTerminableSession) {
-        [self.activeSessionsStatusField setStringValue:TGLoc(@"settings.sessions.stale")];
+        [self setActiveSessionsStatusText:TGLoc(@"settings.sessions.stale")];
         [self reloadActiveSessions:nil];
         NSBeep();
         return;
@@ -331,7 +332,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
 
     NSUInteger requestGeneration = self.activeSessionsRequestGeneration + 1;
     self.activeSessionsRequestGeneration = requestGeneration;
-    [self.activeSessionsStatusField setStringValue:TGLoc(@"settings.sessions.terminating")];
+    [self setActiveSessionsStatusText:TGLoc(@"settings.sessions.terminating")];
     [self.activeSessionsRefreshButton setEnabled:NO];
     [self.activeSessionsTerminateButton setEnabled:NO];
     [self.activeSessionsTerminatePopup setEnabled:NO];
@@ -348,12 +349,12 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
                 self.client == client &&
                 [self.currentAuthState isEqualToString:@"ready"]) {
                 if (ok) {
-                    [self.activeSessionsStatusField setStringValue:TGLoc(@"settings.sessions.terminate.done")];
+                    [self setActiveSessionsStatusText:TGLoc(@"settings.sessions.terminate.done")];
                     [self reloadActiveSessions:nil];
                 } else {
                     NSString *message = [NSString stringWithFormat:TGLoc(@"settings.sessions.terminate.failed"),
                                          ([errorMessage length] > 0 ? errorMessage : TGLoc(@"settings.sessions.unknownError"))];
-                    [self.activeSessionsStatusField setStringValue:message];
+                    [self setActiveSessionsStatusText:message];
                     [self.activeSessionsRefreshButton setEnabled:YES];
                     [self.activeSessionsTerminateButton setEnabled:([[self.activeSessionsTerminatePopup itemArray] count] > 1)];
                     [self.activeSessionsTerminatePopup setEnabled:([[self.activeSessionsTerminatePopup itemArray] count] > 1)];
@@ -388,7 +389,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
     }
     NSUInteger requestGeneration = self.activeSessionsRequestGeneration + 1;
     self.activeSessionsRequestGeneration = requestGeneration;
-    [self.activeSessionsStatusField setStringValue:TGLoc(@"settings.sessions.loading")];
+    [self setActiveSessionsStatusText:TGLoc(@"settings.sessions.loading")];
     [self.activeSessionsRefreshButton setEnabled:NO];
     [self.activeSessionsTextView setString:@""];
     self.activeSessionsSelectableSessions = [NSArray array];
@@ -537,14 +538,17 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
         [contentView addSubview:closeButton];
         self.activeSessionsCloseButton = closeButton;
         self.activeSessionsWindow = window;
+        [self configureAquaActiveSessionsWindow];
     }
     [self.activeSessionsWindow setTitle:TGLoc(@"settings.section.sessions")];
-    [self.activeSessionsRefreshButton setTitle:TGLoc(@"settings.sessions.refresh")];
+    [self.activeSessionsRefreshButton setTitle:TGInterfaceDesignIsAqua() ? @"↻" : TGLoc(@"settings.sessions.refresh")];
+    [self.activeSessionsRefreshButton setToolTip:TGLoc(@"settings.sessions.refresh")];
     [self.activeSessionsTerminateButton setTitle:TGLoc(@"settings.sessions.terminate")];
     [self.activeSessionsWindow center];
     TGFitUtilityWindowToVisibleScreen(self.activeSessionsWindow);
     [self.activeSessionsWindow makeKeyAndOrderFront:nil];
     [self reloadActiveSessions:nil];
+    [self layoutAquaActiveSessionsWindow];
 }
 
 - (void)refreshProfile:(id)sender {

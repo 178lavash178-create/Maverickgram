@@ -55,7 +55,7 @@ int main(void) {
     NSString *previous=[TGLanguageCode() copy];
     for(NSString *language in [NSArray arrayWithObjects:@"ru",@"en",@"be",nil]) {
         TGSetLanguageCode(language);
-        for(CGFloat width=300;width<=620;width+=80) {
+        for(CGFloat width=300;width<=1100;width+=80) {
             [panel presentInFrame:NSMakeRect(20,20,width,520) animated:NO];[panel showSummary:summary loading:NO error:nil];
             NSView *document=[panel valueForKey:@"documentView"];
             for(NSView *view in [document subviews]) Contains([document bounds],[view frame]);
@@ -72,6 +72,7 @@ int main(void) {
             NSRect nameFrame=[name frame],avatarFrame=[avatar frame],subtitleFrame=[subtitle frame];
             Contains([panel bounds],nameFrame);Contains([panel bounds],avatarFrame);Contains([panel bounds],subtitleFrame);
             NSScrollView *tabs=[panel valueForKey:@"tabScrollView"];
+            NSPopUpButton *category=[panel valueForKey:@"categoryPopUp"];
             NSView *tabDocument=[panel valueForKey:@"tabDocumentView"];
             Contains([panel bounds],[tabs frame]);
             assert([tabs hasHorizontalScroller] && ![tabs hasVerticalScroller]);
@@ -79,7 +80,8 @@ int main(void) {
             assert(![tabs drawsBackground] && ![[tabs contentView] drawsBackground]);
             assert(NSHeight([[tabs contentView] bounds])>=30.0);
             assert([tabs documentView]==tabDocument);
-            assert(NSWidth([tabDocument frame])>NSWidth([[tabs contentView] bounds]));
+            assert([tabs isHidden]!=[category isHidden]);
+            if(![category isHidden]) Contains([panel bounds],[category frame]);
             NSArray *buttons=[panel valueForKey:@"actionButtons"];
             assert([buttons count]==9);
             NSInteger expectedTag=-1;
@@ -93,11 +95,16 @@ int main(void) {
                 assert(text.width<=NSWidth(title));
             }
             NSButton *last=[buttons lastObject];
-            [tabDocument scrollRectToVisible:[last frame]];
-            Contains([[tabs contentView] bounds],[last frame]);
+            if(![tabs isHidden]) {
+                [tabDocument scrollRectToVisible:[last frame]];
+                Contains([[tabs contentView] bounds],[last frame]);
+            }
             for(NSInteger tab=-1;tab<8;tab++) {
                 [panel setSelectedMediaTab:tab];
                 assert([panel selectedMediaTab]==tab);
+                assert([[category selectedItem] tag]==tab);
+                assert([category numberOfItems]==9);
+                for(NSUInteger i=0;i<9;i++) assert([[[category itemAtIndex:i] title] isEqual:[[buttons objectAtIndex:i] title]]);
                 assert([scroll isHidden]==(tab>=0));
                 assert([[panel mediaHostView] isHidden]==(tab<0));
                 Contains([panel bounds],[[panel mediaHostView] frame]);
@@ -110,12 +117,16 @@ int main(void) {
             [panel setSelectedMediaTab:-99];assert([panel selectedMediaTab]==-1);
             [panel setSelectedMediaTab:99];assert([panel selectedMediaTab]==7);
             [panel setSelectedMediaTab:-1];
+            [category selectItemWithTag:6];
+            [NSApp sendAction:[category action] to:[category target] from:category];
+            assert([panel selectedMediaTab]==6 && [[category selectedItem] tag]==6);
+            [panel setSelectedMediaTab:99];
 
         }
     }
     TGSetLanguageCode(previous);[previous release];
     NSArray *buttons=[panel valueForKey:@"actionButtons"];
-    for(NSButton *button in buttons) [button performClick:nil]; assert(target->media==45 && target->details==0);
+    for(NSButton *button in buttons) [button performClick:nil]; assert(target->media==45+8*3*11 && target->details==0);
     NSButton *manage=[panel valueForKey:@"detailsButton"];
     assert([manage isHidden] && ![manage isEnabled]); [manage performClick:nil]; assert(target->details==0);
     NSDictionary *adminSummary=[NSDictionary dictionaryWithObjectsAndKeys:@"supergroup",@"kind",@YES,@"can_manage_members",nil];
@@ -137,6 +148,6 @@ int main(void) {
     [panel presentInFrame:NSMakeRect(20,20,440,520) animated:YES];Spin();assert(NSEqualRects([panel frame],NSMakeRect(20,20,440,520)) && ![panel isHidden]);
     [panel closeAnimated:YES];[panel hideImmediately];Spin();assert([panel isHidden] && target->closed==2);
     [panel setTarget:nil];[panel removeFromSuperview];[panel release];[window close];
-    printf("Aqua profile panel: %lu geometry cases, %lu real localized tab layouts, nine full-width horizontally scrollable tabs and fixed identity, separate manage action, immediate/animated close, interrupted open/close/resize, detach PASS.\n",(unsigned long)cases,(unsigned long)layouts);
+    printf("Aqua profile panel: %lu geometry cases, %lu real localized category layouts, measured tabs/popup fallback and selection/action routing, fixed identity, separate manage action, immediate/animated close, interrupted open/close/resize, detach PASS.\n",(unsigned long)cases,(unsigned long)layouts);
     [pool drain];return 0;
 }

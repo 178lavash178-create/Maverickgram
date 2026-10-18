@@ -6,6 +6,8 @@
 #import "TGDownloadProgressWindowController.h"
 #import "TGMessageViewersWindowController.h"
 #import "TGInterfaceDesign.h"
+#import "TGAquaAppearance.h"
+#import "TGDialogPresentation.h"
 #import "TGStatusButtonCells.h"
 #import "../Sources/Media/TGMediaImageLoader.h"
 #include <string.h>
@@ -61,7 +63,8 @@ int main(int argc,const char **argv) {
     NSUInteger layouts=0,buttons=0,rasters=0;
     for(NSString *language in [NSArray arrayWithObjects:@"ru",@"be",@"en",nil]) {
         TGSetLanguageCode(language);[manager refreshPresentation];[progress refresh];
-        NSView *root=[[manager window] contentView];Require([root isKindOfClass:[TGDownloadManagerBackgroundView class]],"manager owns the shared material root");
+        NSView *root=TGUtilityWindowContentView([manager window]);
+        Require(aqua ? [root isKindOfClass:[TGAquaUtilityWindowView class]] : [root isKindOfClass:[TGDownloadManagerBackgroundView class]],"manager owns the design-specific shared material root");
         NSBitmapImageRep *body=PaintAuxiliaryView(root);rasters++;
         Require([[body colorAtX:3 y:3] alphaComponent]>0.99,"manager window material fills corners");
         NSView *header=[manager valueForKey:@"headerView"],*footer=[manager valueForKey:@"footerView"];

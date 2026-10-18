@@ -10,6 +10,8 @@
 #import "TGStatusViewComponents.h"
 #import "TGStatusViewCells.h"
 #import "TGTheme.h"
+#import "TGInterfaceDesign.h"
+#import "TGAquaAppearance.h"
 
 @interface TGDownloadManagerWindowController () <NSTableViewDataSource, NSTableViewDelegate, NSWindowDelegate, TGDownloadCompactPopoverTarget>
 @property(nonatomic,retain) TGDownloadCompactPopover *compactPopover;
@@ -109,7 +111,7 @@
 }
 
 - (void)layoutDownloadViews {
-    TGDownloadManagerLayout f = TGDownloadManagerLayoutForSize([[[self window] contentView] bounds].size);
+    TGDownloadManagerLayout f = TGDownloadManagerLayoutForSize([TGUtilityWindowContentView([self window]) bounds].size);
     [self.headerView setFrame:f.header];
     [self.titleField setFrame:f.title]; [self.subtitleField setFrame:f.subtitle];
     [self.listSurface setFrame:f.surface]; [self.scrollView setFrame:f.list];
@@ -125,7 +127,8 @@
 }
 
 - (void)buildViews {
-    TGDownloadManagerBackgroundView *root = [[[TGDownloadManagerBackgroundView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease];
+    NSView *root = TGInterfaceDesignIsAqua() ? [[[TGAquaUtilityWindowView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease] : [[[TGDownloadManagerBackgroundView alloc] initWithFrame:[[[self window] contentView] bounds]] autorelease];
+    if (TGInterfaceDesignIsAqua()) [(TGAquaUtilityWindowView *)root setFooterHeight:104];
     [root setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [[self window] setContentView:root];
     self.headerView = [[[TGDownloadManagerSurfaceView alloc] initWithFrame:NSZeroRect] autorelease];
@@ -270,6 +273,9 @@
 }
 
 - (void)refreshPresentation {
+    BOOL aqua=TGInterfaceDesignIsAqua();
+    [self.titleField setFont:[NSFont boldSystemFontOfSize:aqua?14:20]];
+    [self.headerView setHidden:aqua]; [self.footerView setHidden:aqua]; [self.listSurface setHidden:aqua];
     NSColor *paper = TGClassicTablePaperColor();
     NSColor *ink = TGDownloadManagerReadableInk(TGClassicCardInkColor(), paper);
     NSColor *muted = TGDownloadManagerReadableInk(TGClassicCardMutedInkColor(), paper);
@@ -280,6 +286,7 @@
     [self.titleField setTextColor:ink]; [self.subtitleField setTextColor:muted];
     [self.statusField setTextColor:muted]; [self.emptyField setTextColor:muted];
     [self.tableView setBackgroundColor:paper];
+    if(aqua)[self.tableView setSelectionHighlightStyle:NSTableViewSelectionHighlightStyleNone];
     NSArray *buttons = [NSArray arrayWithObjects:self.cancelButton, self.retryButton, self.revealButton, self.clearButton, nil];
     NSArray *keys = [NSArray arrayWithObjects:@"downloads.cancel", @"downloads.retry", @"downloads.reveal", @"downloads.clear", nil];
     for (NSUInteger i = 0; i < [buttons count]; i++) {
@@ -317,6 +324,7 @@
     [self.statusField setStringValue:[self.downloads count] > 0
         ? [NSString stringWithFormat:TGLoc(@"downloads.count"), (unsigned long)[self.downloads count]]
         : TGLoc(@"downloads.empty")];
+    [self.statusField setHidden:TGInterfaceDesignIsAqua() && [self.downloads count]==0];
     [self updateControls];
     [self.compactPopover reloadWithItems:self.downloads];
 }

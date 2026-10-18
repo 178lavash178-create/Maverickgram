@@ -1,0 +1,888 @@
+{
+  "assets": {
+    "add-ellipse.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "3cd025b801b9ae520670bfe152709b6d0fea253840fe6e16aab835fa0e9eb3f0",
+      "upstream_source": null
+    },
+    "android.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "9705401fd44645854219319941355cfcf2a08fd1"
+      ],
+      "sha256": "a97fd3008de37383fdadb2ab6ae41a21ac5b743d56c6cba0f89aa7eb4912ab85",
+      "upstream_source": null
+    },
+    "apple-store.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6619128064b1c031664558421506441a774077c6"
+      ],
+      "sha256": "bbbd6a7b5e45e1cefffeb953f9102f9447b7a4083ab2a6a86b579e48e4a7ccee",
+      "upstream_source": null
+    },
+    "apple.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "9705401fd44645854219319941355cfcf2a08fd1"
+      ],
+      "sha256": "bdeb541aa45e7660a4fb8633f925e43f543ccdd7aed6adc6004026fec9a77204",
+      "upstream_source": null
+    },
+    "appstore.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6619128064b1c031664558421506441a774077c6"
+      ],
+      "sha256": "7fa20d9b304e446023e57d7d97ce0d45425de8766e140f90becdea5d585b2477",
+      "upstream_source": null
+    },
+    "archive.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "750fea425506d42bd797b79f605a5baa207d343c6acc1eafcd21f81fe96aa0a6",
+      "upstream_source": null
+    },
+    "arrow-down.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "e88f3be254dd402d0627f1059ce98ad211829d39"
+      ],
+      "sha256": "fd0ad4a0d617a02066f4e2bf8e650d1b86f324f0d24b79f8a6ffc77598175d3e",
+      "upstream_source": null
+    },
+    "attach.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a757a5bc2a864173a82d04b8ae268390cde7ba4b"
+      ],
+      "sha256": "0c0d5576bcaccf1e074d980f39eb777d7f99c863b6e15f80fc3ce2f71523ea2e",
+      "upstream_source": null
+    },
+    "attention.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "c169d2e696728e75ec5a7e967067976b15abd6fbf1edf51da6f6c13fb6c95d5a",
+      "upstream_source": null
+    },
+    "bell.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "6888badc37b74e53c45fc81611fdecd93302de37a42b2763712e65b8794ef11e",
+      "upstream_source": null
+    },
+    "bookmark-plus.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6619128064b1c031664558421506441a774077c6"
+      ],
+      "sha256": "563c047291c2de56c0c724e313442fdca9d4bc5e5f9092c925e7a31af24137c1",
+      "upstream_source": null
+    },
+    "bookmark.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "f5ded0f6bdb1c7ec67ec9b3377e5bdab56779d63"
+      ],
+      "sha256": "8476e363003507b20c7761ddf79ef36fb19da44f4fab49cca6dc7166e4e70dd3",
+      "upstream_source": null
+    },
+    "bullhorn.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "99160f8e804f0fc482dc39a48c47b1b4c1e14203a925bae21ba23d8be4b2c8de",
+      "upstream_source": null
+    },
+    "call-cancel.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "0b47c722d6dcdf0bdbddb5da7d293788c035b9d9"
+      ],
+      "sha256": "a5137a9b8668c02fe83d3f4377ccefc2adb30a12779a6a9b92d6a5dd6c697f69",
+      "upstream_source": null
+    },
+    "call-in.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "0b47c722d6dcdf0bdbddb5da7d293788c035b9d9"
+      ],
+      "sha256": "ccbf6f79725935060421d62572f513267b604373fc6a6a89b690a5fccb17f647",
+      "upstream_source": null
+    },
+    "call-miss.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "0b47c722d6dcdf0bdbddb5da7d293788c035b9d9"
+      ],
+      "sha256": "f60e2a319dec6baad74db942623efd2627e944a6172cc3ee66b7f34e06f45d69",
+      "upstream_source": null
+    },
+    "call-out.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "0b47c722d6dcdf0bdbddb5da7d293788c035b9d9"
+      ],
+      "sha256": "dedd3feca9989c899221fd6797e117ef8f9864f169d92af7bd6009e7163b4528",
+      "upstream_source": null
+    },
+    "call-receive.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "68bc86b6305344f11822798f75835d1ec65c5cef"
+      ],
+      "sha256": "7dba1f12bbdaca7585f060c71860c696f9fb5061534844dcce26ce51e455729f",
+      "upstream_source": null
+    },
+    "cards.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a757a5bc2a864173a82d04b8ae268390cde7ba4b"
+      ],
+      "sha256": "6d0ee78cfac6aec0f981440d4f990e86a859183def329764c49ae4ef6f056b3b",
+      "upstream_source": null
+    },
+    "chat.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "c7568c161a636b783be4b7103df0ddcd3249c8e55a713e09afb62282e4963348",
+      "upstream_source": null
+    },
+    "checkers.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6619128064b1c031664558421506441a774077c6"
+      ],
+      "sha256": "ccc2f52f3f7b1a760000582b7586eb7ac7e881a8e5f22d43aa0b9cc6a0f597c2",
+      "upstream_source": null
+    },
+    "contacts.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "4cf9136276cb37de38c4109c316a02403701c8636a101a7a771fd2eeef4dd7e3",
+      "upstream_source": null
+    },
+    "cross.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "8575dc02ca86a896cbec350454a9924148856fa9"
+      ],
+      "sha256": "561980db3b388a151b29fcee4179152e4a588498ac67aa5209bed15c1db0ca47",
+      "upstream_source": null
+    },
+    "discover-compass.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "d09a317e4433dafb77e854be8401cbf4898b659d"
+      ],
+      "sha256": "9e8aaae7c97403a1e97b1d8e52e42116cf4d2de2bc41e7bdb2c35da050fea89a",
+      "upstream_source": null
+    },
+    "display.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "9705401fd44645854219319941355cfcf2a08fd1"
+      ],
+      "sha256": "63edfd7d4ff32c236d7ea3ca9c98e2e81ede43c2d8e2429d0c9b0d8410655503",
+      "upstream_source": null
+    },
+    "document.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "fd18015b0a3686684e12063b3e758e01139034f2b6c7e2e7c1b45aff1c01793f",
+      "upstream_source": null
+    },
+    "done-mini.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6619128064b1c031664558421506441a774077c6"
+      ],
+      "sha256": "001a649d90591b3291ecc046273c46ff7f071eff4ed10e52c5f0d82f39908bfe",
+      "upstream_source": null
+    },
+    "emoji-smile.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a985ceb5e491294c8f50d5f309c2cf7521274539"
+      ],
+      "sha256": "f67acb7ca38bff77b73b916eaeb94512f6dcc5da323b34fcd6eca04e18c1734e",
+      "upstream_source": null
+    },
+    "ferry.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a201c0567fcdba1ad8ce941e141ddf35e75d06a7"
+      ],
+      "sha256": "e9c4e2449fef1c261e99a995e16a73274652140538b3c517e10326d70c5e3d8f",
+      "upstream_source": null
+    },
+    "firefox.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a757a5bc2a864173a82d04b8ae268390cde7ba4b"
+      ],
+      "sha256": "556e6d26827626aa3d6aeb9153bb655fedb88b88a1dafec46274539eb41e8eec",
+      "upstream_source": null
+    },
+    "flag-triangle.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "a8cffc05c4c57535f8a427ceb8cb3c5da9b4747a443599313cc6e557b81613ca",
+      "upstream_source": null
+    },
+    "folder-add.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a89eaead3ec40747dbe69e876b5396bc3a546670"
+      ],
+      "sha256": "07637488ea785a919f4fa6f62cfccc7674bff680e4512ce49d71a5997404a2cc",
+      "upstream_source": null
+    },
+    "folder-remove.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a89eaead3ec40747dbe69e876b5396bc3a546670"
+      ],
+      "sha256": "7a24178f86aed81f0a2f4126778ccfc919fe83bbdf34c28412ed2ac0356e1cf9",
+      "upstream_source": null
+    },
+    "folder-share.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a89eaead3ec40747dbe69e876b5396bc3a546670"
+      ],
+      "sha256": "6f39902cfa56912a4601399f185af4bcff9c4b06cb76b0c9e817d4a9991996c8",
+      "upstream_source": null
+    },
+    "folder.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a89eaead3ec40747dbe69e876b5396bc3a546670"
+      ],
+      "sha256": "3c6a1922e1227fc1544bc59d692a272647b89597fe1b77ecc3f0f195cb9664c6",
+      "upstream_source": null
+    },
+    "frame.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "9705401fd44645854219319941355cfcf2a08fd1"
+      ],
+      "sha256": "224b2b00f7cec7d5708a99028991ec9221d864484877010e00f188bf3b0d07a9",
+      "upstream_source": null
+    },
+    "github.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "d09a317e4433dafb77e854be8401cbf4898b659d"
+      ],
+      "sha256": "77629411c09860bcb38ca1b6a207b115a95c20f2d1433fb882f83023806e8d6a",
+      "upstream_source": null
+    },
+    "google-chrome.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a757a5bc2a864173a82d04b8ae268390cde7ba4b"
+      ],
+      "sha256": "772aa9ea130beb86ff89f5c7ea2bf852d3f5023b4cdaab0a495008d51331b9d9",
+      "upstream_source": null
+    },
+    "hand.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "3b53615f0deda29b88b6abe7d1bcbead77bc108b23e4e9e4e4dd7b16d2e0dba6",
+      "upstream_source": null
+    },
+    "hdd.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "9705401fd44645854219319941355cfcf2a08fd1"
+      ],
+      "sha256": "195f72c9b0bb0edb5ba0e61556779bc294f1c86ceb85dcfbecd07a1b44a05050",
+      "upstream_source": null
+    },
+    "headphones-off.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "0b47c722d6dcdf0bdbddb5da7d293788c035b9d9"
+      ],
+      "sha256": "a7df84969f02022da6822acd96f7946f2c24e1c32aba805142f18fe6fc086887",
+      "upstream_source": null
+    },
+    "headphones.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "0b47c722d6dcdf0bdbddb5da7d293788c035b9d9"
+      ],
+      "sha256": "12da35afc88e50f7289920efd668e7f09b64f3f0a9f6c2f0ab7125d86467bbf5",
+      "upstream_source": null
+    },
+    "heart.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "d09a317e4433dafb77e854be8401cbf4898b659d"
+      ],
+      "sha256": "b19699f77b650eaf5c5cbb01663681eb563bd9d35b42598a5eb58f0a0a8f8f0c",
+      "upstream_source": null
+    },
+    "history.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "d09a317e4433dafb77e854be8401cbf4898b659d"
+      ],
+      "sha256": "2a96bfeb3e736eaae12a8bae358b908747ceb2f4d7aa83e1a9580a84c13863aa",
+      "upstream_source": null
+    },
+    "image.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "b0c422eb3ac99adfa987fe5d0551b253928fe6948f4043dd1f5b31c47884f325",
+      "upstream_source": null
+    },
+    "info.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "bd05daa7a9c14c3ac849edd0d5dd28c7629030d5da6e5cddca3fffc98cf7df0c",
+      "upstream_source": null
+    },
+    "instagram.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "d09a317e4433dafb77e854be8401cbf4898b659d"
+      ],
+      "sha256": "b1b47be53b6488c33a0c455b8aebfc66b45ffda19798c38b3da6eddf92f41e4b",
+      "upstream_source": null
+    },
+    "laptop.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "9705401fd44645854219319941355cfcf2a08fd1"
+      ],
+      "sha256": "8d44cdd21418e0982a41a06db6ed9b162161eed4f62a745153c52bda82edf181",
+      "upstream_source": null
+    },
+    "log-out.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "922c3aa15035da3e0745f3d6bf55da7764093b147e67e955961cc9cefcdba003",
+      "upstream_source": null
+    },
+    "microphone-off.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "0b47c722d6dcdf0bdbddb5da7d293788c035b9d9"
+      ],
+      "sha256": "5b5a80840a3c33ad672badd4b761909790ef9732e05e4133d68ef8a5f30faf10",
+      "upstream_source": null
+    },
+    "microphone.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "9f2ef2df66104dd8875f95ff7335f98a8e1bffa27452f37f814771390a7eec36",
+      "upstream_source": null
+    },
+    "minesweeper.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6619128064b1c031664558421506441a774077c6"
+      ],
+      "sha256": "8ad96765f72a999d83ddb292e759fcc3e69642f9ea5ed672796587ccd4245d87",
+      "upstream_source": null
+    },
+    "monoblock.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "9705401fd44645854219319941355cfcf2a08fd1"
+      ],
+      "sha256": "b0b8ed9d98dab0fbfc277cd763b493873326937bbcae08628e72b62a04009d65",
+      "upstream_source": null
+    },
+    "next.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "e8e427e23f82cb0e6467ac8dd66f3f1fe016f6c674b2798bb5b92d5acb6a0fdc",
+      "upstream_source": null
+    },
+    "opera.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a757a5bc2a864173a82d04b8ae268390cde7ba4b"
+      ],
+      "sha256": "cb7559d8d539957bd76a453c4b46afc7ef7b1ac7f8647682e35838cb73510f62",
+      "upstream_source": null
+    },
+    "pac-man.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6619128064b1c031664558421506441a774077c6"
+      ],
+      "sha256": "bb0f8b5b28f8aca72552adf62fa60a55d98a33970b3922080d2ad0005d5ad86a",
+      "upstream_source": null
+    },
+    "pause.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "46472131d792728172ee43901eca403ba3e106e5906247e1fb5f952a9f31b93d",
+      "upstream_source": null
+    },
+    "play.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "01e9c2c936113bc288ad89fb22a30f31f39bdc4d4448bfda49d2dd4e5e53cced",
+      "upstream_source": null
+    },
+    "plus.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "1ff2ed03b6e2de7ecf8e6250f37ad738fa18d5f56367245b2aa744a3d29c1650",
+      "upstream_source": null
+    },
+    "pressure.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "9705401fd44645854219319941355cfcf2a08fd1"
+      ],
+      "sha256": "8ba7955c3dc84c87bc7246545a26f423139a0cf3379f99e9d3dc55c5add4dacf",
+      "upstream_source": null
+    },
+    "qr-scan.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a201c0567fcdba1ad8ce941e141ddf35e75d06a7"
+      ],
+      "sha256": "0c7d02ebb6a897b60dceecd1afc42295787b435a5a62d822e79140197cd22bbd",
+      "upstream_source": null
+    },
+    "refresh.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "4479718e642925af5a10b98b19d15e94011f3bd5ac10d075e5cefd7aa19a7ff6",
+      "upstream_source": null
+    },
+    "remove-ellipse.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "e88f3be254dd402d0627f1059ce98ad211829d39"
+      ],
+      "sha256": "9b3ecda46d912dac0e1ba47f6c26207bed79bd2c8c7f97d7d086c9fa96085e1a",
+      "upstream_source": null
+    },
+    "restore.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "dad012c5430682cc470d2a2d2a81024b245382b4c3efd4313e7313b428273e5e",
+      "upstream_source": null
+    },
+    "robot.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "9705401fd44645854219319941355cfcf2a08fd1"
+      ],
+      "sha256": "a8f480ea91554a5894248f51217d7c36dc32d83d956c0e643257a9d27614aa31",
+      "upstream_source": null
+    },
+    "route-arrow.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "92832be7e26dcf753ae141ecb8f1d88c10eb7f56"
+      ],
+      "sha256": "69965ad68699fd2a29f7eb982fbc0637d9a4294e6902bd2c1ceb37988027c4e7",
+      "upstream_source": null
+    },
+    "running.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a89eaead3ec40747dbe69e876b5396bc3a546670"
+      ],
+      "sha256": "63e59547f265a5d7c60cb1b18932cabfeab7d0fcd3b537060cdc8c64a7c01d6a",
+      "upstream_source": null
+    },
+    "search.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "d9e706913a47853d67271dd6e88538045ef790af"
+      ],
+      "sha256": "fcef46de0959437421377a8513d2d41690a79d21f28e51c9eb53e0b4cba36f57",
+      "upstream_source": null
+    },
+    "send.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "fa60bb56da326939f0776f0e7457cd15f69333fdea98312199179f7a9d2d7af7",
+      "upstream_source": null
+    },
+    "settings.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "68bc86b6305344f11822798f75835d1ec65c5cef"
+      ],
+      "sha256": "14fab7591aa2b8196205d044d18278aaaca84508a61c1c7847cfd0ba592825d6",
+      "upstream_source": null
+    },
+    "signal-fair.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a201c0567fcdba1ad8ce941e141ddf35e75d06a7"
+      ],
+      "sha256": "13f1d50cb69f9a9cdc0e1aeca27fa5138c9c25b74cda4b18468b3df633a8021d",
+      "upstream_source": null
+    },
+    "signal-good.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a201c0567fcdba1ad8ce941e141ddf35e75d06a7"
+      ],
+      "sha256": "25b5e6e6ca6084e7dfa9addbe2fc2dbfb0979647909cb68592041906248fc3b6",
+      "upstream_source": null
+    },
+    "signal-strong.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a201c0567fcdba1ad8ce941e141ddf35e75d06a7"
+      ],
+      "sha256": "0d3f4462f3ea84871709d3ae6eb4017356a4435a797e392ddc544167d3d0cb22",
+      "upstream_source": null
+    },
+    "signal-weak.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a201c0567fcdba1ad8ce941e141ddf35e75d06a7"
+      ],
+      "sha256": "1ef3eebd9ede2ea28ded57a59f3cd8b04864a67a14053ab5ef284b91930adccb",
+      "upstream_source": null
+    },
+    "signal.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a201c0567fcdba1ad8ce941e141ddf35e75d06a7"
+      ],
+      "sha256": "629af48959c561344980e07e0ec4feb6d01abe377359ec8520d00c3cfe75c88f",
+      "upstream_source": null
+    },
+    "smartphone.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a985ceb5e491294c8f50d5f309c2cf7521274539"
+      ],
+      "sha256": "b4cc7e37c59c22ea33b4c46484b87368737f9fc564eb9ffd2bf1ba1882656836",
+      "upstream_source": null
+    },
+    "smartwatch.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "9705401fd44645854219319941355cfcf2a08fd1"
+      ],
+      "sha256": "a754afdb61c91cf9252be81d3d9e15fa8c444b7967acfe2d3d729efca889d2e6",
+      "upstream_source": null
+    },
+    "solitaire.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6619128064b1c031664558421506441a774077c6"
+      ],
+      "sha256": "8f18cfa18cbfe67e64ce82a2a8c9a843acb6d6e8979b149ccf02d1fb222280e3",
+      "upstream_source": null
+    },
+    "sound-off.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "4fd63be46169359af19eece8d78bd2a0242efb0bbf81a67231d916d7f8775004",
+      "upstream_source": null
+    },
+    "star.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a89eaead3ec40747dbe69e876b5396bc3a546670"
+      ],
+      "sha256": "2ab90b91e28db4b4df9a49d6d694c93ea394e014d6a6e46376fd7b8b4bb7d9f6",
+      "upstream_source": null
+    },
+    "suitcase.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a985ceb5e491294c8f50d5f309c2cf7521274539"
+      ],
+      "sha256": "8705d507fb70f86300b3f7f5d0c175f3188dcaa470795c64c6213f281f29ebf6",
+      "upstream_source": null
+    },
+    "tablet.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "9705401fd44645854219319941355cfcf2a08fd1"
+      ],
+      "sha256": "b6f130da730044cff6557339333900336162ad5feecf5449e88a3316343f58a3",
+      "upstream_source": null
+    },
+    "telegram.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a89eaead3ec40747dbe69e876b5396bc3a546670"
+      ],
+      "sha256": "2327a9e8973be1561e4d4fb39e63339659860d7a71b005cfe84b986ce0fddc7c",
+      "upstream_source": null
+    },
+    "tictactoe.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6619128064b1c031664558421506441a774077c6"
+      ],
+      "sha256": "674375454636b7dcdab8472d78728d819bf3af48ca8ce76996d2f8a1a310a226",
+      "upstream_source": null
+    },
+    "trash.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "8109e415d33781347c8957fcb140ad4075f629cd89da104d279e4e7cfc02bd13",
+      "upstream_source": null
+    },
+    "upload.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "b7f6b170b9bbe416d023656314ed9b0f551838ab3755bff42c3799c19a30637f",
+      "upstream_source": null
+    },
+    "usb.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "9705401fd44645854219319941355cfcf2a08fd1"
+      ],
+      "sha256": "fa870ba67179b26013cfd764f8afca7118695180d7520e88e960e0c96c1be59d",
+      "upstream_source": null
+    },
+    "user.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a985ceb5e491294c8f50d5f309c2cf7521274539"
+      ],
+      "sha256": "fce94c98318dd5b0dbfba06b5921cc9dffe24dd3efa8b4b775f4f8525b0440f6",
+      "upstream_source": null
+    },
+    "video-off.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a201c0567fcdba1ad8ce941e141ddf35e75d06a7"
+      ],
+      "sha256": "0aeaf83203abfb6b57d07b1eef108942c023dcb32fbb0f1900e94f0fd27cddc7",
+      "upstream_source": null
+    },
+    "video.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "a201c0567fcdba1ad8ce941e141ddf35e75d06a7"
+      ],
+      "sha256": "cf9e22d80491fcdc869a9a491e4172e7335dd747fa860446fd20c7cff91c4541",
+      "upstream_source": null
+    },
+    "wi-fi-off.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "8ac3c191bc6ef0edb197ac66e30b1b1afeaa584deff78a741f89228037725c38",
+      "upstream_source": null
+    },
+    "wi-fi.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "fe2558262513e7b2f18955c66053324146cb9f771f429aed921b62e262929cc9",
+      "upstream_source": null
+    },
+    "windows.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "9705401fd44645854219319941355cfcf2a08fd1"
+      ],
+      "sha256": "b14b9e71e65c6b0910cdd93e5260a8126af7e24873b0add26353fee587dbe976",
+      "upstream_source": null
+    },
+    "workshop-available.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "7bc73ae7d8717cac44ab8398fdcd275ebad8857e"
+      ],
+      "sha256": "bbbd6a7b5e45e1cefffeb953f9102f9447b7a4083ab2a6a86b579e48e4a7ccee",
+      "upstream_source": null
+    },
+    "workshop-installed.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "7bc73ae7d8717cac44ab8398fdcd275ebad8857e"
+      ],
+      "sha256": "2bf4a0069805f5be73dc849eb54bf5b770746f6ffa132a7048be05a40f3ef7d2",
+      "upstream_source": null
+    },
+    "workshop-updates.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "7bc73ae7d8717cac44ab8398fdcd275ebad8857e"
+      ],
+      "sha256": "4479718e642925af5a10b98b19d15e94011f3bd5ac10d075e5cefd7aa19a7ff6",
+      "upstream_source": null
+    },
+    "workshop.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6619128064b1c031664558421506441a774077c6"
+      ],
+      "sha256": "36effafa43b75b404486b92eedaa05e037e8ff73ad7ed6ce79770bbc2a2c1985",
+      "upstream_source": null
+    },
+    "youtube.png": {
+      "license": null,
+      "provenance_status": "Pre-existing approved project asset; upstream source and license not recorded in repository history.",
+      "repository_addition_commits": [
+        "6f69695572dfc66836c8305a69a2b135c66d43be"
+      ],
+      "sha256": "1a934b794785e0dd01c45a9e953322e9307062f2f724de230dea947f0850b73d",
+      "upstream_source": null
+    }
+  },
+  "notice": "An inventory is not a license grant. No upstream authorship, license or origin is inferred from filenames, visual resemblance or repository commit authors.",
+  "scope": "Pre-existing flat PNG collection only; excludes independently attributed AquaGlyphs and Phosphor subdirectories."
+}

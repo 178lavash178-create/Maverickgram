@@ -10,7 +10,10 @@
 #import "TGStatusViewCells.h"
 #import "TGStatusViewComponents.h"
 #import "TGTheme.h"
+#import "TGInterfaceDesign.h"
+#import "TGAquaAppearance.h"
 #import "TGThemeContrast.h"
+#import "TGChatListSelectionAppearance.h"
 
 @interface TGCallHistoryCell : NSTextFieldCell
 @property (nonatomic, retain) NSDictionary *callSummary;
@@ -73,12 +76,23 @@
 }
 
 - (void)drawWithFrame:(NSRect)cellFrame inView:(NSView *)controlView {
-    NSRect cardRect = NSInsetRect(cellFrame, 3.0, 3.0);
-    NSBezierPath *cardPath = [NSBezierPath bezierPathWithRoundedRect:cardRect xRadius:10.0 yRadius:10.0];
-    TGThemeDrawGroupedCardInPath(cardPath, cardRect, [controlView isFlipped]);
-    [TGClassicTableGridColor() set];
-    [cardPath setLineWidth:1.0];
-    [cardPath stroke];
+    BOOL aqua=TGInterfaceDesignIsAqua(), selected=aqua&&[self isHighlighted];
+    if(aqua){
+        cellFrame.size.width=MAX(0,MIN(NSMaxX(cellFrame),NSMaxX([controlView bounds]))-NSMinX(cellFrame));
+        [NSGraphicsContext saveGraphicsState];[NSBezierPath clipRect:cellFrame];
+    }
+    NSRect cardRect = NSInsetRect(cellFrame,aqua?0:3,aqua?0:3);
+    if (aqua) {
+        [(selected?TGListSelectionBackground():[NSColor whiteColor]) set]; NSRectFill(cardRect);
+        [[NSColor colorWithCalibratedWhite:0.88 alpha:1] set];
+        NSRectFill(NSMakeRect(NSMinX(cardRect),[controlView isFlipped]?NSMaxY(cardRect)-1:NSMinY(cardRect),NSWidth(cardRect),1));
+    } else {
+        NSBezierPath *cardPath=[NSBezierPath bezierPathWithRoundedRect:cardRect xRadius:10 yRadius:10];
+        TGThemeDrawGroupedCardInPath(cardPath,cardRect,[controlView isFlipped]);
+        [TGClassicTableGridColor() set];[cardPath setLineWidth:1];[cardPath stroke];
+    }
+    NSColor *ink=selected?TGListSelectionForeground():TGClassicCardInkColor();
+    NSColor *muted=selected?ink:TGClassicCardMutedInkColor();
 
     NSRect avatarRect = NSMakeRect(NSMinX(cardRect) + 10.0, NSMinY(cardRect) + 8.0, 40.0, 40.0);
     NSString *avatarPath = [self.callSummary objectForKey:@"avatar_local_path"];
@@ -102,47 +116,51 @@
     [NSGraphicsContext restoreGraphicsState];
 
     NSString *title = [self.callSummary objectForKey:@"display_name"];
+    NSMutableParagraphStyle *rowStyle=aqua?[[[NSMutableParagraphStyle alloc] init] autorelease]:nil;
+    [rowStyle setLineBreakMode:NSLineBreakByTruncatingTail];
     NSDictionary *titleAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                      [NSFont boldSystemFontOfSize:12.5], NSFontAttributeName,
-                                     TGClassicCardInkColor(), NSForegroundColorAttributeName,
-                                     nil];
+                                     ink, NSForegroundColorAttributeName,
+                                     rowStyle, NSParagraphStyleAttributeName, nil];
     NSDictionary *detailAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                       [NSFont systemFontOfSize:10.5], NSFontAttributeName,
-                                      TGClassicCardMutedInkColor(), NSForegroundColorAttributeName,
-                                      nil];
+                                      muted, NSForegroundColorAttributeName,
+                                      rowStyle, NSParagraphStyleAttributeName, nil];
     CGFloat textX = NSMaxX(avatarRect) + 10.0;
-    CGFloat textWidth = MAX(60.0, NSMaxX(cardRect) - textX - 92.0);
-    [title drawInRect:NSMakeRect(textX, NSMinY(cardRect) + 27.0, textWidth, 18.0)
+    NSString *dateText=nil;CGFloat dateWidth=0;
+    NSNumber *dateValue=[self.callSummary objectForKey:@"date"];
+    if([dateValue respondsToSelector:@selector(doubleValue)]&&[dateValue doubleValue]>0){
+        NSDateFormatter *formatter=[[[NSDateFormatter alloc] init] autorelease];
+        [formatter setDateStyle:NSDateFormatterShortStyle];[formatter setTimeStyle:NSDateFormatterShortStyle];
+        dateText=[formatter stringFromDate:[NSDate dateWithTimeIntervalSince1970:[dateValue doubleValue]]];
+        dateWidth=[dateText sizeWithAttributes:detailAttributes].width;
+        if(aqua)dateWidth=ceil(dateWidth);
+    }
+    CGFloat dateColumn=aqua?MIN(dateWidth,MAX(0,NSWidth(cardRect)*0.45)):dateWidth;
+    CGFloat textWidth=aqua?MAX(0,NSMaxX(cardRect)-textX-20-(dateColumn>0?dateColumn+12:0)):MAX(60,NSMaxX(cardRect)-textX-92);
+    [title drawInRect:NSMakeRect(textX, (aqua?([controlView isFlipped]?NSMinY(cardRect)+9:NSMaxY(cardRect)-27):NSMinY(cardRect)+27), textWidth, 18.0)
        withAttributes:titleAttributes];
     BOOL outgoing = [[self.callSummary objectForKey:@"is_outgoing"] boolValue];
     NSString *discardReason = [self.callSummary objectForKey:@"discard_reason"];
     BOOL missed = ([discardReason isEqualToString:@"callDiscardReasonMissed"] ||
                    [discardReason isEqualToString:@"callDiscardReasonDeclined"]);
     NSString *directionIcon = missed ? @"call-miss" : (outgoing ? @"call-out" : @"call-in");
-    NSColor *directionColor = missed
+    NSColor *directionColor = selected ? ink : missed
         ? TGThemeSurfaceInkColor([NSColor colorWithCalibratedRed:0.84 green:0.18 blue:0.18 alpha:1.0], TGThemeSurfaceCard, 4.5)
-        : TGClassicCardMutedInkColor();
+        : muted;
     TGDrawTemplateIconAsset(directionIcon,
-                            NSMakeRect(textX, NSMinY(cardRect) + 11.0, 13.0, 13.0),
+                            NSMakeRect(textX, (aqua?([controlView isFlipped]?NSMinY(cardRect)+32:NSMaxY(cardRect)-45):NSMinY(cardRect)+11), 13.0, 13.0),
                             directionColor,
                             1.0,
                             [controlView isFlipped]);
-    [[self detailText] drawInRect:NSMakeRect(textX + 18.0, NSMinY(cardRect) + 10.0, textWidth - 18.0, 16.0)
+    [[self detailText] drawInRect:NSMakeRect(textX + 18.0, (aqua?([controlView isFlipped]?NSMinY(cardRect)+31:NSMaxY(cardRect)-47):NSMinY(cardRect)+10), textWidth - 18.0, 16.0)
                     withAttributes:detailAttributes];
 
-    NSNumber *dateValue = [self.callSummary objectForKey:@"date"];
-    if ([dateValue respondsToSelector:@selector(doubleValue)] && [dateValue doubleValue] > 0.0) {
-        NSDateFormatter *formatter = [[[NSDateFormatter alloc] init] autorelease];
-        [formatter setDateStyle:NSDateFormatterShortStyle];
-        [formatter setTimeStyle:NSDateFormatterShortStyle];
-        NSString *dateText = [formatter stringFromDate:[NSDate dateWithTimeIntervalSince1970:[dateValue doubleValue]]];
-        NSSize size = [dateText sizeWithAttributes:detailAttributes];
-        [dateText drawInRect:NSMakeRect(NSMaxX(cardRect) - size.width - 10.0,
-                                        NSMinY(cardRect) + 20.0,
-                                        size.width,
-                                        16.0)
+    if ([dateText length]>0) {
+        [dateText drawInRect:NSMakeRect(NSMaxX(cardRect)-dateColumn-10,NSMinY(cardRect)+20,dateColumn,16)
               withAttributes:detailAttributes];
     }
+    if(aqua)[NSGraphicsContext restoreGraphicsState];
 }
 
 - (void)dealloc {
@@ -173,6 +191,8 @@
 @end
 
 @implementation TGCallsPlaceholderView
+
+#include "TGCallsPlaceholderView+Aqua.inc"
 
 @synthesize client = _client;
 @synthesize coordinator = _coordinator;
@@ -357,6 +377,7 @@
 - (void)resizeSubviewsWithOldSize:(NSSize)oldSize {
     (void)oldSize;
     NSRect bounds = [self bounds];
+    if (TGInterfaceDesignIsAqua()) { [self layoutAquaCalls]; return; }
     [self.titleField setFrame:NSMakeRect(58.0,
                                          NSHeight(bounds) - 32.0,
                                          MAX(120.0, NSWidth(bounds) - 116.0),
@@ -585,6 +606,7 @@ objectValueForTableColumn:(NSTableColumn *)tableColumn
     for (NSView *view in callControls) {
         [view setHidden:!available];
     }
+    if (TGInterfaceDesignIsAqua()) [[self viewWithTag:602] setHidden:YES];
     [self.unavailableTitleField setHidden:available];
     [self.unavailableDetailField setHidden:available];
     if (!available) {
@@ -624,6 +646,7 @@ objectValueForTableColumn:(NSTableColumn *)tableColumn
     NSMenuItem *deleteItem = [[self.tableView menu] itemWithTag:603];
     [deleteItem setTitle:TGLoc(@"delete")];
     [self applyTransportAvailability];
+    [self resizeSubviewsWithOldSize:NSZeroSize];
 }
 
 - (void)refreshThemeAppearance {
