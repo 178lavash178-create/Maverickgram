@@ -1,5 +1,3 @@
-#import "TGMediaCenterLayout.h"
-
 static const NSUInteger TGMediaCenterPageLimit = 30;
 
 static NSString *TGMediaCenterFilterIdentifierForIndex(NSInteger index) {

@@ -1,4 +1,5 @@
 #import "TGMediaPlaybackTimeline.h"
+#import "TGMediaCenterLayout.h"
 #import "TGWindowFramePersistence.h"
 #import "TGNavigationPositionStore.h"
 #import "TGStatusWindowController.h"
@@ -967,6 +968,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 - (void)configureAquaToolbarAccessories;
 - (void)refreshAquaToolbarAccount;
 - (void)commitAquaToolbarSearch:(id)sender;
+- (NSRect)messageBubbleCellFrameForRow:(NSInteger)row;
 
 
 @end
