@@ -115,14 +115,19 @@ SDK_BUILD_ROOT="${SDKROOT:-}"
 if [ -z "$SDK_BUILD_ROOT" ]; then
     SDK_PATH="$(xcrun --sdk "$SDK_NAME" --show-sdk-path 2>/dev/null || true)"
     if [ -n "$SDK_PATH" ]; then
-        SDK_LINK="${TMPDIR:-/tmp}/telegraphica-macosx-sdk"
-        if [ -L "$SDK_LINK" ] && [ "$(readlink "$SDK_LINK")" != "$SDK_PATH" ]; then
-            rm -f "$SDK_LINK"
-        fi
-        if [ ! -e "$SDK_LINK" ]; then
-            ln -s "$SDK_PATH" "$SDK_LINK"
-        fi
-        SDK_BUILD_ROOT="$SDK_LINK"
+        SDK_BUILD_ROOT="$SDK_PATH"
+        case "$SDK_PATH" in
+            *" "*)
+                SDK_LINK="${TMPDIR:-/tmp}/telegraphica-macosx-sdk"
+                if [ -L "$SDK_LINK" ] && [ "$(readlink "$SDK_LINK")" != "$SDK_PATH" ]; then
+                    rm -f "$SDK_LINK"
+                fi
+                if [ ! -e "$SDK_LINK" ]; then
+                    ln -s "$SDK_PATH" "$SDK_LINK"
+                fi
+                SDK_BUILD_ROOT="$SDK_LINK"
+                ;;
+        esac
         export SDKROOT="$SDK_BUILD_ROOT"
     else
         SDK_BUILD_ROOT="$SDK_NAME"
@@ -497,6 +502,11 @@ BUILD_SELECTOR=(-scheme "$SCHEME")
 if ! "$XCODEBUILD" -list -project "$PROJECT" 2>/dev/null | sed 's/^[[:space:]]*//' | grep -Fx -q "$SCHEME"; then
     echo "Scheme '$SCHEME' was not found; falling back to target '$TARGET'."
     BUILD_SELECTOR=(-target "$TARGET")
+    # Xcode 6.2 rejects -derivedDataPath when building a target directly.
+    # SYMROOT and OBJROOT in COMMON_SETTINGS keep the output under BUILD_ROOT.
+    BUILD_LOCATION_ARGS=()
+else
+    BUILD_LOCATION_ARGS=(-derivedDataPath "$DERIVED_DATA_PATH")
 fi
 
 set +e
@@ -504,7 +514,7 @@ set +e
     -project "$PROJECT" \
     "${BUILD_SELECTOR[@]}" \
     -configuration Release \
-    -derivedDataPath "$DERIVED_DATA_PATH" \
+    ${BUILD_LOCATION_ARGS[@]+"${BUILD_LOCATION_ARGS[@]}"} \
     "${SDK_ARGS[@]}" \
     -arch "$ARCH" \
     build \
