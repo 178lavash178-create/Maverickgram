@@ -5,7 +5,7 @@
 #import "../Services/TGSystemCompatibility.h"
 #import <dlfcn.h>
 
-static NSString * const TGCallAudioEngineErrorDomain = @"TelegraphicaCallAudioEngine";
+static NSString * const TGCallAudioEngineErrorDomain = @"MaverickgramCallAudioEngine";
 
 typedef int (*TGTransportABIVersionFunction)(void);
 typedef const char *(*TGTransportVersionsFunction)(void);
@@ -48,7 +48,7 @@ static NSString *TGModernTransportLibraryPath(void) {
         frameworks = [[[NSBundle mainBundle] bundlePath]
             stringByAppendingPathComponent:@"Contents/Frameworks"];
     }
-    return [frameworks stringByAppendingPathComponent:@"TelegraphicaCallTransport.dylib"];
+    return [frameworks stringByAppendingPathComponent:@"MaverickgramCallTransport.dylib"];
 }
 
 static void *TGRequiredTransportSymbol(void *library, const char *name) {

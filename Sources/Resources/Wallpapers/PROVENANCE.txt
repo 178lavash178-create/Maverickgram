@@ -1,4 +1,4 @@
-Telegraphica Aqua illustrated chat wallpapers
+Maverickgram Aqua illustrated chat wallpapers
 Created 2026-10-15 using the built-in image_gen tool (no CLI/API fallback).
 Original generated 1536x1024 PNG assets, copied unmodified into this folder.
 No third-party reference images or official Telegram artwork were used.

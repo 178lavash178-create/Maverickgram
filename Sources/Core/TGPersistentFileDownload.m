@@ -1,7 +1,7 @@
 #import "TGPersistentFileDownload.h"
 
 static NSError *TGFileDownloadError(NSInteger code, NSString *message) {
-    return [NSError errorWithDomain:@"Telegraphica.Downloads" code:code
+    return [NSError errorWithDomain:@"Maverickgram.Downloads" code:code
                           userInfo:[NSDictionary dictionaryWithObject:message forKey:NSLocalizedDescriptionKey]];
 }
 
@@ -47,12 +47,12 @@ NSString *TGPersistentFileDownload(NSNumber *fileID, NSTimeInterval requestTimeo
         if (!response && requestError) {
             // The production TDLib adapter returns nil for protocol errors,
             // keeping the structured response/code in NSError metadata.
-            id structured = [[requestError userInfo] objectForKey:@"TelegraphicaTDLibResponse"];
+            id structured = [[requestError userInfo] objectForKey:@"MaverickgramTDLibResponse"];
             if ([structured isKindOfClass:[NSDictionary class]] &&
                 [[structured objectForKey:@"@type"] isEqualToString:@"error"]) {
                 response = structured;
             } else {
-                id protocolCode = [[requestError userInfo] objectForKey:@"TelegraphicaTDLibCode"];
+                id protocolCode = [[requestError userInfo] objectForKey:@"MaverickgramTDLibCode"];
                 if ([protocolCode isKindOfClass:[NSNumber class]]) {
                     response = [NSDictionary dictionaryWithObjectsAndKeys:@"error", @"@type", protocolCode, @"code", nil];
                 }

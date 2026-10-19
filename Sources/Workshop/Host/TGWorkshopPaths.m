@@ -7,13 +7,13 @@ static NSString *TGWorkshopBaseDirectory(NSSearchPathDirectory directory, NSStri
     if ([testRoot length] > 0) {
         NSString *kind = (directory == NSCachesDirectory) ? @"Caches" : @"Application Support";
         return [[[testRoot stringByAppendingPathComponent:kind]
-                 stringByAppendingPathComponent:@"Telegraphica"]
+                 stringByAppendingPathComponent:@"Maverickgram"]
                 stringByAppendingPathComponent:@"Workshop"];
     }
 #endif
     NSArray *paths = NSSearchPathForDirectoriesInDomains(directory, NSUserDomainMask, YES);
     NSString *basePath = ([paths count] > 0) ? [paths objectAtIndex:0] : [NSHomeDirectory() stringByAppendingPathComponent:fallback];
-    return [[basePath stringByAppendingPathComponent:@"Telegraphica"] stringByAppendingPathComponent:@"Workshop"];
+    return [[basePath stringByAppendingPathComponent:@"Maverickgram"] stringByAppendingPathComponent:@"Workshop"];
 }
 
 NSString *TGWorkshopApplicationSupportDirectory(void) {

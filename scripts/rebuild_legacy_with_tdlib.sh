@@ -30,11 +30,11 @@ Options:
   --tdlib-version VALUE   optional TDLib version/tag label for validation
   --tdlib-label VALUE     optional human-readable TDLib build label
   --allow-snapshot        allow a TDLib snapshot/master archive
-  --open                  open Telegraphica.app after a successful rebuild
+  --open                  open Maverickgram.app after a successful rebuild
   -h, --help              show this help
 
 This script rebuilds TDLib, finds the staged libtdjson.dylib wherever the
-legacy TDLib script produced it, bundles it into Telegraphica, and rebuilds
+legacy TDLib script produced it, bundles it into Maverickgram, and rebuilds
 the app for OS X 10.9.
 EOF
 }
@@ -263,7 +263,7 @@ if [ "$ALLOW_SNAPSHOT" -eq 1 ]; then
     TDLIB_ARGS+=("--allow-snapshot")
 fi
 
-echo "Rebuilding TDLib for Telegraphica..."
+echo "Rebuilding TDLib for Maverickgram..."
 build_tdlib_with_optional_snapshot_compiler
 
 TDJSON_PATH="$(find_tdjson_dylib "$TDLIB_BUILD_DIR" || true)"
@@ -280,5 +280,5 @@ echo "$TDJSON_PATH"
 TELEGRAPHICA_TDJSON_PATH="$TDJSON_PATH" "$ROOT_DIR/build_legacy.sh"
 
 if [ "$OPEN_AFTER_BUILD" -eq 1 ]; then
-    open "$ROOT_DIR/build-legacy/Release/Telegraphica.app"
+    open "$ROOT_DIR/build-legacy/Release/Maverickgram.app"
 fi

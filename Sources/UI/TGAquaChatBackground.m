@@ -102,7 +102,7 @@ static NSImage *TGBackgroundLoadBoundedImage(NSURL *url) {
         if (!store) {
             NSArray *paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory,NSUserDomainMask,YES);
             NSString *base = [paths count] ? [paths objectAtIndex:0] : [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Application Support"];
-            store = [[self alloc] initWithDefaults:[NSUserDefaults standardUserDefaults] rootDirectory:[base stringByAppendingPathComponent:@"Telegraphica/AquaBackgrounds"]];
+            store = [[self alloc] initWithDefaults:[NSUserDefaults standardUserDefaults] rootDirectory:[base stringByAppendingPathComponent:@"Maverickgram/AquaBackgrounds"]];
         }
     }
     return store;

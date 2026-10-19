@@ -1,7 +1,7 @@
 #import "TGAquaFolderPresentation.h"
 #import "TGLocalization.h"
 
-NSString * const TGAquaFolderPresentationDefaultsKey = @"TelegraphicaAquaFoldersUseDrawer";
+NSString * const TGAquaFolderPresentationDefaultsKey = @"MaverickgramAquaFoldersUseDrawer";
 NSString * const TGAquaFolderPresentationDidChangeNotification = @"TGAquaFolderPresentationDidChangeNotification";
 
 BOOL TGAquaFoldersUseDrawer(void) {

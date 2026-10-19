@@ -6,11 +6,11 @@ NSString * const TGPrivacyPermissionsDidChangeNotification =
     @"TGPrivacyPermissionsDidChangeNotification";
 
 static NSString * const TGMicrophonePermissionDefaultsKey =
-    @"TelegraphicaMicrophonePermissionDecisionV2";
+    @"MaverickgramMicrophonePermissionDecisionV2";
 static NSString * const TGCameraPermissionDefaultsKey =
-    @"TelegraphicaCameraPermissionDecisionV1";
+    @"MaverickgramCameraPermissionDecisionV1";
 static NSString * const TGLocationPermissionDefaultsKey =
-    @"TelegraphicaLocationPermissionDecisionV1";
+    @"MaverickgramLocationPermissionDecisionV1";
 
 @implementation TGPrivacyPermissions
 

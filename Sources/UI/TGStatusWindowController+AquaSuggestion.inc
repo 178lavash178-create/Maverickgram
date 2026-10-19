@@ -1,5 +1,5 @@
 /* Offer the optional interface once; never restart while the user is composing. */
-static NSString * const TGAquaSuggestionSeenKey=@"TelegraphicaAquaSuggestionSeen";
+static NSString * const TGAquaSuggestionSeenKey=@"MaverickgramAquaSuggestionSeen";
 - (void)queueAquaSuggestionIfNeeded {
     if (TGInterfaceDesignIsAqua() || [[NSUserDefaults standardUserDefaults] boolForKey:TGAquaSuggestionSeenKey] ||
         ![self.currentAuthState isEqualToString:@"ready"] || objc_getAssociatedObject(self,@selector(offerAquaSuggestion))) return;

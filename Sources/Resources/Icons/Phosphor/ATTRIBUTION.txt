@@ -3,4 +3,4 @@ Copyright (c) 2023 Phosphor Icons. MIT License; see LICENSE.txt.
 Official source: https://github.com/phosphor-icons/core
 Pinned revision: 2b75f3ad12b420c9504ef05df8d2564a28f8500e
 Original SVG paths retained in source/. PNG derivatives rendered with macOS sips at 64x64.
-Approved for Telegraphica by the user on 2026-10-18.
+Originally approved for Telegraphica on 2026-10-18 and reused by Maverickgram.

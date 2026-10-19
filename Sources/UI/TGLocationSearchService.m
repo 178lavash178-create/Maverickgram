@@ -46,7 +46,7 @@
 }
 
 - (NSError *)unavailableError {
-    return [NSError errorWithDomain:@"TelegraphicaLocationSearch"
+    return [NSError errorWithDomain:@"MaverickgramLocationSearch"
                                code:1
                            userInfo:[NSDictionary dictionaryWithObject:@"Location search is unavailable on this system."
                                                                 forKey:NSLocalizedDescriptionKey]];

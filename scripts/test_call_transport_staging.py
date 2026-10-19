@@ -20,7 +20,7 @@ section = source[start:end]
 prefix = '''set -euo pipefail
 cd "$1"
 BUILD_ROOT="build-legacy"
-APP_NAME="Telegraphica.app"
+APP_NAME="Maverickgram.app"
 BUNDLED_TDLIB_CONFIG_SOURCE=""
 BUNDLED_TDLIB_CREDENTIALS_SOURCE=""
 ditto() { cp "$1" "$2"; }
@@ -83,7 +83,7 @@ def check_case(relative_path, missing=False):
         shutil.rmtree(fixture)
 
 
-check_case("build-legacy/Release/Telegraphica.app/Contents/Frameworks/TelegraphicaCallTransport.dylib")
-check_case("Telegraphica.app/Contents/Frameworks/TelegraphicaCallTransport.dylib")
-check_case("build-legacy/Release/Telegraphica.app/Contents/Frameworks/missing.dylib", missing=True)
+check_case("build-legacy/Release/Maverickgram.app/Contents/Frameworks/MaverickgramCallTransport.dylib")
+check_case("Maverickgram.app/Contents/Frameworks/MaverickgramCallTransport.dylib")
+check_case("build-legacy/Release/Maverickgram.app/Contents/Frameworks/missing.dylib", missing=True)
 print("Call transport staging regression checks passed.")

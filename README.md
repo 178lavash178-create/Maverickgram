@@ -1,4 +1,23 @@
-# Telegraphica — a native Telegram client for older Macs
+# Maverickgram
+
+Maverickgram is an independent fork of
+[Telegraphica](https://github.com/MiChiRose/telegraphica) for Intel Macs running
+OS X 10.8 through macOS 10.13, with OS X 10.9.5 Mavericks as the primary target.
+It keeps the native Objective-C/AppKit and TDLib architecture while using its
+own application identity, local-data directories, Keychain namespace and
+release channel.
+
+The fork is under active development. Until Maverickgram publishes its own
+signed release artifacts, build from `develop`; do not install Telegraphica
+updates over a Maverickgram application bundle.
+
+The original implementation and product groundwork are © Yura Menschikov and
+the Telegraphica contributors. Maverickgram preserves the upstream licensing
+and third-party notices.
+
+## Upstream documentation
+
+## Telegraphica upstream documentation snapshot
 
 <div align="center">
   <img src="readme-assets/app-icon.png" alt="Telegraphica app icon" width="120" />

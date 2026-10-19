@@ -106,7 +106,7 @@ int main(void) {
              [[manager presentationStateForFileID:@900 savedPath:&saved] isEqual:@"completed"], "presentation only matches fresh verified session ID");
     TGDownloadManager *restarted = TGRestore(record, client);
     [[NSUserDefaults standardUserDefaults] setObject:[NSDictionary dictionaryWithObject:source forKey:@"900"]
-                                             forKey:@"TelegraphicaCompletedDownloadPathsByFileID"];
+                                             forKey:@"MaverickgramCompletedDownloadPathsByFileID"];
     TGAssert([restarted presentationStateForFileID:@900 savedPath:&saved] == nil, "persisted completed numeric ID cannot match another session file");
     [client setSourcePath:source];
 

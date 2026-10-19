@@ -123,7 +123,7 @@ int main(int argc, const char *argv[]) {
     (void)argc;(void)argv;
     NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];
     [NSApplication sharedApplication];
-    if(!TGInterfaceDesignIsAqua()) { fprintf(stderr,"Run with -TelegraphicaInterfaceDesign aqua\n"); [pool drain]; return 1; }
+    if(!TGInterfaceDesignIsAqua()) { fprintf(stderr,"Run with -MaverickgramInterfaceDesign aqua\n"); [pool drain]; return 1; }
     for(NSString *texture in [NSArray arrayWithObjects:@"black-Linen",@"brushed_alu",@"brushed",nil]) {
         NSString *path=[[NSBundle mainBundle] pathForResource:texture ofType:@"png" inDirectory:@"Textures"];
         NSImage *image=path ? [[[NSImage alloc] initWithContentsOfFile:path] autorelease] : nil;

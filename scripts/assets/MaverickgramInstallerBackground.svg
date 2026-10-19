@@ -20,8 +20,8 @@
   <rect x="22" y="22" width="556" height="356" rx="12" fill="none" stroke="#6f91ad" stroke-width="1"/>
   <rect x="23" y="23" width="554" height="42" rx="11" fill="#234966" opacity="0.9"/>
   <rect x="23" y="52" width="554" height="13" fill="#234966" opacity="0.9"/>
-  <text x="48" y="50" fill="#ffffff" font-family="Helvetica, Arial, sans-serif" font-size="22" font-weight="bold">Telegraphica</text>
-  <text x="48" y="86" fill="#234966" font-family="Helvetica, Arial, sans-serif" font-size="13">Drag Telegraphica to Applications</text>
+  <text x="48" y="50" fill="#ffffff" font-family="Helvetica, Arial, sans-serif" font-size="22" font-weight="bold">Maverickgram</text>
+  <text x="48" y="86" fill="#234966" font-family="Helvetica, Arial, sans-serif" font-size="13">Drag Maverickgram to Applications</text>
   <path d="M251 190 H326 L309 173 L322 160 L363 201 L322 242 L309 229 L326 212 H251 Z"
         fill="url(#arrow)" stroke="#123047" stroke-width="2" filter="url(#shadow)"/>
   <circle cx="132" cy="205" r="73" fill="#0f2b42" opacity="0.22"/>

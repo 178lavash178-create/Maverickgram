@@ -57,7 +57,7 @@ static NSString *TGPreparedProfilePhotoPath(NSString *sourcePath, NSError **erro
     NSData *jpegData = [bitmap representationUsingType:NSJPEGFileType properties:properties];
     if ([jpegData length] == 0) {
         if (error) {
-            *error = [NSError errorWithDomain:@"Telegraphica.ProfilePhoto"
+            *error = [NSError errorWithDomain:@"Maverickgram.ProfilePhoto"
                                          code:1
                                      userInfo:[NSDictionary dictionaryWithObject:TGLoc(@"profile.edit.photo.invalid")
                                                                           forKey:NSLocalizedDescriptionKey]];
@@ -69,7 +69,7 @@ static NSString *TGPreparedProfilePhotoPath(NSString *sourcePath, NSError **erro
     NSString *cacheRoot = ([cachePaths count] > 0)
         ? [cachePaths objectAtIndex:0]
         : [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Caches"];
-    NSString *directory = [cacheRoot stringByAppendingPathComponent:@"Telegraphica/ProfilePhotoUploads"];
+    NSString *directory = [cacheRoot stringByAppendingPathComponent:@"Maverickgram/ProfilePhotoUploads"];
     NSError *directoryError = nil;
     if (![[NSFileManager defaultManager] createDirectoryAtPath:directory
                                   withIntermediateDirectories:YES

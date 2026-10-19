@@ -2,7 +2,7 @@
 #import "TGMediaSecurityLimits.h"
 #import "../Services/TGLogger.h"
 
-static NSString *TGOpusTranscoderErrorDomain = @"TelegraphicaOpusTranscoder";
+static NSString *TGOpusTranscoderErrorDomain = @"MaverickgramOpusTranscoder";
 
 @implementation TGOpusVoiceTranscodeCancellationToken
 
@@ -57,7 +57,7 @@ BOOL TGVoicePathLooksLikeOggOpus(NSString *path, NSString *mimeType, BOOL audioO
 static NSString *TGOpusVoiceCacheDirectory(void) {
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
     NSString *basePath = [paths count] > 0 ? [paths objectAtIndex:0] : NSTemporaryDirectory();
-    return [basePath stringByAppendingPathComponent:@"Telegraphica/VoiceTranscodes"];
+    return [basePath stringByAppendingPathComponent:@"Maverickgram/VoiceTranscodes"];
 }
 
 static NSString *TGOpusVoiceCachePathForSource(NSString *path) {

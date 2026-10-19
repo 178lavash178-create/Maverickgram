@@ -100,7 +100,7 @@ static NSString *TGLoggerRedactedMessage(NSString *message) {
     if ([envFlag length] > 0) {
         return TGLoggerFlagEnabled(envFlag);
     }
-    return [[NSUserDefaults standardUserDefaults] boolForKey:@"TelegraphicaDebugEnabled"];
+    return [[NSUserDefaults standardUserDefaults] boolForKey:@"MaverickgramDebugEnabled"];
 }
 
 + (NSString *)redactedDiagnosticMessage:(NSString *)message {
@@ -110,8 +110,8 @@ static NSString *TGLoggerRedactedMessage(NSString *message) {
 - (NSString *)diagnosticLogPath {
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
     NSString *basePath = ([paths count] > 0) ? [paths objectAtIndex:0] : [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Application Support"];
-    NSString *directory = [basePath stringByAppendingPathComponent:@"Telegraphica/Logs"];
-    return [directory stringByAppendingPathComponent:@"Telegraphica-Debug.log"];
+    NSString *directory = [basePath stringByAppendingPathComponent:@"Maverickgram/Logs"];
+    return [directory stringByAppendingPathComponent:@"Maverickgram-Debug.log"];
 }
 
 - (void)appendDiagnosticLine:(NSString *)line {
@@ -158,7 +158,7 @@ static NSString *TGLoggerRedactedMessage(NSString *message) {
     NSString *osString = [[NSProcessInfo processInfo] operatingSystemVersionString];
 
     [self appendDiagnosticLine:@""];
-    [self appendDiagnosticLine:@"==================== Telegraphica Diagnostic Session ===================="];
+    [self appendDiagnosticLine:@"==================== Maverickgram Diagnostic Session ===================="];
     [self log:[NSString stringWithFormat:@"App version: %@ (%@)", bundleVersion ? bundleVersion : @"unknown", build ? build : @"unknown"]];
     [self log:[NSString stringWithFormat:@"Bundle path: %@", bundlePath ? bundlePath : @"unknown"]];
     [self log:[NSString stringWithFormat:@"OS: %@", osString ? osString : @"unknown"]];

@@ -1260,7 +1260,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     self.stickerPickerMode = 0;
     self.stickerPickerSelectedSetID = nil;
     [self.stickerPickerSearchField setStringValue:@""];
-    [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"TelegraphicaStickerPickerLastSetID"];
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"MaverickgramStickerPickerLastSetID"];
     [self updateStickerPickerSelectionState];
     [self reloadStickerPickerItems];
 }
@@ -1270,7 +1270,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     self.stickerPickerMode = 1;
     self.stickerPickerSelectedSetID = nil;
     [self.stickerPickerSearchField setStringValue:@""];
-    [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"TelegraphicaStickerPickerLastSetID"];
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"MaverickgramStickerPickerLastSetID"];
     [self updateStickerPickerSelectionState];
     [self reloadFavoriteStickerPickerItems];
 }
@@ -1286,7 +1286,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     }
     self.stickerPickerMode = 2;
     self.stickerPickerSelectedSetID = nil;
-    [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"TelegraphicaStickerPickerLastSetID"];
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"MaverickgramStickerPickerLastSetID"];
     [self updateStickerPickerSelectionState];
     [self reloadStickerPickerItemsForEmoji:query];
 }
@@ -1304,7 +1304,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
     self.stickerPickerSelectedSetID = setID;
     self.stickerPickerMode = 3;
     [self.stickerPickerSearchField setStringValue:@""];
-    [[NSUserDefaults standardUserDefaults] setObject:[setID stringValue] forKey:@"TelegraphicaStickerPickerLastSetID"];
+    [[NSUserDefaults standardUserDefaults] setObject:[setID stringValue] forKey:@"MaverickgramStickerPickerLastSetID"];
     [[NSUserDefaults standardUserDefaults] synchronize];
     [self updateStickerPickerSelectionState];
     [self reloadStickerPickerItemsForSet:(NSDictionary *)represented];
@@ -1360,7 +1360,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
                 [self.stickerPickerRailPreviewState removeObjectForKey:[setID stringValue]];
                 self.stickerPickerStickerSets = [NSArray array];
                 self.stickerPickerSelectedSetID = nil;
-                [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"TelegraphicaStickerPickerLastSetID"];
+                [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"MaverickgramStickerPickerLastSetID"];
                 [self reloadStickerPickerSetsIfNeeded];
                 [self reloadStickerPickerItems];
                 [self.stickerPickerStatusField setStringValue:@"Sticker set removed."];
@@ -1535,7 +1535,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
                 [[TGLogger sharedLogger] log:[NSString stringWithFormat:@"Stickers: loaded installed sticker sets count=%lu%@",
                                               (unsigned long)[self.stickerPickerStickerSets count],
                                               [errorMessage length] > 0 ? [NSString stringWithFormat:@" error=%@", errorMessage] : @""]];
-                NSString *lastSetID = [[NSUserDefaults standardUserDefaults] stringForKey:@"TelegraphicaStickerPickerLastSetID"];
+                NSString *lastSetID = [[NSUserDefaults standardUserDefaults] stringForKey:@"MaverickgramStickerPickerLastSetID"];
                 if ([lastSetID length] > 0 && [self.stickerPickerItems count] == 0 && self.stickerPickerMode==0 && [[self.stickerPickerSearchField stringValue] length]==0) {
                     NSUInteger index = 0;
                     for (index = 0; index < [self.stickerPickerStickerSets count]; index++) {
@@ -1991,7 +1991,7 @@ static NSArray *TGAttachmentMediaAlbumItemsFromDescriptors(NSArray *descriptors)
 }
 
 - (NSString *)temporaryVoiceRecordingPath {
-    NSString *directory = [NSTemporaryDirectory() stringByAppendingPathComponent:@"TelegraphicaVoice"];
+    NSString *directory = [NSTemporaryDirectory() stringByAppendingPathComponent:@"MaverickgramVoice"];
     [[NSFileManager defaultManager] createDirectoryAtPath:directory
                               withIntermediateDirectories:YES
                                                attributes:nil

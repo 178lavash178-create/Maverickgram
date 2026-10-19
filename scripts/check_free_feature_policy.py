@@ -9,7 +9,7 @@ import sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 SOURCES = os.path.join(ROOT, "Sources")
 
-# Telegraphica may display already-received paid content and explain that an
+# Maverickgram may display already-received paid content and explain that an
 # action belongs in the official Telegram client. It must never call TDLib
 # commerce, purchase, paid-reaction, gift, boost, or giveaway APIs.
 FORBIDDEN_TDLIB_TYPES = [

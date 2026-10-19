@@ -10,7 +10,7 @@ if command -v python3 >/dev/null 2>&1; then
 elif command -v python >/dev/null 2>&1; then
     PYTHON_BIN="$(command -v python)"
 else
-    echo "python3 or python is required to run Telegraphica tests."
+    echo "python3 or python is required to run Maverickgram tests."
     exit 1
 fi
 
@@ -23,7 +23,7 @@ fi
 
 CLANG="$(xcrun --sdk "$SDK_NAME" --find clang 2>/dev/null || xcrun -f clang 2>/dev/null || command -v clang || true)"
 if [ -z "$CLANG" ]; then
-    echo "clang is required to compile Telegraphica test probes."
+    echo "clang is required to compile Maverickgram test probes."
     exit 1
 fi
 
@@ -37,7 +37,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "== Telegraphica static compatibility =="
+echo "== Maverickgram static compatibility =="
 "$PYTHON_BIN" scripts/check_legacy_compat.py
 "$PYTHON_BIN" Tests/legacy_include_scanner_probe.py
 "$PYTHON_BIN" scripts/test_call_transport_staging.py
@@ -504,7 +504,7 @@ RECEIPT_PLIST
 HOME="$TEST_HOME" "$RECEIPT_PROBE_BUNDLE/Contents/MacOS/receipt-raster-probe"
 
 
-echo "Telegraphica tests passed."
+echo "Maverickgram tests passed."
 
 echo "== Interface design restart =="
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/interface_design_probe.m Sources/UI/TGDialogPresentation.m -framework Cocoa -o "$BUILD_DIR/interface-design-probe"
@@ -525,7 +525,7 @@ cat > "$AQUA_PROBE_BUNDLE/Contents/Info.plist" <<'AQUA_PLIST'
 </dict></plist>
 AQUA_PLIST
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_material_probe.m Sources/UI/TGTheme.m Sources/UI/TGVisualWorldThemeSpec.m Sources/UI/TGAquaAppearance.m Sources/UI/TGInterfaceDesign.m Sources/UI/TGDialogPresentation.m Sources/UI/TGLocalization.m -framework Cocoa -o "$AQUA_PROBE_BUNDLE/Contents/MacOS/aqua-material-probe"
-HOME="$TEST_HOME" "$AQUA_PROBE_BUNDLE/Contents/MacOS/aqua-material-probe" -TelegraphicaInterfaceDesign aqua -TelegraphicaThemeIdentifier visual-space-terminal
+HOME="$TEST_HOME" "$AQUA_PROBE_BUNDLE/Contents/MacOS/aqua-material-probe" -MaverickgramInterfaceDesign aqua -MaverickgramThemeIdentifier visual-space-terminal
 "$CLANG" "${COMPILE_FLAGS[@]}" Tests/aqua_footer_probe.m "${MESSAGE_PROBE_SOURCES[@]}" Sources/UI/TGIconAssets.m -framework Cocoa -o "$BUILD_DIR/aqua-footer-probe"
 HOME="$TEST_HOME" "$BUILD_DIR/aqua-footer-probe" classic
 HOME="$TEST_HOME" "$BUILD_DIR/aqua-footer-probe" aqua

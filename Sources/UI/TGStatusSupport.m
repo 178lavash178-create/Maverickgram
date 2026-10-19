@@ -1,6 +1,6 @@
 #import "TGStatusSupport.h"
 
-static NSString * const TGDownloadFolderDefaultsKey = @"TelegraphicaDownloadFolderPath";
+static NSString * const TGDownloadFolderDefaultsKey = @"MaverickgramDownloadFolderPath";
 
 static NSString *TGVersionWithoutLeadingV(NSString *version) {
     if (![version isKindOfClass:[NSString class]]) {

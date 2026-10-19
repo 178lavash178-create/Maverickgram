@@ -306,7 +306,7 @@ NSString * const TGDownloadManagerDidChangeNotification = @"TGDownloadManagerDid
         NSNumber *resolvedFileID = nil;
         if (current && [fileID longLongValue] > 0 && originClient) {
             if (needsResolution && ([remoteID length] == 0 || !accountID)) {
-                error = [NSError errorWithDomain:@"Telegraphica.Downloads" code:4 userInfo:
+                error = [NSError errorWithDomain:@"Maverickgram.Downloads" code:4 userInfo:
                          [NSDictionary dictionaryWithObject:@"Reopen this file's message and download it again. This older download has no safe identity for restoring after a restart." forKey:NSLocalizedDescriptionKey]];
             } else {
                 NSNumber *readyAccount = nil;
@@ -333,7 +333,7 @@ NSString * const TGDownloadManagerDidChangeNotification = @"TGDownloadManagerDid
                             NSDictionary *other = [_fileOperations objectForKey:freshKey];
                             if (other && [other objectForKey:@"attempt"] != attempt && ![[other objectForKey:@"operation"] isFinished]) {
                                 validIdentity = NO;
-                                error = [NSError errorWithDomain:@"Telegraphica.Downloads" code:6 userInfo:
+                                error = [NSError errorWithDomain:@"Maverickgram.Downloads" code:6 userInfo:
                                     [NSDictionary dictionaryWithObject:@"This file already has another active download." forKey:NSLocalizedDescriptionKey]];
                             } else {
                                 resolvedFileID = [resolvedID retain];
@@ -353,11 +353,11 @@ NSString * const TGDownloadManagerDidChangeNotification = @"TGDownloadManagerDid
                         }
                     }
                     if (!validIdentity && !error) {
-                        error = [NSError errorWithDomain:@"Telegraphica.Downloads" code:5 userInfo:
+                        error = [NSError errorWithDomain:@"Maverickgram.Downloads" code:5 userInfo:
                             [NSDictionary dictionaryWithObject:@"The saved file identity no longer matches. Reopen the file's message and download it again." forKey:NSLocalizedDescriptionKey]];
                     }
                 } else if (current && accountID && readyAccount) {
-                    error = [NSError errorWithDomain:@"Telegraphica.Downloads" code:7 userInfo:
+                    error = [NSError errorWithDomain:@"Maverickgram.Downloads" code:7 userInfo:
                         [NSDictionary dictionaryWithObject:@"This download belongs to another Telegram account. Reopen the file's message in the current account." forKey:NSLocalizedDescriptionKey]];
                 }
                 [readyAccount release];
@@ -391,7 +391,7 @@ NSString * const TGDownloadManagerDidChangeNotification = @"TGDownloadManagerDid
         if (current && [fileID longLongValue] <= 0 && [fallback length] > 0 &&
             [[NSFileManager defaultManager] fileExistsAtPath:fallback]) { sourcePath = fallback; }
         if (current && [fileID longLongValue] > 0 && !originClient) {
-            error = [NSError errorWithDomain:@"Telegraphica.Downloads" code:3 userInfo:
+            error = [NSError errorWithDomain:@"Maverickgram.Downloads" code:3 userInfo:
                      [NSDictionary dictionaryWithObject:@"Sign in before downloading this file." forKey:NSLocalizedDescriptionKey]];
         }
         NSString *savedPath = nil;
@@ -427,7 +427,7 @@ NSString * const TGDownloadManagerDidChangeNotification = @"TGDownloadManagerDid
                     NSString *message = [[error localizedDescription] length] > 0 ? [error localizedDescription] : @"Download failed.";
                     [found setObject:@"failed" forKey:@"state"];
                     [found setObject:message forKey:@"error"];
-                    NSError *failure = [NSError errorWithDomain:@"Telegraphica.Downloads" code:2 userInfo:
+                    NSError *failure = [NSError errorWithDomain:@"Maverickgram.Downloads" code:2 userInfo:
                                         [NSDictionary dictionaryWithObject:message forKey:NSLocalizedDescriptionKey]];
                     [self deliverRecordCompletions:found savedPath:nil error:failure cancelled:NO];
                 }
@@ -480,7 +480,7 @@ NSString * const TGDownloadManagerDidChangeNotification = @"TGDownloadManagerDid
     BOOL hasLocal = [fallbackLocalPath length] > 0 && [[NSFileManager defaultManager] fileExistsAtPath:fallbackLocalPath];
     if (!hasID && !hasLocal) {
         if (completion) {
-            NSError *error = [NSError errorWithDomain:@"Telegraphica.Downloads" code:1 userInfo:
+            NSError *error = [NSError errorWithDomain:@"Maverickgram.Downloads" code:1 userInfo:
                              [NSDictionary dictionaryWithObject:@"The file is not available yet." forKey:NSLocalizedDescriptionKey]];
             completion(nil, error, NO);
         }

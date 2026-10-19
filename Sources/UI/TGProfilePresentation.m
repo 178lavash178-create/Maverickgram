@@ -1,7 +1,7 @@
 #import "TGProfilePresentation.h"
 
 NSString *TGProfileDisplayName(NSString *profileDisplayName) {
-    return ([profileDisplayName length] > 0) ? profileDisplayName : @"Telegraphica";
+    return ([profileDisplayName length] > 0) ? profileDisplayName : @"Maverickgram";
 }
 
 NSString *TGProfileFullName(NSString *profileDisplayName,

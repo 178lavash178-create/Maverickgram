@@ -459,7 +459,7 @@
     if ([folder length] == 0) {
         folder = TGDefaultDownloadFolderPath();
     }
-    NSString *safeName = ([fileName length] > 0) ? [fileName lastPathComponent] : @"Telegraphica-update.dmg";
+    NSString *safeName = ([fileName length] > 0) ? [fileName lastPathComponent] : @"Maverickgram-update.dmg";
     NSString *candidate = [folder stringByAppendingPathComponent:safeName];
     if (![[NSFileManager defaultManager] fileExistsAtPath:candidate]) {
         return candidate;
@@ -518,20 +518,20 @@
             data = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&downloadError];
         }
         if (!downloadURL && !downloadError) {
-            downloadError = [NSError errorWithDomain:@"TelegraphicaUpdate"
+            downloadError = [NSError errorWithDomain:@"MaverickgramUpdate"
                                                 code:30
                                             userInfo:[NSDictionary dictionaryWithObject:@"Update download URL is invalid." forKey:NSLocalizedDescriptionKey]];
         }
         if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
             NSInteger statusCode = [(NSHTTPURLResponse *)response statusCode];
             if (statusCode < 200 || statusCode >= 300) {
-                downloadError = [NSError errorWithDomain:@"TelegraphicaUpdate"
+                downloadError = [NSError errorWithDomain:@"MaverickgramUpdate"
                                                     code:statusCode
                                                 userInfo:[NSDictionary dictionaryWithObject:[NSString stringWithFormat:@"Update download returned HTTP %ld.", (long)statusCode] forKey:NSLocalizedDescriptionKey]];
             }
         }
         if (!downloadError && [data length] == 0) {
-            downloadError = [NSError errorWithDomain:@"TelegraphicaUpdate"
+            downloadError = [NSError errorWithDomain:@"MaverickgramUpdate"
                                                 code:31
                                             userInfo:[NSDictionary dictionaryWithObject:@"Downloaded update is empty." forKey:NSLocalizedDescriptionKey]];
         }

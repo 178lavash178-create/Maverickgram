@@ -4,16 +4,16 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR"
 
-APP_PATH="${1:-build-legacy/Release/Telegraphica.app}"
+APP_PATH="${1:-build-legacy/Release/Maverickgram.app}"
 WAIT_SECONDS="${TELEGRAPHICA_SMOKE_WAIT_SECONDS:-10}"
 
 if [ ! -d "$APP_PATH" ]; then
     echo "App bundle was not found: $APP_PATH"
-    echo "Build first with ./build_legacy.sh or pass a Telegraphica.app path."
+    echo "Build first with ./build_legacy.sh or pass a Maverickgram.app path."
     exit 2
 fi
 
-EXECUTABLE="$APP_PATH/Contents/MacOS/Telegraphica"
+EXECUTABLE="$APP_PATH/Contents/MacOS/Maverickgram"
 INFO_PLIST="$APP_PATH/Contents/Info.plist"
 if [ ! -x "$EXECUTABLE" ]; then
     echo "App executable is missing or not executable: $EXECUTABLE"
@@ -43,7 +43,7 @@ APP_PID=$!
 elapsed=0
 while kill -0 "$APP_PID" >/dev/null 2>&1; do
     if [ "$elapsed" -ge "$WAIT_SECONDS" ]; then
-        echo "Telegraphica did not finish smoke launch within $WAIT_SECONDS seconds."
+        echo "Maverickgram did not finish smoke launch within $WAIT_SECONDS seconds."
         exit 5
     fi
     sleep 1
@@ -51,7 +51,7 @@ while kill -0 "$APP_PID" >/dev/null 2>&1; do
 done
 
 if ! wait "$APP_PID"; then
-    echo "Telegraphica failed during smoke launch."
+    echo "Maverickgram failed during smoke launch."
     echo "--- stdout ---"
     sed -n '1,120p' /tmp/telegraphica-smoke.stdout 2>/dev/null || true
     echo "--- stderr ---"

@@ -3,7 +3,7 @@ set -eu
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 BUILD_ROOT="${WORKSHOP_HITL_BUILD_DIR:-$PROJECT_ROOT/build-workshop-hitl}"
-APPLICATION_SUPPORT="$HOME/Library/Application Support/Telegraphica"
+APPLICATION_SUPPORT="$HOME/Library/Application Support/Maverickgram"
 
 WORKSHOP_BUILD_DIR="$BUILD_ROOT" \
     "$PROJECT_ROOT/WorkshopModules/scripts/build_modules.sh"

@@ -3,12 +3,12 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-APP_PATH="${1:-build-legacy/Release/Telegraphica.app}"
+APP_PATH="${1:-build-legacy/Release/Maverickgram.app}"
 DIST_DIR="${TELEGRAPHICA_DIST_DIR:-$PWD/dist}"
 ALLOW_TDLIBLESS_INSTALLER="${TELEGRAPHICA_ALLOW_TDLIBLESS_INSTALLER:-0}"
 
 if [ ! -d "$APP_PATH" ]; then
-    echo "Telegraphica.app was not found at: $APP_PATH"
+    echo "Maverickgram.app was not found at: $APP_PATH"
     echo "Run ./build_legacy.sh first, optionally with TELEGRAPHICA_TDJSON_PATH."
     exit 1
 fi
@@ -32,7 +32,7 @@ if [ ! -f "$TDJSON_BUNDLED_PATH" ] || [ ! -f "$TDJSON_MOUNTAIN_LION_BUNDLED_PATH
         echo "  modern: $TDJSON_BUNDLED_PATH"
         echo "  Mountain Lion: $TDJSON_MOUNTAIN_LION_BUNDLED_PATH"
         echo
-        echo "Build Telegraphica first with:"
+        echo "Build Maverickgram first with:"
         echo "  TELEGRAPHICA_TDJSON_PATH=/path/to/modern/libtdjson.dylib \\"
         echo "  TELEGRAPHICA_TDJSON_MOUNTAIN_LION_PATH=/path/to/10.8/libtdjson.dylib ./build_legacy.sh"
         echo
@@ -42,15 +42,15 @@ if [ ! -f "$TDJSON_BUNDLED_PATH" ] || [ ! -f "$TDJSON_MOUNTAIN_LION_BUNDLED_PATH
     fi
 fi
 
-BUNDLED_CONFIG_PATH="$APP_PATH/Contents/Resources/TelegraphicaTDLibDefaults.plist"
-RUNTIME_CONFIG_MARKER="$APP_PATH/Contents/Resources/TelegraphicaTDLibRuntimeDefaults.plist"
+BUNDLED_CONFIG_PATH="$APP_PATH/Contents/Resources/MaverickgramTDLibDefaults.plist"
+RUNTIME_CONFIG_MARKER="$APP_PATH/Contents/Resources/MaverickgramTDLibRuntimeDefaults.plist"
 if [ -f "$BUNDLED_CONFIG_PATH" ]; then
     echo "Refusing to create an installer with plaintext TDLib app credentials in Resources."
     echo "Unexpected file: $BUNDLED_CONFIG_PATH"
     exit 1
 fi
 HAS_RUNTIME_CREDENTIALS="$(/usr/libexec/PlistBuddy -c "Print :has_runtime_credentials" "$RUNTIME_CONFIG_MARKER" 2>/dev/null || true)"
-REMOTE_CONFIG_URL="$(/usr/libexec/PlistBuddy -c "Print :TelegraphicaRemoteTDLibConfigURL" "$INFO_PLIST" 2>/dev/null || true)"
+REMOTE_CONFIG_URL="$(/usr/libexec/PlistBuddy -c "Print :MaverickgramRemoteTDLibConfigURL" "$INFO_PLIST" 2>/dev/null || true)"
 if [ "$HAS_RUNTIME_CREDENTIALS" != "true" ] && ! echo "$REMOTE_CONFIG_URL" | grep -E -q '^https://'; then
     echo "Refusing to create an installer without a Telegram connection bootstrap."
     echo "Build with TELEGRAPHICA_BUNDLED_TDLIB_CONFIG_PATH or TELEGRAPHICA_REMOTE_TDLIB_CONFIG_URL."
@@ -59,15 +59,15 @@ fi
 
 mkdir -p "$DIST_DIR"
 
-DMG_NAME="Telegraphica-v${APP_VERSION}-installer.dmg"
+DMG_NAME="Maverickgram-v${APP_VERSION}-installer.dmg"
 DMG_PATH="$DIST_DIR/$DMG_NAME"
 STAGE_DIR="$(mktemp -d /tmp/telegraphica-dmg.XXXXXX)"
-RW_DMG_PATH="$STAGE_DIR/Telegraphica-rw.dmg"
+RW_DMG_PATH="$STAGE_DIR/Maverickgram-rw.dmg"
 MOUNT_DIR=""
 MOUNT_DEVICE=""
-BACKGROUND_SOURCE="$PWD/scripts/assets/TelegraphicaInstallerBackground.png"
-VOLUME_NAME="Telegraphica ${APP_VERSION}"
-PUBLISH_TMP_PATH="$DIST_DIR/.Telegraphica-v${APP_VERSION}-installer.$$.dmg"
+BACKGROUND_SOURCE="$PWD/scripts/assets/MaverickgramInstallerBackground.png"
+VOLUME_NAME="Maverickgram ${APP_VERSION}"
+PUBLISH_TMP_PATH="$DIST_DIR/.Maverickgram-v${APP_VERSION}-installer.$$.dmg"
 MOUNTED=0
 
 cleanup() {
@@ -125,10 +125,10 @@ if [ -z "$MOUNT_DIR" ] || [ ! -d "$MOUNT_DIR" ]; then
     exit 1
 fi
 
-ditto "$APP_PATH" "$MOUNT_DIR/Telegraphica.app"
+ditto "$APP_PATH" "$MOUNT_DIR/Maverickgram.app"
 ln -s /Applications "$MOUNT_DIR/Applications"
 mkdir -p "$MOUNT_DIR/.background"
-ditto "$BACKGROUND_SOURCE" "$MOUNT_DIR/.background/TelegraphicaInstallerBackground.png"
+ditto "$BACKGROUND_SOURCE" "$MOUNT_DIR/.background/MaverickgramInstallerBackground.png"
 chflags hidden "$MOUNT_DIR/.background" || true
 
 LAYOUT_SCRIPT="$STAGE_DIR/layout.applescript"
@@ -159,8 +159,8 @@ on run argv
                 set label position of viewOptions to bottom
                 set shows item info of viewOptions to false
                 set shows icon preview of viewOptions to false
-                set background picture of viewOptions to file ".background:TelegraphicaInstallerBackground.png"
-                set position of item "Telegraphica.app" of container window to {132, 205}
+                set background picture of viewOptions to file ".background:MaverickgramInstallerBackground.png"
+                set position of item "Maverickgram.app" of container window to {132, 205}
                 set position of item "Applications" of container window to {468, 205}
                 update without registering applications
                 delay 2

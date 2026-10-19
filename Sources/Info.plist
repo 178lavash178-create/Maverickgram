@@ -7,9 +7,9 @@
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIconFile</key>
-	<string>TelegraphicaAppIcon</string>
+	<string>MaverickgramAppIcon</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.michirose.Telegraphica</string>
+	<string>com.gregel.Maverickgram</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -27,20 +27,20 @@
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright 2026 Yura Menschikov. All rights reserved.</string>
+	<string>Maverickgram fork. Based on Telegraphica © 2026 Yura Menschikov.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Telegraphica uses the microphone only during calls and voice-message recording.</string>
+	<string>Maverickgram uses the microphone only during calls and voice-message recording.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Telegraphica uses the camera only during video calls and video-message recording.</string>
+	<string>Maverickgram uses the camera only during video calls and video-message recording.</string>
 	<key>NSLocationUsageDescription</key>
-	<string>Telegraphica uses your location only when you choose to send it.</string>
+	<string>Maverickgram uses your location only when you choose to send it.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Telegraphica uses your current location only after you choose “I'm here”.</string>
+	<string>Maverickgram uses your current location only after you choose “I'm here”.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
-	<key>TelegraphicaCompatibilitySummary</key>
+	<key>MaverickgramCompatibilitySummary</key>
 	<string>OS X 10.8–macOS 10.13 · Intel x86_64</string>
-	<key>TelegraphicaReleaseChannel</key>
+	<key>MaverickgramReleaseChannel</key>
 	<string>Unified legacy release</string>
 </dict>
 </plist>

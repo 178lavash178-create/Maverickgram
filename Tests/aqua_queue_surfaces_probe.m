@@ -110,8 +110,8 @@ static void CheckQueueMotion(QueueTarget *target) {
     NSUserDefaults *defaults=[NSUserDefaults standardUserDefaults];
     NSDictionary *old=[[defaults volatileDomainForName:NSArgumentDomain] copy];
     NSMutableDictionary *policy=[NSMutableDictionary dictionaryWithDictionary:old];
-    [policy setObject:@NO forKey:@"TelegraphicaEconomyModeEnabled"];
-    [policy setObject:@NO forKey:@"TelegraphicaStopAnimationsWhenInactive"];
+    [policy setObject:@NO forKey:@"MaverickgramEconomyModeEnabled"];
+    [policy setObject:@NO forKey:@"MaverickgramStopAnimationsWhenInactive"];
     [defaults setVolatileDomain:policy forName:NSArgumentDomain];
     QueueMotionWindow *window=[[[QueueMotionWindow alloc] initWithContentRect:NSMakeRect(0,0,700,300) styleMask:NSTitledWindowMask backing:NSBackingStoreBuffered defer:NO] autorelease];
     [window setReleasedWhenClosed:NO];
@@ -128,10 +128,10 @@ static void CheckQueueMotion(QueueTarget *target) {
     [compact setValue:popover forKey:@"popover"];
     [compact setValue:[[[NSViewController alloc] initWithNibName:nil bundle:nil] autorelease] forKey:@"contentController"];
     Require([compact toggleRelativeToView:shelf] && [popover animates],"Downloads animation follows enabled policy");
-    [policy setObject:@YES forKey:@"TelegraphicaEconomyModeEnabled"];[defaults setVolatileDomain:policy forName:NSArgumentDomain];
+    [policy setObject:@YES forKey:@"MaverickgramEconomyModeEnabled"];[defaults setVolatileDomain:policy forName:NSArgumentDomain];
     [shelf presentAnimated:YES];Require(![shelf isHidden] && [shelf alphaValue]==1,"Economy mode presents shelf without timer/fade");
     Require([compact toggleRelativeToView:shelf] && ![popover animates],"Downloads reevaluates Economy policy on each presentation");
-    [policy setObject:@NO forKey:@"TelegraphicaEconomyModeEnabled"];[policy setObject:@YES forKey:@"TelegraphicaStopAnimationsWhenInactive"];[defaults setVolatileDomain:policy forName:NSArgumentDomain];
+    [policy setObject:@NO forKey:@"MaverickgramEconomyModeEnabled"];[policy setObject:@YES forKey:@"MaverickgramStopAnimationsWhenInactive"];[defaults setVolatileDomain:policy forName:NSArgumentDomain];
     Require([compact toggleRelativeToView:shelf] && [popover animates]==[NSApp isActive],"Downloads obeys stop-inactive policy");
     NSView *newAnchor=[[[NSView alloc] initWithFrame:NSMakeRect(0,0,40,30)] autorelease];[[window contentView] addSubview:newAnchor];
     [compact close];Require([compact toggleRelativeToView:newAnchor],"popover can reopen before prior animated DidClose");popover.probeShown=YES;

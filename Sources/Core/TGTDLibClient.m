@@ -34,13 +34,13 @@ typedef const char *(*TGTDJsonClientReceiveFunction)(void *, double);
 typedef const char *(*TGTDJsonClientExecuteFunction)(void *, const char *);
 typedef void (*TGTDJsonClientDestroyFunction)(void *);
 
-static NSString * const TGTDLibErrorDomain = @"TelegraphicaTDLibError";
-static NSString * const TGTDLibTDLibCodeErrorKey = @"TelegraphicaTDLibCode";
-static NSString * const TGTDLibTDLibMessageErrorKey = @"TelegraphicaTDLibMessage";
-static NSString * const TGTDLibTDLibResponseErrorKey = @"TelegraphicaTDLibResponse";
-static NSString * const TGTDLibAuthorizationNetworkTimeoutErrorKey = @"TelegraphicaAuthorizationNetworkTimeout";
+static NSString * const TGTDLibErrorDomain = @"MaverickgramTDLibError";
+static NSString * const TGTDLibTDLibCodeErrorKey = @"MaverickgramTDLibCode";
+static NSString * const TGTDLibTDLibMessageErrorKey = @"MaverickgramTDLibMessage";
+static NSString * const TGTDLibTDLibResponseErrorKey = @"MaverickgramTDLibResponse";
+static NSString * const TGTDLibAuthorizationNetworkTimeoutErrorKey = @"MaverickgramAuthorizationNetworkTimeout";
 static NSString * const TGTDLibDatabaseEncryptionKeyAccount = @"tdlib_database_encryption_key";
-static NSString * const TGTDLibRemoteConfigurationURLInfoKey = @"TelegraphicaRemoteTDLibConfigURL";
+static NSString * const TGTDLibRemoteConfigurationURLInfoKey = @"MaverickgramRemoteTDLibConfigURL";
 static NSString * const TGTDLibRemoteConfigurationURLEnvironmentKey = @"TELEGRAPHICA_REMOTE_TDLIB_CONFIG_URL";
 static NSString * const TGTDLibProxyServerEnvironmentKey = @"TELEGRAPHICA_TDLIB_PROXY_SERVER";
 static NSString * const TGTDLibProxyPortEnvironmentKey = @"TELEGRAPHICA_TDLIB_PROXY_PORT";
@@ -49,7 +49,7 @@ static NSString * const TGTDLibProxyUsernameEnvironmentKey = @"TELEGRAPHICA_TDLI
 static NSString * const TGTDLibProxyPasswordEnvironmentKey = @"TELEGRAPHICA_TDLIB_PROXY_PASSWORD";
 static NSString * const TGTDLibProxySecretEnvironmentKey = @"TELEGRAPHICA_TDLIB_PROXY_SECRET";
 static NSString * const TGTDLibProxyHTTPOnlyEnvironmentKey = @"TELEGRAPHICA_TDLIB_PROXY_HTTP_ONLY";
-static NSString * const TGTDLibMountainLionSafeLoginModeDisabledDefaultsKey = @"TelegraphicaMountainLionSafeLoginModeDisabled";
+static NSString * const TGTDLibMountainLionSafeLoginModeDisabledDefaultsKey = @"MaverickgramMountainLionSafeLoginModeDisabled";
 static NSString * const TGTDLibDefaultDatabaseDirectoryName = @"tdlib";
 static NSString * const TGTDLibMountainLionDatabaseDirectoryName = @"tdlib-mountain-lion";
 static NSString * const TGTDLibDefaultFilesDirectoryName = @"tdlib-files";
@@ -1787,7 +1787,7 @@ static BOOL TGTDLibSendErrorLooksLikeSchemaMismatch(NSError *error) {
 - (NSString *)applicationSupportPathWithError:(NSError **)error {
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
     NSString *basePath = ([paths count] > 0) ? [paths objectAtIndex:0] : [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Application Support"];
-    NSString *path = [basePath stringByAppendingPathComponent:@"Telegraphica"];
+    NSString *path = [basePath stringByAppendingPathComponent:@"Maverickgram"];
     NSFileManager *fileManager = [NSFileManager defaultManager];
     if (![fileManager createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:error]) {
         return nil;
@@ -1798,7 +1798,7 @@ static BOOL TGTDLibSendErrorLooksLikeSchemaMismatch(NSError *error) {
 - (NSString *)cachePathWithError:(NSError **)error {
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
     NSString *basePath = ([paths count] > 0) ? [paths objectAtIndex:0] : [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Caches"];
-    NSString *path = [basePath stringByAppendingPathComponent:@"Telegraphica"];
+    NSString *path = [basePath stringByAppendingPathComponent:@"Maverickgram"];
     NSFileManager *fileManager = [NSFileManager defaultManager];
     if (![fileManager createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:error]) {
         return nil;
@@ -1914,7 +1914,7 @@ static BOOL TGTDLibSendErrorLooksLikeSchemaMismatch(NSError *error) {
                                                        timeoutInterval:TGTDLibRemoteConfigurationTimeout];
     [request setHTTPMethod:@"GET"];
     [request setValue:@"application/json, application/x-plist" forHTTPHeaderField:@"Accept"];
-    [request setValue:[self applicationVersionString] forHTTPHeaderField:@"X-Telegraphica-Version"];
+    [request setValue:[self applicationVersionString] forHTTPHeaderField:@"X-Maverickgram-Version"];
 
     NSURLResponse *response = nil;
     NSError *requestError = nil;
@@ -2409,7 +2409,7 @@ static BOOL TGTDLibSendErrorLooksLikeSchemaMismatch(NSError *error) {
         if (![self ensureDirectoryAtPath:targetPath error:error]) {
             return NO;
         }
-        NSString *marker = @"Telegraphica Mountain Lion TDLib store keeps only td.binlog and removes SQLite chat cache before TDLib startup.";
+        NSString *marker = @"Maverickgram Mountain Lion TDLib store keeps only td.binlog and removes SQLite chat cache before TDLib startup.";
         return [marker writeToFile:targetMarker atomically:YES encoding:NSUTF8StringEncoding error:error];
     }
 
@@ -2427,7 +2427,7 @@ static BOOL TGTDLibSendErrorLooksLikeSchemaMismatch(NSError *error) {
         [fileManager removeItemAtPath:stagingPath error:NULL];
         return NO;
     }
-    NSString *marker = @"Telegraphica Mountain Lion TDLib store keeps only td.binlog and removes SQLite chat cache before TDLib startup.";
+    NSString *marker = @"Maverickgram Mountain Lion TDLib store keeps only td.binlog and removes SQLite chat cache before TDLib startup.";
     if (![marker writeToFile:[stagingPath stringByAppendingPathComponent:TGTDLibMountainLionBinlogMarkerName] atomically:YES encoding:NSUTF8StringEncoding error:error]) {
         [fileManager removeItemAtPath:stagingPath error:NULL];
         return NO;
@@ -2780,7 +2780,7 @@ static BOOL TGTDLibSendErrorLooksLikeSchemaMismatch(NSError *error) {
         return nil;
     }
 
-    const char *request = "{\"@type\":\"getTextEntities\",\"text\":\"Telegraphica TDLib smoke https://telegram.org @telegraphica\"}";
+    const char *request = "{\"@type\":\"getTextEntities\",\"text\":\"Maverickgram TDLib smoke https://telegram.org @telegraphica\"}";
     const char *result = _executeFunction(_client, request);
     if (!result) {
         if (error) {
@@ -2870,7 +2870,7 @@ static BOOL TGTDLibSendErrorLooksLikeSchemaMismatch(NSError *error) {
         return [NSDictionary dictionary];
     }
     NSString *resourceName = ([_capabilities lane] == TGTDLibLaneMountainLionFallback)
-        ? @"TelegraphicaTDLibMetadataMountainLion" : @"TelegraphicaTDLibMetadata";
+        ? @"MaverickgramTDLibMetadataMountainLion" : @"MaverickgramTDLibMetadata";
     NSString *metadataPath = [[NSBundle mainBundle] pathForResource:resourceName ofType:@"tsv"];
     if ([metadataPath length] == 0) {
         return [NSDictionary dictionary];

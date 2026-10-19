@@ -896,7 +896,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
         [contentView addSubview:cardView];
 
         NSImageView *iconView = [[[NSImageView alloc] initWithFrame:NSMakeRect(190, 340, 100, 100)] autorelease];
-        NSImage *appIcon = [NSImage imageNamed:@"Telegraphica"];
+        NSImage *appIcon = [NSImage imageNamed:@"Maverickgram"];
         if (!appIcon) {
             appIcon = [NSImage imageNamed:@"NSApplicationIcon"];
         }
@@ -906,7 +906,7 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
         [contentView addSubview:iconView];
 
         NSTextField *titleField = [self utilityLabelWithFrame:NSMakeRect(70, 302, 340, 30)
-                                                  text:@"Telegraphica"
+                                                  text:@"Maverickgram"
                                                   font:[NSFont boldSystemFontOfSize:22.0]];
         [titleField setAlignment:NSCenterTextAlignment];
         [contentView addSubview:titleField];
@@ -1026,10 +1026,10 @@ static NSString *TGActiveSessionIconName(NSDictionary *session) {
     }
 
     [self.aboutWindow orderOut:nil];
-    [self openTelegraphicaChannelInApp];
+    [self openMaverickgramChannelInApp];
 }
 
-- (void)openTelegraphicaChannelInApp {
+- (void)openMaverickgramChannelInApp {
     if (![self.currentAuthState isEqualToString:@"ready"]) {
         [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:TGChannelURLString]];
         return;

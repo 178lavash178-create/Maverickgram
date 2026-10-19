@@ -2,10 +2,10 @@
 
 NSString * const TGChatDisplayPreferencesDidChangeNotification = @"TGChatDisplayPreferencesDidChangeNotification";
 
-static NSString * const TGChatMessagesAsBlocksDefaultsKey = @"TelegraphicaChatMessagesAsBlocks";
-static NSString * const TGChatMessageTextSizeDefaultsKey = @"TelegraphicaChatMessageTextSizeLevel";
-static NSString * const TGChatMessagesAsBlocksOverridesDefaultsKey = @"TelegraphicaChatMessagesAsBlocksOverrides";
-static NSString * const TGChatMessageTextSizeOverridesDefaultsKey = @"TelegraphicaChatMessageTextSizeLevelOverrides";
+static NSString * const TGChatMessagesAsBlocksDefaultsKey = @"MaverickgramChatMessagesAsBlocks";
+static NSString * const TGChatMessageTextSizeDefaultsKey = @"MaverickgramChatMessageTextSizeLevel";
+static NSString * const TGChatMessagesAsBlocksOverridesDefaultsKey = @"MaverickgramChatMessagesAsBlocksOverrides";
+static NSString * const TGChatMessageTextSizeOverridesDefaultsKey = @"MaverickgramChatMessageTextSizeLevelOverrides";
 
 static NSInteger TGClampedChatMessageTextSizeLevel(NSInteger level) {
     if (level < TGChatMessageTextSizeSmall) {

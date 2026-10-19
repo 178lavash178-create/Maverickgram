@@ -1,10 +1,10 @@
 #import "TGUpdateSupport.h"
 #import <CommonCrypto/CommonDigest.h>
 
-static NSString * const TGUpdateAPIURLString = @"https://api.github.com/repos/MiChiRose/telegraphica/releases?per_page=10";
-static NSString * const TGUpdateManifestURLStringValue = @"https://telegraphica-tdlib-config.telegraphica.workers.dev/v1/update-manifest?platform=macos&channel=beta";
-static NSString * const TGUpdateManifestURLDefaultsKey = @"TelegraphicaUpdateManifestURL";
-static NSString * const TGProjectReleasesURLString = @"https://github.com/MiChiRose/telegraphica/releases";
+static NSString * const TGUpdateAPIURLString = @"https://api.github.com/repos/178lavash178-create/Maverickgram/releases?per_page=10";
+static NSString * const TGUpdateManifestURLStringValue = @"https://api.github.com/repos/178lavash178-create/Maverickgram/releases/latest";
+static NSString * const TGUpdateManifestURLDefaultsKey = @"MaverickgramUpdateManifestURL";
+static NSString * const TGProjectReleasesURLString = @"https://github.com/178lavash178-create/Maverickgram/releases";
 
 static NSString *TGUpdateStringValue(id object) {
     return [object isKindOfClass:[NSString class]] ? object : nil;
@@ -146,7 +146,7 @@ NSString *TGUpdateCheckUserAgentString(void) {
     if ([version length] == 0) {
         version = @"unknown";
     }
-    return [NSString stringWithFormat:@"Telegraphica/%@ (Mac OS X; 10.8-10.13-unified; x86_64)", version];
+    return [NSString stringWithFormat:@"Maverickgram/%@ (Mac OS X; 10.8-10.13-unified; x86_64)", version];
 }
 
 NSString *TGUpdateDownloadURLStringFromInfo(NSDictionary *info) {
@@ -160,7 +160,7 @@ NSString *TGUpdateDownloadFileNameFromInfo(NSDictionary *info) {
     }
     NSString *downloadURL = TGUpdateDownloadURLStringFromInfo(info);
     NSString *lastPathComponent = [[NSURL URLWithString:downloadURL] lastPathComponent];
-    return ([lastPathComponent length] > 0) ? lastPathComponent : @"Telegraphica-update.dmg";
+    return ([lastPathComponent length] > 0) ? lastPathComponent : @"Maverickgram-update.dmg";
 }
 
 BOOL TGUpdateFileMatchesSHA256(NSString *path, NSString *expectedSHA256, NSError **error) {
@@ -170,7 +170,7 @@ BOOL TGUpdateFileMatchesSHA256(NSString *path, NSString *expectedSHA256, NSError
     NSInputStream *stream = [NSInputStream inputStreamWithFileAtPath:path];
     if (!stream) {
         if (error) {
-            *error = [NSError errorWithDomain:@"TelegraphicaUpdate"
+            *error = [NSError errorWithDomain:@"MaverickgramUpdate"
                                          code:20
                                      userInfo:[NSDictionary dictionaryWithObject:@"Downloaded update file could not be opened for checksum verification." forKey:NSLocalizedDescriptionKey]];
         }
@@ -186,7 +186,7 @@ BOOL TGUpdateFileMatchesSHA256(NSString *path, NSString *expectedSHA256, NSError
         if (readCount < 0) {
             [stream close];
             if (error) {
-                *error = [NSError errorWithDomain:@"TelegraphicaUpdate"
+                *error = [NSError errorWithDomain:@"MaverickgramUpdate"
                                              code:21
                                          userInfo:[NSDictionary dictionaryWithObject:@"Downloaded update file could not be read for checksum verification." forKey:NSLocalizedDescriptionKey]];
             }
@@ -207,7 +207,7 @@ BOOL TGUpdateFileMatchesSHA256(NSString *path, NSString *expectedSHA256, NSError
     }
     BOOL matches = [[actual lowercaseString] isEqualToString:[expectedSHA256 lowercaseString]];
     if (!matches && error) {
-        *error = [NSError errorWithDomain:@"TelegraphicaUpdate"
+        *error = [NSError errorWithDomain:@"MaverickgramUpdate"
                                      code:22
                                  userInfo:[NSDictionary dictionaryWithObject:@"Downloaded update checksum does not match the release manifest." forKey:NSLocalizedDescriptionKey]];
     }
@@ -234,7 +234,7 @@ static NSDictionary *TGLatestManifestReleaseInfoWithError(NSError **error) {
     NSURL *url = [NSURL URLWithString:TGUpdateManifestURLString()];
     if (!url) {
         if (error) {
-            *error = [NSError errorWithDomain:@"TelegraphicaUpdate"
+            *error = [NSError errorWithDomain:@"MaverickgramUpdate"
                                          code:10
                                      userInfo:[NSDictionary dictionaryWithObject:@"Update manifest URL is invalid." forKey:NSLocalizedDescriptionKey]];
         }
@@ -259,7 +259,7 @@ static NSDictionary *TGLatestManifestReleaseInfoWithError(NSError **error) {
         if (statusCode < 200 || statusCode >= 300) {
             if (error) {
                 NSString *message = [NSString stringWithFormat:@"Update manifest returned HTTP %ld.", (long)statusCode];
-                *error = [NSError errorWithDomain:@"TelegraphicaUpdate"
+                *error = [NSError errorWithDomain:@"MaverickgramUpdate"
                                              code:statusCode
                                          userInfo:[NSDictionary dictionaryWithObject:message forKey:NSLocalizedDescriptionKey]];
             }
@@ -270,7 +270,7 @@ static NSDictionary *TGLatestManifestReleaseInfoWithError(NSError **error) {
     id json = [NSJSONSerialization JSONObjectWithData:data options:0 error:error];
     if (![json isKindOfClass:[NSDictionary class]]) {
         if (error) {
-            *error = [NSError errorWithDomain:@"TelegraphicaUpdate"
+            *error = [NSError errorWithDomain:@"MaverickgramUpdate"
                                          code:11
                                      userInfo:[NSDictionary dictionaryWithObject:@"Update manifest did not return an object." forKey:NSLocalizedDescriptionKey]];
         }
@@ -278,7 +278,7 @@ static NSDictionary *TGLatestManifestReleaseInfoWithError(NSError **error) {
     }
     NSDictionary *info = TGUpdateInfoFromReleaseDictionary((NSDictionary *)json, @"cloudflare");
     if (!info && error) {
-        *error = [NSError errorWithDomain:@"TelegraphicaUpdate"
+        *error = [NSError errorWithDomain:@"MaverickgramUpdate"
                                      code:12
                                  userInfo:[NSDictionary dictionaryWithObject:@"Update manifest does not contain a release version." forKey:NSLocalizedDescriptionKey]];
     }
@@ -289,7 +289,7 @@ NSDictionary *TGLatestGitHubReleaseInfoWithError(NSError **error) {
     NSURL *url = [NSURL URLWithString:TGUpdateAPIURLString];
     if (!url) {
         if (error) {
-            *error = [NSError errorWithDomain:@"TelegraphicaUpdate"
+            *error = [NSError errorWithDomain:@"MaverickgramUpdate"
                                          code:1
                                      userInfo:[NSDictionary dictionaryWithObject:@"Update URL is invalid." forKey:NSLocalizedDescriptionKey]];
         }
@@ -316,7 +316,7 @@ NSDictionary *TGLatestGitHubReleaseInfoWithError(NSError **error) {
             if (error) {
                 NSString *fallback = [NSString stringWithFormat:@"GitHub returned HTTP %ld.", (long)statusCode];
                 NSString *message = TGGitHubErrorMessageFromData(data, fallback);
-                *error = [NSError errorWithDomain:@"TelegraphicaUpdate"
+                *error = [NSError errorWithDomain:@"MaverickgramUpdate"
                                              code:statusCode
                                          userInfo:[NSDictionary dictionaryWithObject:message forKey:NSLocalizedDescriptionKey]];
             }
@@ -327,7 +327,7 @@ NSDictionary *TGLatestGitHubReleaseInfoWithError(NSError **error) {
     id json = [NSJSONSerialization JSONObjectWithData:data options:0 error:error];
     if (![json isKindOfClass:[NSArray class]]) {
         if (error) {
-            *error = [NSError errorWithDomain:@"TelegraphicaUpdate"
+            *error = [NSError errorWithDomain:@"MaverickgramUpdate"
                                          code:2
                                      userInfo:[NSDictionary dictionaryWithObject:@"GitHub did not return a release list." forKey:NSLocalizedDescriptionKey]];
         }
@@ -354,7 +354,7 @@ NSDictionary *TGLatestGitHubReleaseInfoWithError(NSError **error) {
     }
 
     if (error) {
-        *error = [NSError errorWithDomain:@"TelegraphicaUpdate"
+        *error = [NSError errorWithDomain:@"MaverickgramUpdate"
                                      code:3
                                  userInfo:[NSDictionary dictionaryWithObject:@"No GitHub releases were found." forKey:NSLocalizedDescriptionKey]];
     }
@@ -373,7 +373,7 @@ NSDictionary *TGLatestUpdateInfoWithError(NSError **error) {
         if ([message length] == 0) {
             message = @"Update manifest did not return release information.";
         }
-        *error = [NSError errorWithDomain:@"TelegraphicaUpdate"
+        *error = [NSError errorWithDomain:@"MaverickgramUpdate"
                                      code:13
                                  userInfo:[NSDictionary dictionaryWithObject:message forKey:NSLocalizedDescriptionKey]];
     }

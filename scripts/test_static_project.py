@@ -142,7 +142,7 @@ def check_localization(errors):
 
 
 def check_project_membership(errors):
-    project_rel = os.path.join("Telegraphica.xcodeproj", "project.pbxproj")
+    project_rel = os.path.join("Maverickgram.xcodeproj", "project.pbxproj")
     project_text = read_text(os.path.join(ROOT, project_rel))
     for rel, path in iter_repo_files():
         if not rel.startswith("Sources/"):
@@ -168,9 +168,9 @@ def check_test_structure(errors):
     ]:
         if not os.path.exists(os.path.join(ROOT, rel)):
             errors.append("%s: required test probe is missing" % rel)
-    scheme_text = read_text(os.path.join(ROOT, "Telegraphica.xcodeproj", "xcshareddata", "xcschemes", "Telegraphica.xcscheme"))
+    scheme_text = read_text(os.path.join(ROOT, "Maverickgram.xcodeproj", "xcshareddata", "xcschemes", "Maverickgram.xcscheme"))
     if "<Testables>" not in scheme_text:
-        errors.append("Telegraphica.xcscheme: TestAction is missing")
+        errors.append("Maverickgram.xcscheme: TestAction is missing")
 
 
 def check_media_center_pagination(errors):
@@ -333,7 +333,7 @@ def check_unified_legacy_contract(errors):
         "Found the existing Mavericks-and-newer TDLib JSON library.",
         "Found the existing Mountain Lion TDLib JSON library.",
         "bundle_tdlib_build_metadata",
-        "TelegraphicaTDLibMetadataMountainLion.tsv",
+        "MaverickgramTDLibMetadataMountainLion.tsv",
     ]:
         if fragment not in build_text:
             errors.append("%s: unified legacy build contract is missing `%s`" %
@@ -365,8 +365,8 @@ def check_unified_legacy_contract(errors):
     bundle_check_text = read_text(os.path.join(ROOT, bundle_check_rel))
     for fragment in [
         "LC_BUILD_VERSION",
-        "TelegraphicaTDLibMetadata.tsv",
-        "TelegraphicaTDLibMetadataMountainLion.tsv",
+        "MaverickgramTDLibMetadata.tsv",
+        "MaverickgramTDLibMetadataMountainLion.tsv",
         "check_tdlib_build_metadata.sh",
     ]:
         if fragment not in bundle_check_text:
@@ -393,7 +393,7 @@ def check_unified_legacy_contract(errors):
 def check_no_local_runtime_data(errors):
     forbidden_names = [
         "tdlib-config.plist",
-        "TelegraphicaTDLibDefaults.plist",
+        "MaverickgramTDLibDefaults.plist",
         "telegram-api.plist",
         "api-credentials.plist",
     ]
@@ -656,7 +656,7 @@ def check_call_transport_stability_contract(errors):
                       audio_rel)
     for fragment in [
         "TGSystemSupportsModernTelegramAudioCalls()",
-        "TelegraphicaCallTransport.dylib",
+        "MaverickgramCallTransport.dylib",
         "TGModernCallTransportABIVersion",
         "TGModernCallTransportReceiveSignalingData",
         "TGModernCallTransportSetMicrophoneMuted",
@@ -743,7 +743,7 @@ def check_call_transport_stability_contract(errors):
         "CMAKE_OSX_DEPLOYMENT_TARGET 10.9",
         "TGModernCallLegacyClock.cpp",
         "TGModernCallVideoPlatform.cpp PROPERTIES LANGUAGE OBJCXX",
-        'OUTPUT_NAME "TelegraphicaCallTransport"',
+        'OUTPUT_NAME "MaverickgramCallTransport"',
         'PREFIX ""',
         "webrtc::AudioProcessingBuilder audioProcessingBuilder",
         "mediaDeps.audio_processing = audioProcessingBuilder.Create()",
@@ -762,7 +762,7 @@ def check_call_transport_stability_contract(errors):
         "TELEGRAPHICA_ALLOW_UNVERIFIED_CALL_TRANSPORT",
         "Refusing to replace the HITL-verified audio-call transport.",
         'CALL_TRANSPORT_MIN" != "10.9"',
-        "TelegraphicaCallTransport.dylib",
+        "MaverickgramCallTransport.dylib",
         "TELEGRAPHICA_LIBTGVOIP_SOURCE is ignored",
     ]:
         if fragment not in build_text:
@@ -803,7 +803,7 @@ def check_call_transport_stability_contract(errors):
         'self.microphoneMuted ? @"microphone-off" : @"microphone"',
         '[NSSound soundNamed:@"Marimba"]',
         'Ringtones/Marimba.m4r',
-        'Application Support/Telegraphica/Sounds/Marimba.m4r',
+        'Application Support/Maverickgram/Sounds/Marimba.m4r',
         '~/Library/Sounds/Marimba.m4r',
         "if (state == TGCallPresentationStateIncoming)",
     ]:
@@ -861,8 +861,8 @@ def check_call_transport_stability_contract(errors):
         "requestMicrophonePermission",
         "requestLocationPermission",
         "TGPrivacyPermissionsDidChangeNotification",
-        "TelegraphicaMicrophonePermissionDecisionV2",
-        "TelegraphicaLocationPermissionDecisionV1",
+        "MaverickgramMicrophonePermissionDecisionV2",
+        "MaverickgramLocationPermissionDecisionV1",
     ]:
         if fragment not in privacy_permissions_text:
             errors.append("%s: app permission contract is missing `%s`" %
@@ -1627,7 +1627,7 @@ def check_chat_navigation_actions_contract(errors):
 def check_message_link_contract(errors):
     client_rel = os.path.join("Sources", "Core", "TGTDLibClient+MessageLinks.m")
     menu_rel = os.path.join("Sources", "UI", "TGStatusWindowController+MessageMenus.inc")
-    project_rel = os.path.join("Telegraphica.xcodeproj", "project.pbxproj")
+    project_rel = os.path.join("Maverickgram.xcodeproj", "project.pbxproj")
     client_text = read_text(os.path.join(ROOT, client_rel))
     menu_text = read_text(os.path.join(ROOT, menu_rel))
     project_text = read_text(os.path.join(ROOT, project_rel))
@@ -1650,7 +1650,7 @@ def check_composer_link_editor_contract(errors):
     support_rel = os.path.join("Sources", "UI", "TGComposerLinkSupport.m")
     composer_rel = os.path.join("Sources", "UI", "TGStatusWindowController+ComposerMedia.inc")
     localization_rel = os.path.join("Sources", "UI", "TGLocalization.m")
-    project_rel = os.path.join("Telegraphica.xcodeproj", "project.pbxproj")
+    project_rel = os.path.join("Maverickgram.xcodeproj", "project.pbxproj")
     support_text = read_text(os.path.join(ROOT, support_rel))
     composer_text = read_text(os.path.join(ROOT, composer_rel))
     localization_text = read_text(os.path.join(ROOT, localization_rel))
@@ -1858,7 +1858,7 @@ def check_qr_login_and_reaction_picker_contract(errors):
     video_note_rel = os.path.join("Sources", "UI", "TGVideoNoteRecorderWindowController.m")
     menu_rel = os.path.join("Sources", "UI", "TGStatusWindowController+MessageMenus.inc")
     reaction_rel = os.path.join("Sources", "UI", "TGReactionMenuRowView.m")
-    project_rel = "Telegraphica.xcodeproj/project.pbxproj"
+    project_rel = "Maverickgram.xcodeproj/project.pbxproj"
     client_text = read_text(os.path.join(ROOT, client_rel))
     qr_controller_text = read_text(os.path.join(ROOT, qr_controller_rel))
     qr_generator_text = read_text(os.path.join(ROOT, qr_generator_rel))
@@ -2003,7 +2003,7 @@ def check_forum_topic_management_contract(errors):
     flow_rel = os.path.join("Sources", "UI", "TGStatusWindowController+TableForumFlow.inc")
     menu_rel = os.path.join("Sources", "UI", "TGStatusWindowController+MessageMenus.inc")
     model_rel = os.path.join("Sources", "Core", "TGChatItem.h")
-    project_rel = os.path.join("Telegraphica.xcodeproj", "project.pbxproj")
+    project_rel = os.path.join("Maverickgram.xcodeproj", "project.pbxproj")
     client_text = read_text(os.path.join(ROOT, client_rel))
     host_text = read_text(os.path.join(ROOT, host_rel))
     flow_text = read_text(os.path.join(ROOT, flow_rel))

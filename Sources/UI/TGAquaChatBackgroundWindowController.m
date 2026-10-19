@@ -101,7 +101,7 @@ static NSString *TGAquaBackgroundPresetTitle(NSDictionary *preset) {
     TGAquaDrawSurfaceInPath([NSBezierPath bezierPathWithRoundedRect:incoming xRadius:12 yRadius:12],incoming,TGThemeSurfaceIncoming,[self isFlipped]);
     TGAquaDrawSurfaceInPath([NSBezierPath bezierPathWithRoundedRect:outgoing xRadius:12 yRadius:12],outgoing,TGThemeSurfaceOutgoing,[self isFlipped]);
     NSDictionary *nameAttrs = [NSDictionary dictionaryWithObjectsAndKeys:[NSFont boldSystemFontOfSize:12],NSFontAttributeName,[NSColor colorWithCalibratedRed:0.18 green:0.35 blue:0.51 alpha:1],NSForegroundColorAttributeName,nil];
-    [@"Telegraphica" drawAtPoint:NSMakePoint(NSMinX(incoming)+12,NSMaxY(incoming)-23) withAttributes:nameAttrs];
+    [@"Maverickgram" drawAtPoint:NSMakePoint(NSMinX(incoming)+12,NSMaxY(incoming)-23) withAttributes:nameAttrs];
     NSMutableParagraphStyle *paragraph = [[[NSMutableParagraphStyle alloc] init] autorelease];
     [paragraph setLineBreakMode:NSLineBreakByWordWrapping];
     NSDictionary *bodyAttrs = [NSDictionary dictionaryWithObjectsAndKeys:[NSFont systemFontOfSize:12],NSFontAttributeName,[NSColor colorWithCalibratedWhite:0.13 alpha:1],NSForegroundColorAttributeName,paragraph,NSParagraphStyleAttributeName,nil];

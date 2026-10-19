@@ -136,23 +136,23 @@ static NSString * const TGSectionAbout = @"about";
 static NSString * const TGSectionLogs = @"logs";
 static NSString * const TGSectionWorkshop = @"workshop";
 
-static NSString * const TGNotificationsEnabledDefaultsKey = @"TelegraphicaNotificationsEnabled";
-static NSString * const TGNotificationSoundEnabledDefaultsKey = @"TelegraphicaNotificationSoundEnabled";
-static NSString * const TGNotificationBadgeEnabledDefaultsKey = @"TelegraphicaNotificationBadgeEnabled";
-static NSString * const TGNotificationPreviewEnabledDefaultsKey = @"TelegraphicaNotificationPreviewEnabled";
-static NSString * const TGNotificationsWhenActiveDefaultsKey = @"TelegraphicaNotificationsWhenActive";
-static NSString * const TGChatNotificationMuteOverridesDefaultsKey = @"TelegraphicaChatNotificationMuteOverrides";
-static NSString * const TGDrawerHiddenDefaultsKey = @"TelegraphicaDrawerHidden";
-static NSString * const TGChatSidebarWidthDefaultsKey = @"TelegraphicaChatSidebarWidth";
-static NSString * const TGTypingIndicatorsEnabledDefaultsKey = @"TelegraphicaTypingIndicatorsEnabled";
-static NSString * const TGForumTopicsTopBarDefaultsKey = @"TelegraphicaForumTopicsTopBar";
-static NSString * const TGComposerVideoNoteModeDefaultsKey = @"TelegraphicaComposerVideoNoteMode";
-static NSString * const TGVideoPlaybackResumePositionsDefaultsKey = @"TelegraphicaVideoPlaybackResumePositions";
-static NSString * const TGMountainLionSafeLoginModeDisabledDefaultsKey = @"TelegraphicaMountainLionSafeLoginModeDisabled";
-static NSString * const TGLastUpdateCheckDefaultsKey = @"TelegraphicaLastUpdateCheckTime";
-static NSString * const TGAvailableUpdateVersionDefaultsKey = @"TelegraphicaAvailableUpdateVersion";
+static NSString * const TGNotificationsEnabledDefaultsKey = @"MaverickgramNotificationsEnabled";
+static NSString * const TGNotificationSoundEnabledDefaultsKey = @"MaverickgramNotificationSoundEnabled";
+static NSString * const TGNotificationBadgeEnabledDefaultsKey = @"MaverickgramNotificationBadgeEnabled";
+static NSString * const TGNotificationPreviewEnabledDefaultsKey = @"MaverickgramNotificationPreviewEnabled";
+static NSString * const TGNotificationsWhenActiveDefaultsKey = @"MaverickgramNotificationsWhenActive";
+static NSString * const TGChatNotificationMuteOverridesDefaultsKey = @"MaverickgramChatNotificationMuteOverrides";
+static NSString * const TGDrawerHiddenDefaultsKey = @"MaverickgramDrawerHidden";
+static NSString * const TGChatSidebarWidthDefaultsKey = @"MaverickgramChatSidebarWidth";
+static NSString * const TGTypingIndicatorsEnabledDefaultsKey = @"MaverickgramTypingIndicatorsEnabled";
+static NSString * const TGForumTopicsTopBarDefaultsKey = @"MaverickgramForumTopicsTopBar";
+static NSString * const TGComposerVideoNoteModeDefaultsKey = @"MaverickgramComposerVideoNoteMode";
+static NSString * const TGVideoPlaybackResumePositionsDefaultsKey = @"MaverickgramVideoPlaybackResumePositions";
+static NSString * const TGMountainLionSafeLoginModeDisabledDefaultsKey = @"MaverickgramMountainLionSafeLoginModeDisabled";
+static NSString * const TGLastUpdateCheckDefaultsKey = @"MaverickgramLastUpdateCheckTime";
+static NSString * const TGAvailableUpdateVersionDefaultsKey = @"MaverickgramAvailableUpdateVersion";
 static NSTimeInterval const TGBackgroundUpdateCheckInterval = (60.0 * 60.0);
-static NSString * const TGProjectURLString = @"https://github.com/MiChiRose/telegraphica";
+static NSString * const TGProjectURLString = @"https://github.com/178lavash178-create/Maverickgram";
 static NSString * const TGAuthorURLString = @"https://www.instagram.com/yuramenschikov/";
 static NSString * const TGChannelURLString = @"https://t.me/macos_telegraphica";
 
@@ -1688,7 +1688,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
                                                     styleMask:(NSTitledWindowMask | NSClosableWindowMask | NSMiniaturizableWindowMask | NSResizableWindowMask)
                                                       backing:NSBackingStoreBuffered
                                                         defer:NO] autorelease];
-    [window setTitle:@"Telegraphica"];
+    [window setTitle:@"Maverickgram"];
     [window setMinSize:NSMakeSize(760, 620)];
     [window center];
 
@@ -2773,7 +2773,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [contentView addSubview:self.topPanelView];
 
     self.accountBadgeView = [[[TGAccountBadgeView alloc] initWithFrame:NSMakeRect(30, 626, 60, 60)] autorelease];
-    [self.accountBadgeView setDisplayName:@"Telegraphica"];
+    [self.accountBadgeView setDisplayName:@"Maverickgram"];
     [self.accountBadgeView setTarget:self];
     [self.accountBadgeView setAction:@selector(openProfileFromDrawer:)];
     [self.accountBadgeView setToolTip:TGLoc(@"profile.openHint")];
@@ -2899,7 +2899,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [contentView addSubview:self.bottomNavigationView];
 
     self.titleField = [self labelWithFrame:NSMakeRect(24, 668, 712, 28)
-                                      text:@"Telegraphica"
+                                      text:@"Maverickgram"
                                       font:[NSFont boldSystemFontOfSize:20.0]];
     [self.titleField setTextColor:[NSColor colorWithCalibratedWhite:0.98 alpha:1.0]];
     [self.titleField setHidden:YES];
@@ -2993,7 +2993,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
     self.loginIconView = [[[NSImageView alloc] initWithFrame:NSMakeRect(454, 548, 72, 72)] autorelease];
     [self.loginIconView setImageScaling:NSImageScaleProportionallyUpOrDown];
-    NSString *loginIconPath = [[NSBundle mainBundle] pathForResource:@"TelegraphicaAppIcon" ofType:@"icns"];
+    NSString *loginIconPath = [[NSBundle mainBundle] pathForResource:@"MaverickgramAppIcon" ofType:@"icns"];
     if ([loginIconPath length] > 0) {
         NSImage *loginIcon = [[[NSImage alloc] initWithContentsOfFile:loginIconPath] autorelease];
         [self.loginIconView setImage:loginIcon];
@@ -3004,7 +3004,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [contentView addSubview:self.loginIconView];
 
     self.loginBrandField = [self labelWithFrame:NSMakeRect(300, 516, 380, 28)
-                                           text:@"Telegraphica"
+                                           text:@"Maverickgram"
                                            font:[NSFont boldSystemFontOfSize:22.0]];
     [self.loginBrandField setAlignment:NSCenterTextAlignment];
     [self.loginBrandField setTextColor:TGThemeSurfaceInkColor(TGClassicNavigationTextColor(1.0), TGThemeSurfaceWindow, 4.5)];
@@ -3019,7 +3019,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [contentView addSubview:self.loginTitleField];
 
     self.loginHintField = [self labelWithFrame:NSMakeRect(250, 392, 480, 44)
-                                          text:@"Telegraphica will connect automatically. If this Mac is not signed in yet, continue with your phone number, login code, and password."
+                                          text:@"Maverickgram will connect automatically. If this Mac is not signed in yet, continue with your phone number, login code, and password."
                                           font:[NSFont systemFontOfSize:12.0]];
     [self.loginHintField setAlignment:NSCenterTextAlignment];
     [[self.loginHintField cell] setLineBreakMode:NSLineBreakByWordWrapping];
@@ -4106,7 +4106,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
 
     self.settingsNotificationsWhenActiveButton = [[[NSButton alloc] initWithFrame:NSMakeRect(64, 204, 400, 22)] autorelease];
     [self.settingsNotificationsWhenActiveButton setButtonType:NSSwitchButton];
-    [self.settingsNotificationsWhenActiveButton setTitle:@"Notify while Telegraphica is active"];
+    [self.settingsNotificationsWhenActiveButton setTitle:@"Notify while Maverickgram is active"];
     [self.settingsNotificationsWhenActiveButton setTarget:self];
     [self.settingsNotificationsWhenActiveButton setAction:@selector(notificationSettingChanged:)];
     [self.settingsNotificationsWhenActiveButton setState:TGUserDefaultBoolWithDefault(TGNotificationsWhenActiveDefaultsKey, NO) ? NSOnState : NSOffState];
@@ -4311,7 +4311,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [contentView addSubview:self.settingsLogsButton];
 
     self.settingsAboutButton = [[[NSButton alloc] initWithFrame:NSMakeRect(334, 276, 260, 40)] autorelease];
-    [self.settingsAboutButton setTitle:@"About Telegraphica"];
+    [self.settingsAboutButton setTitle:@"About Maverickgram"];
     [self.settingsAboutButton setToolTip:TGLoc(@"settings.about")];
     [self.settingsAboutButton setTarget:self];
     [self.settingsAboutButton setAction:@selector(showAboutWindow:)];
@@ -4462,7 +4462,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [contentView addSubview:self.aboutCardView];
 
     self.aboutIconView = [[[NSImageView alloc] initWithFrame:NSMakeRect(430, 396, 120, 120)] autorelease];
-    NSImage *appIcon = [NSImage imageNamed:@"Telegraphica"];
+    NSImage *appIcon = [NSImage imageNamed:@"Maverickgram"];
     if (!appIcon) {
         appIcon = [NSImage imageNamed:@"NSApplicationIcon"];
     }
@@ -4471,7 +4471,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [contentView addSubview:self.aboutIconView];
 
     self.aboutTitleField = [self labelWithFrame:NSMakeRect(240, 352, 500, 30)
-                                           text:@"Telegraphica"
+                                           text:@"Maverickgram"
                                            font:[NSFont boldSystemFontOfSize:22.0]];
     [self.aboutTitleField setAlignment:NSCenterTextAlignment];
     [contentView addSubview:self.aboutTitleField];
@@ -4480,7 +4480,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     NSString *version = [info objectForKey:@"CFBundleShortVersionString"];
     NSString *build = [info objectForKey:@"CFBundleVersion"];
     NSString *versionText = [NSString stringWithFormat:@"Version %@ (%@)", version ? version : @"0.1.0", build ? build : @"0.1.0"];
-    NSString *compatibilitySummary = [info objectForKey:@"TelegraphicaCompatibilitySummary"];
+    NSString *compatibilitySummary = [info objectForKey:@"MaverickgramCompatibilitySummary"];
     if ([compatibilitySummary length] > 0) {
         versionText = [versionText stringByAppendingFormat:@" — %@", compatibilitySummary];
     }
@@ -4500,7 +4500,7 @@ static BOOL TGMountainLionSafeLoginModeEnabled(void) {
     [contentView addSubview:self.aboutCopyrightField];
 
     self.aboutLinkField = [self labelWithFrame:NSMakeRect(240, 260, 500, 22)
-                                          text:@"GitHub: https://github.com/MiChiRose/telegraphica"
+                                          text:@"GitHub: https://github.com/178lavash178-create/Maverickgram"
                                           font:[NSFont systemFontOfSize:12.0]];
     [self.aboutLinkField setAlignment:NSCenterTextAlignment];
     [self.aboutLinkField setSelectable:YES];

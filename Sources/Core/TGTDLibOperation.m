@@ -1,8 +1,8 @@
 #import "TGTDLibOperation.h"
 #import <dispatch/dispatch.h>
 
-NSString * const TGTDLibOperationErrorDomain = @"TelegraphicaTDLibOperationError";
-NSString * const TGTDLibOperationRetryableErrorKey = @"TelegraphicaRetryable";
+NSString * const TGTDLibOperationErrorDomain = @"MaverickgramTDLibOperationError";
+NSString * const TGTDLibOperationRetryableErrorKey = @"MaverickgramRetryable";
 
 @interface TGTDLibOperation ()
 - (void)finishWithResult:(id)result error:(NSError *)error;

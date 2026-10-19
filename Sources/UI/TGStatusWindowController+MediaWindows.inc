@@ -1160,7 +1160,7 @@ static NSImage *TGMediaCenterPreviewImageForItem(TGMessageItem *item) {
                 privateChat = YES;
             }
             if (!privateChat) {
-                lastError = [NSError errorWithDomain:@"TelegraphicaMediaCenter"
+                lastError = [NSError errorWithDomain:@"MaverickgramMediaCenter"
                                                 code:601
                                             userInfo:[NSDictionary dictionaryWithObject:TGLoc(@"media.center.groups.privateOnly")
                                                                                  forKey:NSLocalizedDescriptionKey]];

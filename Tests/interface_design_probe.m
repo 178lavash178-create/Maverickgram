@@ -46,7 +46,7 @@ int main(int argc, const char **argv) {
     IMP defaultsOriginal=method_setImplementation(defaultsMethod,(IMP)StandardProbeDefaults);
     NSUserDefaults *defaults=[NSUserDefaults standardUserDefaults];
     id saved=[[defaults objectForKey:TGInterfaceDesignDefaultsKey] retain];
-    id themeSaved=[[defaults objectForKey:@"TelegraphicaThemeIdentifier"] retain];
+    id themeSaved=[[defaults objectForKey:@"MaverickgramThemeIdentifier"] retain];
     if (argc>1 && !strcmp(argv[1],"aqua")) {
         [defaults setObject:@"aqua" forKey:TGInterfaceDesignDefaultsKey];
         Require(TGInterfaceDesignIsAqua(),"Aqua startup choice");
@@ -59,7 +59,7 @@ int main(int argc, const char **argv) {
         Require(!TGInterfaceDesignIsAqua(),"Classic stays immutable");
     }
     [defaults setObject:@"classic" forKey:TGInterfaceDesignDefaultsKey];
-    [defaults setObject:@"notebook-sentinel" forKey:@"TelegraphicaThemeIdentifier"];
+    [defaults setObject:@"notebook-sentinel" forKey:@"MaverickgramThemeIdentifier"];
     NSError *error=nil;
     Require(!TGRequestInterfaceDesignChange(@"invalid",nil,&error) && error!=nil,"invalid choice rejected");
     Method method=class_getInstanceMethod([NSAlert class],@selector(runModal));
@@ -82,7 +82,7 @@ int main(int argc, const char **argv) {
     NSString *executable=[macOS stringByAppendingPathComponent:@"Probe"];
     [@"#!/bin/sh\nexit 0\n" writeToFile:executable atomically:YES encoding:NSUTF8StringEncoding error:NULL]; chmod([executable fileSystemRepresentation],0700);
     TGInterfaceRestartRequest *bad=[[[TGInterfaceRestartRequest alloc] initWithIdentifier:@"aqua"] autorelease];
-    error=nil; Require(![bad prepareForBundlePath:@"/missing/Telegraphica.app" error:&error] && error!=nil,"missing bundle fails safely");
+    error=nil; Require(![bad prepareForBundlePath:@"/missing/Maverickgram.app" error:&error] && error!=nil,"missing bundle fails safely");
     Require([[defaults stringForKey:TGInterfaceDesignDefaultsKey] isEqual:@"classic"],"prepare failure never persists");
     TGInterfaceRestartRequest *request=[[[TGInterfaceRestartRequest alloc] initWithIdentifier:@"aqua"] autorelease];
     error=nil; Require([request prepareForBundlePath:bundle error:&error],"actual helper ready handshake");
@@ -101,7 +101,7 @@ int main(int argc, const char **argv) {
     Require([[NSFileManager defaultManager] fileExistsAtPath:[[request valueForKey:@"gate"] stringByAppendingPathComponent:@"go"]],"will-terminate arms helper");
     [request disarm];
     Require([[defaults stringForKey:TGInterfaceDesignDefaultsKey] isEqual:@"classic"],"canceled termination rolls back");
-    Require([[defaults stringForKey:@"TelegraphicaThemeIdentifier"] isEqual:@"notebook-sentinel"],"classic palette remains unchanged");
+    Require([[defaults stringForKey:@"MaverickgramThemeIdentifier"] isEqual:@"notebook-sentinel"],"classic palette remains unchanged");
 
     NSArray *arguments=TGInterfaceRestartArguments(getpid(),bundle,root);
     Require([[arguments objectAtIndex:4] isEqual:bundle] && [[arguments objectAtIndex:5] isEqual:root],"exact paths are separate argv entries");
@@ -130,7 +130,7 @@ int main(int argc, const char **argv) {
     Require(![[NSFileManager defaultManager] fileExistsAtPath:marker],"bounded live-PID timeout never opens");
     [[NSFileManager defaultManager] removeItemAtPath:root error:NULL];
     if (saved) { [defaults setObject:saved forKey:TGInterfaceDesignDefaultsKey]; } else { [defaults removeObjectForKey:TGInterfaceDesignDefaultsKey]; }
-    if (themeSaved) { [defaults setObject:themeSaved forKey:@"TelegraphicaThemeIdentifier"]; } else { [defaults removeObjectForKey:@"TelegraphicaThemeIdentifier"]; }
+    if (themeSaved) { [defaults setObject:themeSaved forKey:@"MaverickgramThemeIdentifier"]; } else { [defaults removeObjectForKey:@"MaverickgramThemeIdentifier"]; }
     [defaults synchronize]; [saved release]; [themeSaved release];
     puts("Interface design: immutable startup, cancel/prefs, helper handshake, literal arguments, real PID exit and bounded cancellation PASS.");
     method_setImplementation(defaultsMethod,defaultsOriginal);

@@ -79,7 +79,7 @@ Environment:
                           such as /opt/local/bin/clang-mp-17 and clang++-mp-17
 
 The script builds TDLib tdjson for OS X ${DEPLOYMENT_TARGET} / ${ARCH}, stages
-libtdjson.dylib into STAGE_DIR/Frameworks, and validates it for Telegraphica.
+libtdjson.dylib into STAGE_DIR/Frameworks, and validates it for Maverickgram.
 EOF
 }
 
@@ -338,10 +338,10 @@ patch_tdlib_for_legacy_linker() {
 
     cp "$compiler_file" "$compiler_file.telegraphica-backup"
     sed \
-        -e 's/set(TD_LINKER_FLAGS "-Wl,-dead_strip")/set(TD_LINKER_FLAGS "") # Telegraphica legacy Xcode 6 linker workaround/' \
-        -e 's/set(TD_LINKER_FLAGS "${TD_LINKER_FLAGS},-x,-S")/set(TD_LINKER_FLAGS "${TD_LINKER_FLAGS}") # Telegraphica legacy Xcode 6 linker workaround/' \
-        -e 's/add_cxx_compiler_flag("-Wodr")/# Telegraphica legacy Xcode workaround: skip -Wodr/' \
-        -e 's/add_cxx_compiler_flag("-flto-odr-type-merging")/# Telegraphica legacy Xcode workaround: skip -flto-odr-type-merging/' \
+        -e 's/set(TD_LINKER_FLAGS "-Wl,-dead_strip")/set(TD_LINKER_FLAGS "") # Maverickgram legacy Xcode 6 linker workaround/' \
+        -e 's/set(TD_LINKER_FLAGS "${TD_LINKER_FLAGS},-x,-S")/set(TD_LINKER_FLAGS "${TD_LINKER_FLAGS}") # Maverickgram legacy Xcode 6 linker workaround/' \
+        -e 's/add_cxx_compiler_flag("-Wodr")/# Maverickgram legacy Xcode workaround: skip -Wodr/' \
+        -e 's/add_cxx_compiler_flag("-flto-odr-type-merging")/# Maverickgram legacy Xcode workaround: skip -flto-odr-type-merging/' \
         "$compiler_file.telegraphica-backup" > "$compiler_file"
     {
         echo "Patched TDLib Apple linker strip flags for Xcode 6.2 compatibility."
@@ -449,7 +449,7 @@ patch_tdlib_for_xcode5_filefd_scope_exit() {
     fi
 
     cp "$filefd_file" "$filefd_file.telegraphica-xcode5-backup"
-    perl -0pi -e 's@  SCOPE_EXIT \{\n    if \(need_local_unlock\) \{\n      remove_local_lock\(path\);\n    \}\n  \};\n@  // Telegraphica legacy Xcode workaround: AppleClang 5.1.1 crashes while\n  // generating FileFd::lock with SCOPE_EXIT; keep the same cleanup explicit.\n@s' "$filefd_file"
+    perl -0pi -e 's@  SCOPE_EXIT \{\n    if \(need_local_unlock\) \{\n      remove_local_lock\(path\);\n    \}\n  \};\n@  // Maverickgram legacy Xcode workaround: AppleClang 5.1.1 crashes while\n  // generating FileFd::lock with SCOPE_EXIT; keep the same cleanup explicit.\n@s' "$filefd_file"
     perl -0pi -e 's@        return OS_ERROR\(PSLICE\(\) << "Can'"'"'t lock file \\"" << path\n                                 << "\\", because it is already in use; check for another program instance running"\);@        if (need_local_unlock) {\n          remove_local_lock(path);\n        }\n        return OS_ERROR(PSLICE() << "Can'"'"'t lock file \\"" << path\n                                 << "\\", because it is already in use; check for another program instance running");@s' "$filefd_file"
     perl -0pi -e 's@      return OS_ERROR\("Can'"'"'t lock file"\);@      if (need_local_unlock) {\n        remove_local_lock(path);\n      }\n      return OS_ERROR("Can'"'"'t lock file");@' "$filefd_file"
     perl -0pi -e 's@  if \(flags == LockFlags::Write\) \{\n    need_local_unlock = false;\n  \}\n  return Status::OK\(\);@  if (flags == LockFlags::Write) {\n    need_local_unlock = false;\n  }\n  if (need_local_unlock) {\n    remove_local_lock(path);\n  }\n  return Status::OK();@' "$filefd_file"
@@ -564,7 +564,7 @@ patch_tdlib_for_xcode5_ipaddress_scope_exit() {
     fi
 
     cp "$ipaddress_file" "$ipaddress_file.telegraphica-xcode5-backup"
-    perl -0pi -e 's@  SCOPE_EXIT \{\n    freeaddrinfo\(info\);\n  \};\n@  // Telegraphica legacy Xcode workaround: AppleClang 5.1.1 crashes while\n  // generating this SCOPE_EXIT; keep the same cleanup explicit.\n@s' "$ipaddress_file"
+    perl -0pi -e 's@  SCOPE_EXIT \{\n    freeaddrinfo\(info\);\n  \};\n@  // Maverickgram legacy Xcode workaround: AppleClang 5.1.1 crashes while\n  // generating this SCOPE_EXIT; keep the same cleanup explicit.\n@s' "$ipaddress_file"
     perl -0pi -e 's@  if \(best_info == nullptr\) \{\n    return Status::Error\("Failed to find IPv4/IPv6 address"\);\n  \}\n  return init_sockaddr\(best_info->ai_addr, narrow_cast<socklen_t>\(best_info->ai_addrlen\)\);@  if (best_info == nullptr) {\n    freeaddrinfo(info);\n    return Status::Error("Failed to find IPv4/IPv6 address");\n  }\n  auto status = init_sockaddr(best_info->ai_addr, narrow_cast<socklen_t>(best_info->ai_addrlen));\n  freeaddrinfo(info);\n  return status;@' "$ipaddress_file"
 
     if grep -q 'SCOPE_EXIT {' "$ipaddress_file"; then
@@ -641,7 +641,7 @@ patch_tdlib_for_xcode5_ordered_events_resize() {
     cp "$ordered_events_file" "$ordered_events_file.telegraphica-xcode5-backup"
     perl -0pi -e 's@#include <utility>@#include <deque>\n#include <utility>@' "$ordered_events_file"
     perl -0pi -e 's@    \*this = OrderedEventsProcessor\(\);@    data_array_.clear();\n    offset_ = 1;\n    begin_ = 1;\n    end_ = 1;@g' "$ordered_events_file"
-    perl -0pi -e 's@      // try_compactify\n      auto begin_pos = static_cast<size_t>\(begin_ - offset_\);\n      if \(begin_pos > 5 && begin_pos \* 2 > data_array_\.size\(\)\) \{\n        data_array_\.erase\(data_array_\.begin\(\), data_array_\.begin\(\) \+ begin_pos\);\n        offset_ = begin_;\n      \}@      // Telegraphica legacy Xcode workaround: AppleClang 5.1.1 libc++\n      // cannot compact containers that store move-only DataT values here.@' "$ordered_events_file"
+    perl -0pi -e 's@      // try_compactify\n      auto begin_pos = static_cast<size_t>\(begin_ - offset_\);\n      if \(begin_pos > 5 && begin_pos \* 2 > data_array_\.size\(\)\) \{\n        data_array_\.erase\(data_array_\.begin\(\), data_array_\.begin\(\) \+ begin_pos\);\n        offset_ = begin_;\n      \}@      // Maverickgram legacy Xcode workaround: AppleClang 5.1.1 libc++\n      // cannot compact containers that store move-only DataT values here.@' "$ordered_events_file"
     perl -0pi -e 's@      if \(data_array_\.size\(\) < need_size\) \{\n        data_array_\.resize\(need_size\);\n      \}@      while (data_array_.size() < need_size) {\n        data_array_.emplace_back();\n      }@' "$ordered_events_file"
     perl -0pi -e 's@std::vector<std::pair<DataT, bool>> data_array_;@std::deque<std::pair<DataT, bool>> data_array_;@' "$ordered_events_file"
 
@@ -1474,5 +1474,5 @@ echo "$STAGE_DIR/Frameworks/libtdjson.dylib"
 echo "$STAGE_DIR/TDLibBuildMetadata.tsv"
 echo "$STAGE_DIR/TDLibBuildMetadata.exports.txt"
 echo
-echo "Bundle it into Telegraphica with:"
+echo "Bundle it into Maverickgram with:"
 echo "TELEGRAPHICA_TDJSON_PATH=\"$STAGE_DIR/Frameworks/libtdjson.dylib\" ./build_legacy.sh"

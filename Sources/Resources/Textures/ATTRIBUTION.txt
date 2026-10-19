@@ -19,9 +19,9 @@ https://creativecommons.org/licenses/by-sa/3.0/
 https://creativecommons.org/licenses/by-sa/3.0/legalcode
 Upstream license declaration: https://github.com/atlemo/SubtlePatterns
 
-The five PNG files are redistributed unmodified. Telegraphica composites them
+The five PNG files are redistributed unmodified. Maverickgram composites them
 at reduced opacity over Aqua surfaces. These textures and adaptations remain
-available under CC BY-SA 3.0. Their authors do not endorse Telegraphica.
+available under CC BY-SA 3.0. Their authors do not endorse Maverickgram.
 
 
 ricepaper.png: “Rice Paper”, Atle Mo, 13 November 2011.

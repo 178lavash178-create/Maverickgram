@@ -12,7 +12,7 @@ REQUIRE_PORTABLE_DEPS="${TELEGRAPHICA_REQUIRE_PORTABLE_TDJSON:-0}"
 usage() {
     echo "Usage: $0 /path/to/libtdjson.dylib"
     echo
-    echo "Checks that a TDLib JSON dylib is plausible for Telegraphica's"
+    echo "Checks that a TDLib JSON dylib is plausible for Maverickgram's"
     echo "OS X $DEPLOYMENT_TARGET / $ARCH legacy lane."
 }
 

@@ -15,6 +15,6 @@
 #define TGWorkshopModuleManifestFileName @"WorkshopModule.plist"
 #define TGWorkshopInstalledRegistryFileName @"InstalledModules.plist"
 
-#define TGWorkshopErrorDomain @"com.michirose.Telegraphica.Workshop"
+#define TGWorkshopErrorDomain @"com.gregel.Maverickgram.Workshop"
 #define TGWorkshopCatalogSignatureDomain @"TelegraphicaWorkshopCatalog/v1"
 #define TGWorkshopPackageSignatureDomain @"TelegraphicaWorkshopPackage/v1"

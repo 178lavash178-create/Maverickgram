@@ -56,7 +56,7 @@ namespace {
 /*
  * A deliberately small camera-only platform for the unified legacy build.
  * Telegram Desktop's generic desktop implementation also pulls in screen
- * capture and newer Darwin wrappers.  Telegraphica only needs the built-in
+ * capture and newer Darwin wrappers.  Maverickgram only needs the built-in
  * camera for one-to-one video calls, and this implementation stays within the
  * WebRTC capture APIs available on OS X 10.9.
  */

@@ -445,7 +445,7 @@ static NSRect TGCallAspectFitRect(NSSize imageSize, NSRect bounds) {
             [paths addObject:bundledPath];
         }
         [paths addObjectsFromArray:[NSArray arrayWithObjects:
-                                    [@"~/Library/Application Support/Telegraphica/Sounds/Marimba.m4r" stringByExpandingTildeInPath],
+                                    [@"~/Library/Application Support/Maverickgram/Sounds/Marimba.m4r" stringByExpandingTildeInPath],
                                     [@"~/Library/Sounds/Marimba.m4r" stringByExpandingTildeInPath],
                                     [@"~/Library/Sounds/Marimba.aiff" stringByExpandingTildeInPath],
                                     @"/Library/Sounds/Marimba.m4r",

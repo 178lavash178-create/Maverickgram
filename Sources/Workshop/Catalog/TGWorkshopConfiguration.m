@@ -2,7 +2,7 @@
 
 static NSString * const TGWorkshopDefaultCatalogURLString =
     @"https://telegraphica-tdlib-config.telegraphica.workers.dev/v1/workshop/catalog";
-static NSString * const TGWorkshopCatalogURLDefaultsKey = @"TelegraphicaWorkshopCatalogURL";
+static NSString * const TGWorkshopCatalogURLDefaultsKey = @"MaverickgramWorkshopCatalogURL";
 
 NSString *TGWorkshopCatalogURLString(void) {
     NSString *override = [[NSUserDefaults standardUserDefaults] stringForKey:TGWorkshopCatalogURLDefaultsKey];

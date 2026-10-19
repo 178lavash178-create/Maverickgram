@@ -4,8 +4,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 DIST_DIR="${TELEGRAPHICA_DIST_DIR:-$PWD/dist}"
-APP_PATH="build-legacy/Release/Telegraphica.app"
-APP_NAME="Telegraphica.app"
+APP_PATH="build-legacy/Release/Maverickgram.app"
+APP_NAME="Maverickgram.app"
 ARCH="x86_64"
 DEPLOYMENT_TARGET="${TELEGRAPHICA_DEPLOYMENT_TARGET:-${MACOSX_DEPLOYMENT_TARGET:-10.8}}"
 COMPATIBILITY_TAG="${TELEGRAPHICA_COMPATIBILITY_TAG:-macos10.8-10.13}"
@@ -15,15 +15,15 @@ usage() {
 Usage: $0 --tdjson /path/to/modern/libtdjson.dylib \
           --mountain-lion-tdjson /path/to/10.8/libtdjson.dylib
 
-Builds Telegraphica with bundled TDLib on the legacy Mac, then creates release
+Builds Maverickgram with bundled TDLib on the legacy Mac, then creates release
 artifacts in dist/:
 
-  - Telegraphica-v<VERSION>-${COMPATIBILITY_TAG}-x86_64.dmg
-  - Telegraphica-v<VERSION>-${COMPATIBILITY_TAG}-x86_64.app.zip
+  - Maverickgram-v<VERSION>-${COMPATIBILITY_TAG}-x86_64.dmg
+  - Maverickgram-v<VERSION>-${COMPATIBILITY_TAG}-x86_64.app.zip
   - matching .sha256 files
 
 The script refuses to package a public installer unless the OS X 10.9+ and
-OS X 10.8 TDLib runtimes are both bundled inside Telegraphica.app.
+OS X 10.8 TDLib runtimes are both bundled inside Maverickgram.app.
 USAGE
 }
 
@@ -68,10 +68,10 @@ find_tdjson() {
     for candidate in \
         "$PWD/build-tdlib-master-legacy/stage/Frameworks/libtdjson.dylib" \
         "$PWD/build-tdlib-legacy/stage/Frameworks/libtdjson.dylib" \
-        "$HOME/Desktop/Telegraphica-current/build-tdlib-master-legacy/stage/Frameworks/libtdjson.dylib" \
-        "$HOME/Desktop/Telegraphica-current/build-tdlib-legacy/stage/Frameworks/libtdjson.dylib" \
-        "$HOME/Desktop/Telegraphica-10.8-current/build-tdlib-master-legacy/stage/Frameworks/libtdjson.dylib" \
-        "$HOME/Desktop/Telegraphica-10.8-current/build-tdlib-legacy/stage/Frameworks/libtdjson.dylib"
+        "$HOME/Desktop/Maverickgram-current/build-tdlib-master-legacy/stage/Frameworks/libtdjson.dylib" \
+        "$HOME/Desktop/Maverickgram-current/build-tdlib-legacy/stage/Frameworks/libtdjson.dylib" \
+        "$HOME/Desktop/Maverickgram-10.8-current/build-tdlib-master-legacy/stage/Frameworks/libtdjson.dylib" \
+        "$HOME/Desktop/Maverickgram-10.8-current/build-tdlib-legacy/stage/Frameworks/libtdjson.dylib"
     do
         if [ -f "$candidate" ] &&
             TELEGRAPHICA_REQUIRE_PORTABLE_TDJSON=1 scripts/check_tdjson_legacy.sh "$candidate" >/dev/null 2>&1; then
@@ -140,7 +140,7 @@ fi
 MACOSX_DEPLOYMENT_TARGET=10.9 scripts/check_tdjson_legacy.sh "$TDJSON_PATH"
 MACOSX_DEPLOYMENT_TARGET=10.8 scripts/check_tdjson_legacy.sh "$TDJSON_MOUNTAIN_LION_PATH"
 
-echo "Building Telegraphica with bundled TDLib runtimes:"
+echo "Building Maverickgram with bundled TDLib runtimes:"
 echo "  OS X 10.9+: $TDJSON_PATH"
 echo "  OS X 10.8:  $TDJSON_MOUNTAIN_LION_PATH"
 echo "  Calls 10.9+: $CALL_TRANSPORT_PATH"
@@ -168,11 +168,11 @@ fi
 
 MACOSX_DEPLOYMENT_TARGET=10.9 TELEGRAPHICA_REQUIRE_PORTABLE_TDJSON=1 scripts/check_tdjson_legacy.sh "$BUNDLED_TDJSON"
 MACOSX_DEPLOYMENT_TARGET=10.8 TELEGRAPHICA_REQUIRE_PORTABLE_TDJSON=1 scripts/check_tdjson_legacy.sh "$BUNDLED_TDJSON_MOUNTAIN_LION"
-TELEGRAPHICA_BUNDLE_MANIFEST_PATH="$BUILD_DIST_DIR/TelegraphicaLegacyBinaryManifest.tsv" \
+TELEGRAPHICA_BUNDLE_MANIFEST_PATH="$BUILD_DIST_DIR/MaverickgramLegacyBinaryManifest.tsv" \
 scripts/check_release_bundle_legacy.sh "$APP_PATH" "$DEPLOYMENT_TARGET"
 
-BUNDLED_CONFIG="$APP_PATH/Contents/Resources/TelegraphicaTDLibDefaults.plist"
-RUNTIME_CONFIG_MARKER="$APP_PATH/Contents/Resources/TelegraphicaTDLibRuntimeDefaults.plist"
+BUNDLED_CONFIG="$APP_PATH/Contents/Resources/MaverickgramTDLibDefaults.plist"
+RUNTIME_CONFIG_MARKER="$APP_PATH/Contents/Resources/MaverickgramTDLibRuntimeDefaults.plist"
 INFO_PLIST="$APP_PATH/Contents/Info.plist"
 if [ -f "$BUNDLED_CONFIG" ]; then
     echo "Refusing to create release artifacts with plaintext TDLib app credentials in Resources."
@@ -180,7 +180,7 @@ if [ -f "$BUNDLED_CONFIG" ]; then
     exit 1
 fi
 HAS_RUNTIME_CREDENTIALS="$(/usr/libexec/PlistBuddy -c "Print :has_runtime_credentials" "$RUNTIME_CONFIG_MARKER" 2>/dev/null || true)"
-REMOTE_CONFIG_URL="$(/usr/libexec/PlistBuddy -c "Print :TelegraphicaRemoteTDLibConfigURL" "$INFO_PLIST" 2>/dev/null || true)"
+REMOTE_CONFIG_URL="$(/usr/libexec/PlistBuddy -c "Print :MaverickgramRemoteTDLibConfigURL" "$INFO_PLIST" 2>/dev/null || true)"
 if [ "$HAS_RUNTIME_CREDENTIALS" != "true" ] && ! echo "$REMOTE_CONFIG_URL" | grep -E -q '^https://'; then
     echo "Refusing to create release artifacts without a Telegram connection bootstrap."
     echo "Rebuild with either:"
@@ -199,9 +199,9 @@ mkdir -p "$DIST_DIR"
 
 scripts/package_release_installer.sh "$APP_PATH"
 
-DMG_SRC="$DIST_DIR/Telegraphica-v${APP_VERSION}-installer.dmg"
-DMG_FINAL="$DIST_DIR/Telegraphica-v${APP_VERSION}-${COMPATIBILITY_TAG}-${ARCH}.dmg"
-APP_ZIP="$DIST_DIR/Telegraphica-v${APP_VERSION}-${COMPATIBILITY_TAG}-${ARCH}.app.zip"
+DMG_SRC="$DIST_DIR/Maverickgram-v${APP_VERSION}-installer.dmg"
+DMG_FINAL="$DIST_DIR/Maverickgram-v${APP_VERSION}-${COMPATIBILITY_TAG}-${ARCH}.dmg"
+APP_ZIP="$DIST_DIR/Maverickgram-v${APP_VERSION}-${COMPATIBILITY_TAG}-${ARCH}.app.zip"
 
 if [ ! -f "$DMG_SRC" ]; then
     echo "Expected DMG was not created:"

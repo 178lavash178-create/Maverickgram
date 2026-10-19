@@ -819,7 +819,7 @@ static NSString *TGSearchFilterIdentifierForIndex(NSInteger index) {
     if ([pngData length] == 0) {
         return nil;
     }
-    NSString *directory = [NSTemporaryDirectory() stringByAppendingPathComponent:@"TelegraphicaPasteboard"];
+    NSString *directory = [NSTemporaryDirectory() stringByAppendingPathComponent:@"MaverickgramPasteboard"];
     [[NSFileManager defaultManager] createDirectoryAtPath:directory withIntermediateDirectories:YES attributes:nil error:NULL];
     NSString *fileName = [NSString stringWithFormat:@"paste-%lld.png", (long long)([[NSDate date] timeIntervalSince1970] * 1000.0)];
     NSString *path = [directory stringByAppendingPathComponent:fileName];

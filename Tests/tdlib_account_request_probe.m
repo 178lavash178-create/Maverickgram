@@ -74,7 +74,7 @@
                                  [NSNumber numberWithLongLong:77], @"session_id",
                                  [NSNumber numberWithInteger:1234], @"last_active_date",
                                  [NSNumber numberWithBool:YES], @"is_current",
-                                 @"Telegraphica", @"application_name",
+                                 @"Maverickgram", @"application_name",
                                  @"OS X", @"platform",
                                  @"Minsk", @"region",
                                  @"Belarus", @"country",

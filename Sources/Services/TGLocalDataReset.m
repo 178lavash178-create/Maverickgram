@@ -15,7 +15,7 @@ static NSString * const TGLocalDataResetTDLibKeychainAccount = @"tdlib_database_
 static NSString *TGLocalDataResetBaseDirectory(NSSearchPathDirectory directory, NSString *fallbackPath) {
     NSArray *paths = NSSearchPathForDirectoriesInDomains(directory, NSUserDomainMask, YES);
     NSString *basePath = ([paths count] > 0) ? [paths objectAtIndex:0] : [NSHomeDirectory() stringByAppendingPathComponent:fallbackPath];
-    return [basePath stringByAppendingPathComponent:@"Telegraphica"];
+    return [basePath stringByAppendingPathComponent:@"Maverickgram"];
 }
 
 static void TGLocalDataResetAppendError(NSMutableArray *errors, NSString *label, NSError *error) {
@@ -72,13 +72,13 @@ static void TGLocalDataResetClearDefaults(void) {
         if (![key isKindOfClass:[NSString class]]) {
             continue;
         }
-        if ([key hasPrefix:@"TelegraphicaDraft."] ||
-            [key hasPrefix:@"TelegraphicaSelected"] ||
-            [key hasPrefix:@"TelegraphicaChat"] ||
-            [key hasPrefix:@"TelegraphicaUpdate"] ||
-            [key isEqualToString:@"TelegraphicaAvailableUpdateVersion"] ||
-            [key isEqualToString:@"TelegraphicaAvailableUpdateURL"] ||
-            [key isEqualToString:@"TelegraphicaAvailableUpdateSHA256"]) {
+        if ([key hasPrefix:@"MaverickgramDraft."] ||
+            [key hasPrefix:@"MaverickgramSelected"] ||
+            [key hasPrefix:@"MaverickgramChat"] ||
+            [key hasPrefix:@"MaverickgramUpdate"] ||
+            [key isEqualToString:@"MaverickgramAvailableUpdateVersion"] ||
+            [key isEqualToString:@"MaverickgramAvailableUpdateURL"] ||
+            [key isEqualToString:@"MaverickgramAvailableUpdateSHA256"]) {
             [defaults removeObjectForKey:key];
         }
     }
@@ -127,7 +127,7 @@ static void TGLocalDataResetClearDefaults(void) {
                            (long)[keychain lastStatus]]];
     }
 
-    NSString *offlineNote = @"Local Telegraphica data was removed from this Mac. Telegram cloud data remains online; if the app was offline, terminate server sessions from another Telegram client if needed.";
+    NSString *offlineNote = @"Local Maverickgram data was removed from this Mac. Telegram cloud data remains online; if the app was offline, terminate server sessions from another Telegram client if needed.";
     return [NSDictionary dictionaryWithObjectsAndKeys:
             [NSNumber numberWithUnsignedInteger:removedCount], TGLocalDataResetRemovedCountKey,
             [NSArray arrayWithArray:errors], TGLocalDataResetErrorMessagesKey,

@@ -2,18 +2,18 @@
 
 NSString * const TGResourcePolicyDidChangeNotification = @"TGResourcePolicyDidChangeNotification";
 
-static NSString * const TGResourcePolicyInitializedKey = @"TelegraphicaResourcePolicyInitialized";
-static NSString * const TGResourcePolicyEconomyModeKey = @"TelegraphicaEconomyModeEnabled";
-static NSString * const TGResourcePolicyAutoPhotoKey = @"TelegraphicaAutoDownloadPhotos";
-static NSString * const TGResourcePolicyAutoVideoKey = @"TelegraphicaAutoDownloadVideos";
-static NSString * const TGResourcePolicyAutoDocumentKey = @"TelegraphicaAutoDownloadDocuments";
-static NSString * const TGResourcePolicyAutoVoiceKey = @"TelegraphicaAutoDownloadVoiceMessages";
-static NSString * const TGResourcePolicyLinkPreviewsKey = @"TelegraphicaLinkPreviewsEnabled";
-static NSString * const TGResourcePolicyMaxAutoDownloadBytesKey = @"TelegraphicaMaxAutoDownloadBytes";
-static NSString * const TGResourcePolicyAutoplayAnimatedStickersKey = @"TelegraphicaAutoplayAnimatedStickers";
-static NSString * const TGResourcePolicyMaximumActiveAnimationsKey = @"TelegraphicaMaximumActiveAnimations";
-static NSString * const TGResourcePolicyStopAnimationsInactiveKey = @"TelegraphicaStopAnimationsWhenInactive";
-static NSString * const TGResourcePolicyMediaCacheLimitBytesKey = @"TelegraphicaMediaCacheLimitBytes";
+static NSString * const TGResourcePolicyInitializedKey = @"MaverickgramResourcePolicyInitialized";
+static NSString * const TGResourcePolicyEconomyModeKey = @"MaverickgramEconomyModeEnabled";
+static NSString * const TGResourcePolicyAutoPhotoKey = @"MaverickgramAutoDownloadPhotos";
+static NSString * const TGResourcePolicyAutoVideoKey = @"MaverickgramAutoDownloadVideos";
+static NSString * const TGResourcePolicyAutoDocumentKey = @"MaverickgramAutoDownloadDocuments";
+static NSString * const TGResourcePolicyAutoVoiceKey = @"MaverickgramAutoDownloadVoiceMessages";
+static NSString * const TGResourcePolicyLinkPreviewsKey = @"MaverickgramLinkPreviewsEnabled";
+static NSString * const TGResourcePolicyMaxAutoDownloadBytesKey = @"MaverickgramMaxAutoDownloadBytes";
+static NSString * const TGResourcePolicyAutoplayAnimatedStickersKey = @"MaverickgramAutoplayAnimatedStickers";
+static NSString * const TGResourcePolicyMaximumActiveAnimationsKey = @"MaverickgramMaximumActiveAnimations";
+static NSString * const TGResourcePolicyStopAnimationsInactiveKey = @"MaverickgramStopAnimationsWhenInactive";
+static NSString * const TGResourcePolicyMediaCacheLimitBytesKey = @"MaverickgramMediaCacheLimitBytes";
 
 static long long TGResourceMB(long long value) {
     return value * 1024LL * 1024LL;

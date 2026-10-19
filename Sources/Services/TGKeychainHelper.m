@@ -2,7 +2,7 @@
 #import <Security/Security.h>
 #include <string.h>
 
-static NSString * const TGKeychainServiceName = @"com.michirose.telegraphica.auth";
+static NSString * const TGKeychainServiceName = @"com.gregel.maverickgram.auth";
 
 @interface TGKeychainHelper ()
 @property (nonatomic, assign) OSStatus lastStatusValue;

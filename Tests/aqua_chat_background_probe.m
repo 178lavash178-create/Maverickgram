@@ -10,7 +10,7 @@ static void Check(BOOL condition, const char *message) {
 }
 
 // An isolated defaults implementation verifies serialized values without ever
-// modifying the user's real Telegraphica preferences.
+// modifying the user's real Maverickgram preferences.
 @interface TGBackgroundProbeDefaults : NSUserDefaults {
     NSMutableDictionary *_values;
 }

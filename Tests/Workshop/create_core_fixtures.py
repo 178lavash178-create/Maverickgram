@@ -17,8 +17,8 @@ from typing import Optional, Tuple
 import zipfile
 
 
-CATALOG_DOMAIN = b"TelegraphicaWorkshopCatalog/v1\0"
-PACKAGE_DOMAIN = b"TelegraphicaWorkshopPackage/v1\0"
+CATALOG_DOMAIN = b"MaverickgramWorkshopCatalog/v1\0"
+PACKAGE_DOMAIN = b"MaverickgramWorkshopPackage/v1\0"
 MODULE_ID = "com.michirose.telegraphica.workshop.tictactoe"
 
 
@@ -130,7 +130,7 @@ def main() -> None:
     certificate_der = args.output / "certificate.der"
     run(
         "openssl", "req", "-x509", "-newkey", "rsa:2048", "-sha256", "-nodes",
-        "-days", "2", "-subj", "/CN=Telegraphica Workshop Tests/",
+        "-days", "2", "-subj", "/CN=Maverickgram Workshop Tests/",
         "-keyout", str(private_key), "-out", str(certificate_pem),
     )
     run("openssl", "x509", "-in", str(certificate_pem), "-outform", "der",

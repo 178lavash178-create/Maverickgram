@@ -36,7 +36,7 @@ done
 
 rm -rf "$BUILD_DIR"
 mkdir -p "$OBJECT_DIR" "$CONFIG_DIR"
-printf '%s\n' '/* Telegraphica legacy rlottie configuration. */' > "$CONFIG_DIR/config.h"
+printf '%s\n' '/* Maverickgram legacy rlottie configuration. */' > "$CONFIG_DIR/config.h"
 
 CLANGXX="$(xcrun --sdk "$SDK_NAME" --find clang++)"
 SDK_PATH="${SDKROOT:-$(xcrun --sdk "$SDK_NAME" --show-sdk-path)}"

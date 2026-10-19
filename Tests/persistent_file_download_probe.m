@@ -100,8 +100,8 @@ int main(void) {
                 if (requests > 1) { return TGFile(total, total, NO, YES); }
                 NSDictionary *protocolError = [NSDictionary dictionaryWithObjectsAndKeys:@"error", @"@type", code, @"code", nil];
                 if (requestError) {
-                    *requestError = [NSError errorWithDomain:@"TelegraphicaTDLib" code:56 userInfo:
-                        [NSDictionary dictionaryWithObjectsAndKeys:code, @"TelegraphicaTDLibCode", protocolError, @"TelegraphicaTDLibResponse", nil]];
+                    *requestError = [NSError errorWithDomain:@"MaverickgramTDLib" code:56 userInfo:
+                        [NSDictionary dictionaryWithObjectsAndKeys:code, @"MaverickgramTDLibCode", protocolError, @"MaverickgramTDLibResponse", nil]];
                 }
                 return nil;
             }, nil, nil, ^NSTimeInterval { return now; }, ^(NSTimeInterval seconds) { now += seconds; }, &error);

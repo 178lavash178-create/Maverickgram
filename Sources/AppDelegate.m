@@ -13,7 +13,7 @@
     [self buildMainMenu];
 
     [[TGLogger sharedLogger] startDiagnosticSession];
-    [[TGLogger sharedLogger] log:@"Telegraphica launched."];
+    [[TGLogger sharedLogger] log:@"Maverickgram launched."];
 
     self.statusWindowController = [[[TGStatusWindowController alloc] init] autorelease];
     [self.statusWindowController showWindow:self];
@@ -62,7 +62,7 @@
     NSMenuItem *appMenuItem = [[[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@""] autorelease];
     [mainMenu addItem:appMenuItem];
 
-    NSMenu *appMenu = [[[NSMenu alloc] initWithTitle:@"Telegraphica"] autorelease];
+    NSMenu *appMenu = [[[NSMenu alloc] initWithTitle:@"Maverickgram"] autorelease];
     NSString *quitTitle = [@"Quit " stringByAppendingString:[[NSProcessInfo processInfo] processName]];
     NSMenuItem *quitItem = [[[NSMenuItem alloc] initWithTitle:quitTitle
                                                        action:@selector(terminate:)

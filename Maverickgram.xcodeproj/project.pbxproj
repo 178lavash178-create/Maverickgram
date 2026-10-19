@@ -40,10 +40,10 @@
 		111111111111111111111107 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 111111111111111111111220 /* Localizable.strings */; };
 		111111111111111111111108 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 111111111111111111111230 /* Cocoa.framework */; };
 		111111111111111111111109 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 111111111111111111111231 /* Security.framework */; };
-		111111111111111111111110 /* TelegraphicaAppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 111111111111111111111223 /* TelegraphicaAppIcon.icns */; };
+		111111111111111111111110 /* MaverickgramAppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 111111111111111111111223 /* MaverickgramAppIcon.icns */; };
 		111111111111111111111113 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 111111111111111111111232 /* AVFoundation.framework */; };
 		111111111111111111111157 /* ImageIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 111111111111111111111316 /* ImageIO.framework */; };
-		111111111111111111111114 /* TelegraphicaNotificationIcon.png in Resources */ = {isa = PBXBuildFile; fileRef = 111111111111111111111224 /* TelegraphicaNotificationIcon.png */; };
+		111111111111111111111114 /* MaverickgramNotificationIcon.png in Resources */ = {isa = PBXBuildFile; fileRef = 111111111111111111111224 /* MaverickgramNotificationIcon.png */; };
 		111111111111111111111115 /* TGActiveSessionsPresentation.m in Sources */ = {isa = PBXBuildFile; fileRef = 111111111111111111111217 /* TGActiveSessionsPresentation.m */; };
 		111111111111111111111116 /* TGLocalization.m in Sources */ = {isa = PBXBuildFile; fileRef = 111111111111111111111219 /* TGLocalization.m */; };
 		111111111111111111111117 /* TGWebPDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 111111111111111111111226 /* TGWebPDecoder.m */; };
@@ -293,8 +293,8 @@
 		111111111111111111111219 /* TGLocalization.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGLocalization.m; sourceTree = "<group>"; };
 		111111111111111111111221 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		111111111111111111111222 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/Localizable.strings; sourceTree = "<group>"; };
-		111111111111111111111223 /* TelegraphicaAppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = TelegraphicaAppIcon.icns; sourceTree = "<group>"; };
-		111111111111111111111224 /* TelegraphicaNotificationIcon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = TelegraphicaNotificationIcon.png; sourceTree = "<group>"; };
+		111111111111111111111223 /* MaverickgramAppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = MaverickgramAppIcon.icns; sourceTree = "<group>"; };
+		111111111111111111111224 /* MaverickgramNotificationIcon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = MaverickgramNotificationIcon.png; sourceTree = "<group>"; };
 		111111111111111111111225 /* TGWebPDecoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGWebPDecoder.h; sourceTree = "<group>"; };
 		111111111111111111111226 /* TGWebPDecoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TGWebPDecoder.m; sourceTree = "<group>"; };
 		111111111111111111111227 /* TGMediaImageLoader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TGMediaImageLoader.h; sourceTree = "<group>"; };
@@ -509,7 +509,7 @@
 		555000000000000000000002 /* TGTDLibClient+MessageLinks.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TGTDLibClient+MessageLinks.h"; sourceTree = "<group>"; };
 		555000000000000000000003 /* TGTDLibClient+MessageLinks.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "TGTDLibClient+MessageLinks.m"; sourceTree = "<group>"; };
 		111111111111111111111381 /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
-		111111111111111111111240 /* Telegraphica.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Telegraphica.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		111111111111111111111240 /* Maverickgram.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Maverickgram.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		221000000000000000000001 /* TGWorkshopCatalog.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Catalog/TGWorkshopCatalog.m; sourceTree = "<group>"; };
 		221000000000000000000002 /* TGWorkshopCatalogClient.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Catalog/TGWorkshopCatalogClient.m; sourceTree = "<group>"; };
 		221000000000000000000003 /* TGWorkshopCatalogEntry.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Catalog/TGWorkshopCatalogEntry.m; sourceTree = "<group>"; };
@@ -671,7 +671,7 @@
 		111111111111111111111403 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				111111111111111111111240 /* Telegraphica.app */,
+				111111111111111111111240 /* Maverickgram.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1058,8 +1058,8 @@
 			isa = PBXGroup;
 			children = (
 				111111111111111111111220 /* Localizable.strings */,
-				111111111111111111111223 /* TelegraphicaAppIcon.icns */,
-				111111111111111111111224 /* TelegraphicaNotificationIcon.png */,
+				111111111111111111111223 /* MaverickgramAppIcon.icns */,
+				111111111111111111111224 /* MaverickgramNotificationIcon.png */,
 				111111111111111111111277 /* Icons */,
 				A68400000000000000000002 /* Textures */,
 				A68400000000000000000004 /* Wallpapers */,
@@ -1113,9 +1113,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		111111111111111111111500 /* Telegraphica */ = {
+		111111111111111111111500 /* Maverickgram */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 111111111111111111111701 /* Build configuration list for PBXNativeTarget "Telegraphica" */;
+			buildConfigurationList = 111111111111111111111701 /* Build configuration list for PBXNativeTarget "Maverickgram" */;
 			buildPhases = (
 				111111111111111111111301 /* Sources */,
 				111111111111111111111302 /* Resources */,
@@ -1125,9 +1125,9 @@
 			);
 			dependencies = (
 			);
-			name = Telegraphica;
-			productName = Telegraphica;
-			productReference = 111111111111111111111240 /* Telegraphica.app */;
+			name = Maverickgram;
+			productName = Maverickgram;
+			productReference = 111111111111111111111240 /* Maverickgram.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -1137,9 +1137,9 @@
 			isa = PBXProject;
 			attributes = {
 				LastUpgradeCheck = 0620;
-				ORGANIZATIONNAME = "Telegraphica";
+				ORGANIZATIONNAME = "Maverickgram";
 			};
-			buildConfigurationList = 111111111111111111111700 /* Build configuration list for PBXProject "Telegraphica" */;
+			buildConfigurationList = 111111111111111111111700 /* Build configuration list for PBXProject "Maverickgram" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
@@ -1152,7 +1152,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				111111111111111111111500 /* Telegraphica */,
+				111111111111111111111500 /* Maverickgram */,
 			);
 		};
 /* End PBXProject section */
@@ -1163,8 +1163,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				111111111111111111111107 /* Localizable.strings in Resources */,
-				111111111111111111111110 /* TelegraphicaAppIcon.icns in Resources */,
-				111111111111111111111114 /* TelegraphicaNotificationIcon.png in Resources */,
+				111111111111111111111110 /* MaverickgramAppIcon.icns in Resources */,
+				111111111111111111111114 /* MaverickgramNotificationIcon.png in Resources */,
 				111111111111111111111141 /* Icons in Resources */,
 				A68400000000000000000001 /* Textures in Resources */,
 				A68400000000000000000003 /* Wallpapers in Resources */,
@@ -1481,7 +1481,7 @@
 					"$(inherited)",
 					"-lz",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.michirose.Telegraphica;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gregel.Maverickgram;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -1497,7 +1497,7 @@
 					"$(inherited)",
 					"-lz",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.michirose.Telegraphica;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gregel.Maverickgram;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -1506,7 +1506,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		111111111111111111111700 /* Build configuration list for PBXProject "Telegraphica" */ = {
+		111111111111111111111700 /* Build configuration list for PBXProject "Maverickgram" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				111111111111111111111801 /* Debug */,
@@ -1515,7 +1515,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		111111111111111111111701 /* Build configuration list for PBXNativeTarget "Telegraphica" */ = {
+		111111111111111111111701 /* Build configuration list for PBXNativeTarget "Maverickgram" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				111111111111111111111803 /* Debug */,

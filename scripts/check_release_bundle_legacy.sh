@@ -7,7 +7,7 @@ DEPLOYMENT_TARGET="${2:-${MACOSX_DEPLOYMENT_TARGET:-10.8}}"
 ARCH="${TELEGRAPHICA_ARCH:-x86_64}"
 
 if [ -z "$APP_PATH" ] || [ ! -d "$APP_PATH/Contents" ]; then
-    echo "Usage: $0 /path/to/Telegraphica.app [minimum-system-version]"
+    echo "Usage: $0 /path/to/Maverickgram.app [minimum-system-version]"
     exit 1
 fi
 
@@ -98,7 +98,7 @@ cleanup() {
 trap cleanup EXIT
 
 MACHO_LIST="$WORK_DIR/macho-files.txt"
-MANIFEST_PATH="${TELEGRAPHICA_BUNDLE_MANIFEST_PATH:-$APP_PATH/Contents/Resources/TelegraphicaLegacyBinaryManifest.tsv}"
+MANIFEST_PATH="${TELEGRAPHICA_BUNDLE_MANIFEST_PATH:-$APP_PATH/Contents/Resources/MaverickgramLegacyBinaryManifest.tsv}"
 : > "$MACHO_LIST"
 find "$APP_PATH/Contents" -type f -print | while IFS= read -r candidate; do
     file_description="$(file "$candidate" 2>/dev/null || true)"
@@ -145,7 +145,7 @@ while IFS= read -r binary_path; do
     fi
     binary_deployment_target="$DEPLOYMENT_TARGET"
     if [ "$relative_path" = "Contents/Frameworks/libtdjson.dylib" ] ||
-       [ "$relative_path" = "Contents/Frameworks/TelegraphicaCallTransport.dylib" ]; then
+       [ "$relative_path" = "Contents/Frameworks/MaverickgramCallTransport.dylib" ]; then
         binary_deployment_target="10.9"
     fi
     if version_gt "$minimum_os" "$binary_deployment_target"; then
@@ -199,12 +199,12 @@ done < "$MACHO_LIST"
 if [ -f "$APP_PATH/Contents/Frameworks/libtdjson.dylib" ]; then
     "$SCRIPT_DIR/check_tdlib_build_metadata.sh" \
         "$APP_PATH/Contents/Frameworks/libtdjson.dylib" \
-        "$APP_PATH/Contents/Resources/TelegraphicaTDLibMetadata.tsv"
+        "$APP_PATH/Contents/Resources/MaverickgramTDLibMetadata.tsv"
 fi
 if [ -f "$APP_PATH/Contents/Frameworks/libtdjson-mountain-lion.dylib" ]; then
     "$SCRIPT_DIR/check_tdlib_build_metadata.sh" \
         "$APP_PATH/Contents/Frameworks/libtdjson-mountain-lion.dylib" \
-        "$APP_PATH/Contents/Resources/TelegraphicaTDLibMetadataMountainLion.tsv"
+        "$APP_PATH/Contents/Resources/MaverickgramTDLibMetadataMountainLion.tsv"
 fi
 
 echo "Legacy bundle audit passed for $(wc -l < "$MACHO_LIST" | tr -d ' ') Mach-O file(s)."

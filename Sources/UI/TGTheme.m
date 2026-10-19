@@ -4,7 +4,7 @@
 #import "TGVisualWorldThemeSpec.h"
 #import "TGThemeContrast.inc"
 
-NSString * const TGThemeDefaultsKey = @"TelegraphicaThemeIdentifier";
+NSString * const TGThemeDefaultsKey = @"MaverickgramThemeIdentifier";
 NSString * const TGThemeIdentifierVKBlue = @"vk-blue";
 NSString * const TGThemeIdentifierCoffee = @"coffee-brass";
 NSString * const TGThemeIdentifierCoralPlum = @"coral-plum";

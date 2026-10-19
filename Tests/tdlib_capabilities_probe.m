@@ -20,12 +20,12 @@ static NSDictionary *TGCapabilityError(NSInteger code, NSString *message) {
 
 static void TGTestLaneAndMetadata(void) {
     TGTDLibCapabilities *fallback = [[[TGTDLibCapabilities alloc]
-        initWithLoadedLibraryPath:@"/Applications/Telegraphica.app/Contents/Frameworks/libtdjson-mountain-lion.dylib"] autorelease];
+        initWithLoadedLibraryPath:@"/Applications/Maverickgram.app/Contents/Frameworks/libtdjson-mountain-lion.dylib"] autorelease];
     TGCapabilityAssert([fallback lane] == TGTDLibLaneMountainLionFallback,
                        @"mountain-lion dylib should select the fallback lane");
 
     TGTDLibCapabilities *mainLane = [[[TGTDLibCapabilities alloc]
-        initWithLoadedLibraryPath:@"/Applications/Telegraphica.app/Contents/Frameworks/libtdjson.dylib"] autorelease];
+        initWithLoadedLibraryPath:@"/Applications/Maverickgram.app/Contents/Frameworks/libtdjson.dylib"] autorelease];
     TGCapabilityAssert([mainLane lane] == TGTDLibLaneMavericksOrNewer,
                        @"ordinary tdjson dylib should select the Mavericks+ lane");
     [mainLane recordTDLibVersion:@"1.8.65"

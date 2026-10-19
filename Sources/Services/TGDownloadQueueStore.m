@@ -1,6 +1,6 @@
 #import "TGDownloadQueueStore.h"
 
-NSString * const TGDownloadQueueRecordsDefaultsKey = @"TelegraphicaDownloadQueueRecordsV1";
+NSString * const TGDownloadQueueRecordsDefaultsKey = @"MaverickgramDownloadQueueRecordsV1";
 
 static id TGDownloadQueueValue(NSDictionary *record, NSString *key, Class expectedClass) {
     id value = [record objectForKey:key];

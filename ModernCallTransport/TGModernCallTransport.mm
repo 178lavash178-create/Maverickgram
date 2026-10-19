@@ -147,7 +147,7 @@ private:
 
 /*
  * InstanceV2Impl::setOutputVolume() is intentionally empty in the tgcalls
- * revision used by Telegraphica.  Muting the CoreAudio device itself would
+ * revision used by Maverickgram.  Muting the CoreAudio device itself would
  * also mute every other application on the Mac.  Intercept the per-call
  * playout callback instead: WebRTC still receives the unmodified render
  * stream for echo cancellation, while only the samples handed to CoreAudio
@@ -514,11 +514,11 @@ extern "C" void *TGModernCallTransportCreate(const char *callJSON,
         descriptor.config.customParameters = UTF8String(customParameters);
         descriptor.config.protocolVersion = [version isEqualToString:@"3.0.0"]
             ? tgcalls::ProtocolVersion::V1 : tgcalls::ProtocolVersion::V0;
-        descriptor.config.logPath.data = "/tmp/TelegraphicaCallTransport.log";
-        descriptor.config.statsLogPath.data = "/tmp/TelegraphicaCallTransportStats.json";
-        [[NSFileManager defaultManager] removeItemAtPath:@"/tmp/TelegraphicaCallTransport.log"
+        descriptor.config.logPath.data = "/tmp/MaverickgramCallTransport.log";
+        descriptor.config.statsLogPath.data = "/tmp/MaverickgramCallTransportStats.json";
+        [[NSFileManager defaultManager] removeItemAtPath:@"/tmp/MaverickgramCallTransport.log"
                                                    error:nil];
-        [[NSFileManager defaultManager] removeItemAtPath:@"/tmp/TelegraphicaCallTransportStats.json"
+        [[NSFileManager defaultManager] removeItemAtPath:@"/tmp/MaverickgramCallTransportStats.json"
                                                    error:nil];
         descriptor.initialNetworkType = tgcalls::NetworkType::WiFi;
         descriptor.mediaDevicesConfig.inputVolume = 1.0f;

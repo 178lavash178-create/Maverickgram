@@ -46,7 +46,7 @@
     NSPopUpButton *account=[[[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:YES] autorelease];
     [account setBordered:NO];[account setFont:[NSFont systemFontOfSize:13]];
     [[account cell] setLineBreakMode:NSLineBreakByTruncatingTail];
-    [account addItemWithTitle:@"Telegraphica"];
+    [account addItemWithTitle:@"Maverickgram"];
     NSMenuItem *profile=[[[NSMenuItem alloc] initWithTitle:TGLoc(@"profile.title") action:@selector(openProfileFromDrawer:) keyEquivalent:@""] autorelease];
     [profile setTarget:self];[[account menu] addItem:profile];
     NSMenuItem *settings=[[[NSMenuItem alloc] initWithTitle:TGLoc(@"settings") action:@selector(navigationChanged:) keyEquivalent:@""] autorelease];
@@ -63,7 +63,7 @@
 }
 - (void)refreshAquaToolbarAccount {
     NSPopUpButton *account=[self aquaToolbarAccountButton];if(!account) return;
-    NSString *full=[self.accountBadgeView displayName];if(![full length]) full=@"Telegraphica";
+    NSString *full=[self.accountBadgeView displayName];if(![full length]) full=@"Maverickgram";
     NSString *name=[self.profileFirstName length] ? self.profileFirstName : full;
     [[account itemAtIndex:0] setTitle:name];[account setTitle:name];
     [[account itemAtIndex:1] setTitle:TGLoc(@"profile.title")];[[account itemAtIndex:2] setTitle:TGLoc(@"settings")];

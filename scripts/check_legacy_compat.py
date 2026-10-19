@@ -104,20 +104,20 @@ def check_plist(errors):
 
 
 def check_project(errors):
-    project = os.path.join(ROOT, "Telegraphica.xcodeproj", "project.pbxproj")
+    project = os.path.join(ROOT, "Maverickgram.xcodeproj", "project.pbxproj")
     if not os.path.exists(project):
-        fail(errors, "Telegraphica.xcodeproj/project.pbxproj", "Missing Xcode project.")
+        fail(errors, "Maverickgram.xcodeproj/project.pbxproj", "Missing Xcode project.")
         return
     text = read_text(project)
     expected = "MACOSX_DEPLOYMENT_TARGET = %s;" % DEPLOYMENT_TARGET
     if expected not in text:
-        fail(errors, "Telegraphica.xcodeproj/project.pbxproj", "MACOSX_DEPLOYMENT_TARGET must be %s." % DEPLOYMENT_TARGET)
+        fail(errors, "Maverickgram.xcodeproj/project.pbxproj", "MACOSX_DEPLOYMENT_TARGET must be %s." % DEPLOYMENT_TARGET)
     if "CLANG_ENABLE_OBJC_ARC = NO;" not in text:
-        fail(errors, "Telegraphica.xcodeproj/project.pbxproj", "ARC must stay disabled until the legacy build lane proves otherwise.")
+        fail(errors, "Maverickgram.xcodeproj/project.pbxproj", "ARC must stay disabled until the legacy build lane proves otherwise.")
     if "x86_64" not in text:
-        fail(errors, "Telegraphica.xcodeproj/project.pbxproj", "x86_64 architecture setting is missing.")
+        fail(errors, "Maverickgram.xcodeproj/project.pbxproj", "x86_64 architecture setting is missing.")
     if "TGLocalDataReset.m" not in text:
-        fail(errors, "Telegraphica.xcodeproj/project.pbxproj", "TGLocalDataReset.m must be part of the Xcode project.")
+        fail(errors, "Maverickgram.xcodeproj/project.pbxproj", "TGLocalDataReset.m must be part of the Xcode project.")
 
 
 def check_gitignore(errors):

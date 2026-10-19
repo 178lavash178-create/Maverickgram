@@ -3,11 +3,11 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-PROJECT="Telegraphica.xcodeproj"
-TARGET="Telegraphica"
+PROJECT="Maverickgram.xcodeproj"
+TARGET="Maverickgram"
 SCHEME="${TELEGRAPHICA_SCHEME:-$TARGET}"
-APP_NAME="Telegraphica.app"
-EXECUTABLE_NAME="Telegraphica"
+APP_NAME="Maverickgram.app"
+EXECUTABLE_NAME="Maverickgram"
 DEPLOYMENT_TARGET="${TELEGRAPHICA_DEPLOYMENT_TARGET:-${MACOSX_DEPLOYMENT_TARGET:-10.8}}"
 ARCH="x86_64"
 BUILD_ROOT="build-legacy"
@@ -141,7 +141,7 @@ APP_BUILD="$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$INFO_SOURCE" 
 if [ -z "$APP_BUILD" ]; then
     APP_BUILD="$APP_VERSION"
 fi
-DIST_ZIP="$DIST_DIR/Telegraphica_v${APP_VERSION}.zip"
+DIST_ZIP="$DIST_DIR/Maverickgram_v${APP_VERSION}.zip"
 
 valid_tdlib_config() {
     local config_path="$1"
@@ -291,10 +291,10 @@ fi
 
 if [ -z "$BUNDLED_TDLIB_CONFIG_SOURCE" ] && [ -z "$BUNDLED_TDLIB_CREDENTIALS_SOURCE" ]; then
     for CONFIG_CANDIDATE in \
-        "$HOME/Library/Application Support/Telegraphica/tdlib-config.plist" \
-        "$BUILD_ROOT/Release/$APP_NAME/Contents/Resources/TelegraphicaTDLibDefaults.plist" \
-        "$APP_NAME/Contents/Resources/TelegraphicaTDLibDefaults.plist" \
-        "/Applications/$APP_NAME/Contents/Resources/TelegraphicaTDLibDefaults.plist"
+        "$HOME/Library/Application Support/Maverickgram/tdlib-config.plist" \
+        "$BUILD_ROOT/Release/$APP_NAME/Contents/Resources/MaverickgramTDLibDefaults.plist" \
+        "$APP_NAME/Contents/Resources/MaverickgramTDLibDefaults.plist" \
+        "/Applications/$APP_NAME/Contents/Resources/MaverickgramTDLibDefaults.plist"
     do
         if valid_tdlib_config "$CONFIG_CANDIDATE"; then
             BUNDLED_TDLIB_CONFIG_SOURCE="$CONFIG_CANDIDATE"
@@ -490,7 +490,7 @@ COMMON_SETTINGS=(
     "DSTROOT=$BUILD_ROOT/Install"
 )
 
-echo "Building Telegraphica for OS X $DEPLOYMENT_TARGET ($ARCH)."
+echo "Building Maverickgram for OS X $DEPLOYMENT_TARGET ($ARCH)."
 echo "Using $("$XCODEBUILD" -version | tr '\n' ' ') with SDK $SDK_NAME."
 
 BUILD_SELECTOR=(-scheme "$SCHEME")
@@ -608,7 +608,7 @@ if [ -n "${TELEGRAPHICA_TDJSON_PATH:-}" ]; then
         "$TELEGRAPHICA_TDJSON_PATH" "$TDJSON_DEST" \
         "${TELEGRAPHICA_TDJSON_METADATA_PATH:-}" \
         "mavericks-or-newer" \
-        "$RESOURCES_DIR/TelegraphicaTDLibMetadata.tsv"
+        "$RESOURCES_DIR/MaverickgramTDLibMetadata.tsv"
 fi
 
 if [ -n "${TELEGRAPHICA_TDJSON_MOUNTAIN_LION_PATH:-}" ]; then
@@ -627,7 +627,7 @@ if [ -n "${TELEGRAPHICA_TDJSON_MOUNTAIN_LION_PATH:-}" ]; then
         "$TELEGRAPHICA_TDJSON_MOUNTAIN_LION_PATH" "$TDJSON_MOUNTAIN_LION_DEST" \
         "${TELEGRAPHICA_TDJSON_MOUNTAIN_LION_METADATA_PATH:-}" \
         "mountain-lion-fallback" \
-        "$RESOURCES_DIR/TelegraphicaTDLibMetadataMountainLion.tsv"
+        "$RESOURCES_DIR/MaverickgramTDLibMetadataMountainLion.tsv"
 fi
 
 if [ -n "${TELEGRAPHICA_MODERN_CALL_TRANSPORT_PATH:-}" ]; then
@@ -677,7 +677,7 @@ if [ -n "${TELEGRAPHICA_MODERN_CALL_TRANSPORT_PATH:-}" ]; then
     fi
 
     FRAMEWORKS_DIR="$APP_NAME/Contents/Frameworks"
-    CALL_TRANSPORT_DEST="$FRAMEWORKS_DIR/TelegraphicaCallTransport.dylib"
+    CALL_TRANSPORT_DEST="$FRAMEWORKS_DIR/MaverickgramCallTransport.dylib"
     mkdir -p "$FRAMEWORKS_DIR"
     ditto "$TELEGRAPHICA_MODERN_CALL_TRANSPORT_PATH" "$CALL_TRANSPORT_DEST"
     chmod 0755 "$CALL_TRANSPORT_DEST"
@@ -686,9 +686,9 @@ else
     echo "Modern Telegram audio-call transport was not supplied; the Calls screen will show an unavailable state."
 fi
 
-rm -f "$RESOURCES_DIR/TelegraphicaTDLibDefaults.plist"
+rm -f "$RESOURCES_DIR/MaverickgramTDLibDefaults.plist"
 if [ -n "$BUNDLED_TDLIB_CONFIG_SOURCE" ] || [ -n "$BUNDLED_TDLIB_CREDENTIALS_SOURCE" ]; then
-    RUNTIME_CONFIG_MARKER="$RESOURCES_DIR/TelegraphicaTDLibRuntimeDefaults.plist"
+    RUNTIME_CONFIG_MARKER="$RESOURCES_DIR/MaverickgramTDLibRuntimeDefaults.plist"
     mkdir -p "$RESOURCES_DIR"
     rm -f "$RUNTIME_CONFIG_MARKER"
     /usr/libexec/PlistBuddy -c "Add :has_runtime_credentials bool true" "$RUNTIME_CONFIG_MARKER"
@@ -704,8 +704,8 @@ if [ -n "${TELEGRAPHICA_REMOTE_TDLIB_CONFIG_URL:-}" ]; then
         echo "TELEGRAPHICA_REMOTE_TDLIB_CONFIG_URL must be an HTTPS URL."
         exit 1
     fi
-    /usr/libexec/PlistBuddy -c "Delete :TelegraphicaRemoteTDLibConfigURL" "$INFO_PLIST" >/dev/null 2>&1 || true
-    /usr/libexec/PlistBuddy -c "Add :TelegraphicaRemoteTDLibConfigURL string $TELEGRAPHICA_REMOTE_TDLIB_CONFIG_URL" "$INFO_PLIST"
+    /usr/libexec/PlistBuddy -c "Delete :MaverickgramRemoteTDLibConfigURL" "$INFO_PLIST" >/dev/null 2>&1 || true
+    /usr/libexec/PlistBuddy -c "Add :MaverickgramRemoteTDLibConfigURL string $TELEGRAPHICA_REMOTE_TDLIB_CONFIG_URL" "$INFO_PLIST"
     echo "Bundled remote TDLib config endpoint."
 fi
 

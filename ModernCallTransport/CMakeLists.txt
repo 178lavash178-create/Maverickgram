@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(TelegraphicaCallTransport LANGUAGES C CXX OBJCXX)
+project(MaverickgramCallTransport LANGUAGES C CXX OBJCXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -87,7 +87,7 @@ file(WRITE "${REFLECTOR_PORT_PATCHED_SOURCE}" "${REFLECTOR_PORT_PATCHED_CONTENTS
 # VideoCaptureModule cannot open every FaceTime camera supported by Mavericks.
 set_source_files_properties(TGModernCallVideoPlatform.cpp PROPERTIES LANGUAGE OBJCXX)
 
-add_library(TelegraphicaCallTransport SHARED
+add_library(MaverickgramCallTransport SHARED
     TGModernCallTransport.mm
     TGModernCallLegacyClock.cpp
     TGModernCallVideoPlatform.cpp
@@ -124,7 +124,7 @@ add_library(TelegraphicaCallTransport SHARED
     "${TG_OWT_SOURCE_DIR}/src/modules/video_coding/codecs/h264/h264.cc"
 )
 
-target_include_directories(TelegraphicaCallTransport PRIVATE
+target_include_directories(MaverickgramCallTransport PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
     "${TGCALLS_SOURCE_DIR}"
     "${TGCALLS_DIR}"
@@ -138,13 +138,13 @@ target_include_directories(TelegraphicaCallTransport PRIVATE
     "${VPX_ROOT}/include"
 )
 
-target_compile_definitions(TelegraphicaCallTransport PRIVATE
+target_compile_definitions(MaverickgramCallTransport PRIVATE
     WEBRTC_APP_TDESKTOP
     WEBRTC_MAC
     WEBRTC_POSIX
     RTC_ENABLE_VP9
 )
-target_compile_options(TelegraphicaCallTransport PRIVATE
+target_compile_options(MaverickgramCallTransport PRIVATE
     -Wno-deprecated-builtins
     -Wno-c++11-narrowing-const-reference
 )
@@ -160,7 +160,7 @@ find_library(COREVIDEO_FRAMEWORK CoreVideo REQUIRED)
 find_library(SECURITY_FRAMEWORK Security REQUIRED)
 find_library(VIDEOTOOLBOX_FRAMEWORK VideoToolbox REQUIRED)
 
-target_link_libraries(TelegraphicaCallTransport PRIVATE
+target_link_libraries(MaverickgramCallTransport PRIVATE
     "${TG_OWT_LIBRARY}"
     "${OPUS_ROOT}/lib/libopus.a"
     "${VPX_ROOT}/lib/libvpx.a"
@@ -185,8 +185,8 @@ target_link_libraries(TelegraphicaCallTransport PRIVATE
     "-lz"
 )
 
-set_target_properties(TelegraphicaCallTransport PROPERTIES
-    OUTPUT_NAME "TelegraphicaCallTransport"
+set_target_properties(MaverickgramCallTransport PROPERTIES
+    OUTPUT_NAME "MaverickgramCallTransport"
     PREFIX ""
     INSTALL_NAME_DIR "@rpath"
     BUILD_WITH_INSTALL_RPATH YES

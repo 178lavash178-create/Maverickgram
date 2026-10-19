@@ -25,7 +25,7 @@ static BOOL TGWorkshopVersionIsAtLeast(NSString *candidate, NSString *minimum) {
         return NO;
     }
     if (!TGWorkshopVersionIsAtLeast(applicationVersion, [entry minimumApplicationVersion])) {
-        if (error) *error = TGWorkshopCompatibilityError(351, @"This Workshop module requires a newer Telegraphica version.");
+        if (error) *error = TGWorkshopCompatibilityError(351, @"This Workshop module requires a newer Maverickgram version.");
         return NO;
     }
     if (!TGWorkshopVersionIsAtLeast(systemVersion, [entry minimumOSVersion])) {

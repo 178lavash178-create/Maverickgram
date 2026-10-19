@@ -26,7 +26,7 @@ static void TGAnnounceCompletedDownloadAtPath(NSString *path) {
         return YES;
     }
     if (error) {
-        *error = [NSError errorWithDomain:@"TelegraphicaMediaFileActions"
+        *error = [NSError errorWithDomain:@"MaverickgramMediaFileActions"
                                      code:1
                                  userInfo:[NSDictionary dictionaryWithObject:TGLoc(@"media.center.saveAs.sourceMissing")
                                                                       forKey:NSLocalizedDescriptionKey]];
@@ -109,7 +109,7 @@ static void TGAnnounceCompletedDownloadAtPath(NSString *path) {
     }
     if (![directoryPath isKindOfClass:[NSString class]] || [directoryPath length] == 0) {
         if (error) {
-            *error = [NSError errorWithDomain:@"TelegraphicaMediaFileActions"
+            *error = [NSError errorWithDomain:@"MaverickgramMediaFileActions"
                                          code:2
                                      userInfo:[NSDictionary dictionaryWithObject:@"The downloads folder is not configured."
                                                                           forKey:NSLocalizedDescriptionKey]];

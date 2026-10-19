@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-NSString * const TGInterfaceDesignDefaultsKey = @"TelegraphicaInterfaceDesign";
+NSString * const TGInterfaceDesignDefaultsKey = @"MaverickgramInterfaceDesign";
 NSString * const TGInterfaceDesignClassic = @"classic";
 NSString * const TGInterfaceDesignAqua = @"aqua";
 
@@ -25,7 +25,7 @@ static NSString *TGInterfaceText(NSString *ru, NSString *be, NSString *en) {
     return [language isEqualToString:@"be"] ? be : ([language isEqualToString:@"en"] ? en : ru);
 }
 static NSError *TGInterfaceError(NSInteger code, NSString *description) {
-    return [NSError errorWithDomain:@"Telegraphica.InterfaceDesign" code:code
+    return [NSError errorWithDomain:@"Maverickgram.InterfaceDesign" code:code
         userInfo:[NSDictionary dictionaryWithObject:description forKey:NSLocalizedDescriptionKey]];
 }
 
@@ -86,7 +86,7 @@ static TGInterfaceRestartRequest *TGInterfacePendingRestart = nil;
         if (error) { *error=TGInterfaceError(2,TGInterfaceText(@"Не удалось найти приложение для перезапуска.",@"Не ўдалося знайсці праграму для перазапуску.",@"The application could not be found for restarting.")); }
         return NO;
     }
-    NSString *templatePath=[NSTemporaryDirectory() stringByAppendingPathComponent:@"Telegraphica-interface.XXXXXX"];
+    NSString *templatePath=[NSTemporaryDirectory() stringByAppendingPathComponent:@"Maverickgram-interface.XXXXXX"];
     char *buffer=strdup([templatePath fileSystemRepresentation]);
     char *created=mkdtemp(buffer);
     if (created) { _gate=[[[NSFileManager defaultManager] stringWithFileSystemRepresentation:created length:strlen(created)] copy]; }
@@ -188,7 +188,7 @@ BOOL TGRequestInterfaceDesignChange(NSString *identifier, NSWindow *parentWindow
         return NO;
     }
     NSAlert *alert=[[[NSAlert alloc] init] autorelease];
-    [alert setMessageText:TGInterfaceText(@"Перезапустить Telegraphica?",@"Перазапусціць Telegraphica?",@"Restart Telegraphica?")];
+    [alert setMessageText:TGInterfaceText(@"Перезапустить Maverickgram?",@"Перазапусціць Maverickgram?",@"Restart Maverickgram?")];
     [alert setInformativeText:TGInterfaceText(@"Новое оформление появится после перезапуска. Перезапустить сейчас?",@"Новае афармленне з’явіцца пасля перазапуску. Перазапусціць зараз?",@"The new design will appear after restarting. Restart now?")];
     [alert addButtonWithTitle:TGInterfaceText(@"Да, перезапустить",@"Так, перазапусціць",@"Yes, restart")];
     [alert addButtonWithTitle:TGInterfaceText(@"Нет",@"Не",@"No")];

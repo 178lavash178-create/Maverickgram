@@ -1,12 +1,12 @@
-Telegraphica third-party notices
+Maverickgram third-party notices
 
 libogg 1.3.5, Opus 1.3.1, and opusfile 0.12
 Copyright (c) Xiph.Org Foundation and contributors.
 
-Telegraphica uses vendored Xiph.Org libraries through a bundled helper to
+Maverickgram uses vendored Xiph.Org libraries through a bundled helper to
 decode Telegram Ogg/Opus voice messages into local WAV cache files on OS X
 10.9, where AVFoundation cannot play Ogg/Opus directly. The vendored source
-and license texts are included in Telegraphica's source distribution under
+and license texts are included in Maverickgram's source distribution under
 Vendor/libogg, Vendor/opus, and Vendor/opusfile.
 
 Upstream:
@@ -42,10 +42,10 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 libvpx 1.8.2 / libwebm parser
 Copyright (c) 2010, The WebM Project authors. All rights reserved.
 
-Telegraphica uses vendored libvpx and its libwebm parser to decode Telegram
+Maverickgram uses vendored libvpx and its libwebm parser to decode Telegram
 WebM/VP9 video stickers on OS X 10.9, where AVFoundation cannot play this
 format. The vendored source, license texts, patent grant, and reproducible
-legacy build script are included in Telegraphica's source distribution under
+legacy build script are included in Maverickgram's source distribution under
 Vendor/libvpx.
 
 Upstream: https://chromium.googlesource.com/webm/libvpx
@@ -81,7 +81,7 @@ Copyright (c) 2018 Samsung Electronics Co., Ltd.
 
 rlottie is used under the MIT license. Some imported renderer components use
 their respective permissive licenses. Its vendored source, copyright notices,
-license texts, and reproducible build script are included in Telegraphica's
+license texts, and reproducible build script are included in Maverickgram's
 source distribution under Vendor/rlottie.
 
 Upstream: https://github.com/Samsung/rlottie

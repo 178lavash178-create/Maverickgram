@@ -1,9 +1,9 @@
 #import "TGMediaPlaybackPreferences.h"
 #include <math.h>
 
-static NSString * const TGMediaPlaybackAudioRateDefaultsKey = @"TelegraphicaAudioPlaybackRate";
-static NSString * const TGMediaPlaybackVideoRateDefaultsKey = @"TelegraphicaVideoPlaybackRate";
-static NSString * const TGMediaPlaybackSequentialAudioDefaultsKey = @"TelegraphicaSequentialAudioPlaybackEnabled";
+static NSString * const TGMediaPlaybackAudioRateDefaultsKey = @"MaverickgramAudioPlaybackRate";
+static NSString * const TGMediaPlaybackVideoRateDefaultsKey = @"MaverickgramVideoPlaybackRate";
+static NSString * const TGMediaPlaybackSequentialAudioDefaultsKey = @"MaverickgramSequentialAudioPlaybackEnabled";
 
 NSArray *TGMediaPlaybackSupportedRates(void) {
     return [NSArray arrayWithObjects:

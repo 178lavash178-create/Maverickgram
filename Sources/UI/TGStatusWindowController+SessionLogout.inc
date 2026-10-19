@@ -10,7 +10,7 @@
     NSAlert *alert = [[[NSAlert alloc] init] autorelease];
     [alert setAlertStyle:NSWarningAlertStyle];
     [alert setMessageText:@"Log out of Telegram?"];
-    [alert setInformativeText:@"Telegraphica will close the current local TDLib session. You will need to sign in again on this Mac."];
+    [alert setInformativeText:@"Maverickgram will close the current local TDLib session. You will need to sign in again on this Mac."];
     [alert addButtonWithTitle:@"Cancel"];
     [alert addButtonWithTitle:@"Logout"];
     NSInteger result = TGRunAlert(alert, self.window);
@@ -59,7 +59,7 @@
     [self setControlsBusy:YES];
     [self.settingsDeleteLocalDataButton setEnabled:NO];
     [self.statusField setStringValue:TGLoc(@"settings.localData.busy")];
-    [self appendDetail:@"Local data reset requested. Stopping TDLib before deleting Telegraphica-owned local files."];
+    [self appendDetail:@"Local data reset requested. Stopping TDLib before deleting Maverickgram-owned local files."];
     [[TGLogger sharedLogger] log:@"Local data reset requested."];
 
     TGTDLibClient *client = [self.client retain];

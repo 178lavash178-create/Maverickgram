@@ -1,5 +1,5 @@
-"telegraphica" = "Telegraphica";
-"core_spike" = "Telegraphica core spike";
+"telegraphica" = "Maverickgram";
+"core_spike" = "Maverickgram core spike";
 "tdlib_not_checked" = "TDLib status: not checked";
 "save" = "Сохранить";
 "diagnostics.copyAll" = "Копировать всё";
@@ -27,7 +27,7 @@
 "saved.topics" = "Темы";
 "saved.messages" = "Сообщения";
 "saved.tags" = "Теги";
-"saved.premiumNote" = "Поиск и редактирование тегов доступны только в Telegram Premium и не выполняются в Telegraphica.";
+"saved.premiumNote" = "Поиск и редактирование тегов доступны только в Telegram Premium и не выполняются в Maverickgram.";
 "saved.pin" = "Закрепить тему";
 "saved.unpin" = "Открепить тему";
 "saved.pinned" = "Закреплено";
@@ -145,7 +145,7 @@
 "share.venue.error" = "Укажите название и корректные координаты.";
 "share.liveLocation.menu" = "Транслировать геопозицию…";
 "share.liveLocation.duration" = "Срок трансляции";
-"share.liveLocation.warning" = "Telegraphica отправляет только введённые координаты и не обращается к геолокации компьютера.";
+"share.liveLocation.warning" = "Maverickgram отправляет только введённые координаты и не обращается к геолокации компьютера.";
 "share.liveLocation.15m" = "15 минут";
 "share.liveLocation.1h" = "1 час";
 "share.liveLocation.8h" = "8 часов";
@@ -207,7 +207,7 @@
 "bot.callback.loading" = "Отправка действия боту…";
 "bot.callback.done" = "Действие бота выполнено.";
 "bot.link.confirmTitle" = "Открыть внешнюю ссылку?";
-"bot.link.confirmMessage" = "Ссылка откроет сайт %1$@ вне Telegraphica.";
+"bot.link.confirmMessage" = "Ссылка откроет сайт %1$@ вне Maverickgram.";
 "bot.link.invalid" = "Бот передал некорректную ссылку.";
 "bot.link.opened" = "Ссылка открыта в браузере.";
 "bot.login.checking" = "Проверка ссылки входа…";
@@ -218,9 +218,9 @@
 "bot.login.signInOnly" = "Только войти";
 "bot.login.resolving" = "Подготовка безопасной ссылки входа…";
 "bot.cancelled" = "Отменено.";
-"bot.personalData.manualOnly" = "Telegraphica не передаёт номер телефона или геолокацию по кнопке бота. При желании отправьте эти данные вручную.";
+"bot.personalData.manualOnly" = "Maverickgram не передаёт номер телефона или геолокацию по кнопке бота. При желании отправьте эти данные вручную.";
 "bot.webApp.officialOnly" = "Telegram Mini Apps не запускаются на этом старом Mac. Используйте официальное приложение Telegram.";
-"bot.paid.officialOnly" = "Платные действия Telegram отключены в Telegraphica. Если решите приобрести функцию, используйте официальное приложение Telegram.";
+"bot.paid.officialOnly" = "Платные действия Telegram отключены в Maverickgram. Если решите приобрести функцию, используйте официальное приложение Telegram.";
 "chat.clearHistory" = "Очистить историю";
 "chat.clearHistoryConfirmTitle" = "Очистить историю «%@»?";
 "chat.clearHistoryConfirm" = "Все сообщения в этом чате будут удалены из вашей истории Telegram. Это действие нельзя отменить.";
